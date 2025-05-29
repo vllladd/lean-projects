@@ -1,5 +1,6 @@
 import Init.Coe
 import Mathlib.Tactic.Ring
+import Mathlib.Data.Set.Basic
 import Mathlib.Data.List.Basic
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
@@ -10,7 +11,13 @@ import Mathlib.Algebra.BigOperators.Intervals
 
 noncomputable section
 open scoped Classical
-open Finset BigOperators
+open BigOperators
+
+syntax:min term atomic(" #" ws) term:min : term
+
+macro_rules
+| `($f $args* # $a) => `($f $args* $a)
+| `($f # $a) => `($f $a)
 
 def fn_set' {α : Type} (a b x : α) : α :=
 if x = a then b else x
@@ -22,7 +29,7 @@ def fn_set {α β : Type} (a : α) (b : β) (f : α → β) (x : α) : β :=
 if x = a then b else f x
 
 def fn_swap {α β : Type} (a b : α) (f : α → β) (x : α) : β :=
-f $ fn_swap' a b x
+f # fn_swap' a b x
 
 -----
 
@@ -338,3 +345,40 @@ def Bit.iff : Bit → Bit → Bit
 def Bit.xor : Bit → Bit → Bit
 | 0, a => a
 | 1, a => a.not
+
+def Set.erase {α : Type} (x : α) (s : Set α) := s \ {x}
+
+@[simp]
+theorem Set.mem_erase {α : Type} {z x : α} (s : Set α) :
+z ∈ s.erase x ↔ z ≠ x ∧ z ∈ s := by
+  unfold Set.erase; aesop
+
+theorem Set.erase_eq_of_not_mem {α : Type} {x : α} {s : Set α}
+(h : x ∉ s) : s.erase x = s := by simpa [Set.erase]
+
+theorem Set.insert_erase_eq_of_mem {α : Type} {x : α} {s : Set α}
+(h : x ∈ s) : insert x (s.erase x) = s := by
+  ext z; simp; apply Iff.intro <;> intro h₁
+  rcases h₁ with rfl | ⟨h₁, h₂⟩ <;> assumption
+  simp [h₁]; apply eq_or_ne
+
+theorem ne_none_of_eq_some {α : Type} {m : Option α} {x : α}
+(h : m = some x) : m ≠ none := by simp [h]
+
+def List.snoc {α : Type} (xs : List α) (x : α) := xs ++ [x]
+
+@[simp]
+theorem Set.finite_erase_iff {α : Type} {x : α} {s : Set α} :
+(s.erase x).Finite ↔ s.Finite := by
+  by_cases hx : x ∈ s
+  case neg => simp [Set.erase_eq_of_not_mem hx]
+  symm; apply Iff.intro Finite.diff; intro h
+  generalize hs' : s.erase x = s' at h
+  have hs : s = insert x s' := by
+    subst hs'; rw [Set.insert_erase_eq_of_mem hx]
+  rw [←Set.erase, hs'] at h; rw [hs]
+  apply Finite.insert; exact h
+
+@[simp]
+theorem Set.infinite_erase_iff {α : Type} {x : α} {s : Set α} :
+(s.erase x).Infinite ↔ s.Infinite := by simp [Set.Infinite]
