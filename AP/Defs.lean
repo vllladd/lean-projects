@@ -60,6 +60,7 @@ structure Strat where
 def State'.a_move (s s₁ : State') := ∃ (a₁ : Point),
   s₁ = {s with a := a₁} ∧
   a₁ ∈ s.grid ∧
+  a₁ ≠ s.a ∧
   a₁.dist s.a ≤ s.pw
 
 def State'.d_move (s s₁ : State') := ∃ (p : Point),
@@ -70,9 +71,9 @@ def State'.d_move (s s₁ : State') := ∃ (p : Point),
 def A_moves (s : State') := setOf s.a_move
 def D_moves (s : State') := setOf s.d_move
 
-abbrev StratT (moves : Moves) := {st : Strat // st.moves = moves}
-abbrev A_strat := StratT A_moves
-abbrev D_strat := StratT D_moves
+def StratT (moves : Moves) := {st : Strat // st.moves = moves}
+def A_strat := StratT A_moves
+def D_strat := StratT D_moves
 
 instance {moves : Moves} : Inhabited (StratT moves) := by
   refine' ⟨⟨moves, _, _⟩, by simp⟩
@@ -81,6 +82,9 @@ instance {moves : Moves} : Inhabited (StratT moves) := by
   · intro s; simp; split_ifs with h <;> simp
     · apply Classical.choose_spec
     · exact Set.not_nonempty_iff_eq_empty.mp h
+
+instance : Inhabited A_strat := ⟨(default : StratT _)⟩
+instance : Inhabited D_strat := ⟨(default : StratT _)⟩
 
 @[ext]
 structure Game where
@@ -113,10 +117,12 @@ def game₀ (pw : ℕ) (a : A_strat) (d : D_strat) : Game :=
   , ended := False
   }
 
+@[simp]
+def Game.f (g : Game) := if g.a_turn then g.a.1.f else g.d.1.f
+
 def Game.move (g : Game) : Game :=
   if g.ended then g else
-  let f := if g.a_turn then g.a.1.f else g.d.1.f
-  match f g.state with
+  match g.f g.state with
   | none => {g with ended := True}
   | some s => {g with state := g.state.push s, a_turn := g.d_turn}
 

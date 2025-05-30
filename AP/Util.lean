@@ -2,11 +2,14 @@ import Init.Coe
 import Mathlib.Tactic.Ring
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.List.Basic
+import Mathlib.Tactic.Linarith
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
 import Mathlib.Control.Monad.Basic
 import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.SetTheory.Cardinal.Arithmetic
 import Mathlib.Algebra.BigOperators.Intervals
 
 noncomputable section
@@ -18,6 +21,9 @@ syntax:min term atomic(" #" ws) term:min : term
 macro_rules
 | `($f $args* # $a) => `($f $args* $a)
 | `($f # $a) => `($f $a)
+
+macro "nm " args:(ppSpace colGt Lean.binderIdent)+ : tactic =>
+  `(tactic| rename_i $args*)
 
 def fn_set' {α : Type} (a b x : α) : α :=
 if x = a then b else x
@@ -382,3 +388,23 @@ theorem Set.finite_erase_iff {α : Type} {x : α} {s : Set α} :
 @[simp]
 theorem Set.infinite_erase_iff {α : Type} {x : α} {s : Set α} :
 (s.erase x).Infinite ↔ s.Infinite := by simp [Set.Infinite]
+
+theorem Set.diff_upair {α : Type} (x y : α) (s : Set α) :
+s \ {x, y} = (s \ {x}) \ {y} := by ext z; simp; tauto
+
+@[simp]
+theorem Set.univ_ne_univ_diff_insert {α : Type} {x : α} {s : Set α} :
+Set.univ ≠ Set.univ \ (insert x s) := by
+  simp [Set.ext_iff]; use x; simp
+
+@[simp]
+theorem Set.univ_ne_univ_diff_singleton {α : Type} {x : α} :
+Set.univ ≠ Set.univ \ {x} := by simp [Set.ext_iff]
+
+@[simp]
+theorem Set.univ_ne_erase {α : Type} {x : α} :
+Set.univ ≠ Set.univ.erase x := by simp [Set.erase]
+
+@[simp]
+theorem prop_bcs (P : Prop) {R : Prop} (h₁ : P → R)
+(h₂ : (P → R) → ¬P → R) : R := by tauto
