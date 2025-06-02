@@ -408,3 +408,27 @@ Set.univ ≠ Set.univ.erase x := by simp [Set.erase]
 @[simp]
 theorem prop_bcs (P : Prop) {R : Prop} (h₁ : P → R)
 (h₂ : (P → R) → ¬P → R) : R := by tauto
+
+theorem eq_true_of {P : Prop} (h : P) : P = True := by simpa
+
+theorem Set.diff_erase_self_eq_of_mem {α : Type} {x : α} {s : Set α}
+(h : x ∈ s) : s \ s.erase x = {x} := by simpa [Set.erase]
+
+theorem Set.eq_empty_iff {α : Type} {s : Set α} : s = ∅ ↔ ∀ x, x ∉ s :=
+  eq_empty_iff_forall_notMem
+
+@[simp]
+theorem Set.subsingleton_upair_iff {α : Type} {x y : α} :
+({x, y} : Set _).Subsingleton ↔ x = y := by
+  simp [Set.Subsingleton]; simp [eq_comm]
+
+theorem ne_of_congr {α β : Type} {x y : α} (f : α → β)
+(h : f x ≠ f y) : x ≠ y := by contrapose! h; rw [h]
+
+theorem skolemize {α β : Type} [Nonempty β] {p : α → Prop} {q : α → β → Prop} :
+(∀ x, p x → ∃ y, q x y) ↔ ∃ (f : α → β), ∀ x, p x → q x (f x) := by
+  constructor
+  · intro h; use λ x => Classical.epsilon λ y => p x → q x y
+    intro x hx; specialize h x hx;
+    convert Classical.epsilon_spec h; simp [hx]
+  rintro ⟨f, h⟩ x hx; specialize h x hx; use f x

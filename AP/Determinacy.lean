@@ -24,30 +24,30 @@ theorem game₀_a {pw a d} : (game₀ pw a d).a = a := rfl
 theorem game₀_d {pw a d} : (game₀ pw a d).d = d := rfl
 
 @[simp]
-theorem game₀_state' {pw a d} : (game₀ pw a d).state' = state'₀ pw := rfl
+theorem game₀_state' {pw a d} : (game₀ pw a d).toState' = state'₀ pw := rfl
 
 @[simp]
 theorem game₀_a_turn {pw a d} : ¬(game₀ pw a d).a_turn := λ h => h
 
--- def State'.winning pw (s : State') := ∃ a, ∀ (g : Game) n,
---   g.pw = pw → g.a = a → g.state' = s → g.a_turn → ¬(g.play n).ended
-
 #check 0 #exit
 
-theorem state'₀_winning_iff_a_hws {pw} : (state'₀ pw).winning pw ↔ a_hws pw := by
-  simp [State'.winning, a_hws]
-  rw [exists_congr]
-  intro a
-  apply Iff.intro <;> intro h
-  · intro d n
-    specialize h (game₀ pw a d) n
-    simp at h
+def a_optimal_fn : Strat := λ s =>
+  let sa := Classical.epsilon λ (sa : AState) => sa.toState = s
+  let p := λ (sd : DState) => sa.move sd ∧ ∀ sa₂, sd.move sa₂ → sa₂.winning
+  if ¬sa.has_move then node else some #
+  if ∃ sd, p sd then Classical.epsilon p
+  else Classical.epsilon 
+
+def a_optimal : AStrat := by
+  use a_optimal_fn
 
 #check 0 #exit
 
 theorem a_hws_of_not_d_hws {pw} (h : ¬d_hws pw) : a_hws pw := by
   simp [d_hws] at h
   sorry
+
+#check 0 #exit
 
 theorem d_hws_of_not_a_hws {pw} (h : ¬a_hws pw) : d_hws pw := by
   contrapose! h; exact a_hws_of_not_d_hws h
@@ -59,3 +59,11 @@ theorem not_a_hws_iff {pw} : ¬a_hws pw ↔ d_hws pw :=
 @[simp]
 theorem not_d_hws_iff {pw} : ¬d_hws pw ↔ a_hws pw := by
   simp [not_iff_comm]
+
+theorem a_losing_iff {sa : AState} :
+sa.losing ↔ ∀ sd, sa.move sd → ∃ sa₂, sd.move sa₂ ∧ sa₂.losing := by
+  sorry
+
+theorem a_winning_iff {sa : AState} :
+sa.winning ↔ ∃ sd, sa.move sd ∧ ∀ sa₂, sd.move sa₂ → sa₂.winning := by
+  sorry

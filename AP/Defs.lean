@@ -23,27 +23,26 @@ def grid₀ : Grid := Set.univ
 structure State' where
   pw : ℕ
   grid : Grid
-  a : Point
+  a_pos : Point
 
 @[ext]
-structure State where
-  state : State'
+structure State extends State' where
   hist : List State'
 
 def state'₀ (pw : ℕ) : State' :=
   { pw := pw
   , grid := grid₀
-  , a := point₀
+  , a_pos := point₀
   }
 
 def state₀ (pw : ℕ) : State :=
-  {state := state'₀ pw, hist := []}
+  {state'₀ pw with hist := []}
 
 instance : Inhabited State' := ⟨state'₀ 0⟩
 instance : Inhabited State := ⟨state₀ 0⟩
 
 def State.push (st : State) (s : State') : State :=
-  {st with state := s, hist := st.hist.snoc st.state}
+  {s with hist := st.hist.snoc st.toState'}
 
 abbrev Moves := State' → Set State'
 
@@ -52,67 +51,63 @@ structure Strat where
   moves : Moves
   f : State → Option State'
   h : ∀ (s : State),
-    let set := moves s.state
+    let set := moves s.toState'
     match f s with
     | none => set = ∅
     | some s₁ => s₁ ∈ set
 
 def State'.a_move (s s₁ : State') := ∃ (a₁ : Point),
-  s₁ = {s with a := a₁} ∧
+  s₁ = {s with a_pos := a₁} ∧
   a₁ ∈ s.grid ∧
-  a₁ ≠ s.a ∧
-  a₁.dist s.a ≤ s.pw
+  a₁ ≠ s.a_pos ∧
+  a₁.dist s.a_pos ≤ s.pw
 
 def State'.d_move (s s₁ : State') := ∃ (p : Point),
   s₁ = {s with grid := s.grid.erase p} ∧
   p ∈ s.grid ∧
-  p ≠ s.a
+  p ≠ s.a_pos
 
-def A_moves (s : State') := setOf s.a_move
-def D_moves (s : State') := setOf s.d_move
+def AMoves (s : State') := setOf s.a_move
+def DMoves (s : State') := setOf s.d_move
 
 def StratT (moves : Moves) := {st : Strat // st.moves = moves}
-def A_strat := StratT A_moves
-def D_strat := StratT D_moves
+def AStrat := StratT AMoves
+def DStrat := StratT DMoves
 
 instance {moves : Moves} : Inhabited (StratT moves) := by
   refine' ⟨⟨moves, _, _⟩, by simp⟩
-  · intro s; exact if h : ∃ x, x ∈ moves s.state then
+  · intro s; exact if h : ∃ x, x ∈ moves s.toState' then
       some # Classical.choose h else none
   · intro s; simp; split_ifs with h <;> simp
     · apply Classical.choose_spec
     · exact Set.not_nonempty_iff_eq_empty.mp h
 
-instance : Inhabited A_strat := ⟨(default : StratT _)⟩
-instance : Inhabited D_strat := ⟨(default : StratT _)⟩
+instance : Inhabited AStrat := ⟨(default : StratT _)⟩
+instance : Inhabited DStrat := ⟨(default : StratT _)⟩
 
 @[ext]
-structure Game where
-  a : A_strat
-  d : D_strat
-  state : State
+structure Game extends State where
+  a : AStrat
+  d : DStrat
   a_turn : Prop
   ended : Prop
 
 def Game.dflt : Game :=
   { a := default
   , d := default
-  , state := default
+  , toState := default
   , a_turn := default
   , ended := default
   }
 
 instance : Inhabited Game := ⟨Game.dflt⟩
 
-abbrev State.pw (s : State) := s.state.pw
-abbrev Game.pw (g : Game) := g.state.pw
 abbrev Game.d_turn (g : Game) := ¬g.a_turn
-abbrev Game.state' (g : Game) := g.state.state
 
-def game₀ (pw : ℕ) (a : A_strat) (d : D_strat) : Game :=
+def game₀ (pw : ℕ) (a : AStrat) (d : DStrat) : Game :=
   { a := a
   , d := d
-  , state := state₀ pw
+  , toState := state₀ pw
   , a_turn := False
   , ended := False
   }
@@ -122,9 +117,9 @@ def Game.f (g : Game) := if g.a_turn then g.a.1.f else g.d.1.f
 
 def Game.move (g : Game) : Game :=
   if g.ended then g else
-  match g.f g.state with
+  match g.f g.toState with
   | none => {g with ended := True}
-  | some s => {g with state := g.state.push s, a_turn := g.d_turn}
+  | some s => {g with toState := g.toState.push s, a_turn := g.d_turn}
 
 def Game.play (n : ℕ) (g : Game) := Game.move^[n] g
 
