@@ -3,6 +3,15 @@ import AP.Defs
 noncomputable section
 open scoped Classical
 
+@[ext]
+theorem point_ext {a b : Point} (hx : a.x = b.x) (hy : a.y = b.y) : a = b := by
+  cases a; cases b; simp_all
+
+@[simp]
+theorem point_mk_eq_iff {x₁ y₁ x₂ y₂} :
+@Eq Point (x₁, y₁) (x₂, y₂) ↔ x₁ = x₂ ∧ y₁ = y₂ := by
+  unfold Point; simp
+
 @[simp]
 theorem game_play_zero {g : Game} : g.play 0 = g := rfl
 
@@ -71,7 +80,7 @@ def State'.reachable (s s₁ : State') :=
 def State'.valid s := ∃ pw, (state'₀ pw).reachable s
 
 @[simp]
-theorem state'₀_a_pos {pw} : (state'₀ pw).a_pos = ⟨0, 0⟩ := rfl
+theorem state'₀_a_pos {pw} : (state'₀ pw).a_pos = (0, 0) := rfl
 
 @[simp]
 theorem state'₀_grid {pw} : (state'₀ pw).grid = Set.univ := rfl
@@ -128,11 +137,9 @@ theorem Reachable'_of_valid {s : State'} (h : s.valid) :
   rcases h with ⟨pw, h⟩; replace h := Reachable'_of_reachable h
   convert h; apply pw_eq_of_Reachable' h
 
-def point_equiv_prod : Point ≃ Prod ℤ ℤ := by
-  use λ ⟨x, y⟩ => ⟨x, y⟩, λ ⟨x, y⟩ => ⟨x, y⟩ <;> intro x <;> simp
+def point_equiv_prod : Point ≃ Prod ℤ ℤ := by apply Equiv.refl
 
-instance : Infinite Point := by
-  rw [point_equiv_prod.infinite_iff]; infer_instance
+instance : Infinite Point := by unfold Point; infer_instance
 
 theorem grid_always_inf {s : State'} (h : s.valid) : s.grid.Infinite := by
   obtain ⟨pw, h₁⟩ := exi_Reachable'_of_valid h; clear h
