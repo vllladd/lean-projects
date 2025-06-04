@@ -34,7 +34,7 @@ theorem mem_a_moves {s s₁} : s₁ ∈ AMoves s ↔ s.a_move s₁ := by apply I
 theorem mem_d_moves {s s₁} : s₁ ∈ DMoves s ↔ s.d_move s₁ := by apply Iff.refl
 
 theorem strat_ap_eq_none_iff {f : State' → State' → Prop}
-{st : StratT # λ s => setOf # f s} {s} :
+{st : Strat # λ s => setOf # f s} {s} :
 st.1.f s = none ↔ ∀ s₁, ¬f s.toState' s₁ := by
   rcases st with ⟨⟨ms, f', h₁⟩, h₂⟩; simp at h₁ h₂ ⊢
   subst h₂; specialize h₁ s; split at h₁
@@ -57,7 +57,7 @@ a.1.f s = none ↔ ¬s.toState'.d_has_move := by
   simp [State'.d_has_move]; exact strat_ap_eq_none_iff
 
 theorem of_strat_ap_eq_some {f : State' → State' → Prop}
-{st : StratT # λ (s : State') => setOf # f s} {s : State} {s₁}
+{st : Strat # λ (s : State') => setOf # f s} {s : State} {s₁}
 (h : st.1.f s = some s₁) : f s.toState' s₁ := by
   rcases st with ⟨⟨ms, f', h₂⟩, h₃⟩; simp at h h₃
   subst h₃; specialize h₂ s; simp [h] at h₂; exact h₂
@@ -295,17 +295,20 @@ def AState.to_game (sa : AState) (a : AStrat) (d : DStrat) : Game :=
   , ended := False
   }
 
-abbrev AState.move (sa : AState) (sd : DState) := sa.toState'.a_move sd.toState'
-abbrev DState.move (sd : DState) (sa : AState) := sd.toState'.d_move sa.toState'
+abbrev AState.move' (sa : AState) (sd : DState) :=
+  sa.toState'.a_move sd.toState'
 
-abbrev AState.has_move (sa : AState) := sa.toState'.a_has_move
-abbrev DState.has_move (sd : DState) := sd.toState'.d_has_move
+abbrev DState.move' (sd : DState) (sa : AState) :=
+  sd.toState'.d_move sa.toState'
+
+abbrev AState.has_move' (sa : AState) := sa.toState'.a_has_move
+abbrev DState.has_move' (sd : DState) := sd.toState'.d_has_move
 
 def losing' (set : Set AState) : Set AState :=
-  {sa | ∀ sd, sa.move sd → ∃ sa₂, sd.move sa₂ ∧ sa₂ ∈ set}
+  {sa | ∀ sd, sa.move' sd → ∃ sa₂, sd.move' sa₂ ∧ sa₂ ∈ set}
 
 def AState.losing (sa : AState) :=
-  ∃ n, sa ∈ losing'^[n] {sa | ¬sa.has_move}
+  ∃ n, sa ∈ losing'^[n] {sa | ¬sa.has_move'}
 
 def AState.winning (sa : AState) := ¬sa.losing
 
@@ -318,8 +321,8 @@ theorem not_a_losing_iff {sa : AState} : ¬sa.losing ↔ sa.winning := by
   simp [AState.winning]
 
 theorem a_losing_ind {p : AState → Prop} {sa : AState} (h : sa.losing)
-(h₁ : ∀ sa, ¬sa.has_move → p sa)
-(h₂ : ∀ sa, (∀ sd, sa.move sd → ∃ sa₂, sd.move sa₂ ∧ p sa₂) → p sa) :
+(h₁ : ∀ sa, ¬sa.has_move' → p sa)
+(h₂ : ∀ sa, (∀ sd, sa.move' sd → ∃ sa₂, sd.move' sa₂ ∧ p sa₂) → p sa) :
 p sa := by
   obtain ⟨n, h⟩ := h; induction n generalizing sa
   · simp at h; apply h₁; apply h
@@ -328,7 +331,7 @@ p sa := by
   specialize h _ hs₁; obtain ⟨sa₂, h₁, h₂⟩ := h; use sa₂, h₁, ih h₂
 
 theorem of_a_losing {sa : AState} (h : sa.losing) :
-∀ sd, sa.move sd → ∃ sa₂, sd.move sa₂ ∧ sa₂.losing := by
+∀ sd, sa.move' sd → ∃ sa₂, sd.move' sa₂ ∧ sa₂.losing := by
   obtain ⟨n, h⟩ := h; cases n
   · simp at h; intro sd hsd; contrapose! h; use sd.toState'
   nm n; rw [Function.iterate_succ'] at h; dsimp at h
@@ -336,5 +339,5 @@ theorem of_a_losing {sa : AState} (h : sa.losing) :
   obtain ⟨sa₂, h₁, h₂⟩ := h _ hsd; use sa₂, h₁, n
 
 theorem a_winning_of {sa : AState}
-(h : ∃ sd, sa.move sd ∧ ∀ sa₂, sd.move sa₂ → sa₂.winning) : sa.winning := by
+(h : ∃ sd, sa.move' sd ∧ ∀ sa₂, sd.move' sa₂ → sa₂.winning) : sa.winning := by
   contrapose! h; simp only [not_a_winning_iff] at h ⊢; exact of_a_losing h

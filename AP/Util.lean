@@ -405,7 +405,6 @@ Set.univ ≠ Set.univ \ {x} := by simp [Set.ext_iff]
 theorem Set.univ_ne_erase {α : Type} {x : α} :
 Set.univ ≠ Set.univ.erase x := by simp [Set.erase]
 
-@[simp]
 theorem prop_bcs (P : Prop) {R : Prop} (h₁ : P → R)
 (h₂ : (P → R) → ¬P → R) : R := by tauto
 
@@ -459,13 +458,11 @@ theorem int_mod_2_ind {P : ℤ → Prop}
   · obtain ⟨k, rfl⟩ := int_even_iff_exi.mp h; apply h₁
   · obtain ⟨k, rfl⟩ := int_odd_iff_exi.mp h; apply h₂
 
-@[simp]
 theorem nat_not_even_mul_2_succ {n : ℕ} : ¬Even (n * 2 + 1) := by simp
 
 @[simp]
 theorem nat_not_odd_mul_2 {n : ℕ} : ¬Odd (n * 2) := by simp
 
-@[simp]
 theorem int_not_even_mul_2_succ {n : ℤ} : ¬Even (n * 2 + 1) := by simp
 
 @[simp]

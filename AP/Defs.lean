@@ -46,7 +46,7 @@ def State.push (st : State) (s : State') : State :=
 abbrev Moves := State' → Set State'
 
 @[ext]
-structure Strat where
+structure StratT where
   moves : Moves
   f : State → Option State'
   h : ∀ (s : State),
@@ -69,11 +69,11 @@ def State'.d_move (s s₁ : State') := ∃ (p : Point),
 def AMoves (s : State') := setOf s.a_move
 def DMoves (s : State') := setOf s.d_move
 
-def StratT (moves : Moves) := {st : Strat // st.moves = moves}
-def AStrat := StratT AMoves
-def DStrat := StratT DMoves
+def Strat (moves : Moves) := {st : StratT // st.moves = moves}
+def AStrat := Strat AMoves
+def DStrat := Strat DMoves
 
-instance {moves : Moves} : Inhabited (StratT moves) := by
+instance {moves : Moves} : Inhabited (Strat moves) := by
   refine' ⟨⟨moves, _, _⟩, by simp⟩
   · intro s; exact if h : ∃ x, x ∈ moves s.toState' then
       some # Classical.choose h else none
@@ -81,8 +81,8 @@ instance {moves : Moves} : Inhabited (StratT moves) := by
     · apply Classical.choose_spec
     · exact Set.not_nonempty_iff_eq_empty.mp h
 
-instance : Inhabited AStrat := ⟨(default : StratT _)⟩
-instance : Inhabited DStrat := ⟨(default : StratT _)⟩
+instance : Inhabited AStrat := ⟨(default : Strat _)⟩
+instance : Inhabited DStrat := ⟨(default : Strat _)⟩
 
 @[ext]
 structure Game extends State where
