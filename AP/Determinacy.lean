@@ -18,22 +18,10 @@ theorem not_a_hws_of_d_hws {pw} (h : d_hws pw) : ¬a_hws pw := by
   contrapose! h; exact not_d_hws_of_a_hws h
 
 @[simp]
-theorem game₀_a {pw a d} : (game₀ pw a d).a = a := rfl
-
-@[simp]
-theorem game₀_d {pw a d} : (game₀ pw a d).d = d := rfl
-
-@[simp]
 theorem game₀_state' {pw a d} : (game₀ pw a d).toState' = state'₀ pw := rfl
 
 def AState.a_hws (s : AState) := ∃ a, ∀ d, (s.to_game a d).a_wins
 def AState.d_hws (s : AState) := ∃ d, ∀ a, (s.to_game a d).d_wins
-
-def AState.move (sa : AState) (sd : DState) :=
-  sa.move' sd ∧ sa.toState = sd.toState.push sa.toState'
-
-def DState.move (sd : DState) (sa : AState) :=
-  sd.move' sa ∧ sd.toState = sa.toState.push sd.toState'
 
 theorem a_state_move'_of_move {sa : AState} {sd}
 (h : sa.move sd) : sa.move' sd := h.1
@@ -41,17 +29,70 @@ theorem a_state_move'_of_move {sa : AState} {sd}
 theorem d_state_move'_of_move {sd : DState} {sa}
 (h : sd.move sa) : sd.move' sa := h.1
 
-#check 0 #exit
+theorem game_le_of_play_size_eq_size_add {g : Game} {n x}
+(h : (g.play n).size = g.size + x) : x ≤ n := by
+  by_contra! h₁
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt h₁
+  clear h₁
+  have h₁ := @game_play_size_lt_iff_play_ended g n
+  by_cases h₂ : (g.play n).ended <;> simp [h₂] at h₁
+  · by_cases h₃ : g.ended
+    · rw [game_play_eq_of_ended h₃] at h
+      simp at h
+    · specialize h₁ h₃
+      rw [h] at h₁
+      linarith
+  rw [game_play_size_eq_of_not_ended h₂] at h
+  linarith
 
-theorem game_play_size_eq_self_of_any {g : Game} {x} (n : ℕ)
+theorem game_play_size_eq_self_of_any {g : Game} {n x}
 (h : (g.play n).size = g.size + x) : (g.play x).size = g.size + x := by
-
-#check 0 #exit
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le # game_le_of_play_size_eq_size_add h
+  simp at h
+  by_cases he : (g.play x).ended
+  · simp [game_play_eq_of_ended he] at h
+    exact h
+  apply game_play_size_eq_of_not_ended he
 
 theorem game₀_play_size_eq_self_of_any {pw a d x} (n : ℕ)
 (h : ((game₀ pw a d).play n).size = x) : ((game₀ pw a d).play x).size = x := by
   generalize hg : game₀ pw a d = g at *
-  by_cases g.ended
+  replace h : (g.play n).size = g.size + x :=
+    by
+      nth_rewrite 2 [←hg]
+      simpa
+  replace h := game_play_size_eq_self_of_any h
+  nth_rewrite 2 [←hg] at h
+  simp at h
+  exact h
+
+def d_state₀ (pw : ℕ) : DState := by
+  refine' ⟨⟨state₀ pw, _⟩, _⟩ <;> simp
+
+def a_state₀ (pw : ℕ) : AState :=
+  Classical.epsilon (d_state₀ pw).move
+
+@[simp]
+theorem d_state₀_toState_eq {pw} : (d_state₀ pw).toState = state₀ pw := rfl
+
+@[simp]
+theorem state_mk_size {s' hist} : (⟨s', hist⟩ : State).size = hist.length := rfl
+
+#check 0 #exit
+
+theorem exi_d_state₀_move {pw} : ∃ sa, (d_state₀ pw).move sa := by
+  have ⟨s, hs⟩ := d_always_has_move #
+    state'_valid_of_state_valid (d_state₀ pw).h_valid
+  dsimp only [d_state₀] at hs
+  refine' ⟨⟨⟨⟨s, [state'₀ pw]⟩, _⟩, _⟩, _⟩
+  · have ⟨g, hg⟩ := hv # game₀ pw default #
+      mk_strat_const s
+    refine' ⟨g.move, _, _⟩; simp [hg]
+    simp [hg, Game.move]
+    rw [strat_set_ap_of_eq hs]
+    rfl
+  · simp
+  · unfold DState.move
 
 #check 0 #exit
 
@@ -63,6 +104,9 @@ theorem exi_a_state_move : ∃ (sa : AState) (sd : DState), sa.move sd := by
   have h₁ : g.size = 2 :=
     by
       subst hg₀ hg
+      exact game₀_play_size_eq_self_of_any n h
+  rw [exists_swap]
+  use d_state₀ pw
 
 #check 0 #exit
 

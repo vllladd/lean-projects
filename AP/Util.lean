@@ -619,3 +619,60 @@ theorem int_mul_2_succ_div_2_eq {n : ℤ}
 (hp : 0 ≤ n) : (n * 2 + 1) / 2 = n := by
   suffices (n * 2 + 1) / 2 = n * 2 / 2 by simp at this; assumption
   rw [int_succ_div_2_eq_div_iff # by linarith]; simp
+
+theorem choose_eq_epsilon {α : Type} [Nonempty α] {P : α → Prop} (h : ∃ x, P x) :
+h.choose = Classical.epsilon P := by
+  simp only [Exists.choose, Classical.choose, Classical.indefiniteDescription,
+    Classical.epsilon, Classical.strongIndefiniteDescription]
+  simp [h]
+
+@[simp]
+theorem snoc_ne_nil {α : Type} {xs : List α} {x : α} : xs.snoc x ≠ [] := by
+  simp [List.snoc]
+
+@[simp]
+def List.init {α : Type} : List α → List α
+| [] => []
+| [_] => []
+| (x :: ys) => x :: ys.init
+
+theorem init_cons_of_ne_nil {α : Type} {x : α} {xs : List α}
+(h : xs ≠ []) : (x :: xs).init = x :: xs.init := by
+  cases xs; simp at h; rfl
+
+@[simp]
+theorem init_snoc {α : Type} {xs : List α} {x : α} : (xs.snoc x).init = xs := by
+  unfold List.snoc
+  induction xs; rfl
+  nm y xs ih
+  rw [List.cons_append, init_cons_of_ne_nil # by simp, ih]
+
+@[simp]
+theorem nil_snoc {α : Type} {x : α} : [].snoc x = [x] := rfl
+
+@[simp]
+theorem cons_snoc_cons {α : Type} {x y : α} {xs : List α} :
+(x :: xs).snoc y = x :: xs.snoc y := rfl
+
+theorem and_of {P Q : Prop} (h₁ : P) (h₂ : P → Q) : P ∧ Q := by tauto
+
+@[simp]
+theorem snoc_inj {α : Type} {xs ys : List α} {x y : α} :
+xs.snoc x = ys.snoc y ↔ xs = ys ∧ x = y := by
+  symm; constructor; rintro ⟨rfl, rfl⟩; rfl
+  intro h
+  apply and_of
+  · replace h := congrArg List.init h
+    simp at h
+    exact h
+  · rintro rfl
+    induction xs; simp at h; exact h
+    nm z xs ih
+    simp at h
+    exact ih h
+
+@[simp]
+theorem snoc_ne_self {α : Type} {xs : List α} {x : α} : xs.snoc x ≠ xs := by
+  simp [List.snoc]
+
+theorem not_iff' {P Q : Prop} : ¬(P ↔ Q) ↔ (P ↔ ¬Q) := by tauto

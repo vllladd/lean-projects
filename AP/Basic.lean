@@ -13,6 +13,10 @@ theorem point_mk_eq_iff {x₁ y₁ x₂ y₂} :
   unfold Point; simp
 
 @[simp]
+theorem strat_ap_eq {ms ms' f s h₁ h₂} :
+@Strat.ap ms ⟨⟨ms', f, h₁⟩, h₂⟩ s = f s := rfl
+
+@[simp]
 theorem game_play_zero {g : Game} : g.play 0 = g := rfl
 
 @[simp]
@@ -20,59 +24,54 @@ theorem game_play_succ {n} {g : Game} : g.play (n + 1) = (g.play n).move := by
   apply Function.iterate_succ_apply'
 
 @[simp]
-theorem a_moves_eq_emp_iff {s} : AMoves s = ∅ ↔ ∀ s₁, ¬s.a_move s₁ := by
-  simp [AMoves, Set.eq_empty_iff_forall_notMem]
+theorem a_moves_ap_iff {s s₁} : AMoves s s₁ ↔ s.a_move s₁ := by apply Iff.refl
 
 @[simp]
-theorem d_moves_eq_emp_iff {s} : DMoves s = ∅ ↔ ∀ s₁, ¬s.d_move s₁ := by
-  simp [DMoves, Set.eq_empty_iff_forall_notMem]
-
-@[simp]
-theorem mem_a_moves {s s₁} : s₁ ∈ AMoves s ↔ s.a_move s₁ := by apply Iff.refl
-
-@[simp]
-theorem mem_d_moves {s s₁} : s₁ ∈ DMoves s ↔ s.d_move s₁ := by apply Iff.refl
+theorem d_moves_ap_iff {s s₁} : DMoves s s₁ ↔ s.d_move s₁ := by apply Iff.refl
 
 theorem strat_ap_eq_none_iff {f : State' → State' → Prop}
-{st : Strat # λ s => setOf # f s} {s} :
-st.1.f s = none ↔ ∀ s₁, ¬f s.toState' s₁ := by
+{st : Strat # λ s => f s} {s} :
+st.ap s = none ↔ ∀ s₁, ¬f s.toState' s₁ := by
   rcases st with ⟨⟨ms, f', h₁⟩, h₂⟩; simp at h₁ h₂ ⊢
   subst h₂; specialize h₁ s; split at h₁
-  case _ m h =>
-    simp [h]; intro s₁; rw [Set.ext_iff] at h₁
+  · nm m h
+    simp [h]; intro s₁
     specialize h₁ s₁; simp at h₁; exact h₁
-  case _ m s₂ h => simp [h]; exact ⟨_, h₁⟩
+  · nm m s₂ h; simp [h]; exact ⟨_, h₁⟩
 
-def State'.a_has_move (s : State') := ∃ s₁, s.a_move s₁
-def State'.d_has_move (s : State') := ∃ s₁, s.d_move s₁
+@[simp]
+def State'.has_move (ms : Moves) (s : State') := ∃ s₁, ms s s₁
+
+def State'.a_has_move (s : State') := s.has_move AMoves
+def State'.d_has_move (s : State') := s.has_move DMoves
 
 @[simp]
 theorem a_strat_ap_eq_none_iff {a : AStrat} {s} :
-a.1.f s = none ↔ ¬s.toState'.a_has_move := by
+a.ap s = none ↔ ¬s.toState'.a_has_move := by
   simp [State'.a_has_move]; exact strat_ap_eq_none_iff
 
 @[simp]
 theorem d_strat_ap_eq_none_iff {a : DStrat} {s} :
-a.1.f s = none ↔ ¬s.toState'.d_has_move := by
+a.ap s = none ↔ ¬s.toState'.d_has_move := by
   simp [State'.d_has_move]; exact strat_ap_eq_none_iff
 
 theorem of_strat_ap_eq_some {f : State' → State' → Prop}
-{st : Strat # λ (s : State') => setOf # f s} {s : State} {s₁}
-(h : st.1.f s = some s₁) : f s.toState' s₁ := by
+{st : Strat # λ (s : State') => f s} {s : State} {s₁}
+(h : st.ap s = some s₁) : f s.toState' s₁ := by
   rcases st with ⟨⟨ms, f', h₂⟩, h₃⟩; simp at h h₃
   subst h₃; specialize h₂ s; simp [h] at h₂; exact h₂
 
 theorem of_a_ap_eq_some {a : AStrat} {s s₁} :
-a.1.f s = some s₁ → s.toState'.a_move s₁ := of_strat_ap_eq_some
+a.ap s = some s₁ → s.toState'.a_move s₁ := of_strat_ap_eq_some
 
 theorem of_d_ap_eq_some {d : DStrat} {s s₁} :
-d.1.f s = some s₁ → s.toState'.d_move s₁ := of_strat_ap_eq_some
+d.ap s = some s₁ → s.toState'.d_move s₁ := of_strat_ap_eq_some
 
 theorem of_a_ap_eq_some' {a : AStrat} {s s₁}
-(h : a.1.f s = some s₁) : s.toState'.a_has_move := ⟨s₁, of_a_ap_eq_some h⟩
+(h : a.ap s = some s₁) : s.toState'.a_has_move := ⟨s₁, of_a_ap_eq_some h⟩
 
 theorem of_d_ap_eq_some' {d : DStrat} {s s₁}
-(h : d.1.f s = some s₁) : s.toState'.d_has_move := ⟨s₁, of_d_ap_eq_some h⟩
+(h : d.ap s = some s₁) : s.toState'.d_has_move := ⟨s₁, of_d_ap_eq_some h⟩
 
 def State'.reachable (s s₁ : State') :=
   ∃ (g : Game) (n : ℕ), s = g.toState' ∧ s₁ = (g.play n).toState'
@@ -118,14 +117,6 @@ theorem reachable_refl {s : State'} : s.reachable s := by
 
 @[simp]
 theorem Reachable'_refl {s : State'} : s.Reachable' s := by constructor
-
--- theorem reachable_of_Reachable' {s₀ s : State'}
--- (h : s₀.Reachable' s) : s₀.reachable s := by
---   induction h
---   · simp
---   · nm s₁ s₂ h₁ h₂ h₃
-
--- #check 0 #exit
 
 theorem exi_Reachable'_of_valid {s : State'} (h : s.valid) :
 ∃ pw, (state'₀ pw).Reachable' s := by
@@ -215,7 +206,7 @@ theorem state'_valid_of_game_valid {g : Game} (h : g.valid) :
 g.toState'.valid := state'_valid_of_state_valid # state_valid_of_game_valid h
 
 theorem d_always_has_move_ex {g : Game} (h : g.valid) :
-g.d.1.f g.toState ≠ none := by
+g.d.ap g.toState ≠ none := by
   simp; exact d_always_has_move # state'_valid_of_game_valid h
 
 theorem d_always_has_move' {g : Game} (h : g.valid) : g.toState'.d_has_move := by
@@ -228,7 +219,7 @@ theorem game₀_state {pw a d} : (game₀ pw a d).toState = state₀ pw := rfl
 theorem state₀_hist {pw} : (state₀ pw).hist = [] := rfl
 
 @[simp]
-theorem game_valid_move_of_valid {g : Game} (h : g.valid) : g.move.valid := by
+theorem game_move_valid_of_valid {g : Game} (h : g.valid) : g.move.valid := by
   obtain ⟨pw, a, d, n, rfl⟩ := h; use pw, a, d, n + 1; simp
 
 @[simp]
@@ -301,8 +292,8 @@ abbrev AState.move' (sa : AState) (sd : DState) :=
 abbrev DState.move' (sd : DState) (sa : AState) :=
   sd.toState'.d_move sa.toState'
 
-abbrev AState.has_move' (sa : AState) := sa.toState'.a_has_move
-abbrev DState.has_move' (sd : DState) := sd.toState'.d_has_move
+@[simp] def AState.has_move' (sa : AState) := sa.toState'.a_has_move
+@[simp] def DState.has_move' (sd : DState) := sd.toState'.d_has_move
 
 def losing' (set : Set AState) : Set AState :=
   {sa | ∀ sd, sa.move' sd → ∃ sa₂, sd.move' sa₂ ∧ sa₂ ∈ set}
@@ -333,10 +324,10 @@ p sa := by
 theorem of_a_losing {sa : AState} (h : sa.losing) :
 ∀ sd, sa.move' sd → ∃ sa₂, sd.move' sa₂ ∧ sa₂.losing := by
   obtain ⟨n, h⟩ := h; cases n
-  · simp at h; intro sd hsd; contrapose! h; use sd.toState'
+  · simp at h; intro sd hsd; contrapose! h; use sd.toState'; exact hsd
   nm n; rw [Function.iterate_succ'] at h; dsimp at h
   rw [losing'] at h; simp at h; intro sd hsd
-  obtain ⟨sa₂, h₁, h₂⟩ := h _ hsd; use sa₂, h₁, n
+  obtain ⟨sa₂, h₁, h₂⟩ := h _ hsd; use sa₂, h₁, n, h₂
 
 theorem a_winning_of {sa : AState}
 (h : ∃ sd, sa.move' sd ∧ ∀ sa₂, sd.move' sa₂ → sa₂.winning) : sa.winning := by
