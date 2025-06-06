@@ -252,7 +252,8 @@ g.f g.toState = none := by
       simp at h₇; contradiction
     · nm m s h; contradiction
 
-theorem a_turn_of_ended {g : Game} (h₁ : g.valid) (h₂ : g.ended) : g.a_turn := by
+theorem game_a_turn_of_valid_and_ended {g : Game}
+(h₁ : g.valid) (h₂ : g.ended) : g.a_turn := by
   have h₃ := no_move_of_ended h₁ h₂; by_contra h₄; simp [Game.f, h₄] at h₃
   have h₅ := d_always_has_move' h₁; contradiction
 

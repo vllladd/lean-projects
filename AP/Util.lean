@@ -651,7 +651,7 @@ theorem init_snoc {α : Type} {xs : List α} {x : α} : (xs.snoc x).init = xs :=
 theorem nil_snoc {α : Type} {x : α} : [].snoc x = [x] := rfl
 
 @[simp]
-theorem cons_snoc_cons {α : Type} {x y : α} {xs : List α} :
+theorem cons_snoc {α : Type} {x y : α} {xs : List α} :
 (x :: xs).snoc y = x :: xs.snoc y := rfl
 
 theorem and_of {P Q : Prop} (h₁ : P) (h₂ : P → Q) : P ∧ Q := by tauto
@@ -676,3 +676,6 @@ theorem snoc_ne_self {α : Type} {xs : List α} {x : α} : xs.snoc x ≠ xs := b
   simp [List.snoc]
 
 theorem not_iff' {P Q : Prop} : ¬(P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
+theorem not_iff_comm' {P Q : Prop} : (¬P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
+
+theorem imp_cpos {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto

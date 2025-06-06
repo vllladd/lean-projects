@@ -192,7 +192,7 @@ theorem game_not_ended_of_play_not_ended {g : Game} {n}
 theorem state_push_size_eq {s : State} s' : (s.push s').size = s.size + 1 := by
   simp [State.push, State.size, List.snoc]
 
-theorem game_move_size_eq_of_not_ended {g : Game} (h : ¬g.move.ended) :
+theorem game_move_size_eq_of_move_not_ended {g : Game} (h : ¬g.move.ended) :
 g.move.size = g.size + 1 := by
   have h₁ := game_not_ended_of_move_not_ended h; simp [Game.move, h₁]
   split; nm m h₂; contrapose! h; simp [Game.move, h₁, h₂]; simp
@@ -200,13 +200,13 @@ g.move.size = g.size + 1 := by
 theorem game_play_size_eq_of_not_ended {g : Game} {n} (h : ¬(g.play n).ended) :
 (g.play n).size = g.size + n := by
   induction n; simp; nm n ih; simp at h ⊢
-  rw [game_move_size_eq_of_not_ended h,
+  rw [game_move_size_eq_of_move_not_ended h,
     ih # game_not_ended_of_move_not_ended h]; rfl
 
 theorem game_move_size_eq_of_ended {g : Game} (he : g.ended) :
 g.move.size = g.size := by simp [Game.move, he]
 
-theorem game_move_state_eq_of_move_ended {g : Game} (he : g.move.ended) :
+theorem game_move_toState_eq_of_move_ended {g : Game} (he : g.move.ended) :
 g.move.toState = g.toState := by
   generalize hg₁ : g.move = g₁ at he ⊢
   simp [Game.move] at hg₁; split_ifs at hg₁ with h₁ h₂; rw [hg₁]
@@ -218,7 +218,7 @@ theorem game_play_size_lt_iff_play_ended {g : Game} {n} (h₀ : ¬g.ended) :
   nm n ih; constructor <;> intro h
   · simp at h ⊢; by_contra he₁
     have he := game_not_ended_of_move_not_ended he₁; simp [he] at ih
-    rw [game_move_size_eq_of_not_ended he₁] at h; linarith
+    rw [game_move_size_eq_of_move_not_ended he₁] at h; linarith
   · simp at h ⊢; by_cases he : (g.play n).ended
     · replace ih := ih.mpr he
       suffices (g.play n).move.size = (g.play n).size by linarith
@@ -226,7 +226,7 @@ theorem game_play_size_lt_iff_play_ended {g : Game} {n} (h₀ : ¬g.ended) :
     suffices (g.play n).move.size = g.size + n by linarith
     suffices (g.play n).move.size = (g.play n).size by
       rw [this]; exact game_play_size_eq_of_not_ended he
-    rw [game_move_state_eq_of_move_ended h]
+    rw [game_move_toState_eq_of_move_ended h]
 
 @[simp]
 theorem state₀_size {pw} : (state₀ pw).size = 0 := rfl
@@ -276,7 +276,7 @@ theorem game_d_has_move_of_d_turn {g : Game}
   · simp at h
   · exact of_d_ap_eq_some' h₂
 
-theorem game_move_a_turn_iff {g : Game}
+theorem game_move_a_turn_iff_of_not_ended {g : Game}
 (h : ¬g.move.ended) : g.move.a_turn ↔ ¬g.a_turn := by
   have h₁ := game_not_ended_of_move_not_ended h
   simp [Game.move, h₁]
@@ -284,14 +284,14 @@ theorem game_move_a_turn_iff {g : Game}
   · exact game_a_has_move_of_a_turn m h
   · exact game_d_has_move_of_d_turn m h
 
-theorem game_play_a_turn_iff {g : Game} {n}
+theorem game_play_a_turn_iff_of_not_ended {g : Game} {n}
 (h : ¬(g.play n).ended) : (g.play n).a_turn ↔ (g.a_turn ↔ Even n) := by
   induction n
   · simp
   nm n ih
   simp at h ⊢
   specialize ih # game_not_ended_of_move_not_ended h
-  rw [game_move_a_turn_iff h, ih]
+  rw [game_move_a_turn_iff_of_not_ended h, ih]
   rcases Nat.even_or_odd n with h₁ | h₁
   · rw [←Nat.not_even_iff_odd]
     simp only [h₁]
@@ -303,12 +303,12 @@ theorem game_play_a_turn_iff {g : Game} {n}
 theorem game₀_play_a_turn_iff_odd {pw a d n}
 (h : ¬((game₀ pw a d).play n).ended) :
 ((game₀ pw a d).play n).a_turn ↔ Odd n := by
-  simp [game_play_a_turn_iff h]
+  simp [game_play_a_turn_iff_of_not_ended h]
 
 theorem game₀_play_d_turn_iff_even {pw a d n}
 (h : ¬((game₀ pw a d).play n).ended) :
 ¬((game₀ pw a d).play n).a_turn ↔ Even n := by
-  simp [game_play_a_turn_iff h]
+  simp [game_play_a_turn_iff_of_not_ended h]
 
 theorem exi_valid_state_with_size_of_pw_ne_0 pw n
 (h : pw ≠ 0) : ∃ (s : ValidState), s.pw = pw ∧ s.size = n := by
@@ -344,7 +344,7 @@ theorem exi_valid_state_with_size_of_pw_ne_0 pw n
   apply (by tauto : ∀ P Q, (Q → ¬P) → P → P ∧ ¬Q)
   
   · intro he
-    rw [game_move_state_eq_of_move_ended he, ih₁]
+    rw [game_move_toState_eq_of_move_ended he, ih₁]
     simp only [Nat.cast_add, Nat.cast_one, State'.mk.injEq, implies_true,
       imp_self, point_mk_eq_iff, and_true, true_and, not_and]
     clear * - n
@@ -484,8 +484,8 @@ theorem exi_valid_state_with_size_of_pw_ne_0 pw n
 @[simp]
 theorem game_size_le_move_size {g : Game} : g.size ≤ g.move.size := by
   by_cases he : g.move.ended
-  · rw [game_move_state_eq_of_move_ended he]
-  · simp [game_move_size_eq_of_not_ended he]
+  · rw [game_move_toState_eq_of_move_ended he]
+  · simp [game_move_size_eq_of_move_not_ended he]
 
 @[simp]
 theorem game_size_le_play_size {g : Game} {n} :
@@ -592,7 +592,7 @@ theorem game_play_size_eq_of_ended {g : Game} {n}
   exact game_play_ended_of_ended he
 
 theorem game_play_ended_of_le {g : Game} {n m}
-(h : n ≤ m) (he : (g.play n).ended) : (g.play m).ended := by
+(he : (g.play n).ended) (h : n ≤ m) : (g.play m).ended := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   simp
   exact game_play_ended_of_ended he
@@ -689,16 +689,16 @@ instance : Inhabited DState := by
 
 @[simp]
 def Strat.merge' {ms} (P : State → Prop) (a b : Strat ms) (s : State) :=
-  (if P s then a else b).ap s
+  (if P s then b else a).ap s
 
 theorem Strat.merge_valid {ms} {P : State → Prop} {a b : Strat ms} :
 strat_valid ms (a.merge' P b) := by
   intro s
   simp
   split_ifs with h₁
-  · rcases a with ⟨⟨ms, f, h⟩, rfl⟩
-    apply h
   · rcases b with ⟨⟨ms, f, h⟩, rfl⟩
+    apply h
+  · rcases a with ⟨⟨ms, f, h⟩, rfl⟩
     apply h
 
 def Strat.merge {ms} (p : State → Prop) (a b : Strat ms) : Strat ms := by
@@ -750,14 +750,14 @@ def mk_strat_const (ms : Moves) (s' : State') : Strat ms :=
   mk_strat ms # λ _ => s'
 
 def Strat.set {ms} (a : Strat ms) (s : State) (s' : State') : Strat ms :=
-  (mk_strat_const ms s').merge (· = s) a
-
-theorem strat_merge_eq_of_pos {ms} {P : State → Prop} {a b : Strat ms} {s}
-(h : P s) : (a.merge P b).ap s = a.ap s := by
-  simp [Strat.merge, h]
+  a.merge (· = s) # mk_strat_const ms s'
 
 theorem strat_merge_eq_of_neg {ms} {P : State → Prop} {a b : Strat ms} {s}
-(h : ¬P s) : (a.merge P b).ap s = b.ap s := by
+(h : ¬P s) : (a.merge P b).ap s = a.ap s := by
+  simp [Strat.merge, h]
+
+theorem strat_merge_eq_of_pos {ms} {P : State → Prop} {a b : Strat ms} {s}
+(h : P s) : (a.merge P b).ap s = b.ap s := by
   simp [Strat.merge, h]
 
 theorem strat_set_ap_of_eq {ms : Moves} {a : Strat ms} {s s'}
@@ -807,7 +807,7 @@ theorem not_game_move_inj : ¬∀ (g₁ g₂ : Game), g₁.move = g₂.move → 
   have ht : g.a_turn :=
     by
       subst hg
-      simp [game_move_a_turn_iff he]
+      simp [game_move_a_turn_iff_of_not_ended he]
   have h₁ : ¬g.a_has_move :=
     by
       subst g
@@ -881,7 +881,7 @@ theorem game_move_toState_inj {g₁ g₂ : Game}
   split_ifs at h <;> (try split at h) <;> (try split at h) <;>
     simp at h ⊢ <;> tauto
 
-theorem game_move_a_turn_iff_of_move_ended {g : Game}
+theorem game_move_a_turn_iff_of_not_ended_of_move_ended {g : Game}
 (he : g.move.ended) : g.move.a_turn ↔ g.a_turn := by
   simp [Game.move] at he ⊢; split_ifs with h₁ h₂; rfl
   all_goals simp [h₁, h₂] at he; split at he; rfl; simp at he
@@ -966,7 +966,12 @@ theorem game_with_not_ended_valid_of_valid {g : Game}
   rw [game_eq_of_not_ended_and_move_ended h₃ he₁]
   simp [hg₀, hg]
 
-#check 0 #exit
+theorem game_eq_iff {g₁ g₂ : Game} :
+g₁ = g₂ ↔ g₁.a = g₂.a ∧ g₁.d = g₂.d ∧ g₁.toState = g₂.toState ∧
+(g₁.a_turn ↔ g₂.a_turn) ∧ (g₁.ended ↔ g₂.ended) := by
+  constructor; rintro rfl; simp
+  rintro ⟨h₁, h₂, h₃, h₄, h₅⟩
+  ext <;> simp [h₁, h₂, h₃, h₄, h₅]
 
 @[simp]
 theorem game_move_valid_iff {g : Game} : g.move.valid ↔ g.valid := by
@@ -976,32 +981,489 @@ theorem game_move_valid_iff {g : Game} : g.move.valid ↔ g.valid := by
   · rw [game_move_eq_of_ended he] at h; exact h
 
   by_cases he₁ : g.move.ended
-  ·
+  · rw [game_eq_of_not_ended_and_move_ended he he₁]
+    exact game_with_not_ended_valid_of_valid h
   
-  -- obtain ⟨pw, a, d, n, h⟩ := h
-  -- cases n <;> simp at h; nm n
-  -- 
-  -- obtain ⟨g₀, hg₀⟩ := hv # game₀ pw a d
-  -- obtain ⟨g₁, hg₁⟩ := hv # g₀.play n
-  -- rw [←hg₀, ←hg₁] at h
+  obtain ⟨pw, a, d, n, h⟩ := h
+  cases n <;> simp at h; nm n
   
-#check 0 #exit
+  obtain ⟨g₁, hg₁⟩ := hv # (game₀ pw a d).play n
+  rw [←hg₁] at h
+  
+  use pw, a, d, n
+  
+  have h₁ : ¬g₁.move.ended := by rwa [←h]
+  have h₂ := game_not_ended_of_move_not_ended h₁
+  
+  rw [←hg₁]; clear hg₁
+  
+  rw [game_eq_iff]
+  refine' ⟨_, _, _, _, _⟩
+  · replace h := congrArg Game.a h
+    simp at h
+    exact h
+  · replace h := congrArg Game.d h
+    simp at h
+    exact h
+  · exact game_move_toState_inj h
+  · replace h := congrArg Game.a_turn h
+    rw [game_move_a_turn_iff_of_not_ended he₁,
+      game_move_a_turn_iff_of_not_ended h₁] at h
+    simp [not_iff_comm'] at h
+    exact h
+  · tauto
 
 @[simp]
-theorem game_move_valid_iff {g : Game} : g.move.valid ↔ g.valid := by
-  constructor <;> intro h
-  · obtain ⟨pw, a, d, n, h⟩ := h
-    cases n; simp at h
-    nm n
-    simp at h
-    replace h : g.move.valid :=
-      by
-        simp [h]
+theorem game_play_valid_iff {g : Game} {n} : (g.play n).valid ↔ g.valid := by
+  induction n; simp; simpa
+
+@[simp]
+theorem a_state_to_game_a {sa : AState} {a d} : (sa.to_game a d).a = a := rfl
+
+@[simp]
+theorem a_state_to_game_d {sa : AState} {a d} : (sa.to_game a d).d = d := rfl
+
+@[simp]
+theorem a_state_to_game_toState {sa : AState} {a d} :
+(sa.to_game a d).toState = sa.toState := rfl
+
+def Game.set_strats (g : Game) (a : AStrat) (d : DStrat) :=
+  {g with a := a, d := d}
+
+def Game.merge (g : Game) (pa pd : State → Prop) (a : AStrat) (d : DStrat) :=
+  g.set_strats (g.a.merge pa a) (g.d.merge pd d)
+
+@[simp]
+theorem game_merge_toState {g : Game} {pa pd a d} :
+(g.merge pa pd a d).toState = g.toState := rfl
+
+@[simp]
+theorem game_merge_a {g : Game} {pa pd a d} :
+(g.merge pa pd a d).a = g.a.merge pa a := rfl
+
+@[simp]
+theorem game_merge_d {g : Game} {pa pd a d} :
+(g.merge pa pd a d).d = g.d.merge pd d := rfl
+
+@[simp]
+theorem game_merge_a_turn {g : Game} {pa pd a d} :
+(g.merge pa pd a d).a_turn ↔ g.a_turn := by rfl
+
+@[simp]
+theorem game_merge_ended {g : Game} {pa pd a d} :
+(g.merge pa pd a d).ended ↔ g.ended := by rfl
+
+theorem game_merge_move_eq_of_not
+{g : Game} {pa pd : State → Prop} {a d}
+(ha : ¬pa g.toState) (hd : ¬pd g.toState) :
+(g.merge pa pd a d).move = (g.move).merge pa pd a d := by
+  simp [Game.move]; split_ifs; rfl
+  · rw [strat_merge_eq_of_neg ha]; split <;> rfl
+  · rw [strat_merge_eq_of_neg hd]; split <;> rfl
+
+theorem game_merge_play_eq_merge_of_not
+{g : Game} {pa pd : State → Prop} {a d n}
+(hx : ∀ k < n, ¬pa (g.play k).toState ∧ ¬pd (g.play k).toState) :
+(g.merge pa pd a d).play n = (g.play n).merge pa pd a d := by
+  induction n; rfl; nm n ih
+  specialize ih _
+  · intro k hk
+    apply hx
+    linarith
+  simp [ih]
+  apply game_merge_move_eq_of_not
+  · apply (hx _ _).1; linarith
+  · apply (hx _ _).2; linarith
+
+@[simp]
+theorem game₀_merge {pw a d} {pa pd a₁ d₁} :
+(game₀ pw a d).merge pa pd a₁ d₁ =
+game₀ pw (a.merge pa a₁) (d.merge pd d₁) := by rfl
+
+@[simp]
+theorem state'₀_eq_state'₀_iff {pw₁ pw₂} :
+state'₀ pw₁ = state'₀ pw₂ ↔ pw₁ = pw₂ := by simp [state'₀]
+
+@[simp]
+theorem state₀_eq_state₀_iff {pw₁ pw₂} :
+state₀ pw₁ = state₀ pw₂ ↔ pw₁ = pw₂ := by simp [state₀]
+
+@[simp]
+theorem game₀_eq_game₀_iff {pw₁ pw₂ a₁ a₂ d₁ d₂} :
+game₀ pw₁ a₁ d₁ = game₀ pw₂ a₂ d₂ ↔ pw₁ = pw₂ ∧ a₁ = a₂ ∧ d₁ = d₂ := by
+  simp [game₀]
+
+@[simp]
+theorem strat_merge_const_true {ms} {a b : Strat ms} :
+a.merge (λ _ => True) b = b := by simp [Strat.merge]
+
+@[simp]
+theorem strat_merge_const_false {ms} {a b : Strat ms} :
+a.merge (λ _ => False) b = a := by simp [Strat.merge]
+
+def Game.find_end (g : Game) : ℕ :=
+  nat_find # λ n => (g.play n).ended
+
+def Game.find_pre_end (g : Game) : ℕ :=
+  nat_find # λ n => let g₁ := g.play n; ¬g₁.ended ∧ g₁.move.ended
+
+theorem game_play_find_end_ended_of_play_ended {g : Game} {n}
+(h : (g.play n).ended) : (g.play g.find_end).ended := by
+  exact (nat_find_spec (⟨_, h⟩ : (∃ n, (g.play n).ended))).1
+
+theorem game_play_find_pre_end_not_ended_of {g : Game} {n}
+(he : ¬g.ended) (h : (g.play n).ended) : ¬(g.play g.find_pre_end).ended := by
+  contrapose! he
+  induction n using Nat.strong_induction_on; nm n ih
+  obtain ⟨m, hm⟩ := hv # g.find_pre_end
+  by_cases h₁ : ∃ n, ¬(g.play n).ended ∧ (g.play n).move.ended
+  rotate_left
+  · unfold Game.find_pre_end nat_find at he
+    simp [h₁] at he
+    exact he
+  have h₂ := nat_find_spec h₁
+  rw [←Game.find_pre_end] at h₂
+  simp only [←hm] at he h₂
+  simp [he] at h₂
+
+theorem game_play_find_pre_end_not_ended_of_play_ended_iff {g : Game} {n}
+(h : (g.play n).ended) : (g.play g.find_pre_end).ended ↔ g.ended := by
+  refine' ⟨λ he => _, game_play_ended_of_ended⟩
+  contrapose! he
+  exact game_play_find_pre_end_not_ended_of he h
+
+theorem game₀_play_find_pre_end_not_ended_of_play_ended {pw a d n}
+(h : ((game₀ pw a d).play n).ended) :
+¬((game₀ pw a d).play (game₀ pw a d).find_pre_end).ended := by
+  simp [game_play_find_pre_end_not_ended_of_play_ended_iff h]
+
+theorem game_exi_play_not_ended_and_play_move_ended_iff {g : Game} :
+(∃ n, ¬(g.play n).ended ∧ (g.play n).move.ended) ↔
+¬g.ended ∧ ∃ n, (g.play n).ended := by
+  constructor
+  · rintro ⟨n, h₁, h₂⟩
+    use game_not_ended_of_play_not_ended h₁
+    use n + 1
+    simpa
+  rintro ⟨h₁, n, h₂⟩
+  induction n
+  · contradiction
+  nm n ih
+  simp at h₂
+  rw [imp_iff_not_or] at ih
+  rcases ih with ih | ih
+  · use n
+  exact ih
+
+theorem game_play_find_pre_end_move_ended_of_play_ended {g : Game} {n}
+(he : (g.play n).ended) : (g.play g.find_pre_end).move.ended := by
+  by_cases h₁ : ¬∃ n, ¬(g.play n).ended ∧ (g.play n).move.ended
+  · unfold Game.find_pre_end nat_find
+    simp [h₁]
+    rw [game_exi_play_not_ended_and_play_move_ended_iff] at h₁
+    simp at h₁
+    rw [imp_cpos] at h₁
+    simp at h₁
+    exact game_move_ended_of_ended # h₁ _ he
+  rw [not_not] at h₁
+  exact (nat_find_spec h₁).1.2
+
+theorem game_play_add_ended_of_ended_left {g : Game} {n m}
+(h : (g.play n).ended) : (g.play (n + m)).ended := by
+  apply game_play_ended_of_le h; linarith
+
+theorem game_play_add_ended_of_ended_right {g : Game} {n m}
+(h : (g.play m).ended) : (g.play (n + m)).ended := by
+  apply game_play_ended_of_le h; linarith
+
+theorem game_lt_of_play_not_ended_and_play_ended {g : Game} {n m}
+(h₁ : ¬(g.play n).ended) (h₂ : (g.play m).ended) : n < m := by
+  contrapose! h₁; exact game_play_ended_of_le h₂ h₁
+
+theorem game_find_pre_end_lt_of {g : Game} {n}
+(h₁ : ¬g.ended) (h₂ : (g.play n).ended) : g.find_pre_end < n := by
+  have h₃ := game_play_find_pre_end_not_ended_of h₁ h₂
+  exact game_lt_of_play_not_ended_and_play_ended h₃ h₂
+
+theorem game_find_pre_end_eq_zero_of_ended {g : Game}
+(h : g.ended) : g.find_pre_end = 0 := by
+  unfold Game.find_pre_end nat_find
+  dsimp
+  split_ifs with h₁
+  · exfalso
+    rw [game_exi_play_not_ended_and_play_move_ended_iff] at h₁
+    simp [h] at h₁
+  rfl
+
+theorem game_find_pre_end_le_of {g : Game} {n}
+(h : (g.play n).ended) : g.find_pre_end ≤ n := by
+  by_cases he : g.ended
+  · simp [game_find_pre_end_eq_zero_of_ended he]
+  apply le_of_lt
+  exact game_find_pre_end_lt_of he h
+
+theorem game_a_turn_of_valid_and_move_ended {g : Game}
+(h : g.valid) (he : g.move.ended) : g.a_turn := by
+  apply (game_move_a_turn_iff_of_not_ended_of_move_ended he).mp
+  replace h := game_move_valid_of_valid h
+  exact game_a_turn_of_valid_and_ended h he
+
+theorem game_play_eq_play_of_ended {g : Game} {n m}
+(h₁ : (g.play n).ended) (h₂ : (g.play m).ended) : g.play n = g.play m := by
+  wlog h₃ : n ≤ m with h₄
+  · exact (h₄ h₂ h₁ # by linarith).symm
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₃
+  symm; exact game_play_eq_play_le_of_ended h₁ h₃
+
+theorem game_not_ended_of_valid_and_a_has_move {g : Game}
+(h : g.valid) (hm : g.toState.a_has_move) : ¬g.ended := by
+  obtain ⟨pw, a, d, n, hg⟩ := h
+  obtain ⟨g₀, hg₀⟩ := hv # game₀ pw a d
+  rw [←hg₀] at hg
+  intro he
+  have h : g.valid :=
+    by
+      simp [hg, hg₀]
+  
+  obtain ⟨gx, hgx⟩ := hv # g₀.play g₀.find_pre_end
+  
+  have ht := game_a_turn_of_valid_and_ended h he
+  
+  have h₁ : ¬gx.ended :=
+    by
+      subst hgx hg₀ hg
+      exact game₀_play_find_pre_end_not_ended_of_play_ended he
+  
+  have h₂ : gx.move.ended :=
+    by
+      subst hgx hg
+      exact game_play_find_pre_end_move_ended_of_play_ended he
+  
+  have h₃ : g₀.find_pre_end < n :=
+    by
+      apply game_find_pre_end_lt_of
+      · simp [hg₀]
+      rwa [←hg]
+  
+  have h₄ : gx.valid := by simp [hgx, hg₀]
+  
+  have h₅ : gx.a_turn :=
+    by
+      subst hgx
+      exact game_a_turn_of_valid_and_move_ended h₄ h₂
+  
+  have h₆ : gx.toState = g.toState :=
+    by
+      subst hg hgx
+      rw [←game_move_toState_eq_of_move_ended h₂]
+      rw [←game_play_succ] at h₂ ⊢
+      rw [game_play_eq_play_of_ended h₂ he]
+  
+  rw [←h₆] at hm
+  contrapose! h₂; clear h₂
+  
+  exact game_move_not_ended_of_a_turn h₁ h₅ hm
+
+theorem game_move_size_le_game_size_succ {g : Game} :
+g.move.size ≤ g.size + 1 := by
+  by_cases he : g.ended
+  · rw [game_move_size_eq_of_ended he]; linarith
+  simp [Game.move, he]
+  split_ifs <;> split <;> simp
+
+theorem game_play_size_le_game_size_add {g : Game} {n} :
+(g.play n).size ≤ g.size + n := by
+  induction n; rfl; nm n ih
+  trans (g.play n).size + 1
+  · simp; exact game_move_size_le_game_size_succ
+  linarith
+
+@[simp]
+theorem game₀_play_size_le {pw a d n} : ((game₀ pw a d).play n).size ≤ n := by
+  have h := @game_play_size_le_game_size_add (game₀ pw a d) n
+  simp at h; exact h
+
+@[simp]
+theorem a_state_to_game_a_turn {sa : AState} {a d} :
+(sa.to_game a d).a_turn := by trivial
+
+@[simp]
+theorem a_state_to_game_not_ended {sa : AState} {a d} :
+¬(sa.to_game a d).ended := λ h => h
+
+theorem game_a_turn_iff_odd_size_of_valid {g : Game}
+(h₁ : g.valid) : g.a_turn ↔ Odd g.size := by
+  obtain ⟨pw, a, d, n, hg⟩ := h₁
+  induction n generalizing g
+  · simp [hg]
+  nm n ih
+  simp at hg
+  specialize ih rfl
+  obtain ⟨g₁, hg₁⟩ := hv # (game₀ pw a d).play n
+  rw [←hg₁] at hg ih
+  clear hg₁
+  subst hg
+  rename' g₁ => g
+  
+  by_cases he : g.ended
+  · simpa only [game_move_eq_of_ended he]
+  
+  by_cases he₁ : g.move.ended
+  · rw [game_eq_of_not_ended_and_move_ended he he₁] at ih
+    simp at ih
+    exact ih
+  
+  rw [game_move_a_turn_iff_of_not_ended he₁, ih]
+  rw [game_move_size_eq_of_move_not_ended he₁]
+  simp
+
+theorem game_a_turn_of_valid_and_odd_size {g : Game}
+(h₁ : g.valid) (h₂ : Odd g.size) : g.a_turn := by
+  rwa [game_a_turn_iff_odd_size_of_valid h₁]
+
+theorem game_not_move_ended_of_valid_and_a_has_move {g : Game}
+(h₁ : g.valid) (h₂ : g.a_has_move) : ¬g.move.ended := by
+  have h₃ := game_not_ended_of_valid_and_a_has_move h₁ h₂
+  by_cases ht : ¬g.a_turn
+  · exact game_move_valid_not_ended_of_d_turn h₁ h₃ ht
+  simp at ht
+  simp [Game.move, h₃, ht]
+  split
+  · nm m h₅
+    simp at h₅
+    contradiction
+  · simp
+
+theorem game_merge_valid_of_not_le_size
+{g : Game} {pa pd : State → Prop} {a₁ d₁}
+(hx : ∀ (s : State), s.size ≤ g.size → ¬pa s ∧ ¬pd s)
+(h : g.valid) : (g.merge pa pd a₁ d₁).valid := by
+  obtain ⟨pw, a, d, n, hg⟩ := h
+  use pw, a.merge pa a₁, d.merge pd d₁, n
+  have h₁ := @game_merge_play_eq_merge_of_not (game₀ pw a d) pa pd
+    a₁ d₁ n
+  specialize h₁ _
+  · clear h₁
+    intro k hk
+    apply hx; clear hx
+    subst hg
+    apply game_play_size_le_play_size_of_le
+    linarith
+  simp at h₁
+  simp [←hg] at h₁
+  rw [←h₁]
+
+theorem game_merge_valid_of_not_lt_size_of_not_ended
+{g : Game} {pa pd : State → Prop} {a₁ d₁}
+(hx : ∀ (s : State), s.size < g.size → ¬pa s ∧ ¬pd s)
+(h : g.valid) (he : ¬g.ended) : (g.merge pa pd a₁ d₁).valid := by
+  obtain ⟨pw, a, d, n, hg⟩ := h
+  use pw, a.merge pa a₁, d.merge pd d₁, n
+  have h₁ := @game_merge_play_eq_merge_of_not (game₀ pw a d) pa pd
+    a₁ d₁ n
+  specialize h₁ _
+  · clear h₁
+    intro k hk
+    apply hx; clear hx
+    subst hg
+    rw [lt_iff_le_and_ne]
+    constructor
+    · apply game_play_size_le_play_size_of_le
+      linarith
+    rw [game₀_play_size_eq_of_not_ended he]
+    rw [game₀_play_size_eq_of_not_ended]
+    · linarith
+    contrapose! he
+    apply game_play_ended_of_le he
+    linarith
+  simp at h₁
+  simp [←hg] at h₁
+  rw [←h₁]
+
+theorem game_move_play_eq {g : Game} {n} : g.move.play n = (g.play n).move :=
+  game_play_succ
 
 #check 0 #exit
 
 theorem exi_a_state_move_of_a_move {sa : AState} {s : State'}
 (h : sa.a_move s) : ∃ sd, s = sd.toState' ∧ sa.move sd := by
-  have ⟨g, hg⟩ := hv # sa.to_game (mk_a_strat_const s) default
-  refine' ⟨⟨⟨g.move.toState, _⟩, _⟩, _⟩
-  · simp [hg]
+  have ⟨g, h₁, h₂⟩ := sa.h_valid
+  have he₁ : ¬g.move.ended :=
+    by
+      rw [h₂] at h
+      apply game_not_move_ended_of_valid_and_a_has_move h₁ ⟨_, h⟩
+  have he : ¬g.ended := game_not_ended_of_move_not_ended he₁
+  obtain ⟨a₁, ha₁⟩ := hv # g.a.set sa.toState s
+  have ⟨g₁, hg₁⟩ := hv # sa.to_game a₁ g.d
+  
+  have hq : g.valid := by simp [h₁]
+  
+  have ht : g.a_turn :=
+      by
+        apply game_a_turn_of_valid_and_odd_size hq
+        rw [←h₂]
+        exact sa.h_size
+  
+  have h₃ : g₁ = g.merge
+    (· = sa.toState) (λ _ => False)
+    (mk_a_strat_const s) default :=
+    by
+      subst hg₁
+      rw [game_eq_iff]; refine' ⟨_, _, _, _, _⟩ <;> simp
+      · exact ha₁
+      · exact h₂
+      · exact ht
+      · exact he
+  
+  have ht₁ : g₁.a_turn := by simpa [h₃]
+  
+  refine' ⟨⟨⟨g₁.move.toState, _⟩, _⟩, _⟩
+  · apply state_valid_of_game_valid
+    simp
+    obtain ⟨pw, a, d, n, h₁⟩ := h₁
+    use pw, a₁, d, n
+    have h₂ : game₀ pw a₁ d =
+      (game₀ pw a d).merge (· = sa.toState) (λ _ => False)
+      (mk_a_strat_const s) default := by simp [ha₁, h₁]; rfl
+    rw [h₂]; clear h₂
+    rw [game_merge_play_eq_merge_of_not]
+    
+    rotate_left
+    · intro k hk
+      simp
+      apply ne_of_congr State.size
+      subst h₁
+      simp [h₂, game_play_size_eq_of_not_ended he]
+      contrapose! hk
+      subst hk
+      simp
+    rw [game_eq_iff]; refine' ⟨_, _, _, _, _⟩ <;> simp
+    · simp [hg₁, ha₁, h₁]; rfl
+    · simp [hg₁, h₁]
+    · simp [h₃, h₁]
+    · simp [←h₁, ht, hg₁]
+    · simp [←h₁, he, hg₁]
+  · rw [←Nat.not_odd_iff_even]
+    rw [←game_a_turn_iff_odd_size_of_valid]
+    · rw [game_move_a_turn_iff_of_not_ended]
+      · simp [ht₁]
+      apply game_move_not_ended_of_a_turn
+      · simpa [h₃]
+      · exact ht₁
+      use s
+      convert h
+      simp [h₃, h₂]
+    · simp
+      rw [h₃]
+      apply game_merge_valid_of_not_lt_size_of_not_ended
+      · intro s hs
+        simp
+        rintro rfl
+        contrapose! hs; clear hs
+        rw [h₂]
+      · exact hq
+      · exact he
+  simp
+  constructor
+  · symm
+    rw [hg₁]
