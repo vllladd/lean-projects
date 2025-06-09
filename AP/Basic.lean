@@ -279,13 +279,17 @@ theorem a_state_or_d_state {s : ValidState} :
   · left; exact ⟨⟨s, h⟩, rfl⟩
   · right; refine' ⟨⟨s, _⟩, rfl⟩; simp at h; exact h
 
-def AState.to_game (sa : AState) (a : AStrat) (d : DStrat) : Game :=
+@[simp]
+def State.to_game (s : State) (a_turn : Prop) (a : AStrat) (d : DStrat) : Game :=
   { a := a
   , d := d
-  , toState := sa.toState
-  , a_turn := True
+  , toState := s
+  , a_turn := a_turn
   , ended := False
   }
+
+def AState.to_game (sa : AState) := sa.toState.to_game True
+def DState.to_game (sd : DState) := sd.toState.to_game False
 
 abbrev AState.move' (sa : AState) (sd : DState) :=
   sa.toState'.a_move sd.toState'
