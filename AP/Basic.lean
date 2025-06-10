@@ -291,11 +291,17 @@ def State.to_game (s : State) (a_turn : Prop) (a : AStrat) (d : DStrat) : Game :
 def AState.to_game (sa : AState) := sa.toState.to_game True
 def DState.to_game (sd : DState) := sd.toState.to_game False
 
-abbrev AState.move' (sa : AState) (sd : DState) :=
+def AState.move' (sa : AState) (sd : DState) :=
   sa.toState'.a_move sd.toState'
 
-abbrev DState.move' (sd : DState) (sa : AState) :=
+def DState.move' (sd : DState) (sa : AState) :=
   sd.toState'.d_move sa.toState'
+
+def AState.move (sa : AState) (sd : DState) :=
+  sa.move' sd ∧ sd.toState = sa.toState.push sd.toState'
+
+def DState.move (sd : DState) (sa : AState) :=
+  sd.move' sa ∧ sa.toState = sd.toState.push sa.toState'
 
 @[simp] def AState.has_move' (sa : AState) := sa.toState'.a_has_move
 @[simp] def DState.has_move' (sd : DState) := sd.toState'.d_has_move

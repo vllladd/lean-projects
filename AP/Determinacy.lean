@@ -1,4 +1,4 @@
-import AP.Reachability
+import AP.Mono
 
 noncomputable section
 open scoped Classical
@@ -22,34 +22,6 @@ theorem game₀_state' {pw a d} : (game₀ pw a d).toState' = state'₀ pw := rf
 
 def AState.a_hws (s : AState) := ∃ a, ∀ d, (s.to_game a d).a_wins
 def AState.d_hws (s : AState) := ∃ d, ∀ a, (s.to_game a d).d_wins
-
-#check 0 #exit
-
-theorem a_state_move_of_move' {sa : AState} {sd : DState}
-(h : sa.move' sd) : sa.move sd := by
-  unfold AState.move' at h
-  obtain ⟨⟨⟨s₂', h₃⟩, h₄⟩, h₁, h₂⟩ := exi_a_state_move_of_a_move h
-  obtain ⟨⟨s₂, h₅⟩, h₆⟩ := sd
-  dsimp at h h₁ h₄ h₆
-  convert h₂
-  obtain ⟨h₂, h₇⟩ := h₂
-  dsimp at h₇
-  rw [h₇]
-  unfold AState.move' at h₂
-  dsimp at h₂
-
-#check 0 #exit
-
-theorem a_state_move'_iff_move {sa : AState} {sd : DState} :
-sa.move' sd ↔ sa.move sd := ⟨a_state_move_of_move', a_state_move'_of_move⟩
-
-#check 0 #exit
-
-theorem not_a_state_move'_imp_move :
-¬∀ (sa : AState) (sd : DState), sa.move' sd → sa.move sd := by
-  push_neg
-  obtain ⟨sa, sd, h⟩ := exi_a_state_move
-  obtain ⟨sd₁, hsd₁⟩ := hv # ({sd with hist := []} : DState)
 
 #check 0 #exit
 

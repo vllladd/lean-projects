@@ -679,3 +679,84 @@ theorem not_iff' {P Q : Prop} : ¬(P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
 theorem not_iff_comm' {P Q : Prop} : (¬P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
 
 theorem imp_cpos {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto
+
+def nat_find (P : ℕ → Prop) : ℕ :=
+  if h : ∃ x, P x then Nat.find h else 0
+
+theorem nat_find_spec' {P : ℕ → Prop} (h : ∃ n, P n) :
+P (nat_find P) ∧ ∀ k, P k → nat_find P ≤ k := by
+  simp [nat_find, h]
+  use Nat.find_spec h
+  intro k hk
+  use k
+
+theorem nat_find_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (nat_find P) := by
+  exact (nat_find_spec' h).1
+
+theorem nat_find_eq_of {P : ℕ → Prop} {n}
+(h₁ : P n) (h₂ : ∀ k < n, ¬P k) : nat_find P = n := by
+  unfold nat_find
+  split_ifs with h₃
+  · rw [Nat.find_eq_iff]
+    tauto
+  simp at h₃
+  specialize h₃ n
+  contradiction
+
+theorem nat_find_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : nat_find P = 0 := by
+  unfold nat_find
+  split_ifs with h₁
+  · contrapose! h
+    exact h₁
+  rfl
+
+theorem nat_find_eq_iff {P : ℕ → Prop} {n} :
+nat_find P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0) := by
+  split_ifs with h₁
+  · unfold nat_find; simp [h₁, Nat.find_eq_iff]
+  simp at h₁
+  rw [nat_find_eq_zero_of h₁, eq_comm]
+
+theorem nat_find_min {P : ℕ → Prop} {n} (h : n < nat_find P) : ¬P n := by
+  unfold nat_find at h
+  split_ifs at h with h₁
+  · exact Nat.find_min h₁ h
+  simp at h
+
+theorem nat_find_eq_of_not_ap_zero {P : ℕ → Prop} (h₁ : ∃ n, P n) (h₂ : ¬P 0) :
+nat_find P = nat_find (λ m => P (m + 1)) + 1 := by
+  apply nat_find_eq_of
+  · apply @nat_find_spec (P # · + 1)
+    obtain ⟨n, hn⟩ := h₁
+    cases n
+    · contradiction
+    nm n
+    use n
+  intro k hk
+  cases k
+  · exact h₂
+  nm k
+  simp at hk
+  apply @nat_find_min (P # · + 1)
+  exact hk
+
+theorem nat_find_eq_of_not_ap_le {P : ℕ → Prop} (n : ℕ)
+(h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
+nat_find P = nat_find (λ m => P (n + m)) + n := by
+  induction n generalizing P
+  · simp
+  nm n ih
+  have h₃ : ¬P 0 :=
+    by
+      apply h₂; simp
+  specialize @ih (P # · + 1) _ _ <;> try dsimp
+  · obtain ⟨k, hk⟩ := h₁
+    cases k
+    · contradiction
+    nm k
+    use k
+  · intro k hk
+    apply h₂
+    simpa
+  rw [nat_find_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
+  ring_nf
