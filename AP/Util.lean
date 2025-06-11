@@ -760,3 +760,29 @@ nat_find P = nat_find (λ m => P (n + m)) + n := by
     simpa
   rw [nat_find_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
   ring_nf
+
+theorem fn_set_same_value {α β : Type} {f : α → β} {a : α} : 
+fn_set a (f a) f = f := by
+  unfold fn_set; ext x; split_ifs with h
+  rw [h]
+  rfl
+
+theorem fn_set_twice_same {α β : Type} {f : α → β} {a : α} {b₁ b₂ : β} :
+fn_set a b₂ (fn_set a b₁ f) = fn_set a b₂ f := by
+  unfold fn_set; ext x; split_ifs with h <;> rfl
+
+theorem fn_set_comm {α β : Type} {f : α → β} {a₁ a₂ : α} {b₁ b₂ : β}
+(h : a₁ ≠ a₂) : fn_set a₁ b₁ (fn_set a₂ b₂ f) = fn_set a₂ b₂ (fn_set a₁ b₁ f) := by
+  unfold fn_set; ext x; split_ifs with h₁ h₂ h₂ <;> try rfl
+  rw [h₁] at h₂
+  contradiction
+
+theorem fn_set_ext {α β : Type} {f g : α → β} {a : α} {b : β} :
+(∀ x, fn_set a b f x = fn_set a b g x) ↔ (∀ x, x ≠ a → f x = g x) := by
+  constructor <;> intro h x
+  · intro h₁
+    specialize h x
+    simp only [fn_set_eq_of_ne h₁] at h
+    exact h
+  · unfold fn_set; split_ifs with h₁; rfl
+    exact h _ h₁

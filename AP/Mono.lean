@@ -77,6 +77,11 @@ theorem game_play_move_toState'_eq_orig_iff_move_ended {g : Game} {n} :
   use game_move_ended_of_play_succ_toState'_eq_orig
   intro h; rw [game_play_to_state_eq_of_move_ended h]
 
+@[simp]
+theorem game_orig_eq_play_move_toState'_iff_move_ended {g : Game} {n} :
+g.toState' = (g.play n).move.toState' ↔ g.move.ended := by
+  rw [eq_comm]; simp
+
 theorem game_play_toState_eq_of_toState'_eq {g : Game} {n}
 (h : (g.play n).toState' = g.toState') : (g.play n).toState = g.toState := by
   cases n; rfl;
@@ -90,7 +95,7 @@ theorem game_play_toState_eq_iff_toState'_eq {g : Game} {n} :
   constructor <;> intro h; rw [h]
   exact game_play_toState_eq_of_toState'_eq h
 
-theorem game_play_toState_eq_play_to_state_iff_toState'_eq
+theorem game_play_toState_eq_play_toState_iff_toState'_eq
 {g : Game} {n m} :
 (g.play n).toState = (g.play m).toState ↔
 (g.play n).toState' = (g.play m).toState' := by
@@ -129,32 +134,163 @@ theorem game_play_toState_eq_of_game_play_toState'_eq {g : Game} {n m}
   · exact (ih h.symm # by linarith).symm
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
   rw [eq_comm] at h ⊢
-  rwa [game_play_toState_eq_play_to_state_iff_toState'_eq]
+  rwa [game_play_toState_eq_play_toState_iff_toState'_eq]
+
+def Game.congr (g₁ g₂ : Game) :=
+  g₁.toState = g₂.toState ∧ (g₁.a_turn ↔ g₂.a_turn) ∧ (g₁.ended ↔ g₂.ended)
+
+@[simp]
+theorem game_merge_congr {g : Game} {pa pd a d} :
+(g.merge pa pd a d).congr g := by simp [Game.congr]
+
+@[simp]
+theorem game₀_congr_game₀_iff {pw₁ pw₂ a₁ a₂ d₁ d₂} :
+(game₀ pw₁ a₁ d₁).congr (game₀ pw₂ a₂ d₂) ↔ pw₁ = pw₂ := by simp [Game.congr]
+
+@[simp]
+theorem game_congr_refl {g : Game} : g.congr g := by simp [Game.congr]
+
+@[symm]
+theorem Game.congr.symm {g₁ g₂ : Game} (h : g₁.congr g₂) : g₂.congr g₁ := by
+  rcases h with ⟨h₁, h₂, h₃⟩
+  simp [Game.congr, h₁, h₂, h₃]
+
+@[trans]
+theorem Game.congr.trans {g₁ g₂ g₃ : Game}
+(h₁ : g₁.congr g₂) (h₂ : g₂.congr g₃) : g₁.congr g₃ := by
+  unfold Game.congr at h₁ h₂ ⊢
+  rw [h₂.1, h₂.2.1, h₂.2.2] at h₁
+  exact h₁
+
+-- theorem game_move_toState_eq_of_toState_eq_and_move_toState'_eq {g₁ g₂ : Game}
+-- (h₁ : g₁.toState = g₂.toState) (h₂ : g₁.move.toState' = g₂.move.toState') :
+-- g₁.move.toState = g₂.move.toState := by
+--   sorry
+
+-- theorem game_move_toState'_eq_of_congr_and_play_succ_toState'_eq
+-- {g₁ g₂ : Game} {n m} (h₁ : g₁.congr g₂)
+-- (h₂ : (g₁.play (n + 1)).toState' = (g₂.play (m + 1)).toState') :
+-- g₁.move.toState' = g₂.move.toState' := by
+--   by_cases he₁ : g₁.ended
+--   · rw [game_play_eq_of_ended he₁, h₁.1] at h₂
+--     simp at h₂
+--     rw [game_move_eq_of_ended he₁, h₁.1]
+--     rw [game_move_toState_eq_of_move_ended h₂]
+--   have he₂ : ¬g₂.ended := by rwa [←h₁.2.2]
+--   sorry
+
+-- #check 0 #exit
+
+-- theorem game_move_toState_eq_of_congr_and_play_succ_toState'_eq
+-- {g₁ g₂ : Game} {n m} (h₁ : g₁.congr g₂)
+-- (h₂ : (g₁.play (n + 1)).toState' = (g₂.play (m + 1)).toState') :
+-- g₁.move.toState = g₂.move.toState := by
+--   apply game_move_toState_eq_of_toState_eq_and_move_toState'_eq h₁.1
+--   exact game_move_toState'_eq_of_congr_and_play_succ_toState'_eq h₁ h₂
+
+-- #check 0 #exit
+
+-- theorem game_play_toState_eq_of_toState_eq_and_play_toState'_eq {g₁ g₂ : Game} {n m}
+-- (h₁ : g₁.toState = g₂.toState) (h₂ : (g₁.play n).toState' = (g₂.play m).toState') :
+-- (g₁.play n).toState = (g₂.play m).toState := by
+--   induction n generalizing g₁ g₂ m
+--   · cases m; exact h₁; nm m
+--     simp [h₁] at h₂ ⊢
+--     rw [←game_play_succ, game_play_succ', game_play_eq_of_ended h₂,
+--       game_move_toState_eq_of_move_ended h₂]
+--   nm n ih
+--   cases m
+--   · clear ih
+--     rw [game_play_zero, ←h₁] at h₂ ⊢
+--     simp at h₂
+--     exact game_play_to_state_eq_of_move_ended h₂
+--   nm m
+--   specialize @ih g₁.move g₂.move m _ _
+--   · exact game_move_toState_eq_of_toState_eq_and_play_succ_toState'_eq h₁ h₂
+--   · simp [game_move_play]
+--     simp at h₂
+--     exact h₂
+--   simp [game_move_play] at ih
+--   simpa
+
+theorem game_exiu_play_toState (g : Game) (n : ℕ) :
+∃! (s : State), ∀ m, (g.play n).toState' = (g.play m).toState' →
+s = (g.play m).toState := by
+  use (g.play n).toState
+  dsimp
+  constructor
+  · intro m hm
+    rwa [game_play_toState_eq_play_toState_iff_toState'_eq]
+  intro s hs
+  apply hs
+  rfl
+
+#check 0 #exit
+
+theorem game_play_toState_eq_of_toState_eq_and_play_toState'_eq_aux
+{g₁ g₂ : Game} {n}
+(h₁ : g₁.toState = g₂.toState) (h₂ : (g₁.play n).toState' = (g₂.play n).toState') :
+(g₁.play n).toState = (g₂.play n).toState := by
+  replace h₂ : ∀ k ≤ n, (g₁.play k).toState' = (g₂.play k).toState' :=
+    by
+      intro k hk
+      induction k generalizing g₁ g₂ n
+      · simp [h₁]
+      nm k ih
+      cases n
+      · simp at hk
+      nm n
+      simp at hk
+      specialize @ih g₁.move g₂.move n _ _ hk
+      · sorry
+      · simp only [game_play_succ'] at h₂
+        exact h₂
+      simpa only [game_play_succ']
+  induction n generalizing g₁ g₂
+  · simpa
+  nm n ih
+  have h₃ := h₂ 1 # by linarith
+  simp at h₃
+  specialize @ih g₁.move g₂.move _
+  · sorry
+  apply ih
+  intro k hk
+  specialize h₂ (k + 1) _
+  · linarith
+  simp only [game_play_succ'] at h₂
+  exact h₂
+
+#check 0 #exit
+
+theorem game_play_toState_eq_of_toState_eq_and_play_toState'_eq {g₁ g₂ : Game} {n m}
+(h₁ : g₁.toState = g₂.toState) (h₂ : (g₁.play n).toState' = (g₂.play m).toState') :
+(g₁.play n).toState = (g₂.play m).toState := by
+  obtain ⟨s₁, h₃, h₄⟩ := game_exiu_play_toState g₁ n
+  obtain ⟨s₂, h₅, h₆⟩ := game_exiu_play_toState g₂ m
+  dsimp at h₄ h₆
+  have hs₁ := h₃ n rfl
+  have hs₂ := h₅ m rfl
+  rw [←hs₁, ←hs₂]
+  specialize h₃ m _
+  · rw [h₂]
+    symm
 
 #check 0 #exit
 
 theorem game_toState_eq_of_valid_and_game_toState'_eq {g₁ g₂ : Game}
 (h₁ : g₁.valid) (h₂ : g₂.valid) (h₃ : g₁.toState' = g₂.toState') :
 g₁.toState = g₂.toState := by
-  rename' g₁ => g
-  rename' g₂ => g₁
-  obtain ⟨pw, a, d, n, hg⟩ := h₁
-  obtain ⟨pw', a₁, d₁, m, hg₁⟩ := h₂
+  obtain ⟨pw, a, d, n, hg₁⟩ := h₁
+  obtain ⟨pw', a₁, d₁, m, hg₂⟩ := h₂
   obtain rfl : pw = pw' :=
     by
       contrapose! h₃
       apply ne_of_congr State'.pw
-      simpa [hg, hg₁]
-  rw [eq_comm] at h₃ ⊢
-  
-  -- wlog h₁ : n ≤ m with ih
-  -- · symm
-  --   apply ih h₃.symm
-  --   · exact hg₁
-  --   · exact hg
-  --   linarith
-  -- obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
-  -- rw [game_play_add] at hg₁
+      simpa [hg₁, hg₂]
+  subst hg₁ hg₂
+  apply game_play_toState_eq_of_congr_and_play_toState'_eq
+  · simp
+  exact h₃
 
 #check 0 #exit
 

@@ -1385,7 +1385,7 @@ theorem game_merge_valid_of_not_lt_size_of_not_ended
   simp [←hg] at h₁
   rw [←h₁]
 
-theorem game_move_play_eq {g : Game} {n} : g.move.play n = (g.play n).move :=
+theorem game_move_play {g : Game} {n} : g.move.play n = (g.play n).move :=
   game_play_succ
 
 theorem game_move_toState'_eq_of_of_not_ended_and_a_turn_and_a_has_move
@@ -2066,3 +2066,25 @@ theorem d_state_ext {s₁ s₂ : DState}
 (h : s₁.toState = s₂.toState) : s₁ = s₂ := by
   cases s₁; cases s₂; simp at h ⊢
   ext : 1; exact h
+
+theorem thm_ap_aux₁ {s : State'}
+(h : ∃ p ∈ s.grid, p ≠ s.a_pos) : ∃ s₁, DMoves s s₁ := by
+  change ∃ s₁, s.d_move s₁
+  obtain ⟨p, h₁, h₂⟩ := h
+  use {s with grid := s.grid.erase p}
+  use p
+
+theorem thm_ap_aux₂ : ¬∀ (g : Game),
+g.d_wins ↔ ∃ n, (g.play (n + 1)).ended ∧ (g.play n).a_turn := by
+  push_neg
+  obtain ⟨g, hg⟩ := hv {Game.dflt with a_turn := False, ended := True}
+  dsimp at hg
+  use g
+  left
+  constructor
+  · simp [Game.d_wins, Game.a_wins]
+    use 0
+    simp [hg]
+  intro n hn
+  rw [game_play_eq_of_ended # by simp [hg]]
+  simp [hg]
