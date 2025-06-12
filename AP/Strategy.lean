@@ -59,16 +59,20 @@ theorem a_has_move_iff {s : State'} : s.a_has_move ↔ ∃ (p : Point),
 p ∈ s.grid ∧ p ≠ s.a_pos ∧ s.a_pos.dist p ≤ s.pw := by
   simp [State'.a_has_move, State'.a_move, exists_swap]
 
+theorem d_has_move_iff {s : State'} : s.d_has_move ↔ ∃ (p : Point),
+p ∈ s.grid ∧ p ≠ s.a_pos := by
+  simp [State'.d_has_move, State'.d_move, exists_swap]
+
 @[simp]
 theorem point_dist_self_eq {a : Point} : a.dist a = 0 := by simp [Point.dist]
 
 @[simp]
 theorem point_dist_eq_zero_iff {a b : Point} : a.dist b = 0 ↔ a = b := by
-  symm; apply Iff.intro <;> intro h; simp [h]
-  simp [Point.dist, Int.add_le_zero_iff_le_neg] at h
-  have h₁ : |a.x - b.x| ≤ 0 := by apply h.trans; simp
-  have h₂ : |a.y - b.y| ≤ 0 := by apply (Int.le_neg_of_le_neg h).trans; simp
-  simp [Int.sub_eq_zero] at h₁ h₂; ext <;> assumption
+  refine' ⟨λ h => _, by rintro rfl; simp⟩
+  unfold Point.dist at h
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  ext <;> apply Int.eq_of_sub_eq_zero <;> assumption
 
 theorem game₀_0_play_2_ended {a d} : ((game₀ 0 a d).play 2).ended := by
   simp [game₀_move]
@@ -790,40 +794,6 @@ theorem game_move_ne_game₀ {pw a d} {g : Game} : g.move ≠ game₀ pw a d := 
 theorem a_strat_ap_eq_of_not_a_has_move {a : AStrat} {s : State}
 (h : ¬s.a_has_move) : a.ap s = none := by simpa
 
-theorem not_game_move_inj : ¬∀ (g₁ g₂ : Game), g₁.move = g₂.move → g₁ = g₂ := by
-  push_neg
-  obtain ⟨g, hg⟩ := hv (game₀ 0 default default).move
-  use g, g.move
-  have he : ¬g.ended :=
-    by
-      subst hg
-      exact game₀_move_not_ended
-  have ht : g.a_turn :=
-    by
-      subst hg
-      simp [game_move_a_turn_iff_of_not_ended he]
-  have h₁ : ¬g.a_has_move :=
-    by
-      subst g
-      apply not_a_has_move_of_pw_0
-      simp
-  have h₂ : g.move = {g with ended := True} :=
-    by
-      simp [Game.move, he, ht]
-      rw [a_strat_ap_eq_of_not_a_has_move h₁]
-  have h₃ : g.move.move = g.move :=
-    by
-      apply game_move_eq_of_ended
-      rw [h₂]
-      trivial
-  have h₄ : g.move.ended :=
-    by
-      rw [h₂]
-      trivial
-  use h₃.symm
-  apply ne_of_congr Game.ended
-  simp [he, h₄]
-
 @[simp]
 theorem state_push_inj {s₁ s₂ : State} {s'₁ s'₂} :
 s₁.push s'₁ = s₂.push s'₂ ↔ s₁ = s₂ ∧ s'₁ = s'₂ := by
@@ -850,22 +820,6 @@ a₂.ap s₂ = some sx := by
   use ⟨_, h₁⟩
   subst hs₁
   simp [h₁]
-
-theorem not_game_move_toState_toState_inj : ¬∀ (g₁ g₂ : Game),
-g₁.move.toState = g₂.move.toState → g₁.toState = g₂.toState := by
-  push_neg
-  obtain ⟨a₂, s₂, sx, h₁⟩ := exi_a_ap_eq_some
-  use ⟨s₂.push sx, default, default, default, True⟩
-  use ⟨s₂, a₂, default, True, False⟩
-  simp [Game.move, h₁]
-
-theorem not_game_move_toState'_toState_inj : ¬∀ (g₁ g₂ : Game),
-g₁.move.toState = g₂.move.toState → g₁.toState = g₂.toState := by
-  push_neg
-  have h := not_game_move_toState_toState_inj
-  push_neg at h
-  obtain ⟨g₁, g₂, h₁, h₂⟩ := h
-  use g₁, g₂
 
 theorem game_move_toState_inj {g₁ g₂ : Game}
 (h : g₁.move = g₂.move) : g₁.toState = g₂.toState := by
@@ -1857,13 +1811,6 @@ theorem d_move_irrefl {s : State'} : ¬s.d_move s := by
   rw [h₁] at h₂
   simp at h₂
 
-theorem not_a_move_asymm : ¬∀ (s₁ s₂ : State'),
-s₁.a_move s₂ → ¬(s₂.a_move s₁) := by
-  push_neg
-  use state'₀ 1, {state'₀ 1 with a_pos := (1, 0)}
-  simp [State'.a_move, state'₀, grid₀, point₀, Point.dist]
-  rfl
-
 theorem d_move_asymm {s₁ s₂ : State'}
 (h : s₁.d_move s₂) : ¬s₂.d_move s₁ := by
   intro h₁
@@ -2074,17 +2021,59 @@ theorem thm_ap_aux₁ {s : State'}
   use {s with grid := s.grid.erase p}
   use p
 
-theorem thm_ap_aux₂ : ¬∀ (g : Game),
-g.d_wins ↔ ∃ n, (g.play (n + 1)).ended ∧ (g.play n).a_turn := by
-  push_neg
-  obtain ⟨g, hg⟩ := hv {Game.dflt with a_turn := False, ended := True}
-  dsimp at hg
-  use g
-  left
+theorem mk_a_strat_ap_eq_some_of_pos {f s s'}
+(h₁ : s.a_move {s.toState' with a_pos := f s})
+(h₂ : (mk_a_strat f).ap s = some s') :
+s' = {s.toState' with a_pos := f s} := by
+  simp [Strat.ap, mk_a_strat, h₁] at h₂
+  exact h₂.2.symm
+
+theorem mk_d_strat_ap_eq_some_of_pos {f s s'}
+(h₁ : s.d_move {s.toState' with grid := s.grid.erase # f s})
+(h₂ : (mk_d_strat f).ap s = some s') :
+s' = {s.toState' with grid := s.grid.erase # f s} := by
+  simp [Strat.ap, mk_d_strat, h₁] at h₂
+  exact h₂.2.symm
+
+theorem mk_a_strat_ap_eq_some_iff_of_pos {f s s'}
+(h₁ : s.a_move {s.toState' with a_pos := f s}) :
+(mk_a_strat f).ap s = some s' ↔ s' = {s.toState' with a_pos := f s} := by
+  dsimp at h₁ ⊢
+  use mk_a_strat_ap_eq_some_of_pos h₁
+  rintro rfl
+  simp [Strat.ap, mk_a_strat, h₁]
+  exact ⟨_, h₁⟩
+
+theorem mk_d_strat_ap_eq_some_iff_of_pos {f s s'}
+(h₁ : s.d_move {s.toState' with grid := s.grid.erase # f s}) :
+(mk_d_strat f).ap s = some s' ↔
+s' = {s.toState' with grid := s.grid.erase # f s} := by
+  dsimp at h₁ ⊢
+  use mk_d_strat_ap_eq_some_of_pos h₁
+  rintro rfl
+  simp [Strat.ap, mk_d_strat, h₁]
+  exact ⟨_, h₁⟩
+
+theorem a_has_move_of_exi_p (p : Point) {s : State'}
+(h : s.a_move {s with a_pos := p}) : s.a_has_move := by
+  exact ⟨_, h⟩
+
+theorem d_has_move_of_exi_p (p : Point) {s : State'}
+(h : s.d_move {s with grid := s.grid.erase p}) : s.d_has_move := by
+  exact ⟨_, h⟩
+
+theorem a_has_move_iff_exi_p {s : State} :
+s.a_has_move ↔ ∃ p, s.a_move {s.toState' with a_pos := p} := by
   constructor
-  · simp [Game.d_wins, Game.a_wins]
-    use 0
-    simp [hg]
-  intro n hn
-  rw [game_play_eq_of_ended # by simp [hg]]
-  simp [hg]
+  · rintro ⟨s', p, rfl, h⟩
+    use p, p
+  rintro ⟨p, h⟩
+  exact a_has_move_of_exi_p p h
+
+theorem d_has_move_iff_exi_p {s : State} :
+s.d_has_move ↔ ∃ p, s.d_move {s.toState' with grid := s.grid.erase p} := by
+  constructor
+  · rintro ⟨s', p, rfl, h⟩
+    use p, p
+  rintro ⟨p, h⟩
+  exact d_has_move_of_exi_p p h

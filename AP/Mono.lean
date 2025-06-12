@@ -162,6 +162,8 @@ theorem Game.congr.trans {g₁ g₂ g₃ : Game}
   rw [h₂.1, h₂.2.1, h₂.2.2] at h₁
   exact h₁
 
+#check 0 #exit
+
 -- theorem game_move_toState_eq_of_toState_eq_and_move_toState'_eq {g₁ g₂ : Game}
 -- (h₁ : g₁.toState = g₂.toState) (h₂ : g₁.move.toState' = g₂.move.toState') :
 -- g₁.move.toState = g₂.move.toState := by

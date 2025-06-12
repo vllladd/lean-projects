@@ -12,7 +12,7 @@ def point₀ : Point := (0, 0)
 instance : Inhabited Point := ⟨point₀⟩
 
 def Point.dist (a b : Point) : ℕ :=
-  Int.toNat # |a.x - b.x| + |a.y - b.y|
+  Int.toNat # max |a.x - b.x| |a.y - b.y|
 
 abbrev Grid := Set Point
 
