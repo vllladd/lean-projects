@@ -316,8 +316,8 @@ theorem game₀_play_d_turn_iff_even {pw a d n}
 
 theorem exi_valid_state_with_size_of_pw_ne_0 pw n
 (h : pw ≠ 0) : ∃ (s : ValidState), s.pw = pw ∧ s.size = n := by
-  obtain ⟨fa, hfa⟩ := hv # λ (s : State) => ((s.size / 2 + 1, 0) : Point)
-  obtain ⟨fd, hfd⟩ := hv # λ (s : State) => ((s.size / 2, 1) : Point)
+  obtain ⟨fa, hfa⟩ := hv # λ (s : State) => (⟨s.size / 2 + 1, 0⟩ : Point)
+  obtain ⟨fd, hfd⟩ := hv # λ (s : State) => (⟨s.size / 2, 1⟩ : Point)
   obtain ⟨a, ha⟩ := hv # mk_a_strat fa
   obtain ⟨d, hd⟩ := hv # mk_d_strat fd
   refine' ⟨⟨((game₀ pw a d).play n).toState, _⟩, _⟩
@@ -327,8 +327,8 @@ theorem exi_valid_state_with_size_of_pw_ne_0 pw n
   rw [game_play_size_eq_of_not_ended]; simp
   apply and_intro # ((game₀ pw a d).play n).toState' =
     { pw := pw
-    , grid := Set.univ \ {(x, y) | y = 1 ∧ 0 ≤ x ∧ x < (n + 1) / 2}
-    , a_pos := (n / 2, 0)
+    , grid := Set.univ \ {⟨x, y⟩ | y = 1 ∧ 0 ≤ x ∧ x < (n + 1) / 2}
+    , a_pos := ⟨n / 2, 0⟩
     }
   induction n
   · simp only [game_play_zero, game₀_state, state₀_state, Nat.cast_zero,
@@ -358,7 +358,7 @@ theorem exi_valid_state_with_size_of_pw_ne_0 pw n
     have hn := Int.ofNat_zero_le n
     generalize (n : ℤ) = n at *; nm x; clear x
     rw [eq_comm] at h
-    use (n / 2, 1); simp
+    use ⟨n / 2, 1⟩; simp
     rw [int_succ_div_2_eq_div_iff hn] at h
     rw [int_even_iff_exi] at h
     obtain ⟨k, rfl⟩ := h
@@ -439,7 +439,7 @@ theorem exi_valid_state_with_size_of_pw_ne_0 pw n
       have h_d_move : g.d_move {g with grid := g.grid.erase # fd g.toState} :=
         by
           simp [hfd, ih₁, State'.d_move]
-          use ((n : ℤ) / 2, 1)
+          use ⟨(n : ℤ) / 2, 1⟩
           simp [hgn]
           intro h₁
           apply le_of_eq
@@ -806,9 +806,9 @@ theorem state_push_ne_self {s : State} {s'} : s.push s' ≠ s := by
 
 theorem exi_a_ap_eq_some : ∃ (a₂ : AStrat) (s₂ : State) (sx : State'),
 a₂.ap s₂ = some sx := by
-  use mk_a_strat # λ _ => (1, 0)
+  use mk_a_strat # λ _ => ⟨1, 0⟩
   obtain ⟨s, hs⟩ := hv # state₀ 1
-  obtain ⟨s₁, hs₁⟩ := hv {s.toState' with a_pos := (1, 0)}
+  obtain ⟨s₁, hs₁⟩ := hv {s.toState' with a_pos := ⟨1, 0⟩}
   dsimp at hs₁
   use s, s₁
   simp [mk_a_strat]
@@ -2119,20 +2119,11 @@ theorem grid_diff_subsingleton_of_state'₀_0 {g : Game} {n}
   exact grid_diff_subsingleton_of_state'₀_0_a_turn h h₁
   exact grid_diff_subsingleton_of_state'₀_0_not_a_turn h h₁
 
-theorem not_Reachable'_imp_reachable :
-¬(∀ (s₀ s : State'), s₀.Reachable' s → s₀.reachable s) := by
-  push_neg; obtain ⟨s₁, hs₁⟩ := hv #
-    {state'₀ 0 with grid := Set.univ \ {(0, 1)}}
-  obtain ⟨s₂, hs₂⟩ := hv #
-    {state'₀ 0 with grid := Set.univ \ {(0, 1), (0, 2)}}
-  dsimp at hs₁ hs₂; use state'₀ 0, s₂
-  constructor
-  · apply State'.Reachable'.hd s₁
-    · apply State'.Reachable'.hd # state'₀ 0
-      constructor; use ⟨0, 1⟩; simp [hs₁, hs₂, Set.erase]
-    use ⟨0, 2⟩; simp [hs₁, hs₂, Set.erase, Set.diff_upair]
-  simp [State'.reachable]; rintro g h₁ n rfl
-  rw [eq_comm] at h₁; have h₂ := congrArg State'.grid hs₂
-  dsimp at h₂; contrapose! h₂; clear h₂
-  apply ne_of_congr λ s => (Set.univ \ s).Subsingleton
-  simp [h₁]; exact grid_diff_subsingleton_of_state'₀_0 h₁
+def ValidState.mk_game (s : ValidState)
+(a : State → Point) (d : State → Point) : Game :=
+  { a := mk_a_strat a
+  , d := mk_d_strat d
+  , toState := s.toState
+  , a_turn := Odd s.size
+  , ended := False
+  }

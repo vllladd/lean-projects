@@ -56,7 +56,7 @@ g₁.move.toState = g₂.move.toState → g₁.toState = g₂.toState := by
 theorem counterexample₄ : ¬∀ (s₁ s₂ : State'),
 s₁.a_move s₂ → ¬(s₂.a_move s₁) := by
   push_neg
-  use state'₀ 1, {state'₀ 1 with a_pos := (1, 0)}
+  use state'₀ 1, {state'₀ 1 with a_pos := ⟨1, 0⟩}
   simp [State'.a_move, state'₀, grid₀, point₀, Point.dist]
   rfl
 
@@ -79,10 +79,10 @@ theorem counterexample₆ : ¬∀ (g₁ g₂ : Game) (n m : ℕ),
 g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' →
 (g₁.play n).toState = (g₂.play m).toState := by
   push_neg
-  obtain ⟨a, ha⟩ := hv # mk_a_strat # λ s => (1 - s.a_pos.x, 0)
-  obtain ⟨d, hd⟩ := hv # mk_d_strat # λ s => (0, 1)
+  obtain ⟨a, ha⟩ := hv # mk_a_strat # λ s => ⟨1 - s.a_pos.x, 0⟩
+  obtain ⟨d, hd⟩ := hv # mk_d_strat # λ s => ⟨0, 1⟩
   obtain ⟨s₀, hs₀⟩ := hv
-    ({pw := 1, grid := Set.univ, a_pos := (0, 0)} : State')
+    ({pw := 1, grid := Set.univ, a_pos := ⟨0, 0⟩} : State')
   obtain ⟨g₁, hg₁⟩ := hv
     ({ a := a, d := d, toState := ⟨s₀, []⟩
      , a_turn := False, ended := False} : Game)
@@ -91,11 +91,11 @@ g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' 
      , a_turn := True, ended := False} : Game)
   use g₁, g₂, 1, 3, by simp [hg₁, hg₂]
   obtain ⟨s₁, hs₁⟩ := hv
-    ({pw := 1, grid := Set.univ.erase (0, 1), a_pos := (0, 0)} : State')
+    ({pw := 1, grid := Set.univ.erase ⟨0, 1⟩, a_pos := ⟨0, 0⟩} : State')
   obtain ⟨s₂, hs₂⟩ := hv
-    ({pw := 1, grid := Set.univ, a_pos := (1, 0)} : State')
+    ({pw := 1, grid := Set.univ, a_pos := ⟨1, 0⟩} : State')
   obtain ⟨s₃, hs₃⟩ := hv
-    ({pw := 1, grid := Set.univ.erase (0, 1), a_pos := (1, 0)} : State')
+    ({pw := 1, grid := Set.univ.erase ⟨0, 1⟩, a_pos := ⟨1, 0⟩} : State')
   dsimp only at hg₁ hg₂
   have h₁ : g₁.play 1 =
     { a := a, d := d, toState := ⟨s₁, [s₀]⟩
@@ -113,7 +113,7 @@ g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' 
     rw [mk_d_strat_ap_eq_some_iff_of_pos] at hs
     exact hs
     simp [State'.d_move]
-    use (0, 1)
+    use ⟨0, 1⟩
     simp
   dsimp only at h₁
   have h₂ : g₂.play 1 =
@@ -125,7 +125,7 @@ g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' 
       contrapose! h₂
       simp
       rw [a_has_move_iff]
-      use (1, 0)
+      use ⟨1, 0⟩
       simp [Point.dist]
       decide
     nm m s hs
@@ -148,14 +148,14 @@ g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' 
       contrapose! hs
       simp
       rw [d_has_move_iff]
-      use (0, 1)
+      use ⟨0, 1⟩
       simp [hs₂]
     nm m s hs
     simp [State.push, hs₃]
     rw [hd, mk_d_strat_ap_eq_some_iff_of_pos] at hs
     simp [hs₂] at hs
     exact hs
-    use (0, 1)
+    use ⟨0, 1⟩
     simp [hs₂]
   dsimp only at h₃
   have h₄ : g₂.play 3 =
@@ -169,7 +169,7 @@ g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' 
       contrapose! hs
       simp
       rw [a_has_move_iff]
-      use (0, 0)
+      use ⟨0, 0⟩
       simp [hs₃, Point.dist]
       decide
     nm m s hs
@@ -178,9 +178,27 @@ g₁.toState = g₂.toState → (g₁.play n).toState' = (g₂.play m).toState' 
     · simp [hs₃] at hs
       exact hs
     dsimp
-    use (0, 0)
+    use ⟨0, 0⟩
     simp [hs₃, Point.dist]
     decide
   dsimp only at h₄
   rw [h₁, h₄]
   simp
+
+theorem counterexample₇ :
+¬(∀ (s₀ s : State'), s₀.Reachable' s → s₀.reachable s) := by
+  push_neg; obtain ⟨s₁, hs₁⟩ := hv #
+    {state'₀ 0 with grid := Set.univ \ {(⟨0, 1⟩ : Point)}}
+  obtain ⟨s₂, hs₂⟩ := hv #
+    {state'₀ 0 with grid := Set.univ \ {(⟨0, 1⟩ : Point), (⟨0, 2⟩ : Point)}}
+  dsimp at hs₁ hs₂; use state'₀ 0, s₂
+  constructor
+  · apply State'.Reachable'.hd s₁
+    · apply State'.Reachable'.hd # state'₀ 0
+      constructor; use ⟨0, 1⟩; simp [hs₁, hs₂, Set.erase]
+    use ⟨0, 2⟩; simp [hs₁, hs₂, Set.erase, Set.diff_upair]
+  simp [State'.reachable]; rintro g h₁ n rfl
+  rw [eq_comm] at h₁; have h₂ := congrArg State'.grid hs₂
+  dsimp at h₂; contrapose! h₂; clear h₂
+  apply ne_of_congr λ s => (Set.univ \ s).Subsingleton
+  simp [h₁]; exact grid_diff_subsingleton_of_state'₀_0 h₁

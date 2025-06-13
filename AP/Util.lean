@@ -5,6 +5,7 @@ import Mathlib.Data.List.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Ordmap.Ordset
 import Mathlib.Control.Monad.Basic
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Set.Card.Arithmetic
@@ -786,3 +787,8 @@ theorem fn_set_ext {α β : Type} {f g : α → β} {a : α} {b : β} :
     exact h
   · unfold fn_set; split_ifs with h₁; rfl
     exact h _ h₁
+
+@[simp]
+theorem not_mem_ordset_empty {α : Type} [LinearOrder α] {x : α} :
+x ∉ (∅ : Ordset α) := by
+  simp [Ordset.instEmptyCollection, Ordset.nil, Ordset.instMembership]; rfl

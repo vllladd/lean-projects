@@ -3,12 +3,12 @@ import AP.Util
 noncomputable section
 open scoped Classical
 
-def Point := ℤ × ℤ
+@[ext]
+structure Point where
+  x : ℤ
+  y : ℤ
 
-@[simp] abbrev Point.x (p : Point) := p.1
-@[simp] abbrev Point.y (p : Point) := p.2
-
-def point₀ : Point := (0, 0)
+def point₀ : Point := ⟨0, 0⟩
 instance : Inhabited Point := ⟨point₀⟩
 
 def Point.dist (a b : Point) : ℕ :=
