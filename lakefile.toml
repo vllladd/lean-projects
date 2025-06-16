@@ -1,7 +1,7 @@
 name = "ap"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["AP"]
+defaultTargets = ["AP", "main"]
 
 [leanOptions]
 pp.unicode.fun = true
@@ -13,3 +13,8 @@ scope = "leanprover-community"
 
 [[lean_lib]]
 name = "AP"
+
+[[lean_exe]]
+name = "main"
+root = "AP"
+needs = ["AP"]
