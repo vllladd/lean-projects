@@ -74,6 +74,9 @@ def Game.congr_comp (g : Game) (cg : CompGame) :=
 def Game.congr_mcomp (g : Game) (mcg : Option CompGame) :=
   ∀ cg, mcg = some cg → g.congr_comp cg
 
+def Game.congr_mcomp_play (g : Game) (mcg : Option CompGame) :=
+  ∀ n, (g.play n).congr_mcomp # mcg >>= (·.play n)
+
 @[simp]
 theorem game_congr_mcomp_none {g : Game} : g.congr_mcomp none := by
   simp [Game.congr_mcomp]
@@ -85,22 +88,19 @@ g.congr_mcomp (some cg) ↔ g.congr_comp cg := by
 
 class GameToComp (g : Game) where
   mcg : Option CompGame
-  h : g.congr_mcomp mcg
+  h : g.congr_mcomp_play mcg
 
 def strat_fn_to_comp (f : State → Point) : List CompState -> CompState -> Point :=
   λ h s => f ⟨s.to_state', comp_hist_to_hist h⟩
 
-instance {pw fa fd} : GameToComp # game₀ pw (mk_a_strat fa) (mk_d_strat fd) := by
-  use pure #
-    { fa := strat_fn_to_comp fa
-    , fd := strat_fn_to_comp fd
-    , hist := []
-    , s := {pw := pw, grid := ∅, a_pos := point₀}
-    , a_turn := false
-    , ended := false
-    }
-  simp [CompGame.to_state, CompState.to_state', Game.congr_comp]
-  apply state_ext <;> rfl
+def game₀_to_comp_aux (pw : ℕ) (fa fd : State → Point) : CompGame :=
+  { fa := strat_fn_to_comp fa
+  , fd := strat_fn_to_comp fd
+  , hist := []
+  , s := {pw := pw, grid := ∅, a_pos := point₀}
+  , a_turn := false
+  , ended := false
+  }
 
 @[simp]
 theorem comp_game_play_0 {cg : CompGame} : cg.play 0 = some cg := rfl
@@ -266,58 +266,156 @@ theorem comp_game_push_to_state {cg : CompGame} {s} :
   simp [CompGame.push, CompGame.to_state, State.push,
     comp_hist_to_hist, List.snoc]
 
+-- #check 0 #exit
+
+-- theorem game_move_congr_mcomp_of {g : Game} {mcg : Option CompGame}
+-- (h : g.congr_mcomp mcg) : g.move.congr_mcomp (mcg >>= (·.move)) := by
+--   dsimp
+--   intro cg₁ h₁
+--   cases mcg
+--   · simp at h₁
+--   nm cg
+--   simp at h h₁
+--   
+--   have h₂ := h
+--   rcases h₂ with ⟨h₂, h₃, h₄⟩
+--   
+--   simp [Game.move]
+--   split_ifs with he ht <;> simp [he] at h₄ <;>
+--     simp [CompGame.move, h₄] at h₁
+--   · rwa [←h₁]
+--   all_goals simp [ht] at h₃; simp [h₃] at h₁; split
+--   · nm m h₅
+--     simp at h₅
+--     split_ifs at h₁ with h₆
+--     · simp at h₁
+--       simp [h₂] at h₅
+--       exfalso
+--       apply h₅
+--       exact comp_game_to_state_a_has_move_of_check_a_move h₆
+--     · have h₇ : ¬cg.s.a_has_move := by simpa [←h₂]
+--       simp [h₇] at h₁
+--       subst h₁
+--       constructor; rw [h₂]; rfl; simpa
+--   · nm m s h₅
+--     split_ifs at h₁ with h₆
+--     · simp at h₁
+--       subst cg₁
+--       constructor
+--       · simp [h₂]
+--         sorry
+--       · sorry
+--     · sorry
+--   · sorry
+--   · sorry
+
+-- @[simp]
+-- theorem comp
+
+-- #check 0 #exit
+
+@[simp]
+theorem of_comp_game_move_bind_fa_eq_some {cg : CompGame} {fa}
+(h : cg.move.bind (·.fa) = some fa) : cg.fa = fa := by
+  revert h; simp [CompGame.move]
+  split_ifs <;> (try simp) <;> (try exact λ h => h) <;>
+    simp [guard] <;> split_ifs <;> simp
+  exact λ h => h
+
+@[simp]
+theorem of_comp_game_move_bind_fd_eq_some {cg : CompGame} {fd}
+(h : cg.move.bind (·.fd) = some fd) : cg.fd = fd := by
+  revert h; simp [CompGame.move]
+  split_ifs <;> (try simp) <;> (try exact λ h => h) <;>
+    simp [guard] <;> split_ifs <;> simp
+  exact λ h => h
+
+@[simp]
+theorem of_comp_game_play_bind_strat_eq_some {α : Type} {cg : CompGame} {n}
+{f : α} {g : CompGame → α}
+(hg : ∀ {cg}, cg.move.bind (g ·) = some f → g cg = f)
+(h : (cg.play n).bind (g ·) = some f) :
+g cg = f := by
+  revert h
+  induction n generalizing cg
+  simp
+  nm n ih
+  rw [comp_game_play_succ]
+  dsimp
+  generalize hcg : cg.play n = cg₁ at ih ⊢
+  cases cg₁
+  · simp
+  nm cg₁
+  simp at ih ⊢
+  intro h
+  have hx : cg₁.move = cg.play (n + 1) := by simp [hcg]
+  obtain ⟨cg', hcg'⟩ : ∃ cg', cg.move = some cg' :=
+    by
+      by_contra! h₁
+      rw [←Option.eq_none_iff_forall_ne_some] at h₁
+      rw [hx] at h
+      rw [comp_game_play_succ'] at h
+      simp [h₁] at h
+  specialize @ih cg' _
+  · rw [hx] at h
+    rw [comp_game_play_succ'] at h
+    simp [hcg'] at h
+    exact h
+  apply hg
+  simpa [hcg']
+
+theorem of_comp_game_play_bind_fa_eq_some {cg : CompGame} {n fa}
+(h : (cg.play n).bind (·.fa) = some fa) : cg.fa = fa :=
+  of_comp_game_play_bind_strat_eq_some of_comp_game_move_bind_fa_eq_some h
+
+theorem of_comp_game_play_bind_fd_eq_some {cg : CompGame} {n fd}
+(h : (cg.play n).bind (·.fd) = some fd) : cg.fd = fd :=
+  of_comp_game_play_bind_strat_eq_some of_comp_game_move_bind_fd_eq_some h
+
 #check 0 #exit
 
-theorem eq_of_comp_game_check_a_move_and_a_ap_eq {g : Game} {cg p s'}
-(h₁ : g.congr_comp cg)
-(h₂ : cg.s.check_a_move p)
-(h₃ : g.a.ap cg.to_state = some s') :
-s' = {cg.to_state.toState' with a_pos := p} := by
-  dsimp
-  rcases h₁ with ⟨h₁, h₄, h₅⟩
-
-#check 0 #exit
-
-theorem game_move_congr_mcomp_of {g : Game} {mcg : Option CompGame}
-(h : g.congr_mcomp mcg) : g.move.congr_mcomp (mcg >>= (·.move)) := by
-  dsimp
-  intro cg₁ h₁
-  cases mcg
-  · simp at h₁
+theorem game₀_congr_mcomp_play_game₀_to_comp_aux {pw fa fd} :
+(game₀ pw (mk_a_strat fa) (mk_d_strat fd)).congr_mcomp_play #
+game₀_to_comp_aux pw fa fd := by
+  intro n
+  induction n
+  · intro cg h
+    simp [Game.congr_mcomp, Game.congr_comp, game₀_to_comp_aux,
+      CompGame.to_state, CompState.to_state'] at h ⊢
+    subst h
+    simp
+    rfl
+  nm n ih
+  dsimp at ih ⊢
+  rw [game_play_succ]
+  simp
+  have ⟨g, hg⟩ := hv # (game₀ pw (mk_a_strat fa) (mk_d_strat fd)).play n
+  have ⟨mcg, hcg⟩ := hv # (game₀_to_comp_aux pw fa fd).play n
+  simp only [←hg, ←hcg] at ih ⊢
+  cases mcg; simp
   nm cg
-  simp at h h₁
+  have ha : cg.fa = strat_fn_to_comp fa := by
+    have h₁ := congrArg (· >>= λ cg => some # cg.fa) hcg
+    dsimp at h₁
+    symm at h₁
+    replace h₁ := of_comp_game_play_bind_fa_eq_some h₁
+    rw [←h₁]
+    rfl
+  have hd : cg.fd = strat_fn_to_comp fd := by
+    have h₁ := congrArg (· >>= λ cg => some # cg.fd) hcg
+    dsimp at h₁
+    symm at h₁
+    replace h₁ := of_comp_game_play_bind_fd_eq_some h₁
+    rw [←h₁]
+    rfl
+  symm at hg hcg
+  simp
   
-  have h₂ := h
-  rcases h₂ with ⟨h₂, h₃, h₄⟩
-  
-  simp [Game.move]
-  split_ifs with he ht <;> simp [he] at h₄ <;>
-    simp [CompGame.move, h₄] at h₁
-  · rwa [←h₁]
-  all_goals simp [ht] at h₃; simp [h₃] at h₁; split
-  · nm m h₅
-    simp at h₅
-    split_ifs at h₁ with h₆
-    · simp at h₁
-      simp [h₂] at h₅
-      exfalso
-      apply h₅
-      exact comp_game_to_state_a_has_move_of_check_a_move h₆
-    · have h₇ : ¬cg.s.a_has_move := by simpa [←h₂]
-      simp [h₇] at h₁
-      subst h₁
-      constructor; rw [h₂]; rfl; simpa
-  · nm m s h₅
-    split_ifs at h₁ with h₆
-    · simp at h₁
-      subst cg₁
-      constructor
-      · simp [h₂]
-        sorry
-      · sorry
-    · sorry
-  · sorry
-  · sorry
+
+#check 0 #exit
+
+instance {pw fa fd} : GameToComp # game₀ pw (mk_a_strat fa) (mk_d_strat fd) := by
+  exact ⟨_, game₀_congr_mcomp_play_game₀_to_comp_aux⟩
 
 #check 0 #exit
 
