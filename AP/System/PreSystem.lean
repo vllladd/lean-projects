@@ -27,16 +27,16 @@ structure PreSystem (S T : Type) : Type where
 noncomputable section open scoped Classical
 
 @[simp]
-def system_equiv_f {S T : Type} (s₀ : S) (f g : SystemFn S T) : Prop :=
+def system_congr_f {S T : Type} (s₀ : S) (f g : SystemFn S T) : Prop :=
   mk_system_fn f s₀ = mk_system_fn g s₀
 
 @[simp]
-def PreSystem.equiv_f {S T : Type}
+def PreSystem.congr_f {S T : Type}
 (sys : PreSystem S T) (f : SystemFn S T) : Prop :=
-  system_equiv_f sys.s₀ sys.f f
+  system_congr_f sys.s₀ sys.f f
 
 def PreSystem.equiv {S T : Type} (sys₁ sys₂ : PreSystem S T) : Prop :=
-  sys₁.s₀ = sys₂.s₀ ∧ sys₁.equiv_f sys₂.f
+  sys₁.s₀ = sys₂.s₀ ∧ sys₁.congr_f sys₂.f
 
 end section
 

@@ -130,7 +130,7 @@ mk_system_fn (mk_system_fn f s₀) s₀ = mk_system_fn f s₀ := by
 
 @[simp]
 theorem mk_system_eq_iff {S T : Type} {f₁ f₂ : SystemFn S T} {s₁ s₂} :
-mk_system f₁ s₁ = mk_system f₂ s₂ ↔ s₁ = s₂ ∧ system_equiv_f s₁ f₁ f₂:= by
+mk_system f₁ s₁ = mk_system f₂ s₂ ↔ s₁ = s₂ ∧ system_congr_f s₁ f₁ f₂:= by
   unfold mk_system
   rw [Quotient.eq]
   rfl
@@ -165,9 +165,9 @@ sys.init_state.to_system = sys := rfl
 theorem system_init_state_state {S T : Type} {sys : System S T} :
 sys.init_state.s = sys.s₀ := rfl
 
-def System.f_congr {S T : Type}
+def System.congr_f {S T : Type}
 (sys : System S T) (f : SystemFn S T) : Prop := by
-  apply sys.lift (·.equiv_f f)
+  apply sys.lift (·.congr_f f)
   rintro a b ⟨h₁, h₂⟩
   simp at h₂ ⊢
   rw [h₂, h₁]
@@ -219,19 +219,10 @@ theorem reachable_of_reachable_mk_system_fn {S T : Type} {f : SystemFn S T} {s�
   rcases h₁ with ⟨h₁, h₃, h₄⟩
   exact Reachable.h₁ h₄ ih
 
--- def quot_lift' {α β : Type} {r : α → α → Prop}
--- (q : Quot r)
--- (f : (x : α) → (q = Quot.mk r x) → β)
--- (a : ∀ (a b : α) (ha hb : _), r a b → f a ha = f b hb) :
--- β := by
---   sorry
-
-#check 0 #exit
-
 end section
 
 def SystemState.tr_aux {S T : Type} (st : SystemState S T) (t : T)
-(f : SystemFn S T) (h : st.to_system.f_congr f) : Option (SystemState S T) :=
+(f : SystemFn S T) (h : st.to_system.congr_f f) : Option (SystemState S T) :=
 match h₁ : f st.s t with
 | none => none
 | some s₁ => some
@@ -246,7 +237,7 @@ match h₁ : f st.s t with
       apply sys.ind
       clear sys
       intro p h₂ h₃
-      simp [System.Reachable, System.f_congr] at h₂ h₃ ⊢
+      simp [System.Reachable, System.congr_f] at h₂ h₃ ⊢
       replace h₁ : mk_system_fn f p.s₀ s t = some s₁ := by
         simp
         have h₄ := reachable_of_mk_system_fn_eq h₃ h₂
@@ -259,11 +250,22 @@ match h₁ : f st.s t with
 
 -- #check 0 #exit
 
-def SystemState.tr {S T : Type} (st : SystemState S T) (t : T) :
-Option (SystemState S T) := by
-  refine' st.to_system.lift _ _
-  · intro p
-    apply st.tr_aux t p.f
+-- noncomputable
+-- def SystemState.tr {S T : Type} (st : SystemState S T) (t : T) :
+-- Option (SystemState S T) := by
+--   classical
+--   apply st.to_system.lift λ p => if h : _ then st.tr_aux t p.f h else none
+--   intro a b ⟨h₁, h₂⟩
+--   simp at h₂
+--   rcases st with ⟨sys, s, hs⟩
+--   simp
+--   revert sys
+--   apply Quot.ind
+--   intro p hs
+--   split_ifs with h₃ h₄ h₄ <;> simp [tr_aux] <;> split <;>
+--     (try split) <;> simp <;> change _root_.Reachable _ _ _ at hs <;>
+--     (try change system_congr_f _ _ _ at h₃ h₄) <;>
+--     simp at h₃ h₄
 
 -- def SystemState.trs {S T : Type} (st : SystemState S T) (ts : List T) :
 -- Option (SystemState S T) := match ts with

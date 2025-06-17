@@ -266,7 +266,17 @@ theorem comp_game_push_to_state {cg : CompGame} {s} :
   simp [CompGame.push, CompGame.to_state, State.push,
     comp_hist_to_hist, List.snoc]
 
--- #check 0 #exit
+#check 0 #exit
+
+theorem eq_of_comp_game_check_a_move_and_a_ap_eq {g : Game} {cg p s'}
+(h₁ : g.congr_comp cg)
+(h₂ : cg.s.check_a_move p)
+(h₃ : g.a.ap cg.to_state = some s') :
+s' = {cg.to_state.toState' with a_pos := p} := by
+  dsimp
+  rcases h₁ with ⟨h₁, h₄, h₅⟩
+
+#check 0 #exit
 
 theorem game_move_congr_mcomp_of {g : Game} {mcg : Option CompGame}
 (h : g.congr_mcomp mcg) : g.move.congr_mcomp (mcg >>= (·.move)) := by
