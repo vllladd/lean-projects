@@ -818,3 +818,8 @@ theorem Set.not_nonempty_iff {α : Type} {s : Set α} :
 @[simp]
 theorem Set.setOf_compl {α : Type} {P : α → Prop} :
 {x | P x}ᶜ = {x | ¬P x} := rfl
+
+-- @[simp]
+-- theorem Ordset.finite {α : Type} [hi : LinearOrder α] {s : Ordset α} :
+-- {x | x ∈ s}.Finite := by
+--   sorry

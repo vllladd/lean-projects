@@ -2,7 +2,7 @@ import AP.Strategy
 
 structure CompState where
   pw : ℕ
-  grid : Ordset Point
+  grid : Finset Point
   a_pos : Point
 
 structure CompGame where
@@ -300,49 +300,12 @@ theorem comp_game_play_eq_of_ended {cg : CompGame} {n}
   induction n; rfl; nm n ih
   rwa [comp_game_play_succ', comp_game_move_eq_of_ended h]
 
-#check 0 #exit
-
-@[simp]
-theorem Ordset.finite {α : Type} [hi : LinearOrder α] {s : Ordset α} :
-{x | x ∈ s}.Finite := by
-  rcases s with ⟨s, h⟩
-  apply Set.Finite.ofFinset # s.toList.toFinset
-  intro p
-  simp
-  change _ ↔ decide (p ∈ s)
-  simp
-  induction s
-  · sorry
-  nm size s₁ x s₂ ih₁ ih₂
-  simp
-  specialize ih₁ h.left
-  specialize ih₂ h.right
-  constructor
-  · rintro (h₃ | rfl | h₃)
-    · simp [ih₁] at h₃
-      change Ordnode.mem _ _
-      unfold Ordnode.mem
-      split <;> nm ord h₄
-      · exact h₃
-      · unfold cmpLE at h₄
-        split_ifs at h₄ with h₅; rfl
-      · unfold cmpLE at h₄
-        split_ifs at h₄ with h₅
-        exfalso
-
-#check 0 #exit
-
 theorem comp_state_to_state'_grid_infinite {s : CompState} :
 s.to_state'.grid.Infinite := by
   rcases s with ⟨pw, grid, a_pos⟩
   simp [CompState.to_state']
   apply Set.infinite_of_finite_compl
   simp
-  clear pw a_pos
-  apply Set.infinite_of_not_bddAbove
-  simp [BddAbove]
-  ext p
-  simp [upperBounds]
 
 #check 0 #exit
 
