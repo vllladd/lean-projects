@@ -810,3 +810,11 @@ theorem Option.guard_bind_eq_some_iff {α : Type} {P : Prop} [Decidable P]
 theorem quot_lift_mk_of {α : Type} {P : α → α → Prop} {f : α → Prop} {a} (h₁)
 (h₂ : (∀ (a₁ a₂ : α), P a₁ a₂ → f a₁ = f a₂) → f a) :
 Quot.lift f h₁ (Quot.mk P a) := h₂ h₁
+
+@[simp]
+theorem Set.not_nonempty_iff {α : Type} {s : Set α} :
+¬s.Nonempty ↔ s = ∅ := not_nonempty_iff_eq_empty
+
+@[simp]
+theorem Set.setOf_compl {α : Type} {P : α → Prop} :
+{x | P x}ᶜ = {x | ¬P x} := rfl
