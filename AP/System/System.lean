@@ -25,8 +25,8 @@ theorem system_cnd_mk_system_fn {S T : Type} {f : SystemFn S T} {s₀}
     · exact Reachable.h₀
     clear s t
     nm s t s₁ h₁ h₂ ih
-    apply Reachable.h₁ s t s₁ ih
-    have h₃ := Reachable.h₁ _ _ _ h₁ h₂
+    apply Reachable.h₁ (t := t) _ ih
+    have h₃ := Reachable.h₁ h₁ h₂
     simp [h₁, h₂, h₃]
   · intro s₁ t
     contrapose! hs
@@ -51,8 +51,8 @@ theorem system_cnd_mk_system_fn {S T : Type} {f : SystemFn S T} {s₀}
     · exact Reachable.h₀
     clear s
     nm s t s₁ h₁ h₂ ih
-    apply Reachable.h₁ s t s₁ ih
-    have h₃ := Reachable.h₁ _ _ _ h₁ h₂
+    apply Reachable.h₁ (t := t) _ ih
+    have h₃ := Reachable.h₁ h₁ h₂
     simp [h₁, h₂, h₃]
 
 def System.s₀ {S T : Type} (sys : System S T) : S := by
@@ -89,7 +89,7 @@ mk_system_fn f s₀ s t = none ↔ ¬Reachable f s₀ s ∨ f s t = none := by
   obtain ⟨s₁, h₂⟩ := Option.exists_eq_some_of_ne_none h₁
   simp [h₂]
   by_cases h₃ : Reachable f s₀ s <;> simp [h₃]
-  exact Reachable.h₁ s t s₁ h₃ h₂
+  exact Reachable.h₁ h₂ h₃
 
 @[simp]
 theorem reachable_mk_system_fn_iff {S T : Type} {f : SystemFn S T} {s₀ : S} {s} :
@@ -99,15 +99,15 @@ Reachable (mk_system_fn f s₀) s₀ s ↔ Reachable f s₀ s := by
     · exact Reachable.h₀
     clear s
     nm s t s₁ h₁ h₂ ih
-    simp at h₂
-    exact h₂.2.1
+    simp at h₁
+    exact h₁.2.1
   · induction h
     · exact Reachable.h₀
     clear s
     nm s t s₁ h₁ h₂ ih
-    apply Reachable.h₁ s t s₁ ih
+    apply Reachable.h₁ (t := t) _ ih
     simp [h₁, h₂]
-    exact Reachable.h₁ s t s₁ h₁ h₂
+    exact Reachable.h₁ h₁ h₂
 
 end section
 
@@ -130,7 +130,7 @@ mk_system_fn (mk_system_fn f s₀) s₀ = mk_system_fn f s₀ := by
 
 @[simp]
 theorem mk_system_eq_iff {S T : Type} {f₁ f₂ : SystemFn S T} {s₁ s₂} :
-mk_system f₁ s₁ = mk_system f₂ s₂ ↔ PreSystem.equiv ⟨s₁, f₁⟩ ⟨s₂, f₂⟩ := by
+mk_system f₁ s₁ = mk_system f₂ s₂ ↔ s₁ = s₂ ∧ system_equiv_f s₁ f₁ f₂:= by
   unfold mk_system
   rw [Quotient.eq]
   rfl
@@ -140,42 +140,130 @@ theorem mk_system_mk_system_fn {S T : Type} {f : SystemFn S T} {s₀ : S} :
 mk_system (mk_system_fn f s₀) s₀ = mk_system f s₀ := by
   simp [PreSystem.equiv]
 
-#check 0 #exit
+end section
+
+structure SystemState (S T : Type) where
+  to_system : System S T
+  s : S
+  h_st : to_system.Reachable s
 
 @[simp]
-theorem system_init_state_toSystem {S T : Type} {sys : System S T} :
-sys.init_state.toSystem = sys := rfl
+def SystemState.Reachable {S T : Type} (st : SystemState S T) (s : S) : Prop :=
+  st.to_system.Reachable s
+
+def System.init_state {S T : Type} (sys : System S T) : SystemState S T :=
+  { to_system := sys
+  , s := sys.s₀
+  , h_st := by apply sys.ind # λ p => Reachable.h₀
+  }
+
+@[simp]
+theorem system_init_state_to_system {S T : Type} {sys : System S T} :
+sys.init_state.to_system = sys := rfl
 
 @[simp]
 theorem system_init_state_state {S T : Type} {sys : System S T} :
 sys.init_state.s = sys.s₀ := rfl
 
-end section
+def System.f_congr {S T : Type}
+(sys : System S T) (f : SystemFn S T) : Prop := by
+  apply sys.lift (·.equiv_f f)
+  rintro a b ⟨h₁, h₂⟩
+  simp at h₂ ⊢
+  rw [h₂, h₁]
+
+def PreSystem.to_system {S T : Type} (p : PreSystem S T) : System S T :=
+  Quot.mk _ p
+
+def System.equiv_pre {S T : Type} (s : System S T) (p : PreSystem S T) : Prop := by
+  apply s.lift (·.equiv p)
+  intro a b h
+  simp
+  change a.equiv b at h
+  exact ⟨λ h₁ => h.symm.trans h₁, λ h₁ => h.trans h₁⟩
+
+@[simp]
+theorem pre_system_to_system_equiv {S T : Type} {p : PreSystem S T} :
+p.to_system.equiv_pre p := PreSystem.equiv.refl
+
+noncomputable section open scoped Classical
+
+theorem reachable_of_mk_system_fn_eq {S T : Type} {f g : SystemFn S T} {s₀ s}
+(h₁ : mk_system_fn f s₀ = mk_system_fn g s₀) (h₂ : Reachable f s₀ s) :
+Reachable g s₀ s := by
+  induction h₂; constructor
+  clear s
+  nm s t s₁ h₃ h₄ ih
+  replace h₁ := congrArg (· s t) h₁
+  have h₅ := Reachable.h₁ h₃ h₄
+  simp [mk_system_fn, h₃, h₄, h₅] at h₁
+  symm at h₁
+  simp at h₁
+  apply Reachable.h₁ (t := t) _ ih
+  rcases h₁ with ⟨h₁, h₆⟩
+  rw [←h₆]
+  generalize hx : g s t = x
+  cases x <;> simp
+  nm x
+  symm
+  simp
+  simp [hx] at h₆
+  exact h₆.1
+
+theorem reachable_of_reachable_mk_system_fn {S T : Type} {f : SystemFn S T} {s₀ s}
+(h : Reachable (mk_system_fn f s₀) s₀ s) : Reachable f s₀ s := by
+  induction h; rfl
+  clear s
+  nm s t s₁ h₁ h₂ ih
+  simp at h₁
+  rcases h₁ with ⟨h₁, h₃, h₄⟩
+  exact Reachable.h₁ h₄ ih
+
+-- def quot_lift' {α β : Type} {r : α → α → Prop}
+-- (q : Quot r)
+-- (f : (x : α) → (q = Quot.mk r x) → β)
+-- (a : ∀ (a b : α) (ha hb : _), r a b → f a ha = f b hb) :
+-- β := by
+--   sorry
 
 #check 0 #exit
 
--- structure SystemState (S T : Type) extends System S T where
---   s : S
---   h_st : toSystem.Reachable s
+end section
 
--- @[simp]
--- def SystemState.Reachable {S T : Type} (st : SystemState S T) (s : S) : Prop :=
---   _root_.Reachable st.f st.s s
+def SystemState.tr_aux {S T : Type} (st : SystemState S T) (t : T)
+(f : SystemFn S T) (h : st.to_system.f_congr f) : Option (SystemState S T) :=
+match h₁ : f st.s t with
+| none => none
+| some s₁ => some
+  { st with
+    s := s₁
+  , h_st :=
+    by
+      classical
+      rcases st with ⟨sys, s, h₂⟩
+      dsimp at h h₁ ⊢
+      revert h₂ h
+      apply sys.ind
+      clear sys
+      intro p h₂ h₃
+      simp [System.Reachable, System.f_congr] at h₂ h₃ ⊢
+      replace h₁ : mk_system_fn f p.s₀ s t = some s₁ := by
+        simp
+        have h₄ := reachable_of_mk_system_fn_eq h₃ h₂
+        exact ⟨h₄, Reachable.h₁ h₁ h₄, h₁⟩
+      apply reachable_of_mk_system_fn_eq h₃.symm
+      simp at h₁
+      rcases h₁ with ⟨h₁, h₄, h₅⟩
+      exact Reachable.h₁ h₅ h₁
+  }
 
--- def System.init_state {S T : Type} (sys : System S T) : SystemState S T :=
---   { toSystem := sys
---   , s := sys.s₀
---   , h_st := Reachable.h₀
---   }
+-- #check 0 #exit
 
--- def SystemState.tr {S T : Type} (st : SystemState S T) (t : T) :
--- Option (SystemState S T) := match h : st.f st.s t with
--- | none => none
--- | some s₁ => some
---   { st with
---     s := s₁
---   , h_st := Reachable.h₁ st.s t s₁ st.h_st h
---   }
+def SystemState.tr {S T : Type} (st : SystemState S T) (t : T) :
+Option (SystemState S T) := by
+  refine' st.to_system.lift _ _
+  · intro p
+    apply st.tr_aux t p.f
 
 -- def SystemState.trs {S T : Type} (st : SystemState S T) (ts : List T) :
 -- Option (SystemState S T) := match ts with
