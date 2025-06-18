@@ -162,10 +162,6 @@ match h : s.a_has_move_comp with
 #check 0 #exit
 
 -- @[simp]
--- theorem strat_ap_eq {ms ms' f s h₁ h₂} :
--- @Strat.ap ms ⟨⟨ms', f, h₁⟩, h₂⟩ s = f s := rfl
--- 
--- @[simp]
 -- theorem game_play_zero {g : Game} : g.play 0 = g := rfl
 -- 
 -- @[simp]

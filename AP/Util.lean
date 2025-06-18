@@ -242,7 +242,7 @@ a = c + 1 + b ↔ a - b = c + 1 := by
   exact nat_eq_add_of_sub_eq_succ h
 
 @[simp]
-theorem univ_unit_iff {p : Unit → Prop} : (∀ u, p u) ↔ p () :=
+theorem forall_unit_iff {p : Unit → Prop} : (∀ u, p u) ↔ p () :=
   Unique.forall_iff
 
 @[simp]
@@ -285,7 +285,7 @@ theorem ite_01_le_one {P : Prop} : ite P 0 1 ≤ 1 := by split_ifs <;> simp
 
 theorem hv {α : Type} (x : α) : ∃ y, y = x := exists_eq
 
-theorem univ_spec {α β γ : Type} {p : α → Prop} (f : β → γ → α)
+theorem forall_spec {α β γ : Type} {p : α → Prop} (f : β → γ → α)
 (h : ∀ x, p x) : ∀ y z, p (f y z) := by intro y z; apply h
 
 class ListMem {α : Type} [DecidableEq α] (x : α) (xs : List α) where
@@ -840,3 +840,62 @@ x ∉ (failure : List α) := List.count_eq_zero.mp rfl
 theorem list_unit_mem_guard_iff {P : Prop} [Decidable P] :
 () ∈ (guard P : List Unit) ↔ P := by
   by_cases h : P <;> simp [h]
+
+theorem forall_prop_iff {R : Prop → Prop} :
+(∀ P, R P) ↔ R True ∧ R False := by
+  constructor
+  · intro h
+    simp [h]
+  rintro ⟨h₁, h₂⟩ P
+  by_cases h : P <;> simpa [h]
+
+theorem exi_prop_iff {R : Prop → Prop} :
+(∃ P, R P) ↔ R True ∨ R False := by
+  constructor
+  · rintro ⟨P, h⟩
+    by_cases h₁ : P <;> simp [h₁] at h <;> simp [h]
+  rintro (h | h)
+  · use True
+  · use False
+
+section
+
+local instance {R : Prop → Prop}
+[ht : Decidable # R True] [hf : Decidable # R False] : Decidable # ∀ P, R P :=
+match h₁ : decide # R True ∧ R False with
+| true => isTrue # by
+  simp at h₁
+  simpa [forall_prop_iff]
+| false => isFalse # by
+  simp only [forall_prop_iff]
+  simp at h₁
+  push_neg
+  exact h₁
+
+local instance {R : Prop → Prop}
+[ht : Decidable # R True] [hf : Decidable # R False] : Decidable # ∃ P, R P :=
+match h₁ : decide # R True ∨ R False with
+| true => isTrue # by
+  simp at h₁
+  simpa [exi_prop_iff]
+| false => isFalse # by
+  simp only [exi_prop_iff]
+  simp at h₁
+  push_neg
+  exact h₁
+
+theorem not_forall_congr_iff : ¬∀ (α : Type) (P Q : α → Prop),
+((∀ x, P x) ↔ (∀ x, Q x)) ↔ ∀ x, P x ↔ Q x := by
+  push_neg
+  use Prop, id, (¬.)
+  dsimp
+  decide
+
+theorem not_exi_congr_iff : ¬∀ (α : Type) (P Q : α → Prop),
+((∃ x, P x) ↔ (∃ x, Q x)) ↔ ∃ x, P x ↔ Q x := by
+  push_neg
+  use Prop, id, (¬.)
+  dsimp
+  decide
+
+end
