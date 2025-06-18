@@ -5,7 +5,7 @@ import Mathlib.Data.List.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Ordmap.Ordset
+-- import Mathlib.Data.Ordmap.Ordset
 import Mathlib.Control.Monad.Basic
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Set.Card.Arithmetic
@@ -789,11 +789,6 @@ theorem fn_set_ext {α β : Type} {f g : α → β} {a : α} {b : β} :
     exact h _ h₁
 
 @[simp]
-theorem not_mem_ordset_empty {α : Type} [LinearOrder α] {x : α} :
-x ∉ (∅ : Ordset α) := by
-  simp [Ordset.instEmptyCollection, Ordset.nil, Ordset.instMembership]; rfl
-
-@[simp]
 theorem Option.failure_bind {α β : Type} {f : α → Option β} :
 (failure : Option α).bind f = none := rfl
 
@@ -820,6 +815,28 @@ theorem Set.setOf_compl {α : Type} {P : α → Prop} :
 {x | P x}ᶜ = {x | ¬P x} := rfl
 
 -- @[simp]
+-- theorem not_mem_ordset_empty {α : Type} [LinearOrder α] {x : α} :
+-- x ∉ (∅ : Ordset α) := by
+--   simp [Ordset.instEmptyCollection, Ordset.nil, Ordset.instMembership]; rfl
+
+-- @[simp]
 -- theorem Ordset.finite {α : Type} [hi : LinearOrder α] {s : Ordset α} :
 -- {x | x ∈ s}.Finite := by
 --   sorry
+
+@[simp]
+theorem option_get!_with_bot_some {α : Type} [Inhabited α] {x : α} :
+(WithBot.some x).get! = x := rfl
+
+theorem max_right_eq_of_max_eq_and_ne {α : Type} [LinearOrder α] {a b c : α}
+(h₁ : max a b = c) (h₂ : a ≠ c) : b = c := by
+  simp [max_eq_iff, h₂] at h₁; exact h₁.1
+
+@[simp]
+theorem list_not_mem_failure {α : Type} {x : α} :
+x ∉ (failure : List α) := List.count_eq_zero.mp rfl
+
+@[simp]
+theorem list_unit_mem_guard_iff {P : Prop} [Decidable P] :
+() ∈ (guard P : List Unit) ↔ P := by
+  by_cases h : P <;> simp [h]

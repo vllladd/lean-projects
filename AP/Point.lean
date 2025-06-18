@@ -1,18 +1,13 @@
 import AP.Defs
 
+namespace AP
+
+instance : Inhabited Point := ⟨0, 0⟩
+
 instance : Repr Point := by
   constructor
   rintro ⟨x, y⟩ prec
   exact (x, y).repr prec
-
-instance : DecidableEq Point := by
-  intro a b
-  by_cases h : a.x = b.x ∧ a.y = b.y
-  · apply Decidable.isTrue
-    ext <;> simp [h]
-  · apply Decidable.isFalse
-    rintro rfl
-    simp at h
 
 @[simp]
 def Point.lt (a b : Point) : Prop :=
@@ -139,3 +134,7 @@ instance : LinearOrder Point := by
     split_ifs <;> simp_all
   · infer_instance
   · infer_instance
+
+@[simp, symm]
+theorem Point.dist.comm {a b : Point} : a.dist b = b.dist a := by
+  simp [Point.dist, abs_sub_comm]

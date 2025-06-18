@@ -51,10 +51,6 @@ theorem game_mk_move_ended_of_a_turn_iff {a d} {s : State} :
 @[simp]
 theorem state_push_state {st : State} {s} : (st.push s).toState' = s := rfl
 
-@[simp, symm]
-theorem point_dist_comm {a b : Point} : a.dist b = b.dist a := by
-  simp [Point.dist, abs_sub_comm]
-
 theorem a_has_move_iff {s : State'} : s.a_has_move ↔ ∃ (p : Point),
 p ∈ s.grid ∧ p ≠ s.a_pos ∧ s.a_pos.dist p ≤ s.pw := by
   simp [State'.a_has_move, State'.a_move, exists_swap]

@@ -1,132 +1,97 @@
-import AP.Util
+import AP.System.Basic
 
-noncomputable section
-open scoped Classical
+namespace AP
 
 @[ext]
 structure Point where
   x : ℤ
   y : ℤ
 
-def point₀ : Point := ⟨0, 0⟩
-instance : Inhabited Point := ⟨point₀⟩
+instance : DecidableEq Point := λ a b =>
+match h : decide # a.x = b.x ∧ a.y = b.y with
+| true => isTrue # by ext <;> simp_all
+| false => isFalse # by rintro rfl; simp at h
 
 def Point.dist (a b : Point) : ℕ :=
   Int.toNat # max |a.x - b.x| |a.y - b.y|
 
-abbrev Grid := Set Point
+inductive Player where
+| A : Player
+| D : Player
 
-def grid₀ : Grid := Set.univ
+open Player
 
 @[ext]
-structure State' where
+structure State where
   pw : ℕ
-  grid : Grid
+  taken : Finset Point
   a_pos : Point
+  hist : List Point
+  turn : Player
 
-@[ext]
-structure State extends State' where
-  hist : List State'
-
-def state'₀ (pw : ℕ) : State' :=
+def init_state (pw : ℕ) : State :=
   { pw := pw
-  , grid := grid₀
-  , a_pos := point₀
-  }
-
-def state₀ (pw : ℕ) : State :=
-  {state'₀ pw with hist := []}
-
-instance : Inhabited State' := ⟨state'₀ 0⟩
-instance : Inhabited State := ⟨state₀ 0⟩
-
-def State.push (st : State) (s : State') : State :=
-  {s with hist := st.hist.snoc st.toState'}
-
-abbrev Moves := State' → State' → Prop
-abbrev Strat' := State → Option State'
-
-@[ext]
-structure StratT where
-  moves : Moves
-  f : Strat'
-  h : ∀ (s : State),
-    let g := moves s.toState'
-    match f s with
-    | none => ∀ s₁, ¬g s₁
-    | some s₁ => g s₁
-
-def State'.a_move (s s₁ : State') := ∃ (a₁ : Point),
-  s₁ = {s with a_pos := a₁} ∧
-  a₁ ∈ s.grid ∧
-  a₁ ≠ s.a_pos ∧
-  a₁.dist s.a_pos ≤ s.pw
-
-def State'.d_move (s s₁ : State') := ∃ (p : Point),
-  s₁ = {s with grid := s.grid.erase p} ∧
-  p ∈ s.grid ∧
-  p ≠ s.a_pos
-
-@[simp] def AMoves (s : State') := s.a_move
-@[simp] def DMoves (s : State') := s.d_move
-
-def Strat (moves : Moves) := {st : StratT // st.moves = moves}
-def AStrat := Strat AMoves
-def DStrat := Strat DMoves
-
-def Strat.ap {ms} (a : Strat ms) := a.1.f
-
-instance {moves : Moves} : Inhabited (Strat moves) := by
-  refine' ⟨⟨moves, _, _⟩, by simp⟩
-  · intro s; exact if h : ∃ x, moves s.toState' x then
-      some # Classical.choose h else none
-  · intro s; simp; split_ifs with h <;> simp
-    · apply Classical.choose_spec
-    · simp at h; exact h
-
-instance : Inhabited AStrat := ⟨(default : Strat _)⟩
-instance : Inhabited DStrat := ⟨(default : Strat _)⟩
-
-@[ext]
-structure Game extends State where
-  a : AStrat
-  d : DStrat
-  a_turn : Prop
-  ended : Prop
-
-def Game.dflt : Game :=
-  { a := default
-  , d := default
-  , toState := default
-  , a_turn := default
-  , ended := default
-  }
-
-instance : Inhabited Game := ⟨Game.dflt⟩
-
-abbrev Game.d_turn (g : Game) := ¬g.a_turn
-
-def game₀ (pw : ℕ) (a : AStrat) (d : DStrat) : Game :=
-  { a := a
-  , d := d
-  , toState := state₀ pw
-  , a_turn := False
-  , ended := False
+  , taken := ∅
+  , a_pos := ⟨0, 0⟩
+  , hist := []
+  , turn := D
   }
 
 @[simp]
-def Game.f (g : Game) := if g.a_turn then g.a.ap else g.d.ap
+abbrev State.a_valid_move (s : State) (p : Point) : Prop :=
+  p ∉ s.taken ∧ p ≠ s.a_pos ∧ p.dist s.a_pos ≤ s.pw
 
-def Game.move (g : Game) : Game :=
-  if g.ended then g else
-  match g.f g.toState with
-  | none => {g with ended := True}
-  | some s => {g with toState := g.toState.push s, a_turn := g.d_turn}
+@[simp]
+abbrev State.d_valid_move (s : State) (p : Point) : Prop :=
+  p ∉ s.taken ∧ p ≠ s.a_pos
 
-def Game.play (n : ℕ) (g : Game) := Game.move^[n] g
+def State.a_move (s : State) (p : Point) : Option State :=
+  if s.a_valid_move p
+  then some {s with a_pos := p, hist := p :: s.hist, turn := D}
+  else none
 
-def Game.a_wins (g : Game) := ∀ n, ¬(g.play n).ended
-def Game.d_wins (g : Game) := ¬g.a_wins
+def State.d_move (s : State) (p : Point) : Option State :=
+  if s.d_valid_move p
+  then some {s with taken := insert p s.taken, hist := p :: s.hist, turn := A}
+  else none
 
-def a_hws (pw : ℕ) := ∃ a, ∀ d, (game₀ pw a d).a_wins
-def d_hws (pw : ℕ) := ∃ d, ∀ a, (game₀ pw a d).d_wins
+def State.tr_fn (s : State) (p : Point) : Option State :=
+match s.turn with
+| A => s.a_move p
+| D => s.d_move p
+
+def Rules : System State Point := ⟨State.tr_fn⟩
+
+def State.a_has_move (s : State) : Prop :=
+  ∃ p, s.a_valid_move p
+
+structure AStrat where
+  fa : State → Point
+  ha : ∀ (s : State), s.turn = A → s.a_has_move → Rules.valid_tr s (fa s)
+
+structure DStrat where
+  fd : State → Point
+  hd : ∀ (s : State), s.turn = D → Rules.valid_tr s (fd s)
+
+structure Game extends AStrat, DStrat
+
+def Game.fn (g : Game) (s : State) : Point :=
+match s.turn with
+| A => g.fa s
+| D => g.fd s
+
+def Game.play (g : Game) (s : State) (n : ℕ) : State × ℕ :=
+  Rules.simulate g.fn s n
+
+noncomputable
+def Game.winner_at (g : Game) (s : State) : Player := by classical
+  exact if ∀ n, (g.play s n).2 = 0 then A else D
+
+def State.a_hws (s : State) : Prop :=
+  ∃ a, ∀ d, (Game.mk a d).winner_at s = A
+
+def State.d_hws (s : State) : Prop :=
+  ∃ d, ∀ a, (Game.mk a d).winner_at s = D
+
+def a_hws (pw : ℕ) : Prop :=
+  (init_state pw).a_hws

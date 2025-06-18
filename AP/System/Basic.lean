@@ -1,17 +1,14 @@
-import AP.System.System
+import AP.System.Defs
 
-noncomputable section
-open scoped Classical
+namespace System
 
--- theorem system_state_state_mk_system_tr_eq {S T : Type}
--- {st : SystemState S T} {f s₀ t s₁}
--- (h₁ : st.toSystem = mk_system f s₀)
--- (h₂ : st.tr t = some s₁) :
--- f st.s t = some s₁.s := by
---   unfold SystemState.tr at h₂
---   split at h₂ <;> simp at h₂
---   nm s₂ h₃
---   subst h₂
---   generalize_proofs
---   simp [h₁] at h₃
---   convert h₃.2.2
+@[refl]
+theorem Reachable.refl' {S T} {sys : System S T} {a} : sys.Reachable a a :=
+  Reachable.refl
+
+@[trans]
+theorem Reachable.trans {S T} {sys : System S T} {a b c}
+(h₁ : sys.Reachable a b) (h₂ : sys.Reachable b c) : sys.Reachable a c := by
+  induction h₂; exact h₁
+  nm x y t h₂ h₃ ih
+  exact Reachable.step h₂ ih

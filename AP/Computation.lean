@@ -1,5 +1,7 @@
 import AP.Strategy
 
+#check 0 #exit
+
 structure CompState where
   pw : ℕ
   grid : Finset Point
@@ -119,103 +121,6 @@ theorem unit_mem_guard_list_iff {P : Prop} [Decidable P] :
 @[simp]
 theorem mem_compt_state_to_state'_grid_iff {s : CompState} {p} :
 p ∈ s.to_state'.grid ↔ ¬p ∈ s.grid := by rfl
-
-theorem of_comp_state_to_state'_a_has_move {s : CompState}
-(h : s.to_state'.a_has_move) : s.a_has_move := by
-  simp [CompState.a_has_move, a_has_move_iff] at h ⊢
-  rcases h with ⟨p, h₁, h₂, h₃⟩
-  use Int.toNat # s.pw + p.x - s.a_pos.x
-  constructor
-  rotate_left
-  use Int.toNat # s.pw + p.y - s.a_pos.y
-  constructor
-  all_goals try
-    clear h₁ h₂
-    cases s; nm pw grid a_pos
-    simp [Point.dist] at h₃ ⊢
-    clear grid
-    rw [←Int.le_iff_lt_add_one]
-    rcases h₃ with ⟨h₁, h₂⟩
-    rw [Int.add_sub_assoc, mul_two]
-    simp
-    replace h₁ := le_of_max_le_left h₁
-    replace h₂ := le_of_max_le_left h₂
-    linarith
-  simp [CompState.check_a_move]
-  constructor
-  · cases s; nm pw grid a_pos
-    simp [Point.dist] at h₁ h₃ ⊢; clear h₂
-    convert h₁ <;> clear h₁ grid <;> rcases h₃ with ⟨h₁, h₂⟩
-    · have h₃ : max (pw + p.x - a_pos.x) 0 = pw + p.x - a_pos.x := by
-        apply max_eq_left
-        replace h₁ := le_of_max_le_right h₁
-        linarith
-      rw [h₃]
-      ring
-    · have h₃ : max (pw + p.y - a_pos.y) 0 = pw + p.y - a_pos.y := by
-        apply max_eq_left
-        replace h₂ := le_of_max_le_right h₂
-        linarith
-      rw [h₃]
-      ring
-  constructor
-  · cases s; nm pw grid a_pos
-    clear h₁
-    simp at h₂ ⊢
-    rw [point_mk_eq_iff]
-    simp
-    intro h₄
-    contrapose! h₂
-    simp [Point.dist] at h₃
-    rcases h₃ with ⟨h₅, h₆⟩
-    replace h₅ : max (pw + p.x - a_pos.x) 0 = pw + p.x - a_pos.x := by
-      apply max_eq_left
-      replace h₅ := le_of_max_le_right h₅
-      linarith
-    replace h₆ : max (pw + p.y - a_pos.y) 0 = pw + p.y - a_pos.y := by
-      apply max_eq_left
-      replace h₆ := le_of_max_le_right h₆
-      linarith
-    simp only [h₅, h₆] at h₂ h₄; clear h₅ h₆
-    clear grid
-    ring_nf at h₂ h₄
-    ext <;> linarith
-  cases s; nm pw grid a_pos
-  simp at h₁ h₂ h₃ ⊢
-  rw [point_dist_comm]
-  convert h₃
-  · simp [Point.dist] at h₃
-    rcases h₃ with ⟨h₃, h₄⟩
-    replace h₃ : max (pw + p.x - a_pos.x) 0 = pw + p.x - a_pos.x := by
-      apply max_eq_left
-      replace h₃ := le_of_max_le_right h₃
-      linarith
-    rw [h₃]
-    linarith
-  · simp [Point.dist] at h₃
-    rcases h₃ with ⟨h₃, h₄⟩
-    replace h₄ : max (pw + p.y - a_pos.y) 0 = pw + p.y - a_pos.y := by
-      apply max_eq_left
-      replace h₄ := le_of_max_le_right h₄
-      linarith
-    rw [h₄]
-    linarith
-
-theorem comp_state_to_state'_a_has_move_of {s : CompState}
-(h : s.a_has_move) : s.to_state'.a_has_move := by
-  simp [CompState.a_has_move, a_has_move_iff] at h ⊢
-  rcases h with ⟨x, hx, y, hy, h₁⟩
-  simp [CompState.check_a_move] at h₁
-  rcases h₁ with ⟨h₁, h₂, h₃⟩
-  use ⟨s.a_pos.x + (x - s.pw), s.a_pos.y + (y - s.pw)⟩
-  use h₁, h₂
-  rw [point_dist_comm]
-  exact h₃
-
-@[simp]
-theorem comp_state_to_state'_a_has_move_iff {s : CompState} :
-s.to_state'.a_has_move ↔ s.a_has_move :=
-  ⟨of_comp_state_to_state'_a_has_move, comp_state_to_state'_a_has_move_of⟩
 
 theorem comp_game_to_state_toState'_eq {cg : CompGame} :
 cg.to_state.toState' = cg.s.to_state' := by rfl
