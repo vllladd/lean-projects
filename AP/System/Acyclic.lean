@@ -225,7 +225,7 @@ theorem trs_snd_eq_nil_of_prefix_and_eq_nil {a xs ys}
   nm x c h₃; clear x
   exact ih h₁ h₂
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem exi_trs_nodup_states_of_trs_eq {a b ts}
 (h : sys.trs a ts = (b, [])) : ∃ ts', sys.trs a ts' = (b, []) ∧
@@ -275,7 +275,7 @@ theorem exi_trs_nodup_states_of_trs_eq {a b ts}
   constructor
   · simp [trs_append, h₅]
     sorry
-  · sorry
+  sorry -- use ih again
 
 #check 0 #exit
 
