@@ -1,4 +1,4 @@
-import AP.System.Basic
+import AP.System.Main
 
 namespace AP
 
@@ -84,8 +84,9 @@ def Game.play (g : Game) (s : State) (n : ℕ) : State × ℕ :=
   Rules.simulate g.fn s n
 
 noncomputable
-def Game.winner_at (g : Game) (s : State) : Player := by classical
-  exact if ∀ n, (g.play s n).2 = 0 then A else D
+def Game.winner_at (g : Game) (s : State) : Player :=
+  by classical exact
+  if ∀ n, (g.play s n).2 = 0 then A else D
 
 def State.a_hws (s : State) : Prop :=
   ∃ a, ∀ d, (Game.mk a d).winner_at s = A

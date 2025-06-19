@@ -899,3 +899,9 @@ theorem not_exi_congr_iff : ¬∀ (α : Type) (P Q : α → Prop),
   decide
 
 end
+
+theorem Nat.add_one_add {a b : ℕ} : a + 1 + b = a + b + 1 := by ring
+
+theorem Nat.add_one_sub {a b : ℕ} (h : b ≤ a) : a + 1 - b = a - b + 1 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  ring_nf; simp [nat_thm_aux₃]

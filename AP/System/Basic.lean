@@ -22,7 +22,7 @@ theorem has_tr_of_eq_some {s t s₁}
 (h : sys.tr s t = some s₁) : sys.has_tr s := ⟨_, valid_tr_of_eq_some h⟩
 
 theorem reachable_of_simulate
-{f} {s₁ s₂ n} (h : (sys.simulate f s₁ n).1 = s₂) :
+{f} {s₁ s₂ n} (h : s₂ = (sys.simulate f s₁ n).1) :
 sys.Reachable s₁ s₂ := by
   induction n generalizing s₁ s₂
   · subst h; rfl
@@ -81,6 +81,7 @@ theorem exi_tr_right_of_reachable_and_ne {a b}
     exact reachable_left h₁ h₄
   subst ih
   specialize h₂ a t
+  reduce at h₁
   simp [h₁] at h₂
 
 theorem reachable_ind_left {P : ∀ a b, sys.Reachable a b → Prop}
@@ -111,6 +112,7 @@ theorem exi_trs_of_reachable {a b} (h : sys.Reachable a b) :
   nm a b c t h₁ h₂ ih
   obtain ⟨ts, ih⟩ := ih
   use t :: ts
+  reduce at h₁
   simpa [h₁]
 
 theorem exi_trs_nil_of_trs {a b ts} (h : (sys.trs a ts).1 = b) :
@@ -212,71 +214,56 @@ theorem simulate_snd_le {f s n} : (sys.simulate f s n).2 ≤ n := by
   specialize @ih s₁
   linarith
 
-theorem simulate_add {f s n m} [hi : DecidableEq T] :
+theorem simulate_add {f s n m} :
 sys.simulate f s (n + m) =
 let ⟨s₁, n'⟩ := sys.simulate f s n
 let (s₂, m') := sys.simulate f s₁ m
 if n' ≠ 0 then (s₁, n' + m) else (s₂, n' + m') := by
-  sorry
-
--- #check 0 #exit
+  induction n generalizing s
+  · simp
+  nm n ih
+  rw [Nat.add_one_add]
+  simp only [System.simulate]
+  split; simp [Nat.add_one_add]
+  exact ih
 
 theorem simulate_snd_mono {f s n m} (h : n ≤ m) :
 (sys.simulate f s n).2 ≤ (sys.simulate f s m).2 := by
   classical
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
   simp [simulate_add]
-  split_ifs with h₁
-  · sorry
-  · sorry
+  split_ifs with h₁ <;> simp [h₁]
 
-#check 0 #exit
+theorem simulate_sub_simulate_snd_snd {f s n} :
+(sys.simulate f s (n - (sys.simulate f s n).2)).2 = 0 := by
+  induction n generalizing s
+  · rfl
+  nm n ih
+  simp
+  split
+  · nm x h₁
+    simp [h₁]
+  nm x s₁ h₁; clear x
+  rw [Nat.add_one_sub simulate_snd_le]
+  simp [h₁]
+  exact ih
 
-theorem simulate_simulate_snd_snd {f s n} :
-(sys.simulate f s (sys.simulate f s n).2).2 = 0 := by
-  have h₁ : (sys.simulate f s n).2 ≤ n := simulate_snd_le
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h₁
+noncomputable
+def dflt_sim_fn [Inhabited T] : S → T :=
+  by classical exact
+  λ s => if h : sys.has_tr s then h.choose else default
 
-#check 0 #exit
+instance [hi : Inhabited T] : sys.SimFn sys.dflt_sim_fn := by
+  constructor
+  intro s h₁
+  unfold dflt_sim_fn
+  split_ifs
+  exact h₁.choose_spec
 
-example {s} :
-(∀ f [sys.SimFn f] n m,
-  let (sn, n₁) := sys.simulate f s n
-  let (sm, m₁) := sys.simulate f s m
-  n₁ = 0 → m₁ = 0 → sn = sm → n = m) ↔
-(∀ f [sys.SimFn f] n m,
-  sys.simulate f s n = sys.simulate f s m → n = m) := by
-  symm
-  constructor <;> intro h f hf n m <;> specialize h f
-  · specialize h n m
-    simp
-    intro h₁ h₂ h₃
-    apply h
-    ext1
-    · exact h₃
-    simp [h₁, h₂]
-  intro h₁
-  simp [h₁] at h
-  have hn : (sys.simulate f s n).2 ≤ n := simulate_snd_le
-  have hm : (sys.simulate f s m).2 ≤ m := simulate_snd_le
-  obtain ⟨x, hx⟩ := Nat.exists_eq_add_of_le hn
-  obtain ⟨y, hy⟩ := Nat.exists_eq_add_of_le hm
-  specialize @h (sys.simulate f s n).2 (sys.simulate f s m).2
-  simp at h
-      
-  specialize h (n - sys.simulate f s n)
+theorem sim_fn_iff {f} : sys.SimFn f ↔ ∀ {s}, sys.has_tr s → sys.valid_tr s (f s) :=
+  ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-#check 0 #exit
-
-theorem exi_simulate_of_reachable {s₁ s₂}
-[hi₁ : Nonempty T] [hi₂ : sys.SimInj s₁] (h : sys.Reachable s₁ s₂) :
-∃ (f : S → T) (n : ℕ), sys.SimFn f ∧ (sys.simulate f s₁ n).1 = s₂ := by
-  classical
-  obtain ⟨ts, hh⟩ := exi_trs_of_reachable h
-  use λ s => if sys.has_tr s then
-
-#check 0 #exit
-
--- theorem reachable_iff_exi_simulate {s₁ s₂} :
--- sys.Reachable s₁ s₂ ↔ ∃ (f : S → T), sys.SimFn f ∧
--- ∃ n, (sys.simulate f s₁ n).1 = s₂ := by
+@[simp]
+theorem acyclic_iff {s} : sys.Acyclic s ↔
+∀ {a b t}, sys.Reachable s a → sys.tr_to a t b → ¬sys.Reachable b a :=
+  ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
