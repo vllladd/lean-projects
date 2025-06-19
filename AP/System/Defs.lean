@@ -50,3 +50,7 @@ inductive Reachable {S T} (sys : System S T) : S → S → Prop where
 @[class]
 structure Acyclic (s : S) : Prop where
   h : ∀ {a b t}, sys.Reachable s a → sys.tr_to a t b → ¬sys.Reachable b a
+
+@[class]
+structure Tree (s : S) : Prop where
+  h : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂

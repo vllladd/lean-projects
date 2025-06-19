@@ -21,7 +21,7 @@ theorem valid_tr_of_eq_some {s t s₁}
 theorem has_tr_of_eq_some {s t s₁}
 (h : sys.tr s t = some s₁) : sys.has_tr s := ⟨_, valid_tr_of_eq_some h⟩
 
-theorem reachable_of_simulate
+theorem reachable_of_simulate'
 {f} {s₁ s₂ n} (h : s₂ = (sys.simulate f s₁ n).1) :
 sys.Reachable s₁ s₂ := by
   induction n generalizing s₁ s₂
@@ -37,6 +37,16 @@ sys.Reachable s₁ s₂ := by
   trans s
   · apply Reachable.step h₁; rfl
   exact ih h
+
+theorem reachable_of_simulate
+{f} {s₁ s₂ n} (h : (sys.simulate f s₁ n).1 = s₂) :
+sys.Reachable s₁ s₂ := reachable_of_simulate' h.symm
+
+theorem reachable_of_simulate_full
+{f} {s₁ s₂ n} (h : sys.simulate f s₁ n = (s₂, 0)) :
+sys.Reachable s₁ s₂ := by
+  replace h := congrArg (·.1) h
+  exact reachable_of_simulate h
 
 theorem reachable_left {a b c t}
 (h₁ : sys.tr a t = some b) (h₂ : sys.Reachable b c) : sys.Reachable a c :=
@@ -248,18 +258,6 @@ theorem simulate_sub_simulate_snd_snd {f s n} :
   simp [h₁]
   exact ih
 
-noncomputable
-def dflt_sim_fn [Inhabited T] : S → T :=
-  by classical exact
-  λ s => if h : sys.has_tr s then h.choose else default
-
-instance [hi : Inhabited T] : sys.SimFn sys.dflt_sim_fn := by
-  constructor
-  intro s h₁
-  unfold dflt_sim_fn
-  split_ifs
-  exact h₁.choose_spec
-
 theorem sim_fn_iff {f} : sys.SimFn f ↔ ∀ {s}, sys.has_tr s → sys.valid_tr s (f s) :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
@@ -267,3 +265,37 @@ theorem sim_fn_iff {f} : sys.SimFn f ↔ ∀ {s}, sys.has_tr s → sys.valid_tr 
 theorem acyclic_iff {s} : sys.Acyclic s ↔
 ∀ {a b t}, sys.Reachable s a → sys.tr_to a t b → ¬sys.Reachable b a :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+@[simp]
+theorem tree_iff {s} : sys.Tree s ↔
+∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂ :=
+  ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+noncomputable
+def dflt_sim_fn (t : T) : S → T :=
+  by classical exact
+  λ s => if h : sys.has_tr s then h.choose else t
+
+instance {t : T} : sys.SimFn # sys.dflt_sim_fn t := by
+  constructor
+  intro s h₁
+  unfold dflt_sim_fn
+  split_ifs
+  exact h₁.choose_spec
+
+noncomputable
+def mk_sim_fn (f : S → T) : S → T :=
+  by classical exact
+  λ s => if sys.valid_tr s (f s) then f s else
+  sys.dflt_sim_fn (f s) s
+
+theorem valid_tr_of_sim_fn_and_has_tr {f} [hf : sys.SimFn f] {s}
+(h : sys.has_tr s) : sys.valid_tr s (f s) := hf.h h
+
+instance {f} : sys.SimFn # sys.mk_sim_fn f := by
+  constructor
+  intro s h₁
+  unfold mk_sim_fn
+  split_ifs with h₂
+  · exact h₂
+  exact valid_tr_of_sim_fn_and_has_tr h₁

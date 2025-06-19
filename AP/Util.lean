@@ -2,6 +2,8 @@ import Init.Coe
 import Mathlib.Tactic.Ring
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.List.Basic
+import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Infix
 import Mathlib.Tactic.Linarith
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
@@ -905,3 +907,20 @@ theorem Nat.add_one_add {a b : ℕ} : a + 1 + b = a + b + 1 := by ring
 theorem Nat.add_one_sub {a b : ℕ} (h : b ≤ a) : a + 1 - b = a - b + 1 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   ring_nf; simp [nat_thm_aux₃]
+
+theorem List.eq_of_prefix_and_length_eq {α : Type} {xs ys zs : List α}
+(hx : xs <+: zs) (hy : ys <+: zs) (hn : xs.length = ys.length) : xs = ys := by
+  induction ys generalizing xs zs
+  · simp at hn; exact hn
+  nm y ys ih
+  cases xs
+  · simp at hn
+  nm x xs
+  simp at hn ⊢
+  cases zs
+  · simp at hx
+  nm z zs
+  simp at hx hy
+  constructor
+  · rw [hx.1, hy.1]
+  exact ih hx.2 hy.2 hn

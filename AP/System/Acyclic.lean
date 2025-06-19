@@ -33,9 +33,9 @@ n₁ = 0 → m₁ = 0 → sn = sm → n = m := by
   split at h₃
   · simp [←h₃] at h₂
   nm x b h₄
-  apply @h₁ a b (f a) (reachable_of_simulate ha) h₄
+  apply @h₁ a b (f a) (reachable_of_simulate ha.symm) h₄
   apply @reachable_of_simulate S T sys f b a m
-  rwa [h₃]
+  rw [h₃, ha]
 
 @[simp]
 theorem reachable_simulate {f} {s n} : sys.Reachable s (sys.simulate f s n).1 := by
@@ -65,7 +65,7 @@ theorem acyclic_of_reachable {a} [ha : sys.Acyclic a] {b}
   intro c d t h₁ h₂
   exact @ha c d t (h.trans h₁) h₂
 
-theorem simulate_fn_set_eq_simulate_of {f} [hf : sys.SimFn f] {a b t n}
+theorem simulate_fn_set_eq_of {f} [hf : sys.SimFn f] {a b t n}
 (h₁ : sys.valid_tr b t) (h₂ : ∀ k < n, (sys.simulate f a k).1 ≠ b) :
 sys.simulate (fn_set b t f) a n = sys.simulate f a n := by
   induction n generalizing a
@@ -122,118 +122,183 @@ theorem simulate_snd_eq_zero_of_has_tr {f} [hf : sys.SimFn f] {a n}
   nm x b h₁; clear x
   exact ih h
 
-#check 0 #exit
+theorem acyclic_of_tree {a} [ht : sys.Tree a] : sys.Acyclic a := by
+  classical
+  rw [tree_iff] at ht
+  rw [acyclic_iff]
+  intro b c t h₁ h₃ h₂
+  obtain ⟨ts₁, h₁⟩ := exi_trs_of_reachable h₁
+  obtain ⟨ts₂, h₂⟩ := exi_trs_of_reachable h₂
+  nm x y; clear x y
+  simp at h₃
+  specialize @ht ts₁ (ts₁ ++ t :: ts₂) _
+  · rw [trs_append]
+    simp [h₁, h₂, h₃]
+  simp at ht
 
-theorem simulate_snd_eq_zero_of_acyclic_and_trs_eq
-{f} [hf : sys.SimFn f] {a} [ha : sys.Acyclic a] {ts}
+instance {a} [ht : sys.Tree a] : sys.Acyclic a := acyclic_of_tree
+
+theorem simulate_eq_of_tr_eq_none {f a n}
+(h : sys.tr a (f a) = none) : sys.simulate f a n = (a, n) := by
+  cases n; rfl; nm n; simp [h]
+
+theorem exi_trs_of_simulate_eq {f a n r} (h₁ : sys.simulate f a n = r) :
+∃ ts, sys.trs a ts = (r.1, []) ∧ n = ts.length + r.2 := by
+  induction n generalizing a r
+  · use []
+    subst h₁
+    simp
+  nm n ih
+  simp at h₁
+  split at h₁
+  · use []
+    simp [←h₁]
+  nm x b h₂; clear x
+  specialize ih h₁
+  obtain ⟨ts, h₃, rfl⟩ := ih
+  use f a :: ts
+  simp [h₂, h₃, Nat.add_one_add]
+
+theorem simulate_snd_eq_zero_of_tree_and_trs_eq {f a} [ht : sys.Tree a] {ts}
 (h : sys.trs a ts = ((sys.simulate f a ts.length).1, [])) :
 (sys.simulate f a ts.length).2 = 0 := by
-  induction ts generalizing a
-  · rfl
-  nm t ts ih
-  simp at h ⊢
-  split at h <;> split at h <;> try simp at h
-  · nm x b h₁ y h₂; clear x y
-    exfalso
-    obtain ⟨c, hc⟩ := hf.1 # has_tr_of_eq_some h₁
-    simp [h₂] at hc
-  nm x b h₁ y c h₂; clear x y
-  have hb := acyclic_of_reachable # reachable_of_tr h₁
-  suffices h₃ : b = c
-    by
-      subst h₃
-      exact ih h
-  clear ih
+  generalize hr : sys.simulate f a ts.length = r at h ⊢
+  obtain ⟨ts₁, h₁, h₂⟩ := exi_trs_of_simulate_eq hr
+  obtain ⟨rfl⟩ := @ht.1 ts ts₁ # by rwa [h₁]
+  linarith
 
-#check 0 #exit
+theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited T]
+{a} [ha : sys.Acyclic a] {ts r}
+(h₁ : sys.trs a ts = r) : ∃ f, sys.SimFn f ∧
+∃ n, sys.simulate f a n = (r.1, 0) ∧ ts.length = n + r.2.length := by
+  symm at h₁
+  classical
+  induction ts generalizing a r
+  · use sys.dflt_sim_fn default, inferInstance, 0
+    simp [h₁]
+  nm t ts ih
+  simp at h₁
+  split at h₁
+  · nm x h₂; clear x
+    use sys.dflt_sim_fn default, inferInstance, 0
+    simp [h₁]
+  nm x b h₂; clear x
+  have hb := acyclic_of_reachable # reachable_of_tr h₂
+  specialize ih h₁
+  obtain ⟨f, hf, n, h₃, h₄⟩ := ih
+  have h₅ := valid_tr_of_eq_some h₂
+  use fn_set a t f, sim_fn_fn_set_of h₅, n + 1
+  simp [Nat.add_one_add, h₂, h₄]
+  rw [←h₃]
+  apply simulate_fn_set_eq_of h₅
+  clear h₅
+  intro k hk h₆
+  apply @ha.1 a b t (by rfl) h₂
+  exact reachable_of_simulate' h₆.symm
+
+theorem eq_of_tree_and_trs_eq {a} [ht : sys.Tree a] {ts₁ ts₂ b}
+(hb : sys.trs a ts₁ = (b, [])) (hc : sys.trs a ts₂ = (b, [])) : ts₁ = ts₂ := by
+  apply ht.1; rwa [hc]
 
 theorem exi_simulate_of_reachable {a b}
 [ht : Inhabited T] [ha : sys.Acyclic a] (h : sys.Reachable a b) :
-∃ (f : S → T), sys.SimFn f ∧ ∃ (n : ℕ), b = (sys.simulate f a n).1 := by
-  classical
-  obtain ⟨tr, h⟩ := exi_trs_of_reachable h; nm x; clear x
-  
-  induction tr generalizing a b
-  · use sys.dflt_sim_fn, inferInstance, 0
-    simp at h ⊢
-    rw [h]
-  
-  nm t ts ih
-  simp at h
-  split at h
-  · simp at h
-  nm x c h₁; clear x
-  
-  have hc := acyclic_of_reachable # reachable_of_tr h₁
-  specialize @ih c b _ h
-  obtain ⟨f, h₂, n, rfl⟩ := ih
-  use fn_set a t f
-  have h₃ := valid_tr_of_eq_some h₁
-  use sim_fn_fn_set_of h₃, n + 1
-  symm
-  congr 1
-  simp [h₁]
-  have h₄ := reachable_of_tr h₁
-  apply simulate_fn_set_eq_simulate_of h₃
-  clear h₃
-  
-  intro k h₆
-  have h₅ := @sim_full_inj_of_acyclic (ha := hc)
-  specialize @h₅ f _ k n
-  simp at h₅
-  have hk := h₆
-  contrapose! h₆
-  apply le_of_eq
-  symm
-  apply h₅ <;> clear h₅
-  · apply simulate_snd_eq_zero_of_has_tr
-    rw [h₆]
-    exact has_tr_of_eq_some h₁
-  · have hn : n = ts.length :=
-      by
-        sorry
-    -- have := @simulate_snd_eq_zero_of_le_of_eq_zero
-    --   S T sys f c k n (le_of_lt hk)
-    subst hn
-    exact simulate_snd_eq_zero_of_acyclic_and_trs_eq h
-  
-  -- replace ha : ∃ x, sys.Acyclic x ∧ sys.Reachable x a := by use a
-  -- obtain ⟨x, hx₁, hx₂⟩ := ha
-  -- induction h generalizing x
-  -- · clear b
-  --   nm b
-  --   use sys.dflt_sim_fn, inferInstance, 0
-  --   rfl
-  -- clear b
-  -- nm b c d t h₁ h₂ ih
-  -- obtain ⟨f, hf, n, hh⟩ := ih _ _ # reachable_right hx₂ h₁
-  -- clear ih h₂
-  -- use fn_set b t f
-  -- simp at h₁
-  -- have h₂ := valid_tr_of_eq_some h₁
-  -- use sim_fn_fn_set_of h₂, n + 1
-  -- simp [h₁]
-  -- symm
-  -- congr 1
-  -- apply simulate_fn_set_eq_simulate_of h₂
-  -- clear h₂
-  -- have h₄ := @sim_full_inj_of_acyclic (ha := hx₁)
-  -- specialize @h₄ f hf
-  -- simp at h₄
-  -- intro k hk h₃
-  -- specialize @h₄ k n
+∃ (f : S → T), sys.SimFn f ∧ ∃ (n : ℕ), (sys.simulate f a n).1 = b := by
+  obtain ⟨t, h₁⟩ := exi_trs_of_reachable h; clear h
+  obtain ⟨f, hf, n, h₂, h₃⟩ := exi_simulate_of_acyclic_and_trs_eq h₁
+  use f, hf, n
+  subst h₃
+  simp at h₂
+  rw [h₂]
+
+theorem trs_snd_eq_nil_of_prefix_and_eq_nil {a xs ys}
+(h₁ : xs <+: ys) (h₂ : (sys.trs a ys).2 = []) : (sys.trs a xs).2 = [] := by
+  induction xs generalizing a ys
+  · rfl
+  nm x xs ih
+  cases ys; simp at h₁
+  nm y ys
+  simp at h₁
+  rcases h₁ with ⟨rfl, h₁⟩
+  simp at h₂ ⊢
+  split at h₂
+  · simp at h₂
+  nm x c h₃; clear x
+  exact ih h₁ h₂
 
 #check 0 #exit
 
-theorem acyclic_iff_sim_full_inj {s} :
-sys.Acyclic s ↔ (∀ f [sys.SimFn f] n m,
-let (sn, n₁) := sys.simulate f s n
-let (sm, m₁) := sys.simulate f s m
+theorem exi_trs_nodup_states_of_trs_eq {a b ts}
+(h : sys.trs a ts = (b, [])) : ∃ ts', sys.trs a ts' = (b, []) ∧
+∀ (xs ys : List T), xs <+: ts' → ys <+: ts' →
+(sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys := by
+  classical
+  obtain ⟨cnd, h_cnd⟩ := hv # λ a ts =>
+    ∀ (xs ys : List T), xs <+: ts → ys <+: ts →
+    (sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys
+  suffices h₁ : ∃ ts', sys.trs a ts' = (b, []) ∧ cnd a ts'
+    by
+      rw [h_cnd] at h₁
+      exact h₁
+  obtain ⟨n, hn⟩ := hv ts.length
+  induction n using Nat.strong_induction_on generalizing a b ts
+  nm n ih
+  by_cases h₁ : cnd a ts
+  · use ts
+  simp [h_cnd] at h₁
+  obtain ⟨xs, hx, ys, hy, h₁, h₂⟩ := h₁
+  subst hn
+  
+  wlog hxy : xs.length < ys.length with ih₁
+  · simp at hxy
+    apply @ih₁ S T sys cnd h_cnd a b ts h ys hy xs hx
+      h₁.symm (by rwa [eq_comm]) ih _
+    apply lt_of_le_of_ne hxy
+    contrapose! h₂
+    symm at h₂
+    exact List.eq_of_prefix_and_length_eq hx hy h₂
+  nm x₁ x₂ x₃; clear! x₁ x₂ x₃
+  
+  have h₃ := List.prefix_of_prefix_length_le hx hy # le_of_lt hxy
+  
+  obtain ⟨c, hc⟩ : ∃ b, sys.trs a xs = (b, []) :=
+    by
+      use (sys.trs a xs).1
+      ext1 <;> try rfl
+      dsimp
+      apply trs_snd_eq_nil_of_prefix_and_eq_nil hx
+      simp [h]
+  
+  have h₄ := Nat.lt_of_lt_of_le hxy hy.length_le
+  have h₅ := @ih xs.length h₄ a c xs hc rfl
+  obtain ⟨ts', h₅, h₆⟩ := h₅
+  use ts' ++ ts.drop ys.length
+  constructor
+  · simp [trs_append, h₅]
+    sorry
+  · sorry
+
+#check 0 #exit
+
+theorem exi_nodup_trs_of_reachable {a b} (h : sys.Reachable a b) :
+∃ (ts : List T), sys.trs a ts = (b, []) ∧ ts.Nodup := by
+  replace h := exi_trs_of_reachable h
+  obtain ⟨ts, h₁⟩ := h
+  rw [←h₁]
+
+#check 0 #exit
+
+theorem acyclic_iff_sim_full_inj {a} :
+sys.Acyclic a ↔ (∀ f [sys.SimFn f] n m,
+let (sn, n₁) := sys.simulate f a n
+let (sm, m₁) := sys.simulate f a m
 n₁ = 0 → m₁ = 0 → sn = sm → n = m) := by
   constructor
   · intro h₁ f hf n m
     exact sim_full_inj_of_acyclic
-  sorry
+  intro h
+  simp at h
+  constructor
+  intro b c t h₁ h₂ h₃
 
 #check 0 #exit
 
@@ -276,3 +341,20 @@ example {s} :
 -- theorem reachable_iff_exi_simulate {s₁ s₂} :
 -- sys.Reachable s₁ s₂ ↔ ∃ (f : S → T), sys.SimFn f ∧
 -- ∃ n, s₂ = (sys.simulate f s₁ n).1 := by
+
+-- |.| theorem tr!_eq_of_valid {sys : System S T} {s t} : sys.valid_tr s t → sys.tr! s t = s' → sys.tr s t = some s'
+-- |.| theorem tr!_idempotent {sys : System S T} {s t} : ¬sys.valid_tr s t → sys.tr! s t = s
+-- |.| theorem trs_termination {sys : System S T} : ∀ s ts, ∃ s' rem, sys.trs s ts = (s', rem) ∧ rem.length ≤ ts.length
+-- |.| theorem trs_reachable {sys : System S T} : ∀ s ts s', sys.trs s ts = (s', []) → sys.Reachable s s'
+-- |.| theorem simulate_monotonic {sys f s n} : sys.simulate f s n = (s₁, k) → ∀ m < n, ∃ s₂ l, sys.simulate f s m = (s₂, l)
+-- |.| theorem simulate_halts {sys f s} : (∀ s', ¬sys.has_tr s') → ∀ n, ∃ k s', sys.simulate f s n = (s', k) ∧ k > 0
+-- |.| theorem reachable_trans {sys : System S T} : ∀ {a b c}, sys.Reachable a b → sys.Reachable b c → sys.Reachable a c
+-- |.| theorem reachable_via_simulate {sys f s n} : sys.simulate f s n = (s', 0) → sys.Reachable s s'
+-- |.| theorem simFn_exists [DecidableHasTr sys] : ∃ f, sys.SimFn f
+-- |.| theorem simulate_deterministic {sys f} [SimFn sys f] : ∀ s n, ∃! s' k, sys.simulate f s n = (s', k)
+-- |.| theorem SimInj_acyclic {sys s} [SimInj sys s] {f} [SimFn sys f] : ∀ n m, n < m → sys.simulate f s n = (sn, _) → sys.simulate f s m = (sm, _) → sn ≠ sm
+-- |.| theorem SimInj_finite_termination [Finite S] {sys s} [SimInj sys s] {f} [SimFn sys f] : ∃ N, ∀ n ≥ N, ∃ k > 0, sys.simulate f s n = (_, k)
+-- |.| theorem trs_append_valid {sys s ts₁ ts₂} : (∀ t ∈ ts₁, sys.valid_tr (current_state) t) → sys.trs s (ts₁ ++ ts₂) = sys.trs (sys.trs s ts₁).fst ts₂
+-- |.| theorem simulate_step {sys f s n} : sys.simulate f s (n+1) = match sys.tr s (f s) with | none => (s, n+1) | some s' => sys.simulate f s' n
+-- |.| f(0)=0 /\ f(n+1)=f(f(n))
+-- |.| (ts.inits.map # λ xs => (sys.trs a xs).1).Nodup
