@@ -225,7 +225,7 @@ theorem trs_snd_eq_nil_of_prefix_and_eq_nil {a xs ys}
   nm x c h₃; clear x
   exact ih h₁ h₂
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem exi_trs_nodup_states_of_trs_eq {a b ts}
 (h : sys.trs a ts = (b, [])) : ∃ ts', sys.trs a ts' = (b, []) ∧
@@ -256,11 +256,12 @@ theorem exi_trs_nodup_states_of_trs_eq {a b ts}
     contrapose! h₂
     symm at h₂
     exact List.eq_of_prefix_and_length_eq hx hy h₂
+  have h₄ := Nat.lt_of_lt_of_le hxy hy.length_le
   nm x₁ x₂ x₃; clear! x₁ x₂ x₃
   
   have h₃ := List.prefix_of_prefix_length_le hx hy # le_of_lt hxy
   
-  obtain ⟨c, hc⟩ : ∃ b, sys.trs a xs = (b, []) :=
+  obtain ⟨c, hcx⟩ : ∃ c, sys.trs a xs = (c, []) :=
     by
       use (sys.trs a xs).1
       ext1 <;> try rfl
@@ -268,14 +269,18 @@ theorem exi_trs_nodup_states_of_trs_eq {a b ts}
       apply trs_snd_eq_nil_of_prefix_and_eq_nil hx
       simp [h]
   
-  have h₄ := Nat.lt_of_lt_of_le hxy hy.length_le
-  have h₅ := @ih xs.length h₄ a c xs hc rfl
-  obtain ⟨ts', h₅, h₆⟩ := h₅
-  use ts' ++ ts.drop ys.length
-  constructor
-  · simp [trs_append, h₅]
+  have hcy : sys.trs a ys = (c, []) :=
+    by
+      sorry
+  
+  have h₅ := @ih (ts.length + xs.length - ys.length)
+  specialize @h₅ _ a c (xs ++ ts.drop ys.length) _ _
+  · clear h₅
     sorry
-  sorry -- use ih again
+  · clear h₅
+    sorry
+  · clear h₅
+    simp
 
 #check 0 #exit
 
