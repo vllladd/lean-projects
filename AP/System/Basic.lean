@@ -4,6 +4,38 @@ namespace System
 
 variable {S T} {sys : System S T}
 
+noncomputable
+def dflt_sim_fn [Inhabited # S → T] : S → T :=
+  by classical exact
+  λ s => if h : sys.has_tr s then h.choose else (default : S → T) s
+
+instance [Inhabited # S → T] : sys.SimFn sys.dflt_sim_fn := by
+  constructor
+  intro s h₁
+  unfold dflt_sim_fn
+  split_ifs
+  exact h₁.choose_spec
+
+noncomputable
+def mk_sim_fn (f : S → T) : S → T := by
+  classical
+  intro s
+  by_cases h : sys.valid_tr s # f s
+  · exact f s
+  haveI : Inhabited # S → T := ⟨λ _ => f s⟩
+  use sys.dflt_sim_fn s
+
+theorem valid_tr_of_sim_fn_and_has_tr {f} [hf : sys.SimFn f] {s}
+(h : sys.has_tr s) : sys.valid_tr s (f s) := hf.h h
+
+instance {f} : sys.SimFn # sys.mk_sim_fn f := by
+  constructor
+  intro s h₁
+  unfold mk_sim_fn
+  split_ifs with h₂
+  · exact h₂
+  exact valid_tr_of_sim_fn_and_has_tr h₁
+
 @[simp, refl]
 theorem Reachable.refl' {a} : sys.Reachable a a :=
   Reachable.refl
@@ -270,32 +302,3 @@ theorem acyclic_iff {s} : sys.Acyclic s ↔
 theorem tree_iff {s} : sys.Tree s ↔
 ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂ :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
-
-noncomputable
-def dflt_sim_fn (t : T) : S → T :=
-  by classical exact
-  λ s => if h : sys.has_tr s then h.choose else t
-
-instance {t : T} : sys.SimFn # sys.dflt_sim_fn t := by
-  constructor
-  intro s h₁
-  unfold dflt_sim_fn
-  split_ifs
-  exact h₁.choose_spec
-
-noncomputable
-def mk_sim_fn (f : S → T) : S → T :=
-  by classical exact
-  λ s => if sys.valid_tr s (f s) then f s else
-  sys.dflt_sim_fn (f s) s
-
-theorem valid_tr_of_sim_fn_and_has_tr {f} [hf : sys.SimFn f] {s}
-(h : sys.has_tr s) : sys.valid_tr s (f s) := hf.h h
-
-instance {f} : sys.SimFn # sys.mk_sim_fn f := by
-  constructor
-  intro s h₁
-  unfold mk_sim_fn
-  split_ifs with h₂
-  · exact h₂
-  exact valid_tr_of_sim_fn_and_has_tr h₁

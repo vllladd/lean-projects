@@ -4,6 +4,13 @@ namespace System
 
 variable {S T} {sys : System S T}
 
+def trs_nodup_states' (a : S) (ts : List T) : Prop :=
+  ∀ (xs ys : List T), xs <+: ts → ys <+: ts →
+  (sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys
+
+def trs_nodup_states (a : S) (ts : List T) (b : S) : Prop :=
+  sys.trs a ts = (b, []) ∧ sys.trs_nodup_states' a ts
+
 theorem sim_full_inj_of_acyclic {s} [ha : sys.Acyclic s]
 {f} [hf : sys.SimFn f] {n m} :
 let (sn, n₁) := sys.simulate f s n
@@ -167,20 +174,20 @@ theorem simulate_snd_eq_zero_of_tree_and_trs_eq {f a} [ht : sys.Tree a] {ts}
   obtain ⟨rfl⟩ := @ht.1 ts ts₁ # by rwa [h₁]
   linarith
 
-theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited T]
+theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited # S → T]
 {a} [ha : sys.Acyclic a] {ts r}
 (h₁ : sys.trs a ts = r) : ∃ f, sys.SimFn f ∧
 ∃ n, sys.simulate f a n = (r.1, 0) ∧ ts.length = n + r.2.length := by
   symm at h₁
   classical
   induction ts generalizing a r
-  · use sys.dflt_sim_fn default, inferInstance, 0
+  · use sys.dflt_sim_fn, inferInstance, 0
     simp [h₁]
   nm t ts ih
   simp at h₁
   split at h₁
   · nm x h₂; clear x
-    use sys.dflt_sim_fn default, inferInstance, 0
+    use sys.dflt_sim_fn, inferInstance, 0
     simp [h₁]
   nm x b h₂; clear x
   have hb := acyclic_of_reachable # reachable_of_tr h₂
@@ -201,7 +208,7 @@ theorem eq_of_tree_and_trs_eq {a} [ht : sys.Tree a] {ts₁ ts₂ b}
   apply ht.1; rwa [hc]
 
 theorem exi_simulate_of_reachable {a b}
-[ht : Inhabited T] [ha : sys.Acyclic a] (h : sys.Reachable a b) :
+[ht : Inhabited # S → T] [ha : sys.Acyclic a] (h : sys.Reachable a b) :
 ∃ (f : S → T), sys.SimFn f ∧ ∃ (n : ℕ), (sys.simulate f a n).1 = b := by
   obtain ⟨t, h₁⟩ := exi_trs_of_reachable h; clear h
   obtain ⟨f, hf, n, h₂, h₃⟩ := exi_simulate_of_acyclic_and_trs_eq h₁
@@ -225,12 +232,8 @@ theorem trs_snd_eq_nil_of_prefix_and_eq_nil {a xs ys}
   nm x c h₃; clear x
   exact ih h₁ h₂
 
-#check 0 #exit
-
-theorem exi_trs_nodup_states_of_trs_eq {a b ts}
-(h : sys.trs a ts = (b, [])) : ∃ ts', sys.trs a ts' = (b, []) ∧
-∀ (xs ys : List T), xs <+: ts' → ys <+: ts' →
-(sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys := by
+theorem exi_trs_nodup_states_of_trs_eq {a b ts} (h : sys.trs a ts = (b, [])) :
+∃ ts', sys.trs_nodup_states a ts' b := by
   classical
   obtain ⟨cnd, h_cnd⟩ := hv # λ a ts =>
     ∀ (xs ys : List T), xs <+: ts → ys <+: ts →
@@ -271,24 +274,129 @@ theorem exi_trs_nodup_states_of_trs_eq {a b ts}
   
   have hcy : sys.trs a ys = (c, []) :=
     by
-      sorry
+      ext1
+      · rw [←h₁, hcx]
+      apply trs_snd_eq_nil_of_prefix_and_eq_nil hy
+      rw [h]
   
-  have h₅ := @ih (ts.length + xs.length - ys.length)
-  specialize @h₅ _ a c (xs ++ ts.drop ys.length) _ _
-  · clear h₅
-    sorry
-  · clear h₅
-    sorry
-  · clear h₅
+  have h₅ := List.IsPrefix.length_le hy
+  
+  have h₆ := @ih (ts.length + xs.length - ys.length)
+  apply @h₆ _ a b (xs ++ ts.drop ys.length) _ _
+  · omega
+  · clear h₆
+    simp [trs_append, hcx]
+    obtain ⟨zs, rfl⟩ := hy
+    simp [trs_append, hcy] at h
+    simpa
+  · clear h₆
     simp
+    omega
+
+theorem exi_trs_nodup_states_of_reachable {a b} (h : sys.Reachable a b) :
+∃ (ts : List T), sys.trs_nodup_states a ts b := by
+  replace h := exi_trs_of_reachable h
+  obtain ⟨ts, h₁⟩ := h
+  exact exi_trs_nodup_states_of_trs_eq h₁
+
+theorem trs_nodup_states'_of_cons_and_tr_to {a b t ts}
+(h₁ : sys.trs_nodup_states' a (t :: ts)) (h₂ : sys.tr_to a t b) :
+sys.trs_nodup_states' b ts := by
+  reduce at h₁ h₂
+  intro xs ys h₃ h₄ h₅
+  specialize h₁ (t :: xs) (t :: ys) (by simpa) (by simpa) (by simpa [h₂])
+  simp at h₁
+  exact h₁
+
+theorem exi_trs_prefix_of_simulate_le {f a b c n m}
+(h₁ : n ≤ m)
+(h₂ : sys.simulate f a n = (b, 0))
+(h₃ : sys.simulate f a m = (c, 0)) :
+∃ xs ys, xs <+: ys ∧ sys.trs a xs = (b, []) ∧ sys.trs a ys = (c, []) := by
+  classical
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
+  obtain ⟨xs, hx, rfl⟩ := exi_trs_of_simulate_eq h₂
+  dsimp at *
+  simp [simulate_add, h₂] at h₃
+  obtain ⟨ys, hy, rfl⟩ := exi_trs_of_simulate_eq h₃
+  dsimp at *
+  use xs, xs ++ ys, (by simp), hx
+  simpa [trs_append, hx]
 
 #check 0 #exit
 
-theorem exi_nodup_trs_of_reachable {a b} (h : sys.Reachable a b) :
-∃ (ts : List T), sys.trs a ts = (b, []) ∧ ts.Nodup := by
-  replace h := exi_trs_of_reachable h
-  obtain ⟨ts, h₁⟩ := h
-  rw [←h₁]
+theorem exi_trs_prefix_and_ne_of_simulate_lt {f a b c n m}
+(h₁ : n < m)
+(h₂ : sys.simulate f a n = (b, 0))
+(h₃ : sys.simulate f a m = (c, 0)) :
+∃ xs ys, xs <+: ys ∧ xs ≠ ys ∧ sys.trs a xs = (b, []) ∧ sys.trs a ys = (c, []) := by
+  classical
+  obtain ⟨xs, ys, h₄, h₅, h₆⟩ := exi_trs_prefix_of_simulate_le (le_of_lt h₁) h₂ h₃
+  by_cases hx : xs ≠ ys
+  · use xs, ys
+  simp at hx
+  subst hx
+  simp [h₅] at h₆
+  subst h₆
+  rw [←h₃] at h₂
+  clear h₄
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt h₁
+  clear h₁
+  simp at h₂
+  split at h₂
+  · contrapose! h₂
+    apply ne_of_congr (·.2 = 0)
+    simp
+    apply simulate_snd_eq_zero_of_le_of_eq_zero (by linarith : n ≤ n + m + 1)
+    rw [h₃]
+  nm x c h₄; clear x
+  
+  have h₆ : sys.simulate f a n = (b, 0) := by simpa [h₄, ←h₃]
+  
+  clear! xs
+  obtain ⟨xs, ys, h₁, h₅, h₇⟩ := exi_trs_prefix_of_simulate_le (by linarith) h₆ h₃
+  use xs, ys, h₁
+  constructor
+  · 
+
+#check 0 #exit
+
+theorem exi_simulate_of_trs_nodup_states {a b ts} [ht : Inhabited # S → T]
+(h : sys.trs_nodup_states a ts b) :
+∃ f, sys.SimFn f ∧ sys.simulate f a ts.length = (b, 0) := by
+  induction ts generalizing a
+  · use sys.dflt_sim_fn, inferInstance
+    reduce at h
+    simp at h
+    simp [h]
+  nm t ts ih
+  obtain ⟨h₁, h₂⟩ := h
+  simp [trs_append] at h₁
+  split at h₁
+  · simp at h₁
+  nm m c h₃; clear m
+  specialize @ih c _
+  · use h₁, trs_nodup_states'_of_cons_and_tr_to h₂ h₃
+  obtain ⟨f, hf, ih⟩ := ih
+  have h₄ := valid_tr_of_eq_some h₃
+  use fn_set a t f, sim_fn_fn_set_of h₄
+  simp [h₃]
+  rw [←ih]
+  apply simulate_fn_set_eq_of h₄
+  intro k hk h₅
+  
+  replace h₅ : sys.simulate f c k = (a, 0) :=
+    by
+      ext1
+      · use h₅
+      dsimp
+      apply simulate_snd_eq_zero_of_le_of_eq_zero # le_of_lt hk
+      rw [ih]
+  
+  obtain ⟨xs, ys, hx, h₆, h₇⟩ := exi_trs_prefix_of_simulate_le
+    (le_of_lt hk) h₅ ih
+  specialize h₂ (t :: xs) (t :: ys)
+  simp [h₃, h₆, h₇] at h₂
 
 #check 0 #exit
 
@@ -304,6 +412,9 @@ n₁ = 0 → m₁ = 0 → sn = sm → n = m) := by
   simp at h
   constructor
   intro b c t h₁ h₂ h₃
+  obtain ⟨xs, hx⟩ := exi_trs_nodup_states_of_reachable h₁
+  obtain ⟨ys, hy⟩ := exi_trs_nodup_states_of_reachable h₃
+  clear h₁ h₃
 
 #check 0 #exit
 
