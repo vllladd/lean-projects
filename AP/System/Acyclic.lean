@@ -308,11 +308,11 @@ sys.trs_nodup_states' b ts := by
   simp at h₁
   exact h₁
 
-theorem exi_trs_prefix_of_simulate_le {f a b c n m}
-(h₁ : n ≤ m)
+theorem exi_trs_prefix_of_simulate_le {f a b c n m} (h₁ : n ≤ m)
 (h₂ : sys.simulate f a n = (b, 0))
 (h₃ : sys.simulate f a m = (c, 0)) :
-∃ xs ys, xs <+: ys ∧ sys.trs a xs = (b, []) ∧ sys.trs a ys = (c, []) := by
+∃ xs ys, xs <+: ys ∧ xs.length = n ∧ ys.length = m ∧
+sys.trs a xs = (b, []) ∧ sys.trs a ys = (c, []) := by
   classical
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
   obtain ⟨xs, hx, rfl⟩ := exi_trs_of_simulate_eq h₂
@@ -320,83 +320,164 @@ theorem exi_trs_prefix_of_simulate_le {f a b c n m}
   simp [simulate_add, h₂] at h₃
   obtain ⟨ys, hy, rfl⟩ := exi_trs_of_simulate_eq h₃
   dsimp at *
-  use xs, xs ++ ys, (by simp), hx
+  use xs, xs ++ ys, (by simp), (by rfl), (by simp), hx
   simpa [trs_append, hx]
 
-#check 0 #exit
+theorem has_tr_of_valid_tr {a t} (h : sys.valid_tr a t) : sys.has_tr a := ⟨t, h⟩
 
-theorem exi_trs_prefix_and_ne_of_simulate_lt {f a b c n m}
-(h₁ : n < m)
-(h₂ : sys.simulate f a n = (b, 0))
-(h₃ : sys.simulate f a m = (c, 0)) :
-∃ xs ys, xs <+: ys ∧ xs ≠ ys ∧ sys.trs a xs = (b, []) ∧ sys.trs a ys = (c, []) := by
-  classical
-  obtain ⟨xs, ys, h₄, h₅, h₆⟩ := exi_trs_prefix_of_simulate_le (le_of_lt h₁) h₂ h₃
-  by_cases hx : xs ≠ ys
-  · use xs, ys
-  simp at hx
-  subst hx
-  simp [h₅] at h₆
-  subst h₆
-  rw [←h₃] at h₂
-  clear h₄
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt h₁
-  clear h₁
-  simp at h₂
-  split at h₂
-  · contrapose! h₂
-    apply ne_of_congr (·.2 = 0)
-    simp
-    apply simulate_snd_eq_zero_of_le_of_eq_zero (by linarith : n ≤ n + m + 1)
-    rw [h₃]
-  nm x c h₄; clear x
-  
-  have h₆ : sys.simulate f a n = (b, 0) := by simpa [h₄, ←h₃]
-  
-  clear! xs
-  obtain ⟨xs, ys, h₁, h₅, h₇⟩ := exi_trs_prefix_of_simulate_le (by linarith) h₆ h₃
-  use xs, ys, h₁
-  constructor
-  · 
+@[simp]
+theorem valid_tr_iff_of_sim_fn {f} [h : sys.SimFn f] {a} :
+sys.valid_tr a (f a) ↔ sys.has_tr a := ⟨has_tr_of_valid_tr, @h.1 a⟩
 
-#check 0 #exit
+theorem snd_le_of_simulate_eq {f a b n m}
+(h : sys.simulate f a n = (b, m)) : m ≤ n := by
+  contrapose! h
+  apply ne_of_congr (·.2)
+  simp
+  apply ne_of_lt
+  have h₁ : (sys.simulate f a n).2 ≤ n := simulate_snd_le
+  linarith
+
+theorem simulate_eq_of_simulate_add_eq_add {f a b n m k}
+(h : sys.simulate f a (n + k) = (b, m + k)) : sys.simulate f a n = (b, m) := by
+  induction k generalizing n m
+  · exact h
+  nm k ih
+  rw [←add_assoc] at h
+  specialize @ih (n + 1) (m + 1) _
+  · ring_nf at h ⊢
+    exact h
+  clear h
+  induction n generalizing m a
+  · simp at ih
+    split at ih
+    · simp at ih
+      simp [ih.1, ih.2]
+    simp at ih
+  nm n ih₁
+  simp
+  split
+  · nm x h₁
+    rw [simulate_eq_of_tr_eq_none h₁] at ih
+    simp at ih
+    simp [ih]
+  nm x c h₁
+  unfold simulate at ih
+  simp only [h₁] at ih
+  exact ih₁ ih
+
+theorem simulate_sub_eq_of {f a b n m}
+(h : sys.simulate f a n = (b, m)) : sys.simulate f a (n - m) = (b, 0) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le # snd_le_of_simulate_eq h
+  simp
+  change _ = (b, m + 0) at h
+  rw [add_comm] at h
+  nth_rewrite 2 [add_comm] at h
+  exact simulate_eq_of_simulate_add_eq_add h
+
+theorem simulate_eq_of_iter {f : S → T} {n k}
+(hk : k ≤ n) (g : ℕ → S)
+(h₁ : ∀ k < n, sys.valid_tr (g k) (f # g k))
+(h₂ : ∀ k < n, sys.tr (g k) (f # g k) = g (k + 1)) :
+sys.simulate f (g 0) k = (g k, 0) := by
+  sorry
+
+-- #check 0 #exit
 
 theorem exi_simulate_of_trs_nodup_states {a b ts} [ht : Inhabited # S → T]
 (h : sys.trs_nodup_states a ts b) :
 ∃ f, sys.SimFn f ∧ sys.simulate f a ts.length = (b, 0) := by
-  induction ts generalizing a
-  · use sys.dflt_sim_fn, inferInstance
-    reduce at h
-    simp at h
-    simp [h]
-  nm t ts ih
-  obtain ⟨h₁, h₂⟩ := h
-  simp [trs_append] at h₁
+  obtain ⟨f, hf⟩ := hv # sys.mk_sim_fn # λ s =>
+    ts[nat_find # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dflt_sim_fn s
+  use f
+  constructor
+  · rw [hf]; infer_instance
+  generalize hn : ts.length = n
+  rcases h with ⟨h₁, h₂⟩
+  suffices h : ∀ k ≤ n, sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) by
+    specialize h _ (by rfl)
+    subst hn
+    simp [h₁] at h
+    exact h
+  intro k hk
+  apply simulate_eq_of_iter hk # λ k => (sys.trs a # ts.take k).1
+    <;> clear! k <;> intro k hk
+  · sorry
+  · sorry
+
+#check 0 #exit
+
+  induction n generalizing a ts f
+  · subst hf
+    simp at hn
+    subst hn
+    simp at h₁
+    simpa [mk_sim_fn]
+  nm n ih
+  cases ts <;> simp at hn
+  nm t ts
+  simp at h₁
   split at h₁
   · simp at h₁
-  nm m c h₃; clear m
-  specialize @ih c _
-  · use h₁, trs_nodup_states'_of_cons_and_tr_to h₂ h₃
-  obtain ⟨f, hf, ih⟩ := ih
-  have h₄ := valid_tr_of_eq_some h₃
-  use fn_set a t f, sim_fn_fn_set_of h₄
-  simp [h₃]
-  rw [←ih]
-  apply simulate_fn_set_eq_of h₄
-  intro k hk h₅
-  
-  replace h₅ : sys.simulate f c k = (a, 0) :=
+  nm x c hc; clear x
+  have h₃ : f a = t :=
     by
-      ext1
-      · use h₅
-      dsimp
-      apply simulate_snd_eq_zero_of_le_of_eq_zero # le_of_lt hk
-      rw [ih]
+      clear ih
+      subst hf
+      dsimp [mk_sim_fn]
+      rw [nat_find_eq_of (n := 0)]
+      rotate_left
+      · rfl
+      · simp
+      simp
+      intro h₃
+      contrapose! h₃
+      exact valid_tr_of_eq_some hc
+  simp [h₃, hc]
+  specialize @ih c ts (fn_set a t f) _ hn h₁ _
+  · ext x
+    sorry
+  · exact trs_nodup_states'_of_cons_and_tr_to h₂ hc
+  rw [←ih]; clear ih
+  symm
+  haveI hfi : sys.SimFn f := by rw [hf]; infer_instance
+  clear hf
+  apply simulate_fn_set_eq_of # valid_tr_of_eq_some hc
+  intro k hk h₄
   
-  obtain ⟨xs, ys, hx, h₆, h₇⟩ := exi_trs_prefix_of_simulate_le
-    (le_of_lt hk) h₅ ih
-  specialize h₂ (t :: xs) (t :: ys)
-  simp [h₃, h₆, h₇] at h₂
+  replace h₄ : ∃ m, sys.simulate f c k = (a, m) :=
+    by
+      use (sys.simulate f c k).2
+      ext
+      use h₄
+      rfl
+  obtain ⟨m, h₄⟩ := h₄
+  replace h₄ : ∃ k < n, sys.simulate f c k = (a, 0) :=
+    by
+      use k - m
+      exact ⟨by omega, simulate_sub_eq_of h₄⟩
+  clear! k
+  obtain ⟨k, hk, h₄⟩ := h₄
+  replace h₄ : ∃ xs, xs.length < n ∧ xs ≠ [t] ∧
+    xs <+: t :: ts ∧ sys.trs a xs = (a, []) :=
+    by
+      cases k
+      · simp at h₄
+        subst h₄
+        use []
+        simpa
+      nm k
+      replace h₄ : sys.simulate f a (k + 2) = (a, 0) := by simpa [h₃, hc]
+      have h₅ : sys.simulate f a 1 = (c, 0) := by simp [h₃, hc]
+      replace h₄ := exi_trs_prefix_of_simulate_le (by linarith) h₅ h₄
+      obtain ⟨xs, ys, h₄, h₆, h₇, h₈, h₉⟩ := h₄
+      use ys
+      simp [h₉]
+      constructor
+      · sorry
+      constructor
+      · rintro rfl
+        simp at h₇
 
 #check 0 #exit
 

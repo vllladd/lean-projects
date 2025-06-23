@@ -924,3 +924,18 @@ theorem List.eq_of_prefix_and_length_eq {α : Type} {xs ys zs : List α}
   constructor
   · rw [hx.1, hy.1]
   exact ih hx.2 hy.2 hn
+
+theorem fintype_exi_iter_cycle {α : Type} [ha : Fintype α]
+{f : α → α} {x : α} : ∃ n m, n < m ∧ f^[n] x = f^[m] x := by
+  obtain ⟨g, hg⟩ := hv # λ n => f^[n] x
+  suffices h : ∃ n m, g n = g m ∧ n ≠ m by
+    subst hg
+    obtain ⟨n, m, h₁, h₂⟩ := h
+    wlog h₃ : n < m with ih
+    · symm at h₁
+      apply @ih α _ f x m n h₁ h₂.symm _
+      simp at h₃
+      exact Nat.lt_of_le_of_ne h₃ h₂.symm
+    use n, m
+  by_contra! h₁
+  exact Fintype.false # Fintype.ofInjective g h₁
