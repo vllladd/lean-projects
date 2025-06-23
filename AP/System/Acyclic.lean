@@ -375,12 +375,43 @@ theorem simulate_sub_eq_of {f a b n m}
   nth_rewrite 2 [add_comm] at h
   exact simulate_eq_of_simulate_add_eq_add h
 
-theorem simulate_eq_of_iter {f : S → T} {n k}
+theorem simulate_eq_of_iter_le {f : S → T} {n k}
 (hk : k ≤ n) (g : ℕ → S)
 (h₁ : ∀ k < n, sys.valid_tr (g k) (f # g k))
 (h₂ : ∀ k < n, sys.tr (g k) (f # g k) = g (k + 1)) :
 sys.simulate f (g 0) k = (g k, 0) := by
-  sorry
+  induction k
+  · rfl
+  nm k ih
+  specialize ih # by linarith
+  cases n <;> simp at hk
+  nm n
+  specialize h₂ k # by linarith
+  rw [simulate_add]
+  simp [ih, h₂]
+
+theorem simulate_eq_of_iter {f : S → T} {n} (g : ℕ → S)
+(h₁ : ∀ k < n, sys.valid_tr (g k) (f # g k))
+(h₂ : ∀ k < n, sys.tr (g k) (f # g k) = g (k + 1)) :
+sys.simulate f (g 0) n = (g n, 0) := by
+  apply simulate_eq_of_iter_le # by rfl
+  all_goals assumption
+
+theorem has_tr_trs_of_prefix {a b xs ys}
+(h₁ : sys.trs a ys = (b, [])) (h₂ : xs <+: ys) (h₃ : xs ≠ ys) :
+sys.has_tr (sys.trs a xs).1 := by
+  classical
+  obtain ⟨ys, rfl⟩ := h₂
+  cases ys
+  · simp at h₃
+  nm y ys
+  clear h₃
+  simp [trs_append] at h₁
+  split_ifs at h₁ with h₂
+  · split at h₁ <;> simp at h₁
+    nm x c h₃; clear x
+    exact has_tr_of_eq_some h₃
+  simp at h₁
 
 -- #check 0 #exit
 
@@ -400,10 +431,18 @@ theorem exi_simulate_of_trs_nodup_states {a b ts} [ht : Inhabited # S → T]
     simp [h₁] at h
     exact h
   intro k hk
-  apply simulate_eq_of_iter hk # λ k => (sys.trs a # ts.take k).1
+  apply simulate_eq_of_iter_le hk # λ k => (sys.trs a # ts.take k).1
     <;> clear! k <;> intro k hk
-  · sorry
-  · sorry
+  · rw [hf]
+    apply valid_tr_of_sim_fn_and_has_tr
+    apply has_tr_trs_of_prefix h₁ # List.take_prefix k ts
+    apply ne_of_congr (·.length)
+    simpa [hn]
+  subst hf
+  unfold mk_sim_fn
+  dsimp
+  rw [nat_find_eq_of (n := k)]
+  all_goals sorry
 
 #check 0 #exit
 
