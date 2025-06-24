@@ -960,3 +960,40 @@ theorem List.prefix_of_prefix_snoc_and_ne {α : Type} {xs ys : List α} {y : α}
   simp at h₂
   simp
   exact ih h₁ h₂
+
+theorem List.right_induction {α : Type} {P : List α → Prop}
+(h₁ : P []) (h₂ : ∀ xs x, P xs → P (xs ++ [x])) (xs : List α) : P xs := by
+  generalize h : xs.reverse = ys
+  induction ys generalizing xs
+  · simp at h
+    rwa [h]
+  nm y ys ih
+  replace h := congrArg (·.reverse) h
+  simp at h
+  subst h
+  apply h₂
+  apply ih
+  simp
+
+@[simp]
+theorem List.append_prefix_left_iff {α : Type} {xs ys : List α} :
+xs ++ ys <+: xs ↔ ys = [] := by
+  symm
+  constructor
+  · rintro rfl; simp
+  rintro ⟨zs, h⟩
+  simp at h
+  exact h.1
+
+@[simp]
+theorem List.prefix_snoc_iff {α : Type} {xs ys : List α} {y : α} :
+xs <+: ys ++ [y] ↔ xs <+: ys ∨ xs = ys ++ [y] := by
+  induction xs generalizing ys y
+  · simp
+  nm x xs ih
+  cases ys
+  · simp
+  nm z ys
+  simp
+  by_cases h : x = z <;> simp [h]
+  exact ih
