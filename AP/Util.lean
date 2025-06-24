@@ -943,3 +943,20 @@ theorem fintype_exi_iter_cycle {α : Type} [ha : Fintype α]
 @[simp]
 theorem list_take_prefix {α : Type} {xs : List α} {k : ℕ} : xs.take k <+: xs := by
   apply List.take_prefix
+
+theorem List.prefix_of_prefix_snoc_and_ne {α : Type} {xs ys : List α} {y : α}
+(h₁ : xs <+: ys ++ [y]) (h₂ : xs ≠ ys ++ [y]) : xs <+: ys := by
+  induction ys generalizing xs y
+  · cases xs; rfl
+    nm x xs
+    simp at h₁ h₂
+    tauto
+  nm z zs ih
+  cases xs
+  · simp
+  nm x xs
+  simp at h₁
+  rcases h₁ with ⟨rfl, h₁⟩
+  simp at h₂
+  simp
+  exact ih h₁ h₂

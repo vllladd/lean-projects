@@ -157,26 +157,6 @@ theorem exi_trs_of_reachable {a b} (h : sys.Reachable a b) :
   reduce at h₁
   simpa [h₁]
 
-theorem exi_trs_nil_of_trs {a b ts} (h : (sys.trs a ts).1 = b) :
-∃ ts', sys.trs a ts' = (b, []) := by
-  induction ts generalizing a
-  · simp at h
-    subst h
-    use []
-    rfl
-  nm t ts ih
-  simp at h
-  split at h
-  · nm m h₁
-    simp at h
-    subst h
-    use []
-    rfl
-  nm m c h₁
-  obtain ⟨ts', ih⟩ := ih h
-  use t :: ts'
-  simpa [h₁]
-
 theorem reachable_of_trs' {a b ts} (h : sys.trs a ts = (b, [])) :
 sys.Reachable a b := reachable_of_trs # congrArg (·.1) h
 
