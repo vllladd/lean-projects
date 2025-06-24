@@ -932,10 +932,14 @@ theorem fintype_exi_iter_cycle {α : Type} [ha : Fintype α]
     subst hg
     obtain ⟨n, m, h₁, h₂⟩ := h
     wlog h₃ : n < m with ih
-    · symm at h₁
-      apply @ih α _ f x m n h₁ h₂.symm _
+    · symm at h₁ h₂
+      apply @ih α _ f x m n h₁ h₂ _
       simp at h₃
-      exact Nat.lt_of_le_of_ne h₃ h₂.symm
+      exact Nat.lt_of_le_of_ne h₃ h₂
     use n, m
   by_contra! h₁
   exact Fintype.false # Fintype.ofInjective g h₁
+
+@[simp]
+theorem list_take_prefix {α : Type} {xs : List α} {k : ℕ} : xs.take k <+: xs := by
+  apply List.take_prefix
