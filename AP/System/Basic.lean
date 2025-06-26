@@ -4,6 +4,8 @@ namespace System
 
 variable {S T} {sys : System S T}
 
+instance : Inhabited # System S T := ⟨⟨default⟩⟩
+
 noncomputable
 def dflt_sim_fn [Inhabited # S → T] : S → T :=
   by classical exact
@@ -53,8 +55,8 @@ theorem valid_tr_of_eq_some {s t s₁}
 theorem has_tr_of_eq_some {s t s₁}
 (h : sys.tr s t = some s₁) : sys.has_tr s := ⟨_, valid_tr_of_eq_some h⟩
 
-theorem reachable_of_simulate'
-{f} {s₁ s₂ n} (h : s₂ = (sys.simulate f s₁ n).1) :
+theorem reachable_of_simulate
+{f} {s₁ s₂ n} (h : (sys.simulate f s₁ n).1 = s₂) :
 sys.Reachable s₁ s₂ := by
   induction n generalizing s₁ s₂
   · subst h; rfl
@@ -69,10 +71,6 @@ sys.Reachable s₁ s₂ := by
   trans s
   · apply Reachable.step h₁; rfl
   exact ih h
-
-theorem reachable_of_simulate
-{f} {s₁ s₂ n} (h : (sys.simulate f s₁ n).1 = s₂) :
-sys.Reachable s₁ s₂ := reachable_of_simulate' h.symm
 
 theorem reachable_of_simulate_full
 {f} {s₁ s₂ n} (h : sys.simulate f s₁ n = (s₂, 0)) :
@@ -133,8 +131,11 @@ theorem reachable_ind_left {P : ∀ a b, sys.Reachable a b → Prop}
 {a b} (h : sys.Reachable a b) : P a b h := by
   induction h; exact h₁; apply h₂ <;> assumption
 
-theorem reachable_of_trs {a b ts} (h : (sys.trs a ts).1 = b) :
-sys.Reachable a b := by
+theorem reachable_of_trs_eq {a ts r} (h : sys.trs a ts = r) :
+sys.Reachable a r.1 := by
+  rcases r with ⟨b, rs⟩
+  replace h := congrArg (·.1) h
+  dsimp at h ⊢
   induction ts generalizing a b <;> simp at h
   · rw [h]
   nm t ts ih
@@ -142,7 +143,9 @@ sys.Reachable a b := by
   · simp at h
     rw [h]
   nm m c h₁
-  exact reachable_left h₁ # ih h
+  apply reachable_left h₁
+  apply ih
+  exact h
 
 theorem exi_trs_of_reachable {a b} (h : sys.Reachable a b) :
 ∃ ts, sys.trs a ts = (b, []) := by
@@ -157,14 +160,11 @@ theorem exi_trs_of_reachable {a b} (h : sys.Reachable a b) :
   reduce at h₁
   simpa [h₁]
 
-theorem reachable_of_trs' {a b ts} (h : sys.trs a ts = (b, [])) :
-sys.Reachable a b := reachable_of_trs # congrArg (·.1) h
-
 theorem reachable_iff_exi_trs {a b} :
 sys.Reachable a b ↔ ∃ ts, sys.trs a ts = (b, []) := by
   use exi_trs_of_reachable
   rintro ⟨ts, h⟩
-  exact reachable_of_trs' h
+  exact reachable_of_trs_eq h
 
 theorem trs_append {s xs ys} [hi : DecidableEq T] :
 sys.trs s (xs ++ ys) =
@@ -214,7 +214,7 @@ theorem reachable_ind_right {P : ∀ a b, sys.Reachable a b → Prop}
   · simp at h₃
   simp at h₄
   simp only [h₄, List.nil_append, Prod.mk.eta] at h₃
-  have h₅ := reachable_of_trs' h₃
+  have h₅ := reachable_of_trs_eq h₃
   apply @h₂ a (sys.trs a ts).1 b t
   · simp at h₃
     split at h₃ <;> simp at h₃
@@ -256,8 +256,9 @@ theorem simulate_snd_mono {f s n m} (h : n ≤ m) :
   simp [simulate_add]
   split_ifs with h₁ <;> simp [h₁]
 
-theorem simulate_sub_simulate_snd_snd {f s n} :
-(sys.simulate f s (n - (sys.simulate f s n).2)).2 = 0 := by
+@[simp]
+theorem simulate_sub_simulate_snd_eq {f s n} :
+sys.simulate f s (n - (sys.simulate f s n).2) = ((sys.simulate f s n).1, 0) := by
   induction n generalizing s
   · rfl
   nm n ih

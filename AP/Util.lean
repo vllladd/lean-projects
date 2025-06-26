@@ -267,6 +267,7 @@ theorem nat_one_eq_sub_iff {a b : ℕ} : 1 = a - b ↔ a = b + 1 := by
   · exact nat_eq_add_of_one_eq_sub
   · rintro rfl; simp
 
+@[simp]
 theorem nat_thm_aux₅ {a b : ℕ} : ¬(a < a - b) := by simp
 
 theorem nat_thm_aux₆ {a b : ℕ} : a - b = a ↔ a = 0 ∨ b = 0 := by
@@ -997,3 +998,23 @@ xs <+: ys ++ [y] ↔ xs <+: ys ∨ xs = ys ++ [y] := by
   simp
   by_cases h : x = z <;> simp [h]
   exact ih
+
+theorem List.prefix_antisymm {α : Type} {xs ys : List α}
+(h₁ : xs <+: ys) (h₂ : ys <+: xs) : xs = ys := by
+  obtain ⟨ys, rfl⟩ := h₁
+  obtain ⟨zs, h₂⟩ := h₂
+  simp at h₂
+  simp [h₂]
+
+theorem List.take_length_eq_of_prefix {α : Type} {xs ys : List α}
+(h₁ : ys <+: xs) : xs.take ys.length = ys := by
+  obtain ⟨xs, rfl⟩ := h₁; simp
+
+@[simp]
+theorem List.nodup_inits {α : Type} {xs : List α} : xs.inits.Nodup := by
+  induction xs
+  · simp
+  nm x xs ih
+  simp
+  rwa [List.nodup_map_iff]
+  simp

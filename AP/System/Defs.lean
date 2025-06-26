@@ -54,3 +54,10 @@ structure Acyclic (s : S) : Prop where
 @[class]
 structure Tree (s : S) : Prop where
   h : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂
+
+def simp_path' (sys : System S T) (a : S) (ts : List T) : Prop :=
+  ∀ (xs ys : List T), xs <+: ts → ys <+: ts →
+  (sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys
+
+def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
+  sys.simp_path' a ts ∧ sys.trs a ts = (b, [])
