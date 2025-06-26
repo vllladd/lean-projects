@@ -1106,7 +1106,143 @@ theorem simulate_finset_card_eq_of_acyclic
 theorem Fintype.elems_eq_empty_iff {α : Type} [ha : Fintype α] :
 ha.elems = ∅ ↔ ∀ (_ : α), false := by simp [Finset.ext_iff]
 
+theorem Finset.card_eq_card_iff_equiv {α β : Type}
+{sa : Finset α} {sb : Finset β} : sa.card = sb.card ↔ Nonempty (sa ≃ sb) := by
+  simp [←Cardinal.eq]
+
+set_option linter.unusedVariables false
+@[simp]
+theorem Cardinal.mk_subtype_const_true {α : Type} :
+Cardinal.mk {x : α // True} = Cardinal.mk α := by
+  rw [Cardinal.eq]
+  use λ ⟨x, _⟩ => x
+  use λ x => ⟨x, trivial⟩
+  · intro x; simp
+  · intro x; simp
+set_option linter.unusedVariables true
+
+set_option linter.unusedVariables false
+@[simp]
+theorem nonempty_equiv_subtype_const_true_iff {α β : Type} :
+Nonempty (α ≃ {x : β // True}) ↔ Nonempty (α ≃ β) := by
+  simp [←Cardinal.eq]
+set_option linter.unusedVariables true
+
+theorem nonempty_equiv_comm {α β : Type} :
+Nonempty (α ≃ β) ↔ Nonempty (β ≃ α) := by
+  apply Nonempty.congr <;> exact λ h => h.symm
+
+theorem mk_finset_toSet_eq {α β : Type} [ha : Fintype α] {f : α → β} :
+(mk_finset f).toSet = Set.range f := by ext x; simp
+
+theorem Finset.card_eq_cardinal_mk_to_nat {α : Type} {s : Finset α} :
+s.card = (Cardinal.mk s).toNat := by simp
+
+@[simp]
+theorem nonempty_equiv_refl {α : Type} : Nonempty (α ≃ α) := ⟨by rfl⟩
+
+theorem Set.nonempty_equiv_empty_empty {α β : Type} :
+Nonempty ((∅ : Set α) ≃ (∅ : Set β)) := by
+  refine' ⟨⟨_, _, _, _⟩⟩
+  all_goals try rintro ⟨x, h⟩; simp at h
+
+@[simp]
+theorem Set.nonempty_equiv_empty_iff {α β : Type} {s : Set α} :
+Nonempty (s ≃ (∅ : Set β)) ↔ s = ∅ := by
+  constructor
+  · rintro ⟨h⟩
+    ext x
+    simp
+    intro hx
+    exact (h.toFun ⟨_, hx⟩).2
+  · rintro rfl
+    exact Set.nonempty_equiv_empty_empty
+
+theorem Set.ncard_eq_ncard_iff_nonempty_equiv {α β : Type}
+[ha : Fintype α] [hb : Fintype β] {sa : Set α} (sb : Set β) :
+sa.ncard = sb.ncard ↔ Nonempty (sa ≃ sb) := by
+  classical
+  unfold Set.ncard Set.encard ENat.card
+  simp [Finset.card_eq_card_iff_equiv]
+
+theorem nonempty_equiv_trans {α γ : Type} (β : Type)
+(h₁ : Nonempty (α ≃ β)) (h₂ : Nonempty (β ≃ γ)) : Nonempty (α ≃ γ) := by
+  rcases h₁ with ⟨a⟩
+  rcases h₂ with ⟨b⟩
+  exact ⟨a.trans b⟩
+
+theorem nonempty_equiv_set_univ_self {α : Type} :
+Nonempty (α ≃ (Set.univ : Set α)) := by
+  simp [←Cardinal.eq]
+
+theorem nonempty_equiv_set_univ_self' {α : Type} :
+Nonempty ((Set.univ : Set α) ≃ α) := by
+  simp [←Cardinal.eq]
+
+theorem nonempty_equiv_set_univ_set_univ_iff {α β : Type} :
+Nonempty ((Set.univ : Set α) ≃ (Set.univ : Set β)) ↔ Nonempty (α ≃ β) := by
+  simp [←Cardinal.eq]
+
+@[simp]
+theorem nonempty_equiv_set_univ_iff {α β : Type} :
+Nonempty (α ≃ (Set.univ : Set β)) ↔ Nonempty (α ≃ β) := by
+  simp [←Cardinal.eq]
+
+@[simp]
+theorem nonempty_equiv_set_univ_iff' {α β : Type} :
+Nonempty ((Set.univ : Set α) ≃ β) ↔ Nonempty (α ≃ β) := by
+  simp [←Cardinal.eq]
+
+theorem Finset.card_eq_toSet_ncard {α : Type} {s : Finset α} :
+s.card = s.toSet.ncard := by simp
+
+noncomputable
+instance {α : Type} [Fintype α] {s : Set α} : Fintype s := by
+  exact Fintype.ofFinite ↑s
+
+theorem fintype_card_set_eq_ncard {α : Type} [ha : Fintype α] {s : Set α} :
+Fintype.card s = s.ncard := by
+  unfold Fintype.card
+  rw [Finset.card_eq_cardinal_mk_to_nat]
+  unfold Set.ncard Set.encard ENat.card
+  apply congrArg (Cardinal.toNat)
+  simp
+
+#check 0 #exit
+
+theorem mk_finset_card_eq_set_range_card {α β : Type}
+[ha : Fintype α] {f : α → β} :
+(mk_finset f).card = (Set.range f).ncard := by
+  classical
+  simp [Finset.card_eq_cardinal_mk_to_nat]
+  have h₁ : Cardinal.mk {x // ∃ a, f a = x} = Cardinal.mk (Set.range f) :=
+    by
+      rw [Cardinal.eq]
+      exact nonempty_equiv_refl
+  rw [h₁]
+  clear h₁
+  simp
+  rw [Fintype.card_set_eq_ncard]
+
 -- #check 0 #exit
+
+theorem Set.nonempty_range_equiv_self_iff_injective {α β : Type}
+[ha : Fintype α] {f : α → β} : Nonempty (Set.range f ≃ α) ↔ f.Injective := by
+  sorry
+
+#check 0 #exit
+
+theorem Set.nonempty_range_equiv_self_iff_injective {α β : Type}
+[ha : Fintype α] {f : α → β} : Nonempty (Set.range f ≃ α) ↔ f.Injective := by
+  classical
+  have h₁ := @Set.ncard_eq_ncard_iff_nonempty_equiv (Set.range f) α _ _
+    Set.univ Set.univ
+  simp at h₁
+  rw [←h₁]; clear h₁
+  rw [←mk_finset_card_eq_set_range_card]
+  exact?
+
+#check 0 #exit
 
 @[simp]
 theorem mk_finset_card_eq_fintype_card_iff {α β} [ha : Fintype α] {f : α → β} :
@@ -1120,57 +1256,11 @@ theorem mk_finset_card_eq_fintype_card_iff {α β} [ha : Fintype α] {f : α →
     · apply mk_finset_card_le
     apply Finset.card_le_card_of_injOn f <;> simp [h]
   
-  intro x y h₁
-  generalize hn : ha.elems.card = n
-  induction n generalizing α
-  · simp at hn
-    cases hn x
-  nm n ih
+  rw [mk_finset_card_eq_set_range_card] at h
+  simp [Fintype.card_eq] at h
+  obtain ⟨e⟩ := h
   
-  rw [Finset.card_eq_succ] at hn
-  obtain ⟨a, t, h₂, h₃, h₄⟩ := hn
-  
-  change _ = Fintype.elems.card at h
-  simp [←h₃, Finset.card_insert_of_notMem h₂] at h
-  
-  have ht : t = Fintype.elems.erase a :=
-    by
-      ext z
-      have h₆ : z ∈ Fintype.elems := by simp
-      simp [←h₃] at h₆
-      simp
-      rcases h₆ with rfl | h₆
-      · simp [h₂]
-      · simp [h₆]
-        rintro rfl
-        contradiction
-  
-  have hz : ∀ z ∈ t, f a ≠ f z :=
-    by
-      sorry
-  
-  specialize @ih t _ (λ x => f x) _
-  · trans t.card
-    rotate_left
-    · simp [ht]
-    rw [ht, ←h₃]
-    simp [ht]
-    apply Nat.succ_injective
-    change _ + 1 = _ + 1
-    rw [Nat.sub_one_add_one]
-    rotate_left
-    · simp; use a
-    trans (insert (f a) # mk_finset #
-      λ (x : (insert a t).erase a) => f x).card
-    · rw [Finset.card_insert_of_notMem]
-      simp
-      intro z h₅ h₆
-      simp [ht] at h
-      rw [eq_comm]
-      exact hz _ h₆
-    sorry
-  
-  sorry
+  obtain ⟨g, g', h₁, h₂⟩ := h
 
 #check 0 #exit
 
