@@ -862,7 +862,7 @@ theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited # S → T]
 
 theorem exi_simp_path_of_trs_eq {a ts r} (h : sys.trs a ts = r) :
 ∃ ts', sys.simp_path a ts' r.1 :=
-  exi_simp_path_of_reachable # reachable_of_trs_eq h
+  exi_simp_path_of_reachable # reachable_of_trs_eq' h
 
 theorem exi_simulate_of_trs_eq [ht : Inhabited # S → T] {a ts r}
 (h₁ : sys.trs a ts = r) : ∃ f, sys.SimFn f ∧
@@ -925,3 +925,136 @@ sys.simp_path' a ts ↔ (ts.inits.map # λ xs => (sys.trs a xs).1).Nodup := by
   · contrapose! h₂
     exact List.eq_of_prefix_and_length_eq hx hy h₂
   rwa [List.take_length_eq_of_prefix hx, List.take_length_eq_of_prefix hy]
+
+theorem reachable_of_trs_eq {a ts b} (h : (sys.trs a ts).1 = b) :
+sys.Reachable a b := by
+  subst h; exact reachable_of_trs_eq' rfl
+
+theorem trs_full_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
+(hx : xs <+: ys) (h₁ : (sys.trs a xs).2 = []) (h₂ : (sys.trs a ys).2 = [])
+(h₃ : (sys.trs a xs).1 = (sys.trs a ys).1) : xs = ys := by
+  classical
+  rw [acyclic_iff] at h
+  generalize hr₁ : sys.trs a xs = r₁ at h₁ h₃
+  generalize hr₂ : sys.trs a ys = r₂ at h₁ h₃
+  obtain ⟨b, rs₁⟩ := r₁
+  obtain ⟨c, rs₂⟩ := r₂
+  subst h₁ h₃
+  dsimp at hr₂
+  simp [hr₂] at h₂
+  subst h₂
+  obtain ⟨ys, rfl⟩ := hx
+  rename' hr₁ => h₁
+  rename' hr₂ => h₂
+  cases ys
+  · simp
+  nm y ys
+  exfalso
+  rw [List.append_cons] at h₂
+  
+  obtain ⟨c, hc⟩ : ∃ c, sys.trs a (xs ++ [y]) = (c, []) :=
+    by
+      simp [Prod.ext_iff]
+      exact trs_snd_eq_nil_of_prefix_and_eq_nil
+        (by simp : xs ++ [y] <+: xs ++ [y] ++ ys) (by rw [h₂])
+  
+  rw [trs_append] at h₂
+  simp [hc] at h₂
+  
+  simp [trs_append, h₁] at hc
+  split at hc <;> simp at hc
+  nm x d h₃; clear x
+  symm at hc; subst hc
+  
+  apply @h b c y _ h₃ _
+  · exact reachable_of_trs_eq # congrArg (·.1) h₁
+  · exact reachable_of_trs_eq # congrArg (·.1) h₂
+
+theorem acyclic_of_trs_full_inj {a}
+(h : ∀ xs ys, xs <+: ys →
+(sys.trs a xs).2 = [] → (sys.trs a ys).2 = [] →
+(sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys) :
+sys.Acyclic a := by
+  classical
+  rw [acyclic_iff]
+  intro b c t h₁ hb h₂
+  obtain ⟨xs, hx⟩ := exi_trs_of_reachable h₁
+  obtain ⟨ys, hy⟩ := exi_trs_of_reachable h₂
+  specialize h xs (xs ++ [t] ++ ys)
+  simp [hx] at h
+  unfold tr_to at hb
+  rw [List.append_cons, trs_append] at h
+  simp [trs_append, hx, hb, hy] at h
+
+theorem acyclic_iff_trs_full_inj {a} :
+sys.Acyclic a ↔ ∀ xs ys, xs <+: ys →
+(sys.trs a xs).2 = [] → (sys.trs a ys).2 = [] →
+(sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys := by
+  classical
+  use by apply trs_full_inj_of_acyclic
+  exact acyclic_of_trs_full_inj
+
+@[simp]
+theorem trs_take_length_sub_eq {a xs} :
+sys.trs a (xs.take (xs.length - (sys.trs a xs).2.length)) =
+((sys.trs a xs).1, []) := by
+  induction xs generalizing a
+  · rfl
+  nm x xs ih
+  simp
+  split
+  · simp
+  nm y b h₁; clear y
+  rw [Nat.add_one_sub trs_snd_length_le]
+  simp [h₁]
+  exact ih
+
+theorem trs_snd_eq_nil_of_trs_eq_of_prefix_and_and_ne {a xs ys}
+(h₁ : sys.trs a xs = sys.trs a ys) (h₂ : xs <+: ys) (h₃ : xs ≠ ys) :
+(sys.trs a xs).2 = [] := by
+  classical
+  obtain ⟨ys, rfl⟩ := h₂
+  by_contra h₂
+  simp [trs_append, h₂, Prod.ext_iff] at h₁
+  simp [h₁] at h₃
+
+theorem iff_trs_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
+(hx : xs <+: ys) (h₁ : sys.trs a xs = sys.trs a ys) : xs = ys := by
+  classical
+  rw [acyclic_iff_trs_full_inj] at h
+  specialize h # xs.take (xs.length - (sys.trs a xs).2.length)
+  specialize h # ys.take (ys.length - (sys.trs a ys).2.length)
+  simp at h
+  specialize h _ # by rw [h₁]
+  · clear h
+    rw [List.prefix_take_iff]
+    constructor
+    · trans xs
+      · simp
+      exact hx
+    simp [h₁]
+    exact hx.length_le
+  by_contra h₂
+  have h₃ := trs_snd_eq_nil_of_trs_eq_of_prefix_and_and_ne h₁ hx h₂
+  obtain ⟨ys, rfl⟩ := hx
+  simp [trs_append, h₃] at h
+  apply h₂; clear h₂
+  symm at h₁
+  simp [trs_append, h₃] at h₁
+  simp [h₁, h₃] at h
+  rw [List.take_of_length_le] at h; exact h
+  simp
+
+theorem acyclic_of_trs_inj {a}
+(h : ∀ xs ys, xs <+: ys → sys.trs a xs = sys.trs a ys → xs = ys) :
+sys.Acyclic a := by
+  rw [acyclic_iff_trs_full_inj]
+  intro xs ys hx h₁ h₂ h₃
+  apply h xs ys hx
+  ext1; exact h₃; rwa [h₂]
+
+theorem acyclic_iff_trs_inj {a} :
+sys.Acyclic a ↔ ∀ xs ys, xs <+: ys → sys.trs a xs = sys.trs a ys → xs = ys := by
+  classical
+  use by apply iff_trs_inj_of_acyclic
+  exact acyclic_of_trs_inj

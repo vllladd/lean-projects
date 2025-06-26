@@ -131,7 +131,7 @@ theorem reachable_ind_left {P : ∀ a b, sys.Reachable a b → Prop}
 {a b} (h : sys.Reachable a b) : P a b h := by
   induction h; exact h₁; apply h₂ <;> assumption
 
-theorem reachable_of_trs_eq {a ts r} (h : sys.trs a ts = r) :
+theorem reachable_of_trs_eq' {a ts r} (h : sys.trs a ts = r) :
 sys.Reachable a r.1 := by
   rcases r with ⟨b, rs⟩
   replace h := congrArg (·.1) h
@@ -164,7 +164,7 @@ theorem reachable_iff_exi_trs {a b} :
 sys.Reachable a b ↔ ∃ ts, sys.trs a ts = (b, []) := by
   use exi_trs_of_reachable
   rintro ⟨ts, h⟩
-  exact reachable_of_trs_eq h
+  exact reachable_of_trs_eq' h
 
 theorem trs_append {s xs ys} [hi : DecidableEq T] :
 sys.trs s (xs ++ ys) =
@@ -214,7 +214,7 @@ theorem reachable_ind_right {P : ∀ a b, sys.Reachable a b → Prop}
   · simp at h₃
   simp at h₄
   simp only [h₄, List.nil_append, Prod.mk.eta] at h₃
-  have h₅ := reachable_of_trs_eq h₃
+  have h₅ := reachable_of_trs_eq' h₃
   apply @h₂ a (sys.trs a ts).1 b t
   · simp at h₃
     split at h₃ <;> simp at h₃

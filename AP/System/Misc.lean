@@ -29,7 +29,7 @@ theorem aux₃ {s ts} :
 
 theorem aux₄ {s ts s'}
 (h₁ : sys.trs s ts = (s', [])) : sys.Reachable s s' :=
-  reachable_of_trs_eq h₁
+  reachable_of_trs_eq' h₁
 
 theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
   simp [Prod.ext_iff]
@@ -143,7 +143,7 @@ theorem aux₁₂ [h₁ : Finite S] {a} [h₂ : Acyclic sys a] {f} [h₃ : SimFn
   simp at h₄
   sorry
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem cntrex₆ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
 {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] {x},
@@ -228,24 +228,5 @@ theorem aux₁₆ : ∃! (f : ℕ → ℕ), f 0 = 0 ∧ ∀ n, f (n + 1) = f (f 
   · exact h₁
   nm n ih
   simpa [h₂, ih]
-
--- #check 0 #exit
-
--- |+| theorem tr!_eq_of_valid {s t} : sys.valid_tr s t → sys.tr! s t = s' → sys.tr s t = some s'
--- |+| theorem tr!_idempotent {s t} : ¬sys.valid_tr s t → sys.tr! s t = s
--- |+| theorem trs_termination : ∀ s ts, ∃ s' rem, sys.trs s ts = (s', rem) ∧ rem.length ≤ ts.length
--- |+| theorem trs_reachable : ∀ s ts s', sys.trs s ts = (s', []) → sys.Reachable s s'
--- |+| theorem simulate_monotonic {sys f s n} : sys.simulate f s n = (s₁, k) → ∀ m < n, ∃ s₂ l, sys.simulate f s m = (s₂, l)
--- |-| theorem simulate_halts {sys f s} : (∀ s', ¬sys.has_tr s') → ∀ n, ∃ k s', sys.simulate f s n = (s', k) ∧ k > 0
--- |+| theorem reachable_trans : ∀ {a b c}, sys.Reachable a b → sys.Reachable b c → sys.Reachable a c
--- |+| theorem reachable_via_simulate {sys f s n} : sys.simulate f s n = (s', 0) → sys.Reachable s s'
--- |+| theorem simFn_exists [DecidableHasTr sys] : ∃ f, sys.SimFn f
--- |+| theorem simulate_deterministic {sys f} [SimFn sys f] : ∀ s n, ∃! s' k, sys.simulate f s n = (s', k)
--- |#| theorem Acyclic_acyclic {sys s} [Acyclic sys s] {f} [SimFn sys f] : ∀ n m, n < m → sys.simulate f s n = (sn, _) → sys.simulate f s m = (sm, _) → sn ≠ sm
--- |#| theorem Acyclic_finite_termination [Finite S] {sys s} [Acyclic sys s] {f} [SimFn sys f] : ∃ N, ∀ n ≥ N, ∃ k > 0, sys.simulate f s n = (_, k)
--- |#| theorem trs_append_valid {sys s ts₁ ts₂} : (∀ t ∈ ts₁, sys.valid_tr (current_state) t) → sys.trs s (ts₁ ++ ts₂) = sys.trs (sys.trs s ts₁).fst ts₂
--- |+| theorem simulate_step {sys f s n} : sys.simulate f s (n+1) = match sys.tr s (f s) with | none => (s, n+1) | some s' => sys.simulate f s' n
--- |+| f(0)=0 /\ f(n+1)=f(f(n))
--- |+| (ts.inits.map # λ xs => (sys.trs a xs).1).Nodup
 
 set_option linter.unusedVariables true
