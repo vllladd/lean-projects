@@ -15,8 +15,6 @@ import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.SetTheory.Cardinal.Arithmetic
 import Mathlib.Algebra.BigOperators.Intervals
 
-noncomputable section
-open scoped Classical
 open BigOperators
 
 syntax:min term atomic(" #" ws) term:min : term
@@ -28,16 +26,16 @@ macro_rules
 macro "nm " args:(ppSpace colGt Lean.binderIdent)+ : tactic =>
   `(tactic| rename_i $args*)
 
-def fn_set' {α : Type} (a b x : α) : α :=
+def fn_set' {α : Type} [DecidableEq α] (a b x : α) : α :=
 if x = a then b else x
 
-def fn_swap' {α : Type} (a b x : α) : α :=
+def fn_swap' {α : Type} [DecidableEq α] (a b x : α) : α :=
 if x = a then b else if x = b then a else x
 
-def fn_set {α β : Type} (a : α) (b : β) (f : α → β) (x : α) : β :=
+def fn_set {α β : Type} [DecidableEq α] (a : α) (b : β) (f : α → β) (x : α) : β :=
 if x = a then b else f x
 
-def fn_swap {α β : Type} (a b : α) (f : α → β) (x : α) : β :=
+def fn_swap {α β : Type} [DecidableEq α] (a b : α) (f : α → β) (x : α) : β :=
 f # fn_swap' a b x
 
 -----
@@ -45,39 +43,39 @@ f # fn_swap' a b x
 theorem thm_let {α : Type} (x : α) : ∃ y, y = x := by
   apply exists_apply_eq_apply
 
-theorem fn_set_eq {α β : Type} {a : α} {b : β} {f : α → β} {x : α} :
+theorem fn_set_eq {α β : Type} [DecidableEq α] {a : α} {b : β} {f : α → β} {x : α} :
 fn_set a b f x = if x = a then b else f x := rfl
 
-theorem fn_swap_eq {α β : Type} {a b : α} {f : α → β} {x : α} :
+theorem fn_swap_eq {α β : Type} [DecidableEq α] {a b : α} {f : α → β} {x : α} :
 fn_swap a b f x = f (if x = a then b else if x = b then a else x) := rfl
 
 @[simp]
-theorem fn_swap'_idemp {α : Type} {a b x : α} :
+theorem fn_swap'_idemp {α : Type} [DecidableEq α] {a b x : α} :
 fn_swap' a b (fn_swap' a b x) = x := by
   unfold fn_swap'; aesop
 
 @[simp]
-theorem fn_swap_idemp {α β : Type} {a b : α} {f : α → β} :
+theorem fn_swap_idemp {α β : Type} [DecidableEq α] {a b : α} {f : α → β} :
 fn_swap a b (fn_swap a b f) = f := by
   ext x; simp [fn_swap_eq]; aesop
 
-def fn_swap'_equiv {α : Type} (a b : α) : α ≃ α := by
+def fn_swap'_equiv {α : Type} [DecidableEq α] (a b : α) : α ≃ α := by
   apply Equiv.mk (fn_swap' a b) (fn_swap' a b) <;>
   exact λ x => fn_swap'_idemp
 
 @[simp]
-theorem fn_swap'_equiv_to_fun {α : Type} {a b : α} :
+theorem fn_swap'_equiv_to_fun {α : Type} [DecidableEq α] {a b : α} :
 (fn_swap'_equiv a b).toFun = fn_swap' a b :=
   by simp [fn_swap'_equiv]
 
 @[simp]
-theorem fn_swap'_equiv_inv_fun {α : Type} {a b : α} :
+theorem fn_swap'_equiv_inv_fun {α : Type} [DecidableEq α] {a b : α} :
 (fn_swap'_equiv a b).invFun = fn_swap' a b :=
   by simp [fn_swap'_equiv]
 
 @[simp]
-theorem fn_swap'_equiv_apply {α : Type} {a b x : α} :
-  fn_swap'_equiv a b x = fn_swap' a b x := rfl
+theorem fn_swap'_equiv_apply {α : Type} [DecidableEq α] {a b x : α} :
+fn_swap'_equiv a b x = fn_swap' a b x := rfl
 
 theorem nat_rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
   induction n with
@@ -166,27 +164,27 @@ theorem nat_right_lt_succ_max {a b : ℕ} : b < max a b + 1 := by
   simp [Nat.lt_add_one_iff]
 
 @[simp]
-theorem fn_set'_eq_of_eq {α : Type} {a b : α} :
+theorem fn_set'_eq_of_eq {α : Type} [DecidableEq α] {a b : α} :
 fn_set' a b a = b := by simp [fn_set']
 
 @[simp]
-theorem fn_swap'_eq_of_eq_left {α : Type} {a b : α} :
+theorem fn_swap'_eq_of_eq_left {α : Type} [DecidableEq α] {a b : α} :
 fn_swap' a b a = b := by simp [fn_swap']
 
 @[simp]
-theorem fn_swap'_eq_of_eq_right {α : Type} {a b : α} :
+theorem fn_swap'_eq_of_eq_right {α : Type} [DecidableEq α] {a b : α} :
 fn_swap' a b b = a := by simp [fn_swap']
 
 @[simp]
-theorem fn_set_eq_of_eq {α β : Type} {a : α} {b : β} {f : α → β} :
+theorem fn_set_eq_of_eq {α β : Type} [DecidableEq α] {a : α} {b : β} {f : α → β} :
 fn_set a b f a = b := by simp [fn_set_eq]
 
 @[simp]
-theorem fn_swap_eq_of_eq_left {α β : Type} {a b : α} {f : α → β} :
+theorem fn_swap_eq_of_eq_left {α β : Type} [DecidableEq α] {a b : α} {f : α → β} :
 fn_swap a b f a = f b := by simp [fn_swap_eq]
 
 @[simp]
-theorem fn_swap_eq_of_eq_right {α β : Type} {a b : α} {f : α → β} :
+theorem fn_swap_eq_of_eq_right {α β : Type} [DecidableEq α] {a b : α} {f : α → β} :
 fn_swap a b f b = f a := by simp [fn_swap_eq]; aesop
 
 theorem nat_thm_aux₃ {a b c : ℕ} : a + b + c - b = a + c := by
@@ -220,7 +218,7 @@ theorem sum_fn_swap_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ}
 theorem nat_thm_aux₄ {a b : ℕ} : a + (b + 1) ≠ b := by
   nth_rewrite 2 [add_comm]; rw [←add_assoc]; simp
 
-theorem fn_set_eq_of_ne {α β : Type} {a : α} {b : β}
+theorem fn_set_eq_of_ne {α β : Type} [DecidableEq α] {a : α} {b : β}
 {f : α → β} {x : α} (hx : x ≠ a) : fn_set a b f x = f x := by
   simp [fn_set_eq, hx]
 
@@ -228,7 +226,7 @@ theorem nat_fn_set_add {a b : ℕ} {f : ℕ → ℕ} {x : ℕ} :
 fn_set a (f a + b) f x = f x + if x = a then b else 0 := by
   rw [fn_set_eq]; aesop
 
-theorem fn_set_fn_set_eq_fn_swap {α β : Type} {a b} {f : α → β} :
+theorem fn_set_fn_set_eq_fn_swap {α β : Type} [DecidableEq α] {a b} {f : α → β} :
 fn_set a (f b) (fn_set b (f a) f) = fn_swap a b f := by
   ext x; simp [fn_set_eq, fn_swap_eq]; aesop
 
@@ -281,10 +279,12 @@ theorem nat_thm_aux₆ {a b : ℕ} : a - b = a ↔ a = 0 ∨ b = 0 := by
       apply Nat.sub_lt_of_lt; simp
 
 @[simp]
-theorem ite_10_le_one {P : Prop} : ite P 1 0 ≤ 1 := by split_ifs <;> simp
+theorem ite_10_le_one {P : Prop} [Decidable P] : ite P 1 0 ≤ 1 := by
+  split_ifs <;> simp
 
 @[simp]
-theorem ite_01_le_one {P : Prop} : ite P 0 1 ≤ 1 := by split_ifs <;> simp
+theorem ite_01_le_one {P : Prop} [Decidable P] : ite P 0 1 ≤ 1 := by
+  split_ifs <;> simp
 
 theorem hv {α : Type} (x : α) : ∃ y, y = x := exists_eq
 
@@ -684,20 +684,21 @@ theorem not_iff_comm' {P Q : Prop} : (¬P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
 
 theorem imp_cpos {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto
 
-def nat_find (P : ℕ → Prop) : ℕ :=
+def nat_find (P : ℕ → Prop) [DecidablePred P] [Decidable # ∃ x, P x] : ℕ :=
   if h : ∃ x, P x then Nat.find h else 0
 
-theorem nat_find_spec' {P : ℕ → Prop} (h : ∃ n, P n) :
-P (nat_find P) ∧ ∀ k, P k → nat_find P ≤ k := by
+theorem nat_find_spec' {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x]
+(h : ∃ n, P n) : P (nat_find P) ∧ ∀ k, P k → nat_find P ≤ k := by
   simp [nat_find, h]
   use Nat.find_spec h
   intro k hk
   use k
 
-theorem nat_find_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (nat_find P) := by
+theorem nat_find_spec {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x]
+(h : ∃ n, P n) : P (nat_find P) := by
   exact (nat_find_spec' h).1
 
-theorem nat_find_eq_of {P : ℕ → Prop} {n}
+theorem nat_find_eq_of {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x] {n}
 (h₁ : P n) (h₂ : ∀ k < n, ¬P k) : nat_find P = n := by
   unfold nat_find
   split_ifs with h₃
@@ -707,28 +708,31 @@ theorem nat_find_eq_of {P : ℕ → Prop} {n}
   specialize h₃ n
   contradiction
 
-theorem nat_find_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : nat_find P = 0 := by
+theorem nat_find_eq_zero_of {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x]
+(h : ∀ n, ¬P n) : nat_find P = 0 := by
   unfold nat_find
   split_ifs with h₁
   · contrapose! h
     exact h₁
   rfl
 
-theorem nat_find_eq_iff {P : ℕ → Prop} {n} :
+theorem nat_find_eq_iff {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x] {n} :
 nat_find P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0) := by
   split_ifs with h₁
   · unfold nat_find; simp [h₁, Nat.find_eq_iff]
   simp at h₁
   rw [nat_find_eq_zero_of h₁, eq_comm]
 
-theorem nat_find_min {P : ℕ → Prop} {n} (h : n < nat_find P) : ¬P n := by
+theorem nat_find_min {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x] {n}
+(h : n < nat_find P) : ¬P n := by
   unfold nat_find at h
   split_ifs at h with h₁
   · exact Nat.find_min h₁ h
   simp at h
 
-theorem nat_find_eq_of_not_ap_zero {P : ℕ → Prop} (h₁ : ∃ n, P n) (h₂ : ¬P 0) :
-nat_find P = nat_find (λ m => P (m + 1)) + 1 := by
+theorem nat_find_eq_of_not_ap_zero {P : ℕ → Prop}
+[DecidablePred P] [Decidable # ∃ x, P x] [Decidable # ∃ x, P # x + 1]
+(h₁ : ∃ n, P n) (h₂ : ¬P 0) : nat_find P = nat_find (λ m => P (m + 1)) + 1 := by
   apply nat_find_eq_of
   · apply @nat_find_spec (P # · + 1)
     obtain ⟨n, hn⟩ := h₁
@@ -744,16 +748,19 @@ nat_find P = nat_find (λ m => P (m + 1)) + 1 := by
   apply @nat_find_min (P # · + 1)
   exact hk
 
-theorem nat_find_eq_of_not_ap_le {P : ℕ → Prop} (n : ℕ)
-(h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
+theorem nat_find_eq_of_not_ap_le {P : ℕ → Prop}
+[DecidablePred P] [Decidable # ∃ x, P x] [∀ k, Decidable # ∃ x, P # k + x]
+(n : ℕ) (h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
 nat_find P = nat_find (λ m => P (n + m)) + n := by
+  classical
+  nm ha₁ ha₂ ha₃
   induction n generalizing P
   · simp
   nm n ih
   have h₃ : ¬P 0 :=
     by
       apply h₂; simp
-  specialize @ih (P # · + 1) _ _ <;> try dsimp
+  specialize @ih (P # · + 1) _ _ _ _ _ <;> try dsimp
   · obtain ⟨k, hk⟩ := h₁
     cases k
     · contradiction
@@ -765,23 +772,23 @@ nat_find P = nat_find (λ m => P (n + m)) + n := by
   rw [nat_find_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
   ring_nf
 
-theorem fn_set_same_value {α β : Type} {f : α → β} {a : α} : 
+theorem fn_set_same_value {α β : Type} [DecidableEq α] {f : α → β} {a : α} : 
 fn_set a (f a) f = f := by
   unfold fn_set; ext x; split_ifs with h
   rw [h]
   rfl
 
-theorem fn_set_twice_same {α β : Type} {f : α → β} {a : α} {b₁ b₂ : β} :
-fn_set a b₂ (fn_set a b₁ f) = fn_set a b₂ f := by
+theorem fn_set_twice_same {α β : Type} [DecidableEq α]
+{f : α → β} {a : α} {b₁ b₂ : β} : fn_set a b₂ (fn_set a b₁ f) = fn_set a b₂ f := by
   unfold fn_set; ext x; split_ifs with h <;> rfl
 
-theorem fn_set_comm {α β : Type} {f : α → β} {a₁ a₂ : α} {b₁ b₂ : β}
+theorem fn_set_comm {α β : Type} [DecidableEq α] {f : α → β} {a₁ a₂ : α} {b₁ b₂ : β}
 (h : a₁ ≠ a₂) : fn_set a₁ b₁ (fn_set a₂ b₂ f) = fn_set a₂ b₂ (fn_set a₁ b₁ f) := by
   unfold fn_set; ext x; split_ifs with h₁ h₂ h₂ <;> try rfl
   rw [h₁] at h₂
   contradiction
 
-theorem fn_set_ext {α β : Type} {f g : α → β} {a : α} {b : β} :
+theorem fn_set_ext {α β : Type} [DecidableEq α] {f g : α → β} {a : α} {b : β} :
 (∀ x, fn_set a b f x = fn_set a b g x) ↔ (∀ x, x ≠ a → f x = g x) := by
   constructor <;> intro h x
   · intro h₁
@@ -837,7 +844,8 @@ theorem max_right_eq_of_max_eq_and_ne {α : Type} [LinearOrder α] {a b c : α}
 
 @[simp]
 theorem list_not_mem_failure {α : Type} {x : α} :
-x ∉ (failure : List α) := List.count_eq_zero.mp rfl
+x ∉ (failure : List α) := by classical
+  exact List.count_eq_zero.mp rfl
 
 @[simp]
 theorem list_unit_mem_guard_iff {P : Prop} [Decidable P] :
@@ -1018,3 +1026,150 @@ theorem List.nodup_inits {α : Type} {xs : List α} : xs.inits.Nodup := by
   simp
   rwa [List.nodup_map_iff]
   simp
+
+noncomputable
+instance {α : Type} [h : Fintype α] {β : Type} {f : α → β} :
+Fintype # Set.range f := by apply Fintype.ofFinite
+
+theorem Cardinal.mk_eq_of_fintype_card {α : Type} [h : Fintype α] {n}
+(h₁ : Fintype.card α = n) : Cardinal.mk α = n := by
+  rw [Cardinal.mk_fintype, h₁]
+
+noncomputable
+def Finset.to_some_list {α : Type} (s : Finset α) : List α := by
+  classical
+  exact Classical.epsilon # λ xs => xs.toFinset = s
+
+def Finset.to_sorted_list {α : Type} [h : LinearOrder α]
+(s : Finset α) : List α := by
+  apply s.val.lift # λ xs => xs.mergeSort
+  intro xs ys hxy
+  reduce at hxy
+  dsimp
+  generalize hx : xs.mergeSort (· ≤ ·) = xs'
+  generalize hy : ys.mergeSort (· ≤ ·) = ys'
+  obtain ⟨h₁, h₂⟩ : xs'.Sorted (· ≤ ·) ∧ ys'.Sorted (· ≤ ·) := by
+    subst hx hy; constructor <;> apply List.sorted_mergeSort'
+  have h₃ : xs'.Perm ys' := by
+    subst hx hy
+    trans xs
+    · apply List.mergeSort_perm
+    symm; trans ys
+    · apply List.mergeSort_perm
+    exact hxy.symm
+  exact List.eq_of_perm_of_sorted h₃ h₁ h₂
+
+@[simp]
+theorem Finset.to_some_list_toFinset {α : Type} [h : DecidableEq α]
+{s : Finset α} : s.to_some_list.toFinset = s := by
+  unfold to_some_list
+  convert Classical.epsilon_spec (p := λ (xs : List α) => xs.toFinset = s) _
+  rcases s with ⟨m, h₁⟩
+  simp [Finset.ext_iff]
+  apply m.ind
+  intro xs
+  use xs
+  simp
+
+@[simp]
+theorem Finset.to_sorted_list_toFinset {α : Type} [h : LinearOrder α]
+{s : Finset α} : s.to_sorted_list.toFinset = s := by
+  ext x
+  unfold to_sorted_list
+  rcases s with ⟨m, h₁⟩
+  simp
+  apply m.ind
+  intro xs
+  simp
+
+noncomputable
+def mk_finset {α β : Type}
+(f : α → β) : Finset β := by
+  classical
+  by_cases h : Infinite α
+  · exact {}
+  simp at h
+  replace h := Fintype.ofFinite α
+  exact (Fintype.elems.to_some_list.map f).toFinset
+
+def mk_finset_comp {α β : Type} [Fintype α] [LinearOrder α] [DecidableEq β]
+(f : α → β) : Finset β :=
+  (Fintype.elems.to_sorted_list.map f).toFinset
+
+@[simp]
+theorem Finset.mem_to_some_list_iff {α : Type} {s : Finset α} {x} :
+x ∈ s.to_some_list ↔ x ∈ s := by
+  classical
+  simp [←List.mem_toFinset]
+
+@[simp]
+theorem Finset.mem_to_sorted_list_iff {α : Type} [LinearOrder α] {s : Finset α} {x} :
+x ∈ s.to_sorted_list ↔ x ∈ s := by simp [←List.mem_toFinset]
+
+@[simp]
+theorem Fintype.complete' {α : Type} [Fintype α] {x : α} : x ∈ Fintype.elems := by
+  apply complete
+
+theorem mk_finset_eq {α β : Type}
+[ha : Fintype α] [DecidableEq α] [DecidableEq β] {f : α → β} :
+mk_finset f = (Fintype.elems.to_some_list.map f).toFinset := by
+  simp [mk_finset]
+  split_ifs with h₁
+  · exfalso; exact ha.false
+  ext x
+  simp
+
+@[simp]
+theorem mem_mk_finset_iff {α β : Type} [Fintype α]
+{f : α → β} {b : β} : b ∈ mk_finset f ↔ ∃ a, f a = b := by
+  classical
+  simp [mk_finset_eq]
+
+@[simp]
+theorem mem_mk_finset_comp_iff {α β : Type} [Fintype α] [LinearOrder α] [DecidableEq β]
+{f : α → β} {b : β} : b ∈ mk_finset_comp f ↔ ∃ a, f a = b := by simp [mk_finset_comp]
+
+@[simp]
+theorem mk_finset_comp_eq_mk_finset {α β} [Fintype α] [LinearOrder α] [DecidableEq β]
+{f : α → β} : mk_finset_comp f = mk_finset f := by ext x; simp
+
+instance {α : Type} [h : IsEmpty α] : Fintype α := ⟨{}, by simp⟩
+
+@[simp]
+theorem mk_finset_const_of_nonempty {α β : Type}
+[Fintype α] [Nonempty α] [DecidableEq α] [DecidableEq β] {b : β} :
+mk_finset (λ (_ : α) => b) = {b} := by ext x; simp [eq_comm]
+
+@[simp]
+theorem mk_finset_const_of_empty {α β : Type}
+[IsEmpty α] [DecidableEq β] {b : β} : mk_finset (λ (_ : α) => b) = {} := by
+  ext x; simp
+
+theorem mk_finset_fin_succ_eq_insert {α : Type}
+[ha : DecidableEq α] {n} {f : Fin (n + 1) → α} : mk_finset f =
+insert (f ⟨n, by linarith⟩) (mk_finset # λ (k : Fin n) => f k) := by
+  ext x
+  simp
+  constructor
+  · rintro ⟨⟨k, hk⟩, rfl⟩
+    rw [Nat.lt_succ_iff, Nat.le_iff_lt_or_eq] at hk
+    rcases hk with hk | rfl
+    · right
+      use ⟨_, hk⟩
+      rfl
+    simp
+  rintro (rfl | ⟨k, hk⟩)
+  · simp
+  use k
+  simpa
+
+theorem mk_finset_card_le {α β} [ha₁ : Fintype α] {f : α → β} :
+(mk_finset f).card ≤ Fintype.card α := by
+  apply Finset.card_le_card_of_surjOn f
+  simp [mk_finset_eq]
+  intro y
+  simp
+
+@[simp]
+theorem Set.univ_injOn_iff {α β : Type} {f : α → β} :
+(Set.univ : Set α).InjOn f ↔ f.Injective := by simp [Set.InjOn]; rfl

@@ -127,24 +127,6 @@ theorem cntrex₅ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
   use N + 1
   simp
 
-theorem aux₁₂ [h₁ : Finite S] {a} [h₂ : Acyclic sys a] {f} [h₃ : SimFn sys f] :
-∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∃ x, sys.simulate f a n = (x, k) := by
-  classical
-  replace h₁ := Fintype.ofFinite S
-  generalize hu : (Finset.univ : Finset S) = set
-  generalize hs : set.card = N
-  use N
-  intro n hn
-  use (sys.simulate f a n).2
-  simp [Prod.ext_iff]
-  rw [acyclic_iff_sim_full_inj] at h₂
-  specialize h₂ f
-  by_contra h₄
-  simp at h₄
-  sorry
-
--- #check 0 #exit
-
 theorem cntrex₆ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
 {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] {x},
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
@@ -159,35 +141,6 @@ theorem cntrex₆ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
   use N, by rfl
   intro k hk
   rw [simulate_eq_of_tr_eq_none] <;> simp
-
-theorem aux₁₃ [h₁ : Finite S] {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] :
-∃ x N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
-  obtain ⟨N, h₄⟩ := @aux₁₂ S T sys h₁ s h₂ f h₃
-  obtain ⟨m, hm⟩ := hv # nat_find λ n => (sys.simulate f s n).2 ≠ 0
-  use (sys.simulate f s m).1, N
-  intro n hn
-  specialize h₄ n hn
-  obtain ⟨k, hk, x, h₄⟩ := h₄
-  use k, hk
-  symm
-  simp [h₄]
-  have h₅ : (sys.simulate f s m).2 ≠ 0 :=
-    by
-      subst hm
-      unfold nat_find
-      split_ifs with h₅
-      · have h₆ := Nat.find_spec h₅
-        convert h₆
-      contrapose! h₅
-      use n
-      rw [h₄]
-      linarith
-  have h₆ : (sys.simulate f s n).1 = (sys.simulate f s m).1 :=
-    by
-      apply simulate_fst_eq_fst_of_snd_ne_zero _ h₅
-      rw [h₄]
-      linarith
-  rw [←h₆, h₄]
 
 theorem cntrex₇ : ¬∀ (S T) (sys : System S T)
 (a ts₁ ts₂ b) (h₁ : ∀ t ∈ ts₁, sys.valid_tr b t),

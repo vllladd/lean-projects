@@ -48,7 +48,7 @@ theorem reachable_simulate {f} {s n} : sys.Reachable s (sys.simulate f s n).1 :=
   · exact reachable_of_tr h₁
   exact ih
 
-theorem sim_fn_fn_set_of {f} [hf : sys.SimFn f] {s t}
+theorem sim_fn_fn_set_of [DecidableEq S] {f} [hf : sys.SimFn f] {s t}
 (h : sys.valid_tr s t) : sys.SimFn # fn_set s t f := by
   rw [sim_fn_iff] at hf ⊢
   intro a ha
@@ -63,7 +63,7 @@ theorem acyclic_of_reachable {a} [ha : sys.Acyclic a] {b}
   intro c d t h₁ h₂
   exact @ha c d t (h.trans h₁) h₂
 
-theorem simulate_fn_set_eq_of {f} [hf : sys.SimFn f] {a b t n}
+theorem simulate_fn_set_eq_of [DecidableEq S] {f} [hf : sys.SimFn f] {a b t n}
 (h₁ : sys.valid_tr b t) (h₂ : ∀ k < n, (sys.simulate f a k).1 ≠ b) :
 sys.simulate (fn_set b t f) a n = sys.simulate f a n := by
   induction n generalizing a
@@ -101,13 +101,13 @@ sys.simulate (fn_set b t f) a n = sys.simulate f a n := by
   simp [h₃] at h₂
   exact h₂
 
-theorem simulate_snd_eq_zero_of_le_of_eq_zero {f a k n}
-(h₁ : k ≤ n) (h₂ : (sys.simulate f a n).2 = 0) :
+theorem simulate_snd_eq_zero_of_le_and_eq_zero {f a k n}
+(h₁ : (sys.simulate f a n).2 = 0) (h₂ : k ≤ n) :
 (sys.simulate f a k).2 = 0 := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₁
-  simp [simulate_add] at h₂
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₂
+  simp [simulate_add] at h₁
   by_contra h₃
-  simp [h₃] at h₂
+  simp [h₃] at h₁
 
 theorem simulate_snd_eq_zero_of_has_tr {f} [hf : sys.SimFn f] {a n}
 (h : sys.has_tr # (sys.simulate f a n).1) : (sys.simulate f a n).2 = 0 := by
@@ -1018,7 +1018,7 @@ theorem trs_snd_eq_nil_of_trs_eq_of_prefix_and_and_ne {a xs ys}
   simp [trs_append, h₂, Prod.ext_iff] at h₁
   simp [h₁] at h₃
 
-theorem iff_trs_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
+theorem trs_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
 (hx : xs <+: ys) (h₁ : sys.trs a xs = sys.trs a ys) : xs = ys := by
   classical
   rw [acyclic_iff_trs_full_inj] at h
@@ -1054,7 +1054,174 @@ sys.Acyclic a := by
   ext1; exact h₃; rwa [h₂]
 
 theorem acyclic_iff_trs_inj {a} :
-sys.Acyclic a ↔ ∀ xs ys, xs <+: ys → sys.trs a xs = sys.trs a ys → xs = ys := by
+sys.Acyclic a ↔ ∀ xs ys, xs <+: ys → sys.trs a xs = sys.trs a ys → xs = ys :=
+  ⟨by apply trs_inj_of_acyclic, acyclic_of_trs_inj⟩
+
+theorem acyclic_of_tr {a} [ha : sys.Acyclic a] {t b}
+(h₁ : sys.tr_to a t b) : sys.Acyclic b :=
+  acyclic_of_reachable # reachable_of_tr h₁
+
+theorem simulate_succ_snd_eq_zero_of_tr_and_eq_zero {f a b n}
+(h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.tr_to a (f a) b) :
+(sys.simulate f a # n + 1).2 = 0 := by
+  unfold tr_to at h₂; simpa [h₂]
+
+theorem simulate_snd_eq_zero_of_tr_and_eq_zero {f a b n}
+(h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.tr_to a (f a) b) :
+(sys.simulate f a n).2 = 0 := by
+  have h₃ := simulate_succ_snd_eq_zero_of_tr_and_eq_zero h₁ h₂
+  exact simulate_snd_eq_zero_of_le_and_eq_zero h₃ # by linarith
+
+theorem simulate_finset_card_eq_of_acyclic
+[hs : DecidableEq S] {f} [hf : sys.SimFn f] {a} [ha : sys.Acyclic a] {n}
+(h₁ : (sys.simulate f a n).2 = 0) : (mk_finset # λ (k : Fin # n + 1) =>
+(sys.simulate f a k).1).card = n + 1 := by
+  induction n generalizing a
+  · simp
+  nm n ih
+  dsimp at h₁
+  split at h₁; simp at h₁
+  nm x b h₂; clear x
+  rw [mk_finset_fin_succ_eq_insert]
+  simp [h₂]
+  have hb := acyclic_of_tr h₂
+  have h₃ := simulate_snd_eq_zero_of_tr_and_eq_zero h₁ h₂
+  rw [Finset.card_insert_of_notMem]
+  · simp [@ih b _ h₁]; exact ih h₃
+  simp
+  rintro ⟨k, hk⟩
+  simp
+  rw [Nat.lt_succ_iff] at hk
+  rw [acyclic_iff_sim_full_inj] at ha
+  intro h₄
+  specialize ha f k (n + 1)
+    (simulate_snd_eq_zero_of_le_and_eq_zero h₃ hk)
+  simp [h₂] at ha
+  specialize ha h₁ h₄
+  simp [ha] at hk
+
+-- #check 0 #exit
+
+@[simp]
+theorem Fintype.elems_eq_empty_iff {α : Type} [ha : Fintype α] :
+ha.elems = ∅ ↔ ∀ (_ : α), false := by simp [Finset.ext_iff]
+
+-- #check 0 #exit
+
+@[simp]
+theorem mk_finset_card_eq_fintype_card_iff {α β} [ha : Fintype α] {f : α → β} :
+(mk_finset f).card = Fintype.card α ↔ f.Injective := by
   classical
-  use by apply iff_trs_inj_of_acyclic
-  exact acyclic_of_trs_inj
+  
+  change _ = (Finset.univ : Finset α).card ↔ _
+  symm; constructor <;> intro h
+  · rw [Nat.eq_iff_le_and_ge]
+    constructor
+    · apply mk_finset_card_le
+    apply Finset.card_le_card_of_injOn f <;> simp [h]
+  
+  intro x y h₁
+  generalize hn : ha.elems.card = n
+  induction n generalizing α
+  · simp at hn
+    cases hn x
+  nm n ih
+  
+  rw [Finset.card_eq_succ] at hn
+  obtain ⟨a, t, h₂, h₃, h₄⟩ := hn
+  
+  change _ = Fintype.elems.card at h
+  simp [←h₃, Finset.card_insert_of_notMem h₂] at h
+  
+  have ht : t = Fintype.elems.erase a :=
+    by
+      ext z
+      have h₆ : z ∈ Fintype.elems := by simp
+      simp [←h₃] at h₆
+      simp
+      rcases h₆ with rfl | h₆
+      · simp [h₂]
+      · simp [h₆]
+        rintro rfl
+        contradiction
+  
+  have hz : ∀ z ∈ t, f a ≠ f z :=
+    by
+      sorry
+  
+  specialize @ih t _ (λ x => f x) _
+  · trans t.card
+    rotate_left
+    · simp [ht]
+    rw [ht, ←h₃]
+    simp [ht]
+    apply Nat.succ_injective
+    change _ + 1 = _ + 1
+    rw [Nat.sub_one_add_one]
+    rotate_left
+    · simp; use a
+    trans (insert (f a) # mk_finset #
+      λ (x : (insert a t).erase a) => f x).card
+    · rw [Finset.card_insert_of_notMem]
+      simp
+      intro z h₅ h₆
+      simp [ht] at h
+      rw [eq_comm]
+      exact hz _ h₆
+    sorry
+  
+  sorry
+
+#check 0 #exit
+
+theorem simulate_exi_snd_pos_of_finite'
+[hs : Fintype S] {a} [ha : Acyclic sys a] {f} [hf : SimFn sys f] :
+∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∃ x, sys.simulate f a n = (x, k) := by
+  classical
+  generalize hN : hs.card = N
+  have h₁ := simulate_finset_card_eq_of_acyclic (ha := ha) (f := f) (n := N)
+  by_contra! h₂
+  specialize h₂ N
+  obtain ⟨n, hn, h₂⟩ := h₂
+  specialize h₂ (sys.simulate f a n).2
+  simp [Prod.ext_iff] at h₂
+  specialize h₁ # simulate_snd_eq_zero_of_le_and_eq_zero h₂ hn
+  replace hn : ¬(N + 1 ≤ N) := by linarith
+  apply hn; clear hn
+  rw [←h₁]
+  have := @mk_finset_card_le (Fin # N + 1) S _ _ _
+    (λ k => (sys.simulate f a k).1)
+  simp at this
+
+#check 0 #exit
+
+theorem simulate_exi_snd_pos_of_finite
+[h₁ : Fintype S] {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] :
+∃ x N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
+  classical
+  obtain ⟨N, h₄⟩ := @simulate_exi_snd_pos_of_finite' S T sys h₁ s h₂ f h₃
+  obtain ⟨m, hm⟩ := hv # nat_find λ n => (sys.simulate f s n).2 ≠ 0
+  use (sys.simulate f s m).1, N
+  intro n hn
+  specialize h₄ n hn
+  obtain ⟨k, hk, x, h₄⟩ := h₄
+  use k, hk
+  symm
+  simp [h₄]
+  have h₅ : (sys.simulate f s m).2 ≠ 0 :=
+    by
+      subst hm
+      unfold nat_find
+      split_ifs with h₅
+      · have h₆ := Nat.find_spec h₅
+        convert h₆
+      contrapose! h₅
+      use n
+      rw [h₄]
+      linarith
+  have h₆ : (sys.simulate f s n).1 = (sys.simulate f s m).1 :=
+    by
+      apply simulate_fst_eq_fst_of_snd_ne_zero _ h₅
+      rw [h₄]
+      linarith
+  rw [←h₆, h₄]
