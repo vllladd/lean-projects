@@ -159,8 +159,6 @@ match h : s.a_has_move_comp with
 | true => isTrue # by simpa [a_has_move_iff_comp]
 | false => isFalse # by simpa [a_has_move_iff_comp]
 
-#check 0 #exit
-
 -- @[simp]
 -- theorem game_play_zero {g : Game} : g.play 0 = g := rfl
 -- 
