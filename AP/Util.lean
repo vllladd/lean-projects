@@ -7,6 +7,7 @@ import Mathlib.Data.List.Infix
 import Mathlib.Tactic.Linarith
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Fintype.Card
 -- import Mathlib.Data.Ordmap.Ordset
 import Mathlib.Control.Monad.Basic
 import Mathlib.Data.Nat.Prime.Basic

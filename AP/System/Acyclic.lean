@@ -1200,16 +1200,6 @@ noncomputable
 instance {α : Type} [Fintype α] {s : Set α} : Fintype s := by
   exact Fintype.ofFinite ↑s
 
-theorem fintype_card_set_eq_ncard {α : Type} [ha : Fintype α] {s : Set α} :
-Fintype.card s = s.ncard := by
-  unfold Fintype.card
-  rw [Finset.card_eq_cardinal_mk_to_nat]
-  unfold Set.ncard Set.encard ENat.card
-  apply congrArg (Cardinal.toNat)
-  simp
-
-#check 0 #exit
-
 theorem mk_finset_card_eq_set_range_card {α β : Type}
 [ha : Fintype α] {f : α → β} :
 (mk_finset f).card = (Set.range f).ncard := by
@@ -1221,48 +1211,55 @@ theorem mk_finset_card_eq_set_range_card {α β : Type}
       exact nonempty_equiv_refl
   rw [h₁]
   clear h₁
+  unfold Set.ncard
+  apply congrArg Cardinal.toNat
   simp
-  rw [Fintype.card_set_eq_ncard]
+
+@[simp]
+theorem fintype_card_set_eq_ncard {α : Type}
+{s : Set α} [hs : Fintype s] : Fintype.card s = s.ncard := by
+  unfold Fintype.card
+  rw [Finset.card_eq_cardinal_mk_to_nat]
+  apply congrArg Cardinal.toNat
+  simp
+
+-- #check 0 #exit
+
+theorem injective_iff_fintype_range_card_eq {α β : Type}
+[ha : Fintype α] {f : α → β} : f.Injective ↔
+Fintype.card (Set.range f) = Fintype.card α := by
+  use λ h => Set.card_range_of_injective h
+  intro h
+  simp at h
+  sorry
 
 -- #check 0 #exit
 
 theorem Set.nonempty_range_equiv_self_iff_injective {α β : Type}
 [ha : Fintype α] {f : α → β} : Nonempty (Set.range f ≃ α) ↔ f.Injective := by
-  sorry
-
-#check 0 #exit
-
-theorem Set.nonempty_range_equiv_self_iff_injective {α β : Type}
-[ha : Fintype α] {f : α → β} : Nonempty (Set.range f ≃ α) ↔ f.Injective := by
-  classical
-  have h₁ := @Set.ncard_eq_ncard_iff_nonempty_equiv (Set.range f) α _ _
-    Set.univ Set.univ
-  simp at h₁
-  rw [←h₁]; clear h₁
-  rw [←mk_finset_card_eq_set_range_card]
-  exact?
-
-#check 0 #exit
+  rw [injective_iff_fintype_range_card_eq, ←Cardinal.eq]; simp
 
 @[simp]
 theorem mk_finset_card_eq_fintype_card_iff {α β} [ha : Fintype α] {f : α → β} :
 (mk_finset f).card = Fintype.card α ↔ f.Injective := by
   classical
-  
-  change _ = (Finset.univ : Finset α).card ↔ _
-  symm; constructor <;> intro h
-  · rw [Nat.eq_iff_le_and_ge]
-    constructor
-    · apply mk_finset_card_le
-    apply Finset.card_le_card_of_injOn f <;> simp [h]
-  
-  rw [mk_finset_card_eq_set_range_card] at h
-  simp [Fintype.card_eq] at h
-  obtain ⟨e⟩ := h
-  
-  obtain ⟨g, g', h₁, h₂⟩ := h
+  by_cases h₁ : IsEmpty α
+  · simp [Finset.eq_empty_iff_forall_notMem]
+    exact Function.injective_of_subsingleton f
+  simp at h₁
+  change _ = Finset.univ.card ↔ _
+  rw [injective_iff_fintype_range_card_eq]
+  rw [Finset.card_eq_card_iff_equiv, ←Cardinal.eq]
+  simp [Set.range]
+  simp only [←Finset.card_univ]
+  simp only [Finset.card_eq_cardinal_mk_to_nat]
+  simp
+  constructor <;> intro h
+  · simp [h]
+  rwa [Cardinal.toNat_eq_iff] at h
+  simp [Fintype.card_eq_zero_iff]
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem simulate_exi_snd_pos_of_finite'
 [hs : Fintype S] {a} [ha : Acyclic sys a] {f} [hf : SimFn sys f] :
@@ -1276,12 +1273,24 @@ theorem simulate_exi_snd_pos_of_finite'
   specialize h₂ (sys.simulate f a n).2
   simp [Prod.ext_iff] at h₂
   specialize h₁ # simulate_snd_eq_zero_of_le_and_eq_zero h₂ hn
-  replace hn : ¬(N + 1 ≤ N) := by linarith
-  apply hn; clear hn
+  have hn₁ : ¬(N + 1 ≤ N) := by linarith
+  apply hn₁; clear hn₁
   rw [←h₁]
-  have := @mk_finset_card_le (Fin # N + 1) S _ _ _
-    (λ k => (sys.simulate f a k).1)
-  simp at this
+  -- have h₃ : (mk_finset # λ (k : Fin # N + 1) =>
+  --   (sys.simulate f a k).1).card = N + 1 :=
+  --   by
+  --     trans Fintype.card (Fin # N + 1)
+  --     rotate_left
+  --     · simp
+  --     rw [mk_finset_card_eq_fintype_card_iff]
+  --     rintro ⟨x, hx⟩ ⟨y, hy⟩
+  --     simp
+  --     rw [acyclic_iff_sim_full_inj] at ha
+  --     apply ha f x y
+  --     all_goals
+  --       apply simulate_snd_eq_zero_of_le_and_eq_zero h₂
+  --       linarith
+  sorry
 
 #check 0 #exit
 
