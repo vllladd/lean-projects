@@ -61,8 +61,8 @@ fn_swap a b (fn_swap a b f) = f := by
   ext x; simp [fn_swap_eq]; aesop
 
 def fn_swap'_equiv {α : Type} [DecidableEq α] (a b : α) : α ≃ α := by
-  apply Equiv.mk (fn_swap' a b) (fn_swap' a b) <;>
-  exact λ x => fn_swap'_idemp
+  apply Equiv.mk (fn_swap' a b) (fn_swap' a b) _ _
+  all_goals exact λ x => fn_swap'_idemp
 
 @[simp]
 theorem fn_swap'_equiv_to_fun {α : Type} [DecidableEq α] {a b : α} :
@@ -773,7 +773,7 @@ nat_find P = nat_find (λ m => P (n + m)) + n := by
   rw [nat_find_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
   ring_nf
 
-theorem fn_set_same_value {α β : Type} [DecidableEq α] {f : α → β} {a : α} : 
+theorem fn_set_same_value {α β : Type} [DecidableEq α] {f : α → β} {a : α} :
 fn_set a (f a) f = f := by
   unfold fn_set; ext x; split_ifs with h
   rw [h]
@@ -1148,7 +1148,7 @@ theorem mk_finset_const_of_empty {α β : Type}
 
 theorem mk_finset_fin_succ_eq_insert {α : Type}
 [ha : DecidableEq α] {n} {f : Fin (n + 1) → α} : mk_finset f =
-insert (f ⟨n, by linarith⟩) (mk_finset # λ (k : Fin n) => f k) := by
+insert (f ⟨n, by linarith⟩) (mk_finset # λ (⟨k, hk⟩ : Fin n) => f ⟨k, by linarith⟩) := by
   ext x
   simp
   constructor
@@ -1157,12 +1157,10 @@ insert (f ⟨n, by linarith⟩) (mk_finset # λ (k : Fin n) => f k) := by
     rcases hk with hk | rfl
     · right
       use ⟨_, hk⟩
-      rfl
     simp
-  rintro (rfl | ⟨k, hk⟩)
+  rintro (rfl | ⟨⟨k, hk⟩, h₁⟩)
   · simp
-  use k
-  simpa
+  use ⟨k, by linarith⟩
 
 theorem mk_finset_card_le {α β} [ha₁ : Fintype α] {f : α → β} :
 (mk_finset f).card ≤ Fintype.card α := by
@@ -1296,11 +1294,11 @@ Cardinal.mk α = Cardinal.mk β ↔ Fintype.card α = Fintype.card β := by
   rw [Cardinal.eq, Fintype.card_eq]
 
 noncomputable
-def _root_.Finite.to_fintype {α : Type} (ha : Finite α) : Fintype α :=
+def Finite.to_fintype {α : Type} (ha : Finite α) : Fintype α :=
   Fintype.ofFinite α
 
 noncomputable
-def _root_.Set.Finite.to_fintype {α : Type}
+def Set.Finite.to_fintype {α : Type}
 {sa : Set α} (ha : sa.Finite) : Fintype sa := by
   unfold Set.Finite at ha; exact ha.to_fintype
 
@@ -1318,11 +1316,11 @@ theorem Set.injOn_of_card_image_eq' {α : Type} {s : Set α} {f : α → α}
   subst hs
   clear h₁ h₃
   simp at h₂
-  
+
   induction s using Finset.induction
   · simp
   nm x s hx ih
-  
+
   simp at h₂ ⊢
   rw [Set.image_insert_eq, Finset.card_insert_of_notMem hx] at h₂
   rw [Set.ncard_insert_eq_ite] at h₂
@@ -1393,7 +1391,7 @@ Fintype.card (Set.range f) = Fintype.card α ↔ f.Injective := by
   refine' ⟨_, λ h => Set.card_range_of_injective h⟩
   intro h
   simp at h
-  
+
   let g' : _ → α ⊕ β := λ (x : α ⊕ β) =>
     match x with
     | .inl x => (.inr # f x : α ⊕ β)
@@ -1401,16 +1399,16 @@ Fintype.card (Set.range f) = Fintype.card α ↔ f.Injective := by
   obtain ⟨g, hg⟩ := hv g'
   change g = λ _ => _ at hg
   clear! g'
-  
+
   obtain ⟨s, hs⟩ := hv # Set.range # @Sum.inl α β
-  
+
   have h₁ : s.Finite :=
     by
       subst hs
       apply Set.finite_range
-  
+
   have h₂ := Finite.to_fintype h₁
-  
+
   have h₃ : s.ncard = Fintype.card α :=
     by
       subst s
@@ -1419,10 +1417,10 @@ Fintype.card (Set.range f) = Fintype.card α ↔ f.Injective := by
       rw [Set.ncard_eq_ncard_iff_bijective Set.finite_univ h₁]
       use λ ⟨x, hx⟩ => ⟨Sum.inl x, by simp⟩
       constructor <;> reduce <;> simp
-  
+
   have h₄ := Set.Finite.image g h₁
   have h₅ := h₄.to_fintype
-  
+
   have h₆ : Cardinal.mk (g '' s) = Cardinal.mk s :=
     by
       simp [h₃, ←h]
@@ -1495,12 +1493,12 @@ theorem Set.ncard_image_eq_iff_injOn {α β : Type} {s : Set α} {f : α → β}
 (h₁ : s.Finite) : (f '' s).ncard = s.ncard ↔ s.InjOn f := by
   have h₂ := h₁.to_fintype
   have h₃ := @fintype_card_range_eq_iff_injective
-  
+
   let g' : s → f '' s := λ (⟨x, hx⟩ : s) => (⟨f x, by simp; use x⟩ : f '' s)
   obtain ⟨g, hg⟩ := hv g'
   change _ = λ _ => _ at hg
   clear! g'
-  
+
   have h₄ : ∃ (r : f '' s → Set.range g), r.Bijective :=
     by
       subst hg
@@ -1511,7 +1509,7 @@ theorem Set.ncard_image_eq_iff_injOn {α β : Type} {s : Set α} {f : α → β}
         simp at hy
         exact ⟨⟨y, by simpa⟩, by simpa⟩
       simp [Function.Bijective, Function.Injective, Function.Surjective]
-  
+
   specialize @h₃ s (f '' s) _ g
   simp at h₃
   convert h₃ <;> clear h₃
