@@ -8,7 +8,6 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Fintype.Card
--- import Mathlib.Data.Ordmap.Ordset
 import Mathlib.Control.Monad.Basic
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Set.Card.Arithmetic
@@ -685,23 +684,46 @@ theorem not_iff_comm' {P Q : Prop} : (¬P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
 
 theorem imp_cpos {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto
 
-def nat_find (P : ℕ → Prop) [DecidablePred P] [Decidable # ∃ x, P x] : ℕ :=
-  if h : ∃ x, P x then Nat.find h else 0
+noncomputable
+def nat_find (P : ℕ → Prop) : ℕ := by
+  classical
+  exact if h : ∃ n, P n ∧ ∀ k < n, ¬P k then h.choose else 0
 
-theorem nat_find_spec' {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x]
-(h : ∃ n, P n) : P (nat_find P) ∧ ∀ k, P k → nat_find P ≤ k := by
-  simp [nat_find, h]
+theorem nat_find_eq {P} : by classical exact (
+nat_find P = if h : ∃ n, P n then Nat.find h else 0) := by
+  classical
+  unfold nat_find
+  symm
+  by_cases h₁ : ∃ n, P n
+  · have h₂ : ∃ n, P n ∧ ∀ k < n, ¬P k :=
+      by
+        use Nat.find h₁
+        rw [←Nat.find_eq_iff h₁]
+    simp [h₁, h₂]
+    generalize_proofs
+    rw [Nat.find_eq_iff h₁]
+    exact h₂.choose_spec
+  split_ifs with h₂
+  · simp at h₁
+    obtain ⟨n, h₂⟩ := h₂
+    cases h₁ n h₂.1
+  rfl
+
+theorem nat_find_spec' {P : ℕ → Prop} (h : ∃ n, P n) : P (nat_find P) ∧
+∀ k, P k → nat_find P ≤ k := by
+  classical
+  simp [nat_find_eq, h]
   use Nat.find_spec h
   intro k hk
   use k
 
-theorem nat_find_spec {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x]
-(h : ∃ n, P n) : P (nat_find P) := by
+theorem nat_find_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (nat_find P) := by
   exact (nat_find_spec' h).1
 
-theorem nat_find_eq_of {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x] {n}
-(h₁ : P n) (h₂ : ∀ k < n, ¬P k) : nat_find P = n := by
-  unfold nat_find
+theorem nat_find_eq_of {P : ℕ → Prop} {n} (h₁ : P n) (h₂ : ∀ k < n, ¬P k) :
+nat_find P = n := by
+  classical
+  rw [nat_find_eq]
   split_ifs with h₃
   · rw [Nat.find_eq_iff]
     tauto
@@ -709,30 +731,28 @@ theorem nat_find_eq_of {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, 
   specialize h₃ n
   contradiction
 
-theorem nat_find_eq_zero_of {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x]
-(h : ∀ n, ¬P n) : nat_find P = 0 := by
-  unfold nat_find
+theorem nat_find_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : nat_find P = 0 := by
+  rw [nat_find_eq]
   split_ifs with h₁
   · contrapose! h
     exact h₁
   rfl
 
-theorem nat_find_eq_iff {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x] {n} :
-nat_find P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0) := by
+theorem nat_find_eq_iff {P : ℕ → Prop} {n} : by classical exact (
+nat_find P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0)) := by
   split_ifs with h₁
-  · unfold nat_find; simp [h₁, Nat.find_eq_iff]
+  · rw [nat_find_eq]; simp [h₁, Nat.find_eq_iff]
   simp at h₁
   rw [nat_find_eq_zero_of h₁, eq_comm]
 
-theorem nat_find_min {P : ℕ → Prop} [DecidablePred P] [Decidable # ∃ x, P x] {n}
-(h : n < nat_find P) : ¬P n := by
-  unfold nat_find at h
+theorem nat_find_min {P : ℕ → Prop} {n} (h : n < nat_find P) : ¬P n := by
+  classical
+  rw [nat_find_eq] at h
   split_ifs at h with h₁
   · exact Nat.find_min h₁ h
   simp at h
 
 theorem nat_find_eq_of_not_ap_zero {P : ℕ → Prop}
-[DecidablePred P] [Decidable # ∃ x, P x] [Decidable # ∃ x, P # x + 1]
 (h₁ : ∃ n, P n) (h₂ : ¬P 0) : nat_find P = nat_find (λ m => P (m + 1)) + 1 := by
   apply nat_find_eq_of
   · apply @nat_find_spec (P # · + 1)
@@ -750,18 +770,16 @@ theorem nat_find_eq_of_not_ap_zero {P : ℕ → Prop}
   exact hk
 
 theorem nat_find_eq_of_not_ap_le {P : ℕ → Prop}
-[DecidablePred P] [Decidable # ∃ x, P x] [∀ k, Decidable # ∃ x, P # k + x]
 (n : ℕ) (h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
 nat_find P = nat_find (λ m => P (n + m)) + n := by
   classical
-  nm ha₁ ha₂ ha₃
   induction n generalizing P
   · simp
   nm n ih
   have h₃ : ¬P 0 :=
     by
       apply h₂; simp
-  specialize @ih (P # · + 1) _ _ _ _ _ <;> try dsimp
+  specialize @ih (P # · + 1) _ _ <;> try dsimp
   · obtain ⟨k, hk⟩ := h₁
     cases k
     · contradiction

@@ -202,7 +202,7 @@ theorem exi_simp_path_of_trs_full_eq {a b ts} (h : sys.trs a ts = (b, [])) :
   simp [h_cnd] at h₁
   obtain ⟨xs, hx, ys, hy, h₁, h₂⟩ := h₁
   subst hn
-  
+
   wlog hxy : xs.length < ys.length with ih₁
   · simp at hxy
     apply @ih₁ S T sys cnd h_cnd a b ts h ys hy xs hx
@@ -213,9 +213,9 @@ theorem exi_simp_path_of_trs_full_eq {a b ts} (h : sys.trs a ts = (b, [])) :
     exact List.eq_of_prefix_and_length_eq hx hy h₂
   have h₄ := Nat.lt_of_lt_of_le hxy hy.length_le
   nm x₁ x₂ x₃; clear! x₁ x₂ x₃
-  
+
   have h₃ := List.prefix_of_prefix_length_le hx hy # le_of_lt hxy
-  
+
   obtain ⟨c, hcx⟩ : ∃ c, sys.trs a xs = (c, []) :=
     by
       use (sys.trs a xs).1
@@ -223,16 +223,16 @@ theorem exi_simp_path_of_trs_full_eq {a b ts} (h : sys.trs a ts = (b, [])) :
       dsimp
       apply trs_snd_eq_nil_of_prefix_and_eq_nil hx
       simp [h]
-  
+
   have hcy : sys.trs a ys = (c, []) :=
     by
       ext1
       · rw [←h₁, hcx]
       apply trs_snd_eq_nil_of_prefix_and_eq_nil hy
       rw [h]
-  
+
   have h₅ := List.IsPrefix.length_le hy
-  
+
   have h₆ := @ih (ts.length + xs.length - ys.length)
   apply @h₆ _ a b (xs ++ ts.drop ys.length) _ _
   · omega
@@ -656,7 +656,7 @@ sys.simp_path' a (ts ++ [t]) ↔ sys.simp_path' a ts ∧
     simp [hx, trs_append, hb, h₁, h₂] at h
     simp [h] at hx
   rintro ⟨h₁, h₂⟩ xs ys h₃ h₄ h₅
-  
+
   wlog hxy : xs <+: ys with ih
   · symm
     apply ih h₁ h₂ ys xs h₄ h₃ h₅.symm
@@ -665,7 +665,7 @@ sys.simp_path' a (ts ++ [t]) ↔ sys.simp_path' a ts ∧
     simp [hxy] at h₆
     exact h₆
   nm x₁ x₂ x₃; clear! x₁ x₂ x₃
-  
+
   simp at h₃
   symm at h₃
   rcases h₃ with rfl | h₃
@@ -673,15 +673,15 @@ sys.simp_path' a (ts ++ [t]) ↔ sys.simp_path' a ts ∧
   simp at h₄
   rcases h₄ with h₄ | rfl
   · exact h₁ xs ys h₃ h₄ h₅
-  
+
   clear hxy
   exfalso
-  
+
   obtain ⟨b, hb⟩ := exi_trs_full_of_simp_path' h₁
-  
+
   specialize h₂ b hb xs h₃
   obtain ⟨c, hc, h₂⟩ := h₂
-  
+
   simp [trs_append, hb, hc] at h₅
   apply h₂; clear h₂
   ext1
@@ -698,7 +698,7 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts}
   replace h := exi_simp_path_prefix_of_not_simp_path' h
   obtain ⟨xs, t, h₁, h₂, h₃⟩ := h
   haveI ht : Inhabited T := ⟨t⟩
-  
+
   obtain ⟨b, hb⟩ := exi_trs_full_of_simp_path' h₂
   obtain ⟨c, hc⟩ : ∃ c, sys.tr b t = some c :=
     by
@@ -710,7 +710,7 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts}
       have h₆ := trs_snd_eq_nil_of_prefix_and_eq_nil h₁ hh
       simp [h₅] at h₆
   clear! ts
-  
+
   rw [simp_path'_snoc_iff] at h₃
   push_neg at h₃
   specialize h₃ h₂
@@ -951,21 +951,21 @@ theorem trs_full_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
   nm y ys
   exfalso
   rw [List.append_cons] at h₂
-  
+
   obtain ⟨c, hc⟩ : ∃ c, sys.trs a (xs ++ [y]) = (c, []) :=
     by
       simp [Prod.ext_iff]
       exact trs_snd_eq_nil_of_prefix_and_eq_nil
         (by simp : xs ++ [y] <+: xs ++ [y] ++ ys) (by rw [h₂])
-  
+
   rw [trs_append] at h₂
   simp [hc] at h₂
-  
+
   simp [trs_append, h₁] at hc
   split at hc <;> simp at hc
   nm x d h₃; clear x
   symm at hc; subst hc
-  
+
   apply @h b c y _ h₃ _
   · exact reachable_of_trs_eq # congrArg (·.1) h₁
   · exact reachable_of_trs_eq # congrArg (·.1) h₂
@@ -1134,7 +1134,7 @@ theorem simulate_exi_snd_pos_of_finite
   have h₅ : (sys.simulate f s m).2 ≠ 0 :=
     by
       subst hm
-      unfold nat_find
+      rw [nat_find_eq]
       split_ifs with h₅
       · have h₆ := Nat.find_spec h₅
         convert h₆
