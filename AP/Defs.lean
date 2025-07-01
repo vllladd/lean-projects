@@ -1,4 +1,4 @@
-import AP.System.Main
+import AP.Game.Main
 
 namespace AP
 
@@ -60,7 +60,10 @@ match s.turn with
 | A => s.a_move p
 | D => s.d_move p
 
-def Rules : System State Point := ⟨State.tr_fn⟩
+def Rules : System State Point :=
+  { initial := Set.range init_state
+  , tr := State.tr_fn
+  }
 
 def State.a_has_move (s : State) : Prop :=
   ∃ p, s.a_valid_move p

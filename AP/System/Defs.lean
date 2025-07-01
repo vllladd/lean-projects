@@ -1,6 +1,8 @@
 import AP.Util
 
+@[ext]
 structure System (S T : Type) : Type where
+  initial : Set S
   tr : S → T → Option S
 
 namespace System
@@ -42,6 +44,13 @@ def simulate {S T} (sys : System S T) (f : S → T) (s : S) : ℕ → S × ℕ
   | none => (s, n + 1)
   | some s₁ => sys.simulate f s₁ n
 
+def simp_path' (sys : System S T) (a : S) (ts : List T) : Prop :=
+  ∀ (xs ys : List T), xs <+: ts → ys <+: ts →
+  (sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys
+
+def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
+  sys.simp_path' a ts ∧ sys.trs a ts = (b, [])
+
 @[class]
 inductive Reachable {S T} (sys : System S T) : S → S → Prop where
 | refl : ∀ {a}, sys.Reachable a a
@@ -55,9 +64,10 @@ structure Acyclic (s : S) : Prop where
 structure Tree (s : S) : Prop where
   h : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂
 
-def simp_path' (sys : System S T) (a : S) (ts : List T) : Prop :=
-  ∀ (xs ys : List T), xs <+: ts → ys <+: ts →
-  (sys.trs a xs).1 = (sys.trs a ys).1 → xs = ys
+@[class]
+structure Initial (s : S) : Prop where
+  h : s ∈ sys.initial
 
-def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
-  sys.simp_path' a ts ∧ sys.trs a ts = (b, [])
+@[class]
+inductive Valid (s : S) : Prop where
+| mk : ∀ (s₀ : S) [sys.Initial s₀], sys.Reachable s₀ s → Valid s

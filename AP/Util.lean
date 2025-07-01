@@ -1320,6 +1320,14 @@ def Set.Finite.to_fintype {α : Type}
 {sa : Set α} (ha : sa.Finite) : Fintype sa := by
   unfold Set.Finite at ha; exact ha.to_fintype
 
+theorem Finset.image_toSet_eq {α β : Type} [DecidableEq β]
+{s : Finset α} {f : α → β} :
+f '' s.toSet = (s.image f).toSet := by
+  symm; exact coe_image
+
+theorem Finset.ncard_toSet {α : Type} {s : Finset α} :
+s.toSet.ncard = s.card := by simp
+
 theorem Set.injOn_of_card_image_eq' {α : Type} {s : Set α} {f : α → α}
 (h₁ : s.Finite) (h₂ : Cardinal.mk (f '' s) = Cardinal.mk s) : s.InjOn f := by
   classical
@@ -1334,34 +1342,8 @@ theorem Set.injOn_of_card_image_eq' {α : Type} {s : Set α} {f : α → α}
   subst hs
   clear h₁ h₃
   simp at h₂
-
-  induction s using Finset.induction
-  · simp
-  nm x s hx ih
-
-  simp at h₂ ⊢
-  rw [Set.image_insert_eq, Finset.card_insert_of_notMem hx] at h₂
-  rw [Set.ncard_insert_eq_ite] at h₂
-  split_ifs at h₂ with h₁
-  · have h₄ : (f '' s).ncard ≤ s.card :=
-      by
-        rw [Finset.card_eq_toSet_ncard]
-        apply Set.ncard_image_le
-        simp
-    linarith
-  simp at h₂
-  specialize ih h₂
-  intro y hy z hz h₃
-  simp at hy hz h₁
-  rcases hy with rfl | hy
-  · rcases hz with rfl | hz
-    · rfl
-    specialize h₁ z hz
-    simp [h₃] at h₁
-  rcases hz with rfl | hz
-  · specialize h₁ y hy
-    contradiction
-  exact @ih y hy z hz h₃
+  rw [Finset.image_toSet_eq, Finset.ncard_toSet, Finset.card_image_iff] at h₂
+  exact h₂
 
 theorem Set.card_image_eq_iff_injOn' {α : Type} {s : Set α} {f : α → α}
 (h₁ : s.Finite) : Cardinal.mk (f '' s) = Cardinal.mk s ↔ s.InjOn f := by
@@ -1403,78 +1385,28 @@ sa.ncard = sb.ncard ↔ ∃ (f : sa → sb), f.Bijective := by
   rw [ncard_eq_ncard_iff_nonempty_equiv ha hb]
   exact nonempty_equiv_iff_bijective
 
+theorem Set.range_eq_image {α β : Type} {f : α → β} :
+Set.range f = f '' Set.univ := by simp
+
+theorem Fintype.card_eq_finset_card {α : Type} [ha : Fintype α] :
+Fintype.card α = (Finset.univ : Finset α).card := by simp
+
+theorem Set.univ_eq_finset_univ_of_fintype {α : Type} [ha : Fintype α] :
+(Set.univ : Set α) = Finset.univ.toSet := by simp
+
 theorem fintype_card_range_eq_iff_injective {α β : Type}
 [ha : Fintype α] {f : α → β} :
 Fintype.card (Set.range f) = Fintype.card α ↔ f.Injective := by
+  classical
   refine' ⟨_, λ h => Set.card_range_of_injective h⟩
   intro h
   simp at h
-
-  let g' : _ → α ⊕ β := λ (x : α ⊕ β) =>
-    match x with
-    | .inl x => (.inr # f x : α ⊕ β)
-    | .inr x => .inr x
-  obtain ⟨g, hg⟩ := hv g'
-  change g = λ _ => _ at hg
-  clear! g'
-
-  obtain ⟨s, hs⟩ := hv # Set.range # @Sum.inl α β
-
-  have h₁ : s.Finite :=
-    by
-      subst hs
-      apply Set.finite_range
-
-  have h₂ := Finite.to_fintype h₁
-
-  have h₃ : s.ncard = Fintype.card α :=
-    by
-      subst s
-      symm
-      rw [Fintype.card_eq_nat_card, ←Set.ncard_univ]
-      rw [Set.ncard_eq_ncard_iff_bijective Set.finite_univ h₁]
-      use λ ⟨x, hx⟩ => ⟨Sum.inl x, by simp⟩
-      constructor <;> reduce <;> simp
-
-  have h₄ := Set.Finite.image g h₁
-  have h₅ := h₄.to_fintype
-
-  have h₆ : Cardinal.mk (g '' s) = Cardinal.mk s :=
-    by
-      simp [h₃, ←h]
-      subst hs
-      symm
-      rw [Set.ncard_eq_ncard_iff_bijective (Set.finite_range _) h₄]
-      constructor
-      rotate_left
-      · rintro ⟨y, hy⟩
-        simp at hy
-        use Sum.inr y
-        simp
-        obtain ⟨x, hx⟩ := hy
-        use x
-        simpa [hg]
-      constructor
-      · intro ⟨x, hx⟩ ⟨y, hy⟩ h
-        simp at h
-        simp [h]
-      intro ⟨y, hy⟩
-      simp at hy
-      obtain ⟨x, hx⟩ := hy
-      use ⟨f x, by simp⟩
-      simp [←hx, hg]
-  rw [Set.card_image_eq_iff_injOn' h₁] at h₆
-  intro x y h
-  specialize @h₆ (Sum.inl x) (by simp [hs]) (Sum.inl y) (by simp [hs])
-  simp at h₆
-  apply h₆
-  simpa [hg]
-
-theorem Set.range_eq_image {α β : Type} {f : α → β} :
-Set.range f = f '' Set.univ := Set.image_univ.symm
-
-theorem Fintype.card_eq_finset_card {α : Type} [ha : Fintype α] :
-Fintype.card α = (Finset.univ : Finset α).card := by rfl
+  rw [Set.range_eq_image, Fintype.card_eq_finset_card,
+    Set.univ_eq_finset_univ_of_fintype, Finset.image_toSet_eq,
+    Finset.ncard_toSet] at h
+  rw [Finset.card_image_iff] at h
+  simp at h
+  exact h
 
 theorem Fintype.card_eq_set_ncard {α : Type} [ha : Fintype α] :
 Fintype.card α = (Set.univ : Set α).ncard := by
@@ -1508,35 +1440,7 @@ theorem Set.finite_of_finite_and_bijective' {α β : Type}
   exact finite_of_finite_and_bijective h₁ h₂
 
 theorem Set.ncard_image_eq_iff_injOn {α β : Type} {s : Set α} {f : α → β}
-(h₁ : s.Finite) : (f '' s).ncard = s.ncard ↔ s.InjOn f := by
-  have h₂ := h₁.to_fintype
-  have h₃ := @fintype_card_range_eq_iff_injective
-
-  let g' : s → f '' s := λ (⟨x, hx⟩ : s) => (⟨f x, by simp; use x⟩ : f '' s)
-  obtain ⟨g, hg⟩ := hv g'
-  change _ = λ _ => _ at hg
-  clear! g'
-
-  have h₄ : ∃ (r : f '' s → Set.range g), r.Bijective :=
-    by
-      subst hg
-      simp
-      constructor
-      rotate_left
-      · rintro ⟨y, hy⟩
-        simp at hy
-        exact ⟨⟨y, by simpa⟩, by simpa⟩
-      simp [Function.Bijective, Function.Injective, Function.Surjective]
-
-  specialize @h₃ s (f '' s) _ g
-  simp at h₃
-  convert h₃ <;> clear h₃
-  · rw [ncard_eq_ncard_iff_bijective (Set.toFinite _)]
-    rotate_left
-    · apply Set.finite_of_finite_and_bijective # Set.Finite.image f h₁
-      exact h₄
-    exact h₄
-  · simp [hg, Function.Injective, Set.InjOn]
+(h₁ : s.Finite) : (f '' s).ncard = s.ncard ↔ s.InjOn f := ncard_image_iff h₁
 
 theorem set_range_sum_inl_card_eq {α β : Type} [ha : Fintype α] :
 (Set.range # @Sum.inl α β).ncard = Fintype.card α := by

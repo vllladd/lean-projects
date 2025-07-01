@@ -4,7 +4,7 @@ namespace System
 
 variable {S T} {sys : System S T}
 
-instance : Inhabited # System S T := ⟨⟨default⟩⟩
+instance : Inhabited # System S T := ⟨⟨∅, default⟩⟩
 
 noncomputable
 def dflt_sim_fn [Inhabited # S → T] : S → T :=
@@ -283,3 +283,8 @@ theorem acyclic_iff {s} : sys.Acyclic s ↔
 theorem tree_iff {s} : sys.Tree s ↔
 ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂ :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+theorem valid_of_initial {s} [sys.Initial s] : sys.Valid s := by
+  apply Valid.mk s; rfl
+
+instance {s} [sys.Initial s] : sys.Valid s := valid_of_initial

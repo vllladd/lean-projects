@@ -37,7 +37,7 @@ theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
 theorem cntrex₁ : ¬∀ (S T) (sys : System S T) (f s n),
 (∀ s', ¬sys.has_tr s') → ∃ k s', sys.simulate f s n = (s', k) ∧ 0 < k := by
   push_neg
-  use Unit, Unit, ⟨λ _ _ => none⟩, (λ _ => ()), (), 0
+  use Unit, Unit, ⟨∅, λ _ _ => none⟩, (λ _ => ()), (), 0
   unfold has_tr
   simp
 
@@ -75,7 +75,7 @@ theorem cntrex₄ : ¬∀ (S T) (sys : System S T) (s) (h₁ : sys.Acyclic s)
 (h₅ : sys.simulate f s m = (sm, y)),
 sn ≠ sm := by
   push_neg
-  use Unit, Unit, ⟨λ _ _ => none⟩, ()
+  use Unit, Unit, ⟨∅, λ _ _ => none⟩, ()
   simp [sim_fn_iff, has_tr]
   use default, 0, 1
   simp
@@ -118,7 +118,7 @@ theorem cntrex₅ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
 {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f],
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∀ x, sys.simulate f s n = (x, k) := by
   push_neg
-  use Bool, Unit, ⟨λ _ _ => none⟩
+  use Bool, Unit, ⟨∅, λ _ _ => none⟩
   use inferInstance, true
   simp
   use (λ _ => ())
@@ -131,7 +131,7 @@ theorem cntrex₆ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
 {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] {x},
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
   push_neg
-  use Bool, Unit, ⟨λ _ _ => none⟩
+  use Bool, Unit, ⟨∅, λ _ _ => none⟩
   use inferInstance, true
   simp [acyclic_iff]
   use default
@@ -146,7 +146,7 @@ theorem cntrex₇ : ¬∀ (S T) (sys : System S T)
 (a ts₁ ts₂ b) (h₁ : ∀ t ∈ ts₁, sys.valid_tr b t),
 sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
   push_neg
-  use Bool, Unit, ⟨λ b _ => if b then some true else none⟩
+  use Bool, Unit, ⟨∅, λ b _ => if b then some true else none⟩
   use false, [()], [], true
   simp [valid_tr]
 
