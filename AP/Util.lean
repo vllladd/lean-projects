@@ -1482,3 +1482,21 @@ theorem mk_finset_card_eq_fintype_card_iff_injective {α β}
 @[simp]
 theorem Finset.card_le_fintype_card {α : Type} [ha : Fintype α] {s : Finset α} :
 s.card ≤ Fintype.card α := Finset.card_le_univ s
+
+theorem inf_type : Infinite Type := by
+  rw [Cardinal.infinite_iff]
+  suffices h : Cardinal.aleph0 ≤ Cardinal.lift.{1, 1} (Cardinal.mk Type)
+    by
+      simp at h
+      exact h
+  rw [Cardinal.aleph0, Cardinal.lift_mk_le]
+  refine' ⟨⟨Fin, _⟩⟩
+  intro x y h
+  replace h := congrArg Cardinal.mk h
+  simp at h
+  exact h
+
+instance : Infinite Type := inf_type
+
+theorem card_lt_pi {α : Type*} : Cardinal.mk α < Cardinal.mk (α → Prop) := by
+  simp [Cardinal.mk_pi]; apply Cardinal.cantor
