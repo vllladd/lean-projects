@@ -1500,3 +1500,38 @@ instance : Infinite Type := inf_type
 
 theorem card_lt_pi {α : Type*} : Cardinal.mk α < Cardinal.mk (α → Prop) := by
   simp [Cardinal.mk_pi]; apply Cardinal.cantor
+
+def Quotient.lift_out {α β : Type*} {s : Setoid α} (q : Quotient s) (f : α → β)
+(h : ∀ (x y : α), s.r x q.out → s.r y q.out → f x = f y) : β := by
+  induction q using Quotient.hrecOn
+  · nm x
+    use f x
+  nm x y h
+  clear! q
+  apply Function.hfunext
+  · simp
+    rw [forall_congr]; intro a
+    rw [forall_congr]; intro b
+    ext
+    constructor
+    all_goals
+      intro h₁ h₂ h₃
+      apply h₁
+      all_goals
+        first | apply s.trans h₂ | apply s.trans h₃
+        apply Quotient.out_equiv_out.mpr
+        apply Quotient.sound
+        first | exact s.symm h | exact h
+  intro h₁ h₂ h₃
+  clear h₂ h₃
+  simp
+  have h₂ : s (Quotient.mk s x).out (Quotient.mk s y).out :=
+    by
+      apply Quotient.out_equiv_out.mpr
+      simpa
+  apply h₁ x y
+  · apply s.symm
+    exact Quotient.eq_mk_iff_out.mp rfl
+  · apply s.symm
+    apply Quotient.eq_mk_iff_out.mp
+    simpa

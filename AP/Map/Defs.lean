@@ -9,15 +9,17 @@ namespace Map
 
 set_option linter.unusedVariables false
 universe u
-variable {ι α : Type u} [hhι : LinearOrder ι] [hhα : DecidableEq α]
+variable {ι α : Type u} [hhι : LinearOrder ι] [hhα : DecidableEq α] (mp : Map ι α)
 set_option linter.unusedSectionVars true
 
+omit mp
 def empty : Map ι α :=
   ⟨∅, by simp⟩
 
+omit mp
 instance : EmptyCollection (Map ι α) := ⟨Map.empty⟩
 
-protected def insert (mp : Map ι α) (i : ι) (x : α) : Map ι α := by
+protected def insert (i : ι) (x : α) : Map ι α := by
   use insert (i, x) # mp.s.filter # λ y => y.1 ≠ i
   rintro ⟨j, a⟩ ⟨k, b⟩
   simp
@@ -29,54 +31,64 @@ protected def insert (mp : Map ι α) (i : ι) (x : α) : Map ι α := by
   simp [h₃] at h₁ h₂
   exact mp.h h₁ h₂ rfl
 
--- #check 0 #exit
+def insert_prod (p : ι × α) : Map ι α :=
+  mp.insert p.1 p.2
 
-def ListType (ι α : Type u) : Type u :=
-  {xs : List # ι × α // xs.Nodup ∧ (∀ {x y}, x ∈ xs → y ∈ xs → x.1 = y.1 → x.2 = y.2)}
+instance : Insert (ι × α) (Map ι α) :=
+  ⟨λ p mp => mp.insert_prod p⟩
 
-def ListEquiv (xs ys : @ListType ι α) : Prop :=
-  xs.1.Perm ys.1
+omit mp
+def ofList' (mp : Map ι α) : List (ι × α) → Map ι α
+| [] => mp
+| (x :: xs) => (insert x mp).ofList' xs
 
-omit hhι hhα
-theorem equiv_list_equiv : Equivalence # @ListEquiv ι α := by
-  unfold ListEquiv
-  constructor
-  · intro xs; simp
-  · intro xs ys h; exact h.symm
-  · intro xs ys zs h₁ h₂; exact h₁.trans h₂
+omit mp
+def ofList : List (ι × α) → Map ι α :=
+  empty.ofList'
 
-def ListSetoid (ι α : Type u) : Setoid # ListType ι α :=
-  ⟨_, equiv_list_equiv⟩
-
-def ListQuot (ι α : Type u) : Type u :=
-  Quotient # @ListSetoid ι α
-
--- def to_list_quot (mp : Map ι α) : ListQuot ι α := by
---   apply Quotient.mk
---   have h₁ := mp.1
---   refine' Quotient.liftOn mp.s.1 _ _
---   · intro xs
-
-#check 0 #exit
-
-def lookup (mp : Map ι α) (i : ι) : Option α := by
-  obtain ⟨s, h⟩ := mp
-  revert h
-  apply s.val.lift # λ xs h => (xs.find? # λ (a : ι × α) => a.1 = i).map Prod.snd
-  intro xs ys hx
-  dsimp
-  change xs.Perm ys at hx
-  congr 1
-  ext ⟨j, x⟩
-  simp [List.find?_eq_some_iff_getElem]
-  rintro rfl
-  rw [List.perm_iff_count] at hx
-  specialize hx ⟨j, x⟩
-  have hd : xs.Nodup :=
+def lookup (i : ι) : Option α := by
+  obtain ⟨⟨s, hs⟩, h⟩ := mp
+  simp at h
+  apply s.lift_out λ xs => (xs.find? λ a => a.1 = i).map Prod.snd
+  intro xs ys hx hy
+  ext x
+  simp only [Option.map_eq_some_iff, List.find?_eq_some_iff_getElem, decide_eq_true_eq,
+    Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Prod.exists,
+    exists_eq_right, exists_eq_left]
+  change List.Perm _ _ at hx hy
+  have h₁ := hx.trans hy.symm
+  
+  have h₂ : (Quotient.out s).Nodup :=
     by
-      have := s.2
+      unfold Multiset.Nodup at hs
+      generalize_proofs h₂ at hs
+      sorry
+  
+  have h₃ := List.Perm.nodup hx.symm h₂
+  have h₄ := List.Perm.nodup hy.symm h₂
+  
+  -- rw [List.perm_iff_count] at hx hy h₁
+  
   constructor
-  · rintro ⟨k, h₁, h₂, h₃⟩
-    have h₄ : xs.count (j, x) = 1 :=
+  · rintro ⟨n, hn, h₅, h₆⟩
+    have h₇ : xs[n] ∈ ys :=
       by
-        apply List.count_eq_one_of_mem
+        rw [List.Perm.mem_iff (l₂ := xs)]
+        simp; exact h₁.symm
+    rw [List.mem_iff_getElem] at h₇
+    obtain ⟨n', hn', h₇⟩ := h₇
+    use n', hn', by rwa [h₇]
+    intro m' hm'
+    rw [List.nodup_iff_getElem?_ne_getElem?] at h₄
+    specialize h₄ m' n' hm' hn'
+    rw [List.getElem?_eq_getElem # by linarith] at h₄
+    rw [List.getElem?_eq_getElem # by linarith] at h₄
+    simp at h₄
+    contrapose! h₄
+    sorry
+  
+  sorry
+
+-- h₂ : ∀ (a b : List (ι × α)), (List.isSetoid (ι × α)) a b → a.Nodup = b.Nodup
+-- hs : Quot.liftOn s List.Nodup h₂
+-- ⊢ (Quotient.out s).Nodup
