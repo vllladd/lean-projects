@@ -1,35 +1,81 @@
 import AP.Util
 
+@[simp]
+def map_list_cnd.{u} {ι α : Type u} [LinearOrder ι] [DecidableEq α] : List (ι × α) → Prop
+| (x :: y :: xs) => x.1 < y.1 ∧ map_list_cnd (y :: xs)
+| _ => True
+
 @[ext]
 structure Map.{u} (ι α : Type u) [LinearOrder ι] [DecidableEq α] : Type u where
-  s : Finset # ι × α
-  h : ∀ {x y}, x ∈ s → y ∈ s → x.1 = y.1 → x.2 = y.2
+  xs : List (ι × α)
+  h : map_list_cnd xs
 
 namespace Map
 
 set_option linter.unusedVariables false
 universe u
-variable {ι α : Type u} [hhι : LinearOrder ι] [hhα : DecidableEq α] (mp : Map ι α)
+variable {ι α : Type u} [hhι : LinearOrder ι] [hhα : DecidableEq α]
 set_option linter.unusedSectionVars true
 
-omit mp
 def empty : Map ι α :=
-  ⟨∅, by simp⟩
+  ⟨[], trivial⟩
 
-omit mp
 instance : EmptyCollection (Map ι α) := ⟨Map.empty⟩
 
-protected def insert (i : ι) (x : α) : Map ι α := by
-  use insert (i, x) # mp.s.filter # λ y => y.1 ≠ i
-  rintro ⟨j, a⟩ ⟨k, b⟩
+def insert' (x : ι × α) : List (ι × α) → List (ι × α)
+| [] => [x]
+| (y :: xs) => match compare x.1 y.1 with
+  | .eq => x :: xs
+  | .lt => x :: y :: xs
+  | .gt => y :: insert' x xs
+
+omit hhα in
+@[simp]
+theorem insert'_nil {x : ι × α} : insert' x [] = [x] := rfl
+
+omit hhα in
+@[simp]
+theorem insert'_cons {x y : ι × α} {xs : List (ι × α)} :
+insert' x (y :: xs) = (match compare x.1 y.1 with
+| .eq => x :: xs
+| .lt => x :: y :: xs
+| .gt => y :: insert' x xs) := rfl
+
+theorem map_list_cnd_of_cons {x : ι × α} {xs}
+(h : map_list_cnd (x :: xs)) : map_list_cnd xs := by
+  cases xs; trivial; exact h.2
+
+theorem map_list_cnd_cons_of_congr {x y : ι × α} {xs}
+(h₁ : map_list_cnd (x :: xs)) (h₂ : x.1 = y.1) : map_list_cnd (y :: xs) := by
+  cases xs; trivial
+  nm z xs
+  simp at h₁ ⊢
+  rwa [←h₂]
+
+#check 0 #exit
+
+def insert_prod (mp : Map ι α) (x : ι × α) : Map ι α := by
+  use insert' x mp.xs
+  rcases mp with ⟨xs, h⟩
+  dsimp
+  induction xs
+  · simp
+  nm y xs ih
+  rcases y with ⟨j, y⟩
   simp
-  rintro h₁ h₂ rfl
-  by_cases h₃ : j = i
-  · subst h₃
-    simp at h₁ h₂
-    rw [h₁, h₂]
-  simp [h₃] at h₁ h₂
-  exact mp.h h₁ h₂ rfl
+  split <;> nm x h₁ <;> clear x
+  · rw [compare_eq_iff_eq] at h₁
+    subst h₁
+    exact map_list_cnd_cons_of_congr h rfl
+  · rw [compare_lt_iff_lt] at h₁; simp; tauto
+  rw [compare_gt_iff_gt] at h₁
+  specialize ih # map_list_cnd_of_cons h
+  cases h₂ : insert' x xs
+  · simp
+  nm z zs
+  rw [h₂] at ih
+
+#check 0 #exit
 
 def insert_prod (p : ι × α) : Map ι α :=
   mp.insert p.1 p.2
@@ -37,12 +83,10 @@ def insert_prod (p : ι × α) : Map ι α :=
 instance : Insert (ι × α) (Map ι α) :=
   ⟨λ p mp => mp.insert_prod p⟩
 
-omit mp
 def ofList' (mp : Map ι α) : List (ι × α) → Map ι α
 | [] => mp
 | (x :: xs) => (insert x mp).ofList' xs
 
-omit mp
 def ofList : List (ι × α) → Map ι α :=
   empty.ofList'
 
