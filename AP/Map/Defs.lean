@@ -85,6 +85,23 @@ def lookup (i : ι) : Option α := by
     rw [List.getElem?_eq_getElem # by linarith] at h₄
     simp at h₄
     contrapose! h₄
+    
+    have h₈ : ys[n'] ∈ s.out :=
+      by
+        rw [List.Perm.mem_iff (l₂ := ys)]
+        simp; exact hy.symm
+    have h₉ : ys[m'] ∈ s.out :=
+      by
+        rw [List.Perm.mem_iff (l₂ := ys)]
+        simp; exact hy.symm
+    rw [List.mem_iff_getElem] at h₈ h₉
+    obtain ⟨k₁, hk₁, h₈⟩ := h₈
+    obtain ⟨k₂, hk₂, h₉⟩ := h₉
+    
+    rw [←h₈]
+    rw [←h₉] at h₄ ⊢
+    specialize h i x
+    
     sorry
   
   sorry
