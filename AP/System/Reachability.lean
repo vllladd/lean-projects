@@ -2,7 +2,8 @@ import AP.System.Basic
 
 namespace System
 
-variable {S T} {sys : System S T}
+universe u
+variable {S T : Type u} {sys : System S T}
 
 theorem sim_full_inj_of_acyclic {s} [ha : sys.Acyclic s]
 {f} [hf : sys.SimFn f] {n m} :

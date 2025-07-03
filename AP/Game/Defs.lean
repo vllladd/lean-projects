@@ -1,27 +1,37 @@
 import AP.System.Main
 
-def Game.Tr (Pl : Type) (Tr : Pl → Type) : Type :=
-  Σ (p : Pl), Tr p
-
-@[ext]
-structure Game.State (St Pl : Type) (Tr : Pl → Type) : Type where
-  player : Pl
-  state : St
-  hist : List # Game.Tr Pl Tr
-
-@[ext]
-structure Game (Pl St Re : Type) (Sv Tr : Pl → Type)
-(Tv : Pl → Pl → Type) [hd₁ : DecidableEq Pl] : Type where
-  sys : System (Game.State St Pl Tr) (Game.Tr Pl Tr)
+structure GameParams.{u} : Type (u + 1) where
+  Pl : Type u
+  St : Type u
+  Re : Type u
+  Sv : Pl → Type u
+  Tr : Pl → Type u
+  Tv : Pl → Pl → Type u
   
-  fvs : (p : Pl) → St → Sv p
-  fvt : (p : Pl) → Game.Tr Pl Tr → List (Game.Tr Pl Tr) → Tr p
-  rules : (p : Pl) → St → Tr p → Option (Pl × St)
-  
+  h_pl : LinearOrder Pl
+  h_re : LinearOrder Re
   h_tv_rfl : ∀ p, Tv p p = Tr p
+
+def GameTr.{u} (T : GameParams.{u}) : Type u :=
+  Σ (p : T.Pl), T.Tr p
+
+@[ext]
+structure GameState.{u} (T : GameParams.{u}) : Type u where
+  player : T.Pl
+  state : T.St
+  hist : List # GameTr T
+
+@[ext]
+structure Game.{u} (T : GameParams.{u}) : Type u where
+  sys : System (GameState T) (GameTr T)
   
-  h_sys_tr : sys.tr = λ (s : Game.State St Pl Tr) (t : Game.Tr Pl Tr) =>
-    if h : s.player ≠ t.1 then none else do
+  fvs : (p : T.Pl) → T.St → T.Sv p
+  fvt : (p : T.Pl) → GameTr T → List (GameTr T) → T.Tr p
+  rules : (p : T.Pl) → T.St → T.Tr p → Option (T.Pl × T.St)
+  
+  h_sys_tr : sys.tr = λ (s : GameState T) (t : GameTr T) => by
+    haveI := T.h_pl
+    exact if h : s.player ≠ t.1 then none else do
     let (p₁, s₁) ← rules s.player s.state # by simp at h; rw [h]; exact t.2
     some #
       { s with
@@ -32,4 +42,5 @@ structure Game (Pl St Re : Type) (Sv Tr : Pl → Type)
 
 namespace Game
 
-variable {Pl St Re Sv Tr Tv} [hd₁ : DecidableEq Pl] (game : Game Pl St Re Sv Tr Tv)
+universe u
+variable {T : GameParams.{u}} (game : Game T)

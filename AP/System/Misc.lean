@@ -1,8 +1,9 @@
-import AP.System.Acyclic
+import AP.System.Reachability
 
 namespace System
 
-variable {S T} {sys : System S T}
+universe u
+variable {S T : Type u} {sys : System S T}
 
 set_option linter.unusedVariables false
 
@@ -34,7 +35,7 @@ theorem aux₄ {s ts s'}
 theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
   simp [Prod.ext_iff]
 
-theorem cntrex₁ : ¬∀ (S T) (sys : System S T) (f s n),
+theorem cntrex₁ : ¬∀ (S T : Type) (sys : System S T) (f s n),
 (∀ s', ¬sys.has_tr s') → ∃ k s', sys.simulate f s n = (s', k) ∧ 0 < k := by
   push_neg
   use Unit, Unit, ⟨∅, λ _ _ => none⟩, (λ _ => ()), (), 0
@@ -49,7 +50,7 @@ theorem aux₇ {f s n s'}
 (h₁ : sys.simulate f s n = (s', 0)) : sys.Reachable s s' := by
   exact reachable_of_simulate_full h₁
 
-theorem cntrex₂ : ¬∀ (S T) (sys : System S T),
+theorem cntrex₂ : ¬∀ (S T : Type) (sys : System S T),
 DecidableHasTr sys → ∃ f, sys.SimFn f := by
   push_neg
   use Unit, Empty, default
@@ -69,7 +70,7 @@ theorem cntrex₃ : ¬∀ (α β : Type) (P : α → Prop)
   use Unit, Empty, λ _ => False
   simp
 
-theorem cntrex₄ : ¬∀ (S T) (sys : System S T) (s) (h₁ : sys.Acyclic s)
+theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (h₁ : sys.Acyclic s)
 (f) (h₂ : SimFn sys f) (n m sn sm x y) (h₃ : n < m)
 (h₄ : sys.simulate f s n = (sn, x))
 (h₅ : sys.simulate f s m = (sm, y)),
@@ -114,7 +115,7 @@ sn ≠ sm := by
   specialize h₁ f n m # by rw [h₄, h₅]
   linarith
 
-theorem cntrex₅ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
+theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
 {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f],
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∀ x, sys.simulate f s n = (x, k) := by
   push_neg
@@ -127,7 +128,7 @@ theorem cntrex₅ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
   use N + 1
   simp
 
-theorem cntrex₆ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
+theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
 {s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] {x},
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
   push_neg
@@ -142,7 +143,7 @@ theorem cntrex₆ : ¬∀ (S T) (sys : System S T) [h₁ : Finite S]
   intro k hk
   rw [simulate_eq_of_tr_eq_none] <;> simp
 
-theorem cntrex₇ : ¬∀ (S T) (sys : System S T)
+theorem cntrex₇ : ¬∀ (S T : Type) (sys : System S T)
 (a ts₁ ts₂ b) (h₁ : ∀ t ∈ ts₁, sys.valid_tr b t),
 sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
   push_neg

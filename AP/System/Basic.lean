@@ -2,7 +2,8 @@ import AP.System.Defs
 
 namespace System
 
-variable {S T} {sys : System S T}
+universe u
+variable {S T : Type u} {sys : System S T}
 
 instance : Inhabited # System S T := ⟨⟨∅, default⟩⟩
 

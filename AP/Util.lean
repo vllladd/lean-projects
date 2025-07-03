@@ -26,55 +26,55 @@ macro_rules
 macro "nm " args:(ppSpace colGt Lean.binderIdent)+ : tactic =>
   `(tactic| rename_i $args*)
 
-def fn_set' {α : Type} [DecidableEq α] (a b x : α) : α :=
+def fn_set' {α : Type*} [DecidableEq α] (a b x : α) : α :=
 if x = a then b else x
 
-def fn_swap' {α : Type} [DecidableEq α] (a b x : α) : α :=
+def fn_swap' {α : Type*} [DecidableEq α] (a b x : α) : α :=
 if x = a then b else if x = b then a else x
 
-def fn_set {α β : Type} [DecidableEq α] (a : α) (b : β) (f : α → β) (x : α) : β :=
+def fn_set {α β : Type*} [DecidableEq α] (a : α) (b : β) (f : α → β) (x : α) : β :=
 if x = a then b else f x
 
-def fn_swap {α β : Type} [DecidableEq α] (a b : α) (f : α → β) (x : α) : β :=
+def fn_swap {α β : Type*} [DecidableEq α] (a b : α) (f : α → β) (x : α) : β :=
 f # fn_swap' a b x
 
 -----
 
-theorem thm_let {α : Type} (x : α) : ∃ y, y = x := by
+theorem thm_let {α : Type*} (x : α) : ∃ y, y = x := by
   apply exists_apply_eq_apply
 
-theorem fn_set_eq {α β : Type} [DecidableEq α] {a : α} {b : β} {f : α → β} {x : α} :
+theorem fn_set_eq {α β : Type*} [DecidableEq α] {a : α} {b : β} {f : α → β} {x : α} :
 fn_set a b f x = if x = a then b else f x := rfl
 
-theorem fn_swap_eq {α β : Type} [DecidableEq α] {a b : α} {f : α → β} {x : α} :
+theorem fn_swap_eq {α β : Type*} [DecidableEq α] {a b : α} {f : α → β} {x : α} :
 fn_swap a b f x = f (if x = a then b else if x = b then a else x) := rfl
 
 @[simp]
-theorem fn_swap'_idemp {α : Type} [DecidableEq α] {a b x : α} :
+theorem fn_swap'_idemp {α : Type*} [DecidableEq α] {a b x : α} :
 fn_swap' a b (fn_swap' a b x) = x := by
   unfold fn_swap'; aesop
 
 @[simp]
-theorem fn_swap_idemp {α β : Type} [DecidableEq α] {a b : α} {f : α → β} :
+theorem fn_swap_idemp {α β : Type*} [DecidableEq α] {a b : α} {f : α → β} :
 fn_swap a b (fn_swap a b f) = f := by
   ext x; simp [fn_swap_eq]; aesop
 
-def fn_swap'_equiv {α : Type} [DecidableEq α] (a b : α) : α ≃ α := by
+def fn_swap'_equiv {α : Type*} [DecidableEq α] (a b : α) : α ≃ α := by
   apply Equiv.mk (fn_swap' a b) (fn_swap' a b) _ _
   all_goals exact λ x => fn_swap'_idemp
 
 @[simp]
-theorem fn_swap'_equiv_to_fun {α : Type} [DecidableEq α] {a b : α} :
+theorem fn_swap'_equiv_to_fun {α : Type*} [DecidableEq α] {a b : α} :
 (fn_swap'_equiv a b).toFun = fn_swap' a b :=
   by simp [fn_swap'_equiv]
 
 @[simp]
-theorem fn_swap'_equiv_inv_fun {α : Type} [DecidableEq α] {a b : α} :
+theorem fn_swap'_equiv_inv_fun {α : Type*} [DecidableEq α] {a b : α} :
 (fn_swap'_equiv a b).invFun = fn_swap' a b :=
   by simp [fn_swap'_equiv]
 
 @[simp]
-theorem fn_swap'_equiv_apply {α : Type} [DecidableEq α] {a b x : α} :
+theorem fn_swap'_equiv_apply {α : Type*} [DecidableEq α] {a b x : α} :
 fn_swap'_equiv a b x = fn_swap' a b x := rfl
 
 theorem nat_rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
@@ -82,7 +82,7 @@ theorem nat_rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
   | zero => simp
   | succ n => simpa
 
-theorem nat_rec_succ' {α : Type} {z : α} (f : ℕ → α → α) {n : ℕ} :
+theorem nat_rec_succ' {α : Type*} {z : α} (f : ℕ → α → α) {n : ℕ} :
 @Nat.rec (λ _ => α) z f (n + 1) =
 @Nat.rec (λ _ => α) (f 0 z) (λ m => f (m + 1)) n := by
   induction n generalizing z f with
@@ -164,27 +164,27 @@ theorem nat_right_lt_succ_max {a b : ℕ} : b < max a b + 1 := by
   simp [Nat.lt_add_one_iff]
 
 @[simp]
-theorem fn_set'_eq_of_eq {α : Type} [DecidableEq α] {a b : α} :
+theorem fn_set'_eq_of_eq {α : Type*} [DecidableEq α] {a b : α} :
 fn_set' a b a = b := by simp [fn_set']
 
 @[simp]
-theorem fn_swap'_eq_of_eq_left {α : Type} [DecidableEq α] {a b : α} :
+theorem fn_swap'_eq_of_eq_left {α : Type*} [DecidableEq α] {a b : α} :
 fn_swap' a b a = b := by simp [fn_swap']
 
 @[simp]
-theorem fn_swap'_eq_of_eq_right {α : Type} [DecidableEq α] {a b : α} :
+theorem fn_swap'_eq_of_eq_right {α : Type*} [DecidableEq α] {a b : α} :
 fn_swap' a b b = a := by simp [fn_swap']
 
 @[simp]
-theorem fn_set_eq_of_eq {α β : Type} [DecidableEq α] {a : α} {b : β} {f : α → β} :
+theorem fn_set_eq_of_eq {α β : Type*} [DecidableEq α] {a : α} {b : β} {f : α → β} :
 fn_set a b f a = b := by simp [fn_set_eq]
 
 @[simp]
-theorem fn_swap_eq_of_eq_left {α β : Type} [DecidableEq α] {a b : α} {f : α → β} :
+theorem fn_swap_eq_of_eq_left {α β : Type*} [DecidableEq α] {a b : α} {f : α → β} :
 fn_swap a b f a = f b := by simp [fn_swap_eq]
 
 @[simp]
-theorem fn_swap_eq_of_eq_right {α β : Type} [DecidableEq α] {a b : α} {f : α → β} :
+theorem fn_swap_eq_of_eq_right {α β : Type*} [DecidableEq α] {a b : α} {f : α → β} :
 fn_swap a b f b = f a := by simp [fn_swap_eq]; aesop
 
 theorem nat_thm_aux₃ {a b c : ℕ} : a + b + c - b = a + c := by
@@ -218,7 +218,7 @@ theorem sum_fn_swap_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ}
 theorem nat_thm_aux₄ {a b : ℕ} : a + (b + 1) ≠ b := by
   nth_rewrite 2 [add_comm]; rw [←add_assoc]; simp
 
-theorem fn_set_eq_of_ne {α β : Type} [DecidableEq α] {a : α} {b : β}
+theorem fn_set_eq_of_ne {α β : Type*} [DecidableEq α] {a : α} {b : β}
 {f : α → β} {x : α} (hx : x ≠ a) : fn_set a b f x = f x := by
   simp [fn_set_eq, hx]
 
@@ -226,7 +226,7 @@ theorem nat_fn_set_add {a b : ℕ} {f : ℕ → ℕ} {x : ℕ} :
 fn_set a (f a + b) f x = f x + if x = a then b else 0 := by
   rw [fn_set_eq]; aesop
 
-theorem fn_set_fn_set_eq_fn_swap {α β : Type} [DecidableEq α] {a b} {f : α → β} :
+theorem fn_set_fn_set_eq_fn_swap {α β : Type*} [DecidableEq α] {a b} {f : α → β} :
 fn_set a (f b) (fn_set b (f a) f) = fn_swap a b f := by
   ext x; simp [fn_set_eq, fn_swap_eq]; aesop
 
@@ -286,20 +286,20 @@ theorem ite_10_le_one {P : Prop} [Decidable P] : ite P 1 0 ≤ 1 := by
 theorem ite_01_le_one {P : Prop} [Decidable P] : ite P 0 1 ≤ 1 := by
   split_ifs <;> simp
 
-theorem hv {α : Type} (x : α) : ∃ y, y = x := exists_eq
+theorem hv {α : Type*} (x : α) : ∃ y, y = x := exists_eq
 
-theorem forall_spec {α β γ : Type} {p : α → Prop} (f : β → γ → α)
+theorem forall_spec {α β γ : Type*} {p : α → Prop} (f : β → γ → α)
 (h : ∀ x, p x) : ∀ y z, p (f y z) := by intro y z; apply h
 
-class ListMem {α : Type} [DecidableEq α] (x : α) (xs : List α) where
+class ListMem {α : Type*} [DecidableEq α] (x : α) (xs : List α) where
   i : ℕ
 
 @[simp]
-instance {α : Type} [DecidableEq α] {x : α} {xs} :
+instance {α : Type*} [DecidableEq α] {x : α} {xs} :
 ListMem x (x :: xs) := ⟨0⟩
 
 @[simp]
-instance {α : Type} [DecidableEq α] {x y : α} {xs}
+instance {α : Type*} [DecidableEq α] {x y : α} {xs}
 [h : ListMem x xs] : ListMem x (y :: xs) := ⟨h.i + 1⟩
 
 inductive Bit where
@@ -356,29 +356,29 @@ def Bit.xor : Bit → Bit → Bit
 | 0, a => a
 | 1, a => a.not
 
-def Set.erase {α : Type} (x : α) (s : Set α) := s \ {x}
+def Set.erase {α : Type*} (x : α) (s : Set α) := s \ {x}
 
 @[simp]
-theorem Set.mem_erase {α : Type} {z x : α} (s : Set α) :
+theorem Set.mem_erase {α : Type*} {z x : α} (s : Set α) :
 z ∈ s.erase x ↔ z ≠ x ∧ z ∈ s := by
   unfold Set.erase; aesop
 
-theorem Set.erase_eq_of_not_mem {α : Type} {x : α} {s : Set α}
+theorem Set.erase_eq_of_not_mem {α : Type*} {x : α} {s : Set α}
 (h : x ∉ s) : s.erase x = s := by simpa [Set.erase]
 
-theorem Set.insert_erase_eq_of_mem {α : Type} {x : α} {s : Set α}
+theorem Set.insert_erase_eq_of_mem {α : Type*} {x : α} {s : Set α}
 (h : x ∈ s) : insert x (s.erase x) = s := by
   ext z; simp; apply Iff.intro <;> intro h₁
   rcases h₁ with rfl | ⟨h₁, h₂⟩ <;> assumption
   simp [h₁]; apply eq_or_ne
 
-theorem ne_none_of_eq_some {α : Type} {m : Option α} {x : α}
+theorem ne_none_of_eq_some {α : Type*} {m : Option α} {x : α}
 (h : m = some x) : m ≠ none := by simp [h]
 
-def List.snoc {α : Type} (xs : List α) (x : α) := xs ++ [x]
+def List.snoc {α : Type*} (xs : List α) (x : α) := xs ++ [x]
 
 @[simp]
-theorem Set.finite_erase_iff {α : Type} {x : α} {s : Set α} :
+theorem Set.finite_erase_iff {α : Type*} {x : α} {s : Set α} :
 (s.erase x).Finite ↔ s.Finite := by
   by_cases hx : x ∈ s
   case neg => simp [Set.erase_eq_of_not_mem hx]
@@ -390,23 +390,23 @@ theorem Set.finite_erase_iff {α : Type} {x : α} {s : Set α} :
   apply Finite.insert; exact h
 
 @[simp]
-theorem Set.infinite_erase_iff {α : Type} {x : α} {s : Set α} :
+theorem Set.infinite_erase_iff {α : Type*} {x : α} {s : Set α} :
 (s.erase x).Infinite ↔ s.Infinite := by simp [Set.Infinite]
 
-theorem Set.diff_upair {α : Type} (x y : α) (s : Set α) :
+theorem Set.diff_upair {α : Type*} (x y : α) (s : Set α) :
 s \ {x, y} = (s \ {x}) \ {y} := by ext z; simp; tauto
 
 @[simp]
-theorem Set.univ_ne_univ_diff_insert {α : Type} {x : α} {s : Set α} :
+theorem Set.univ_ne_univ_diff_insert {α : Type*} {x : α} {s : Set α} :
 Set.univ ≠ Set.univ \ (insert x s) := by
   simp [Set.ext_iff]; use x; simp
 
 @[simp]
-theorem Set.univ_ne_univ_diff_singleton {α : Type} {x : α} :
+theorem Set.univ_ne_univ_diff_singleton {α : Type*} {x : α} :
 Set.univ ≠ Set.univ \ {x} := by simp [Set.ext_iff]
 
 @[simp]
-theorem Set.univ_ne_erase {α : Type} {x : α} :
+theorem Set.univ_ne_erase {α : Type*} {x : α} :
 Set.univ ≠ Set.univ.erase x := by simp [Set.erase]
 
 theorem prop_bcs (P : Prop) {R : Prop} (h₁ : P → R)
@@ -414,21 +414,21 @@ theorem prop_bcs (P : Prop) {R : Prop} (h₁ : P → R)
 
 theorem eq_true_of {P : Prop} (h : P) : P = True := by simpa
 
-theorem Set.diff_erase_self_eq_of_mem {α : Type} {x : α} {s : Set α}
+theorem Set.diff_erase_self_eq_of_mem {α : Type*} {x : α} {s : Set α}
 (h : x ∈ s) : s \ s.erase x = {x} := by simpa [Set.erase]
 
-theorem Set.eq_empty_iff {α : Type} {s : Set α} : s = ∅ ↔ ∀ x, x ∉ s :=
+theorem Set.eq_empty_iff {α : Type*} {s : Set α} : s = ∅ ↔ ∀ x, x ∉ s :=
   eq_empty_iff_forall_notMem
 
 @[simp]
-theorem Set.subsingleton_upair_iff {α : Type} {x y : α} :
+theorem Set.subsingleton_upair_iff {α : Type*} {x y : α} :
 ({x, y} : Set _).Subsingleton ↔ x = y := by
   simp [Set.Subsingleton]; simp [eq_comm]
 
-theorem ne_of_congr {α β : Type} {x y : α} (f : α → β)
+theorem ne_of_congr {α β : Type*} {x y : α} (f : α → β)
 (h : f x ≠ f y) : x ≠ y := by contrapose! h; rw [h]
 
-theorem skolemize {α β : Type} [Nonempty β] {p : α → Prop} {q : α → β → Prop} :
+theorem skolemize {α β : Type*} [Nonempty β] {p : α → Prop} {q : α → β → Prop} :
 (∀ x, p x → ∃ y, q x y) ↔ ∃ (f : α → β), ∀ x, p x → q x (f x) := by
   constructor
   · intro h; use λ x => Classical.epsilon λ y => p x → q x y
@@ -624,44 +624,44 @@ theorem int_mul_2_succ_div_2_eq {n : ℤ}
   suffices (n * 2 + 1) / 2 = n * 2 / 2 by simp at this; assumption
   rw [int_succ_div_2_eq_div_iff # by linarith]; simp
 
-theorem choose_eq_epsilon {α : Type} [Nonempty α] {P : α → Prop} (h : ∃ x, P x) :
+theorem choose_eq_epsilon {α : Type*} [Nonempty α] {P : α → Prop} (h : ∃ x, P x) :
 h.choose = Classical.epsilon P := by
   simp only [Exists.choose, Classical.choose, Classical.indefiniteDescription,
     Classical.epsilon, Classical.strongIndefiniteDescription]
   simp [h]
 
 @[simp]
-theorem snoc_ne_nil {α : Type} {xs : List α} {x : α} : xs.snoc x ≠ [] := by
+theorem snoc_ne_nil {α : Type*} {xs : List α} {x : α} : xs.snoc x ≠ [] := by
   simp [List.snoc]
 
 @[simp]
-def List.init {α : Type} : List α → List α
+def List.init {α : Type*} : List α → List α
 | [] => []
 | [_] => []
 | (x :: ys) => x :: ys.init
 
-theorem init_cons_of_ne_nil {α : Type} {x : α} {xs : List α}
+theorem init_cons_of_ne_nil {α : Type*} {x : α} {xs : List α}
 (h : xs ≠ []) : (x :: xs).init = x :: xs.init := by
   cases xs; simp at h; rfl
 
 @[simp]
-theorem init_snoc {α : Type} {xs : List α} {x : α} : (xs.snoc x).init = xs := by
+theorem init_snoc {α : Type*} {xs : List α} {x : α} : (xs.snoc x).init = xs := by
   unfold List.snoc
   induction xs; rfl
   nm y xs ih
   rw [List.cons_append, init_cons_of_ne_nil # by simp, ih]
 
 @[simp]
-theorem nil_snoc {α : Type} {x : α} : [].snoc x = [x] := rfl
+theorem nil_snoc {α : Type*} {x : α} : [].snoc x = [x] := rfl
 
 @[simp]
-theorem cons_snoc {α : Type} {x y : α} {xs : List α} :
+theorem cons_snoc {α : Type*} {x y : α} {xs : List α} :
 (x :: xs).snoc y = x :: xs.snoc y := rfl
 
 theorem and_of {P Q : Prop} (h₁ : P) (h₂ : P → Q) : P ∧ Q := by tauto
 
 @[simp]
-theorem snoc_inj {α : Type} {xs ys : List α} {x y : α} :
+theorem snoc_inj {α : Type*} {xs ys : List α} {x y : α} :
 xs.snoc x = ys.snoc y ↔ xs = ys ∧ x = y := by
   symm; constructor; rintro ⟨rfl, rfl⟩; rfl
   intro h
@@ -676,7 +676,7 @@ xs.snoc x = ys.snoc y ↔ xs = ys ∧ x = y := by
     exact ih h
 
 @[simp]
-theorem snoc_ne_self {α : Type} {xs : List α} {x : α} : xs.snoc x ≠ xs := by
+theorem snoc_ne_self {α : Type*} {xs : List α} {x : α} : xs.snoc x ≠ xs := by
   simp [List.snoc]
 
 theorem not_iff' {P Q : Prop} : ¬(P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
@@ -791,23 +791,23 @@ nat_find P = nat_find (λ m => P (n + m)) + n := by
   rw [nat_find_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
   ring_nf
 
-theorem fn_set_same_value {α β : Type} [DecidableEq α] {f : α → β} {a : α} :
+theorem fn_set_same_value {α β : Type*} [DecidableEq α] {f : α → β} {a : α} :
 fn_set a (f a) f = f := by
   unfold fn_set; ext x; split_ifs with h
   rw [h]
   rfl
 
-theorem fn_set_twice_same {α β : Type} [DecidableEq α]
+theorem fn_set_twice_same {α β : Type*} [DecidableEq α]
 {f : α → β} {a : α} {b₁ b₂ : β} : fn_set a b₂ (fn_set a b₁ f) = fn_set a b₂ f := by
   unfold fn_set; ext x; split_ifs with h <;> rfl
 
-theorem fn_set_comm {α β : Type} [DecidableEq α] {f : α → β} {a₁ a₂ : α} {b₁ b₂ : β}
+theorem fn_set_comm {α β : Type*} [DecidableEq α] {f : α → β} {a₁ a₂ : α} {b₁ b₂ : β}
 (h : a₁ ≠ a₂) : fn_set a₁ b₁ (fn_set a₂ b₂ f) = fn_set a₂ b₂ (fn_set a₁ b₁ f) := by
   unfold fn_set; ext x; split_ifs with h₁ h₂ h₂ <;> try rfl
   rw [h₁] at h₂
   contradiction
 
-theorem fn_set_ext {α β : Type} [DecidableEq α] {f g : α → β} {a : α} {b : β} :
+theorem fn_set_ext {α β : Type*} [DecidableEq α] {f g : α → β} {a : α} {b : β} :
 (∀ x, fn_set a b f x = fn_set a b g x) ↔ (∀ x, x ≠ a → f x = g x) := by
   constructor <;> intro h x
   · intro h₁
@@ -818,51 +818,51 @@ theorem fn_set_ext {α β : Type} [DecidableEq α] {f g : α → β} {a : α} {b
     exact h _ h₁
 
 @[simp]
-theorem Option.failure_bind {α β : Type} {f : α → Option β} :
+theorem Option.failure_bind {α β : Type*} {f : α → Option β} :
 (failure : Option α).bind f = none := rfl
 
 @[simp]
-theorem Option.exists_eq_some_of_ne_none {α : Type} {x : Option α}
+theorem Option.exists_eq_some_of_ne_none {α : Type*} {x : Option α}
 (h : x ≠ none) : ∃ y, x = some y := by rwa [←ne_none_iff_exists']
 
 @[simp]
-theorem Option.guard_bind_eq_some_iff {α : Type} {P : Prop} [Decidable P]
+theorem Option.guard_bind_eq_some_iff {α : Type*} {P : Prop} [Decidable P]
 {f : Unit → Option α} {x} :
 (_root_.guard P : Option Unit).bind f = some x ↔ P ∧ f () = some x := by
   by_cases h : P <;> simp [h]
 
-theorem quot_lift_mk_of {α : Type} {P : α → α → Prop} {f : α → Prop} {a} (h₁)
+theorem quot_lift_mk_of {α : Type*} {P : α → α → Prop} {f : α → Prop} {a} (h₁)
 (h₂ : (∀ (a₁ a₂ : α), P a₁ a₂ → f a₁ = f a₂) → f a) :
 Quot.lift f h₁ (Quot.mk P a) := h₂ h₁
 
 @[simp]
-theorem Set.not_nonempty_iff {α : Type} {s : Set α} :
+theorem Set.not_nonempty_iff {α : Type*} {s : Set α} :
 ¬s.Nonempty ↔ s = ∅ := not_nonempty_iff_eq_empty
 
 @[simp]
-theorem Set.setOf_compl {α : Type} {P : α → Prop} :
+theorem Set.setOf_compl {α : Type*} {P : α → Prop} :
 {x | P x}ᶜ = {x | ¬P x} := rfl
 
 -- @[simp]
--- theorem not_mem_ordset_empty {α : Type} [LinearOrder α] {x : α} :
+-- theorem not_mem_ordset_empty {α : Type*} [LinearOrder α] {x : α} :
 -- x ∉ (∅ : Ordset α) := by
 --   simp [Ordset.instEmptyCollection, Ordset.nil, Ordset.instMembership]; rfl
 
 -- @[simp]
--- theorem Ordset.finite {α : Type} [hi : LinearOrder α] {s : Ordset α} :
+-- theorem Ordset.finite {α : Type*} [hi : LinearOrder α] {s : Ordset α} :
 -- {x | x ∈ s}.Finite := by
 --   sorry
 
 @[simp]
-theorem option_get!_with_bot_some {α : Type} [Inhabited α] {x : α} :
+theorem option_get!_with_bot_some {α : Type*} [Inhabited α] {x : α} :
 (WithBot.some x).get! = x := rfl
 
-theorem max_right_eq_of_max_eq_and_ne {α : Type} [LinearOrder α] {a b c : α}
+theorem max_right_eq_of_max_eq_and_ne {α : Type*} [LinearOrder α] {a b c : α}
 (h₁ : max a b = c) (h₂ : a ≠ c) : b = c := by
   simp [max_eq_iff, h₂] at h₁; exact h₁.1
 
 @[simp]
-theorem list_not_mem_failure {α : Type} {x : α} :
+theorem list_not_mem_failure {α : Type*} {x : α} :
 x ∉ (failure : List α) := by classical
   exact List.count_eq_zero.mp rfl
 
@@ -914,19 +914,19 @@ match h₁ : decide # R True ∨ R False with
   push_neg
   exact h₁
 
-theorem not_forall_congr_iff : ¬∀ (α : Type) (P Q : α → Prop),
+theorem not_forall_congr_iff : ¬∀ (α : Type*) (P Q : α → Prop),
 ((∀ x, P x) ↔ (∀ x, Q x)) ↔ ∀ x, P x ↔ Q x := by
   push_neg
-  use Prop, id, (¬.)
-  dsimp
-  decide
+  use ULift Prop, ULift.down, (¬·.down)
+  have h₁ : (∀ P, ¬P) → False := by decide
+  aesop
 
-theorem not_exi_congr_iff : ¬∀ (α : Type) (P Q : α → Prop),
+theorem not_exi_congr_iff : ¬∀ (α : Type*) (P Q : α → Prop),
 ((∃ x, P x) ↔ (∃ x, Q x)) ↔ ∃ x, P x ↔ Q x := by
   push_neg
-  use Prop, id, (¬.)
-  dsimp
-  decide
+  use ULift Prop, ULift.down, (¬·.down)
+  have h₁ : ∀ P, P ∨ ¬P := by decide
+  aesop
 
 end
 
@@ -936,7 +936,7 @@ theorem Nat.add_one_sub {a b : ℕ} (h : b ≤ a) : a + 1 - b = a - b + 1 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   ring_nf; simp [nat_thm_aux₃]
 
-theorem List.eq_of_prefix_and_length_eq {α : Type} {xs ys zs : List α}
+theorem List.eq_of_prefix_and_length_eq {α : Type*} {xs ys zs : List α}
 (hx : xs <+: zs) (hy : ys <+: zs) (hn : xs.length = ys.length) : xs = ys := by
   induction ys generalizing xs zs
   · simp at hn; exact hn
@@ -953,7 +953,7 @@ theorem List.eq_of_prefix_and_length_eq {α : Type} {xs ys zs : List α}
   · rw [hx.1, hy.1]
   exact ih hx.2 hy.2 hn
 
-theorem fintype_exi_iter_cycle {α : Type} [ha : Fintype α]
+theorem fintype_exi_iter_cycle {α : Type*} [ha : Fintype α]
 {f : α → α} {x : α} : ∃ n m, n < m ∧ f^[n] x = f^[m] x := by
   obtain ⟨g, hg⟩ := hv # λ n => f^[n] x
   suffices h : ∃ n m, g n = g m ∧ n ≠ m by
@@ -969,10 +969,10 @@ theorem fintype_exi_iter_cycle {α : Type} [ha : Fintype α]
   exact Fintype.false # Fintype.ofInjective g h₁
 
 @[simp]
-theorem list_take_prefix {α : Type} {xs : List α} {k : ℕ} : xs.take k <+: xs := by
+theorem list_take_prefix {α : Type*} {xs : List α} {k : ℕ} : xs.take k <+: xs := by
   apply List.take_prefix
 
-theorem List.prefix_of_prefix_snoc_and_ne {α : Type} {xs ys : List α} {y : α}
+theorem List.prefix_of_prefix_snoc_and_ne {α : Type*} {xs ys : List α} {y : α}
 (h₁ : xs <+: ys ++ [y]) (h₂ : xs ≠ ys ++ [y]) : xs <+: ys := by
   induction ys generalizing xs y
   · cases xs; rfl
@@ -989,7 +989,7 @@ theorem List.prefix_of_prefix_snoc_and_ne {α : Type} {xs ys : List α} {y : α}
   simp
   exact ih h₁ h₂
 
-theorem List.right_induction {α : Type} {P : List α → Prop}
+theorem List.right_induction {α : Type*} {P : List α → Prop}
 (h₁ : P []) (h₂ : ∀ xs x, P xs → P (xs ++ [x])) (xs : List α) : P xs := by
   generalize h : xs.reverse = ys
   induction ys generalizing xs
@@ -1004,7 +1004,7 @@ theorem List.right_induction {α : Type} {P : List α → Prop}
   simp
 
 @[simp]
-theorem List.append_prefix_left_iff {α : Type} {xs ys : List α} :
+theorem List.append_prefix_left_iff {α : Type*} {xs ys : List α} :
 xs ++ ys <+: xs ↔ ys = [] := by
   symm
   constructor
@@ -1014,7 +1014,7 @@ xs ++ ys <+: xs ↔ ys = [] := by
   exact h.1
 
 @[simp]
-theorem List.prefix_snoc_iff {α : Type} {xs ys : List α} {y : α} :
+theorem List.prefix_snoc_iff {α : Type*} {xs ys : List α} {y : α} :
 xs <+: ys ++ [y] ↔ xs <+: ys ∨ xs = ys ++ [y] := by
   induction xs generalizing ys y
   · simp
@@ -1026,19 +1026,19 @@ xs <+: ys ++ [y] ↔ xs <+: ys ∨ xs = ys ++ [y] := by
   by_cases h : x = z <;> simp [h]
   exact ih
 
-theorem List.prefix_antisymm {α : Type} {xs ys : List α}
+theorem List.prefix_antisymm {α : Type*} {xs ys : List α}
 (h₁ : xs <+: ys) (h₂ : ys <+: xs) : xs = ys := by
   obtain ⟨ys, rfl⟩ := h₁
   obtain ⟨zs, h₂⟩ := h₂
   simp at h₂
   simp [h₂]
 
-theorem List.take_length_eq_of_prefix {α : Type} {xs ys : List α}
+theorem List.take_length_eq_of_prefix {α : Type*} {xs ys : List α}
 (h₁ : ys <+: xs) : xs.take ys.length = ys := by
   obtain ⟨xs, rfl⟩ := h₁; simp
 
 @[simp]
-theorem List.nodup_inits {α : Type} {xs : List α} : xs.inits.Nodup := by
+theorem List.nodup_inits {α : Type*} {xs : List α} : xs.inits.Nodup := by
   induction xs
   · simp
   nm x xs ih
@@ -1047,19 +1047,19 @@ theorem List.nodup_inits {α : Type} {xs : List α} : xs.inits.Nodup := by
   simp
 
 noncomputable
-instance {α : Type} [h : Fintype α] {β : Type} {f : α → β} :
+instance {α : Type*} [h : Fintype α] {β : Type*} {f : α → β} :
 Fintype # Set.range f := by apply Fintype.ofFinite
 
-theorem Cardinal.mk_eq_of_fintype_card {α : Type} [h : Fintype α] {n}
+theorem Cardinal.mk_eq_of_fintype_card {α : Type*} [h : Fintype α] {n}
 (h₁ : Fintype.card α = n) : Cardinal.mk α = n := by
   rw [Cardinal.mk_fintype, h₁]
 
 noncomputable
-def Finset.to_some_list {α : Type} (s : Finset α) : List α := by
+def Finset.to_some_list {α : Type*} (s : Finset α) : List α := by
   classical
   exact Classical.epsilon # λ xs => xs.toFinset = s
 
-def Finset.to_sorted_list {α : Type} [h : LinearOrder α]
+def Finset.to_sorted_list {α : Type*} [h : LinearOrder α]
 (s : Finset α) : List α := by
   apply s.val.lift # λ xs => xs.mergeSort
   intro xs ys hxy
@@ -1079,7 +1079,7 @@ def Finset.to_sorted_list {α : Type} [h : LinearOrder α]
   exact List.eq_of_perm_of_sorted h₃ h₁ h₂
 
 @[simp]
-theorem Finset.to_some_list_toFinset {α : Type} [h : DecidableEq α]
+theorem Finset.to_some_list_toFinset {α : Type*} [h : DecidableEq α]
 {s : Finset α} : s.to_some_list.toFinset = s := by
   unfold to_some_list
   convert Classical.epsilon_spec (p := λ (xs : List α) => xs.toFinset = s) _
@@ -1091,7 +1091,7 @@ theorem Finset.to_some_list_toFinset {α : Type} [h : DecidableEq α]
   simp
 
 @[simp]
-theorem Finset.to_sorted_list_toFinset {α : Type} [h : LinearOrder α]
+theorem Finset.to_sorted_list_toFinset {α : Type*} [h : LinearOrder α]
 {s : Finset α} : s.to_sorted_list.toFinset = s := by
   ext x
   unfold to_sorted_list
@@ -1102,7 +1102,7 @@ theorem Finset.to_sorted_list_toFinset {α : Type} [h : LinearOrder α]
   simp
 
 noncomputable
-def mk_finset {α β : Type}
+def mk_finset {α β : Type*}
 (f : α → β) : Finset β := by
   classical
   by_cases h : Infinite α
@@ -1111,25 +1111,25 @@ def mk_finset {α β : Type}
   replace h := Fintype.ofFinite α
   exact (Fintype.elems.to_some_list.map f).toFinset
 
-def mk_finset_comp {α β : Type} [Fintype α] [LinearOrder α] [DecidableEq β]
+def mk_finset_comp {α β : Type*} [Fintype α] [LinearOrder α] [DecidableEq β]
 (f : α → β) : Finset β :=
   (Fintype.elems.to_sorted_list.map f).toFinset
 
 @[simp]
-theorem Finset.mem_to_some_list_iff {α : Type} {s : Finset α} {x} :
+theorem Finset.mem_to_some_list_iff {α : Type*} {s : Finset α} {x} :
 x ∈ s.to_some_list ↔ x ∈ s := by
   classical
   simp [←List.mem_toFinset]
 
 @[simp]
-theorem Finset.mem_to_sorted_list_iff {α : Type} [LinearOrder α] {s : Finset α} {x} :
+theorem Finset.mem_to_sorted_list_iff {α : Type*} [LinearOrder α] {s : Finset α} {x} :
 x ∈ s.to_sorted_list ↔ x ∈ s := by simp [←List.mem_toFinset]
 
 @[simp]
-theorem Fintype.complete' {α : Type} [Fintype α] {x : α} : x ∈ Fintype.elems := by
+theorem Fintype.complete' {α : Type*} [Fintype α] {x : α} : x ∈ Fintype.elems := by
   apply complete
 
-theorem mk_finset_eq {α β : Type}
+theorem mk_finset_eq {α β : Type*}
 [ha : Fintype α] [DecidableEq α] [DecidableEq β] {f : α → β} :
 mk_finset f = (Fintype.elems.to_some_list.map f).toFinset := by
   simp [mk_finset]
@@ -1139,32 +1139,32 @@ mk_finset f = (Fintype.elems.to_some_list.map f).toFinset := by
   simp
 
 @[simp]
-theorem mem_mk_finset_iff {α β : Type} [Fintype α]
+theorem mem_mk_finset_iff {α β : Type*} [Fintype α]
 {f : α → β} {b : β} : b ∈ mk_finset f ↔ ∃ a, f a = b := by
   classical
   simp [mk_finset_eq]
 
 @[simp]
-theorem mem_mk_finset_comp_iff {α β : Type} [Fintype α] [LinearOrder α] [DecidableEq β]
+theorem mem_mk_finset_comp_iff {α β : Type*} [Fintype α] [LinearOrder α] [DecidableEq β]
 {f : α → β} {b : β} : b ∈ mk_finset_comp f ↔ ∃ a, f a = b := by simp [mk_finset_comp]
 
 @[simp]
 theorem mk_finset_comp_eq_mk_finset {α β} [Fintype α] [LinearOrder α] [DecidableEq β]
 {f : α → β} : mk_finset_comp f = mk_finset f := by ext x; simp
 
-instance {α : Type} [h : IsEmpty α] : Fintype α := ⟨{}, by simp⟩
+instance {α : Type*} [h : IsEmpty α] : Fintype α := ⟨{}, by simp⟩
 
 @[simp]
-theorem mk_finset_const_of_nonempty {α β : Type}
+theorem mk_finset_const_of_nonempty {α β : Type*}
 [Fintype α] [Nonempty α] [DecidableEq α] [DecidableEq β] {b : β} :
 mk_finset (λ (_ : α) => b) = {b} := by ext x; simp [eq_comm]
 
 @[simp]
-theorem mk_finset_const_of_empty {α β : Type}
+theorem mk_finset_const_of_empty {α β : Type*}
 [IsEmpty α] [DecidableEq β] {b : β} : mk_finset (λ (_ : α) => b) = {} := by
   ext x; simp
 
-theorem mk_finset_fin_succ_eq_insert {α : Type}
+theorem mk_finset_fin_succ_eq_insert {α : Type*}
 [ha : DecidableEq α] {n} {f : Fin (n + 1) → α} : mk_finset f =
 insert (f ⟨n, by linarith⟩) (mk_finset # λ (⟨k, hk⟩ : Fin n) => f ⟨k, by linarith⟩) := by
   ext x
@@ -1188,20 +1188,20 @@ theorem mk_finset_card_le {α β} [ha₁ : Fintype α] {f : α → β} :
   simp
 
 @[simp]
-theorem Set.univ_injOn_iff {α β : Type} {f : α → β} :
+theorem Set.univ_injOn_iff {α β : Type*} {f : α → β} :
 (Set.univ : Set α).InjOn f ↔ f.Injective := by simp [Set.InjOn]; rfl
 
 @[simp]
-theorem Fintype.elems_eq_empty_iff {α : Type} [ha : Fintype α] :
+theorem Fintype.elems_eq_empty_iff {α : Type*} [ha : Fintype α] :
 ha.elems = ∅ ↔ ∀ (_ : α), false := by simp [Finset.ext_iff]
 
-theorem Finset.card_eq_card_iff_equiv {α β : Type}
+theorem Finset.card_eq_card_iff_equiv.{u} {α β : Type u}
 {sa : Finset α} {sb : Finset β} : sa.card = sb.card ↔ Nonempty (sa ≃ sb) := by
   simp [←Cardinal.eq]
 
 set_option linter.unusedVariables false
 @[simp]
-theorem Cardinal.mk_subtype_const_true {α : Type} :
+theorem Cardinal.mk_subtype_const_true {α : Type*} :
 Cardinal.mk {x : α // True} = Cardinal.mk α := by
   rw [Cardinal.eq]
   use λ ⟨x, _⟩ => x
@@ -1212,31 +1212,31 @@ set_option linter.unusedVariables true
 
 set_option linter.unusedVariables false
 @[simp]
-theorem nonempty_equiv_subtype_const_true_iff {α β : Type} :
+theorem nonempty_equiv_subtype_const_true_iff.{u} {α β : Type u} :
 Nonempty (α ≃ {x : β // True}) ↔ Nonempty (α ≃ β) := by
   simp [←Cardinal.eq]
 set_option linter.unusedVariables true
 
-theorem nonempty_equiv_comm {α β : Type} :
+theorem nonempty_equiv_comm {α β : Type*} :
 Nonempty (α ≃ β) ↔ Nonempty (β ≃ α) := by
   apply Nonempty.congr <;> exact λ h => h.symm
 
-theorem mk_finset_toSet_eq {α β : Type} [ha : Fintype α] {f : α → β} :
+theorem mk_finset_toSet_eq {α β : Type*} [ha : Fintype α] {f : α → β} :
 (mk_finset f).toSet = Set.range f := by ext x; simp
 
-theorem Finset.card_eq_cardinal_mk_to_nat {α : Type} {s : Finset α} :
+theorem Finset.card_eq_cardinal_mk_to_nat {α : Type*} {s : Finset α} :
 s.card = (Cardinal.mk s).toNat := by simp
 
 @[simp]
-theorem nonempty_equiv_refl {α : Type} : Nonempty (α ≃ α) := ⟨by rfl⟩
+theorem nonempty_equiv_refl {α : Type*} : Nonempty (α ≃ α) := ⟨by rfl⟩
 
-theorem Set.nonempty_equiv_empty_empty {α β : Type} :
+theorem Set.nonempty_equiv_empty_empty {α β : Type*} :
 Nonempty ((∅ : Set α) ≃ (∅ : Set β)) := by
   refine' ⟨⟨_, _, _, _⟩⟩
   all_goals try rintro ⟨x, h⟩; simp at h
 
 @[simp]
-theorem Set.nonempty_equiv_empty_iff {α β : Type} {s : Set α} :
+theorem Set.nonempty_equiv_empty_iff {α β : Type*} {s : Set α} :
 Nonempty (s ≃ (∅ : Set β)) ↔ s = ∅ := by
   constructor
   · rintro ⟨h⟩
@@ -1247,42 +1247,42 @@ Nonempty (s ≃ (∅ : Set β)) ↔ s = ∅ := by
   · rintro rfl
     exact Set.nonempty_equiv_empty_empty
 
-theorem nonempty_equiv_trans {α γ : Type} (β : Type)
+theorem nonempty_equiv_trans {α γ : Type*} (β : Type*)
 (h₁ : Nonempty (α ≃ β)) (h₂ : Nonempty (β ≃ γ)) : Nonempty (α ≃ γ) := by
   rcases h₁ with ⟨a⟩
   rcases h₂ with ⟨b⟩
   exact ⟨a.trans b⟩
 
-theorem nonempty_equiv_set_univ_self {α : Type} :
+theorem nonempty_equiv_set_univ_self {α : Type*} :
 Nonempty (α ≃ (Set.univ : Set α)) := by
   simp [←Cardinal.eq]
 
-theorem nonempty_equiv_set_univ_self' {α : Type} :
+theorem nonempty_equiv_set_univ_self' {α : Type*} :
 Nonempty ((Set.univ : Set α) ≃ α) := by
   simp [←Cardinal.eq]
 
-theorem nonempty_equiv_set_univ_set_univ_iff {α β : Type} :
+theorem nonempty_equiv_set_univ_set_univ_iff.{u} {α β : Type u} :
 Nonempty ((Set.univ : Set α) ≃ (Set.univ : Set β)) ↔ Nonempty (α ≃ β) := by
   simp [←Cardinal.eq]
 
 @[simp]
-theorem nonempty_equiv_set_univ_iff {α β : Type} :
+theorem nonempty_equiv_set_univ_iff.{u} {α β : Type u} :
 Nonempty (α ≃ (Set.univ : Set β)) ↔ Nonempty (α ≃ β) := by
   simp [←Cardinal.eq]
 
 @[simp]
-theorem nonempty_equiv_set_univ_iff' {α β : Type} :
+theorem nonempty_equiv_set_univ_iff'.{u} {α β : Type u} :
 Nonempty ((Set.univ : Set α) ≃ β) ↔ Nonempty (α ≃ β) := by
   simp [←Cardinal.eq]
 
-theorem Finset.card_eq_toSet_ncard {α : Type} {s : Finset α} :
+theorem Finset.card_eq_toSet_ncard {α : Type*} {s : Finset α} :
 s.card = s.toSet.ncard := by simp
 
 noncomputable
-instance {α : Type} [Fintype α] {s : Set α} : Fintype s := by
+instance {α : Type*} [Fintype α] {s : Set α} : Fintype s := by
   exact Fintype.ofFinite ↑s
 
-theorem mk_finset_card_eq_set_card_range {α β : Type}
+theorem mk_finset_card_eq_set_card_range {α β : Type*}
 [ha : Fintype α] {f : α → β} :
 (mk_finset f).card = (Set.range f).ncard := by
   classical
@@ -1298,7 +1298,7 @@ theorem mk_finset_card_eq_set_card_range {α β : Type}
   simp
 
 @[simp]
-theorem fintype_card_set_eq_ncard {α : Type}
+theorem fintype_card_set_eq_ncard {α : Type*}
 {s : Set α} [hs : Fintype s] : Fintype.card s = s.ncard := by
   unfold Fintype.card
   rw [Finset.card_eq_cardinal_mk_to_nat]
@@ -1306,29 +1306,29 @@ theorem fintype_card_set_eq_ncard {α : Type}
   simp
 
 @[simp]
-theorem Cardinal.mk_eq_mk_iff_of_finite {α β : Type}
+theorem Cardinal.mk_eq_mk_iff_of_finite.{u} {α β : Type u}
 [ha : Fintype α] [hb : Fintype β] :
 Cardinal.mk α = Cardinal.mk β ↔ Fintype.card α = Fintype.card β := by
   rw [Cardinal.eq, Fintype.card_eq]
 
 noncomputable
-def Finite.to_fintype {α : Type} (ha : Finite α) : Fintype α :=
+def Finite.to_fintype {α : Type*} (ha : Finite α) : Fintype α :=
   Fintype.ofFinite α
 
 noncomputable
-def Set.Finite.to_fintype {α : Type}
+def Set.Finite.to_fintype {α : Type*}
 {sa : Set α} (ha : sa.Finite) : Fintype sa := by
   unfold Set.Finite at ha; exact ha.to_fintype
 
-theorem Finset.image_toSet_eq {α β : Type} [DecidableEq β]
+theorem Finset.image_toSet_eq {α β : Type*} [DecidableEq β]
 {s : Finset α} {f : α → β} :
 f '' s.toSet = (s.image f).toSet := by
   symm; exact coe_image
 
-theorem Finset.ncard_toSet {α : Type} {s : Finset α} :
+theorem Finset.ncard_toSet {α : Type*} {s : Finset α} :
 s.toSet.ncard = s.card := by simp
 
-theorem Set.injOn_of_card_image_eq' {α : Type} {s : Set α} {f : α → α}
+theorem Set.injOn_of_card_image_eq' {α : Type*} {s : Set α} {f : α → α}
 (h₁ : s.Finite) (h₂ : Cardinal.mk (f '' s) = Cardinal.mk s) : s.InjOn f := by
   classical
   have h₃ := Set.Finite.image f h₁
@@ -1345,7 +1345,7 @@ theorem Set.injOn_of_card_image_eq' {α : Type} {s : Set α} {f : α → α}
   rw [Finset.image_toSet_eq, Finset.ncard_toSet, Finset.card_image_iff] at h₂
   exact h₂
 
-theorem Set.card_image_eq_iff_injOn' {α : Type} {s : Set α} {f : α → α}
+theorem Set.card_image_eq_iff_injOn' {α : Type*} {s : Set α} {f : α → α}
 (h₁ : s.Finite) : Cardinal.mk (f '' s) = Cardinal.mk s ↔ s.InjOn f := by
   classical
   use injOn_of_card_image_eq' h₁
@@ -1359,7 +1359,7 @@ theorem Set.card_image_eq_iff_injOn' {α : Type} {s : Set α} {f : α → α}
   · simpa [Function.Injective]
   · simp [Function.Surjective]
 
-theorem Set.ncard_eq_ncard_iff_nonempty_equiv {α β : Type}
+theorem Set.ncard_eq_ncard_iff_nonempty_equiv.{u} {α β : Type u}
 {sa : Set α} {sb : Set β} (ha : sa.Finite) (hb : sb.Finite) :
 sa.ncard = sb.ncard ↔ Nonempty (sa ≃ sb) := by
   classical
@@ -1368,33 +1368,33 @@ sa.ncard = sb.ncard ↔ Nonempty (sa ≃ sb) := by
   replace hb := hb.to_fintype
   simp
 
-theorem Set.ncard_image_eq_iff_injOn' {α : Type} {s : Set α} {f : α → α}
+theorem Set.ncard_image_eq_iff_injOn' {α : Type*} {s : Set α} {f : α → α}
 (h₁ : s.Finite) : (f '' s).ncard = s.ncard ↔ s.InjOn f := by
   rw [ncard_eq_ncard_iff_nonempty_equiv (Set.Finite.image f h₁) h₁]
   rw [←Cardinal.eq]
   exact card_image_eq_iff_injOn' h₁
 
-theorem nonempty_equiv_iff_bijective {α β : Type} :
+theorem nonempty_equiv_iff_bijective {α β : Type*} :
 Nonempty (α ≃ β) ↔ ∃ (f : α → β), f.Bijective := by
   use λ ⟨e⟩ => ⟨_, e.bijective⟩
   use λ ⟨f, hf⟩ => ⟨Equiv.ofBijective f hf⟩
 
-theorem Set.ncard_eq_ncard_iff_bijective {α β : Type} {sa : Set α} {sb : Set β}
-(ha : sa.Finite) (hb : sb.Finite) :
+theorem Set.ncard_eq_ncard_iff_bijective.{u} {α β : Type u}
+{sa : Set α} {sb : Set β} (ha : sa.Finite) (hb : sb.Finite) :
 sa.ncard = sb.ncard ↔ ∃ (f : sa → sb), f.Bijective := by
   rw [ncard_eq_ncard_iff_nonempty_equiv ha hb]
   exact nonempty_equiv_iff_bijective
 
-theorem Set.range_eq_image {α β : Type} {f : α → β} :
+theorem Set.range_eq_image {α β : Type*} {f : α → β} :
 Set.range f = f '' Set.univ := by simp
 
-theorem Fintype.card_eq_finset_card {α : Type} [ha : Fintype α] :
+theorem Fintype.card_eq_finset_card {α : Type*} [ha : Fintype α] :
 Fintype.card α = (Finset.univ : Finset α).card := by simp
 
-theorem Set.univ_eq_finset_univ_of_fintype {α : Type} [ha : Fintype α] :
+theorem Set.univ_eq_finset_univ_of_fintype {α : Type*} [ha : Fintype α] :
 (Set.univ : Set α) = Finset.univ.toSet := by simp
 
-theorem fintype_card_range_eq_iff_injective {α β : Type}
+theorem fintype_card_range_eq_iff_injective {α β : Type*}
 [ha : Fintype α] {f : α → β} :
 Fintype.card (Set.range f) = Fintype.card α ↔ f.Injective := by
   classical
@@ -1408,11 +1408,11 @@ Fintype.card (Set.range f) = Fintype.card α ↔ f.Injective := by
   simp at h
   exact h
 
-theorem Fintype.card_eq_set_ncard {α : Type} [ha : Fintype α] :
+theorem Fintype.card_eq_set_ncard {α : Type*} [ha : Fintype α] :
 Fintype.card α = (Set.univ : Set α).ncard := by
   rw [Set.ncard_eq_toFinset_card]; simp
 
-theorem Set.finite_of_finite_and_bijective {α β : Type}
+theorem Set.finite_of_finite_and_bijective {α β : Type*}
 {sa : Set α} {sb : Set β}
 (h₁ : sa.Finite) (h₂ : ∃ (f : sa → sb), f.Bijective) : sb.Finite := by
   rw [←nonempty_equiv_iff_bijective] at h₂
@@ -1421,7 +1421,7 @@ theorem Set.finite_of_finite_and_bijective {α β : Type}
   suffices h₃ : Fintype sb from Set.toFinite sb
   exact Fintype.ofEquiv _ e
 
-theorem exi_bijective_symm {α β : Type}
+theorem exi_bijective_symm {α β : Type*}
 (h : ∃ (f : α → β), f.Bijective) : ∃ (f : β → α), f.Bijective := by
   obtain ⟨f, hf⟩ := h
   rw [Function.bijective_iff_has_inverse] at hf
@@ -1429,37 +1429,37 @@ theorem exi_bijective_symm {α β : Type}
   use g
   exact Equiv.bijective ⟨g, f, h₂, h₁⟩
 
-theorem exi_bijective_comm {α β : Type} :
+theorem exi_bijective_comm {α β : Type*} :
 (∃ (f : α → β), f.Bijective) ↔ ∃ (f : β → α), f.Bijective := by
   constructor <;> exact exi_bijective_symm
 
-theorem Set.finite_of_finite_and_bijective' {α β : Type}
+theorem Set.finite_of_finite_and_bijective' {α β : Type*}
 {sa : Set α} {sb : Set β}
 (h₁ : sa.Finite) (h₂ : ∃ (f : sb → sa), f.Bijective) : sb.Finite := by
   rw [exi_bijective_comm] at h₂
   exact finite_of_finite_and_bijective h₁ h₂
 
-theorem Set.ncard_image_eq_iff_injOn {α β : Type} {s : Set α} {f : α → β}
+theorem Set.ncard_image_eq_iff_injOn {α β : Type*} {s : Set α} {f : α → β}
 (h₁ : s.Finite) : (f '' s).ncard = s.ncard ↔ s.InjOn f := ncard_image_iff h₁
 
-theorem set_range_sum_inl_card_eq {α β : Type} [ha : Fintype α] :
+theorem set_range_sum_inl_card_eq {α β : Type*} [ha : Fintype α] :
 (Set.range # @Sum.inl α β).ncard = Fintype.card α := by
   rw [Fintype.card_eq_set_ncard, Set.range_eq_image]
   rw [Set.ncard_image_eq_iff_injOn Set.finite_univ]
   apply Set.injOn_of_injective Sum.inl_injective
 
-theorem set_range_sum_inr_card_eq {α β : Type} [hb : Fintype β] :
+theorem set_range_sum_inr_card_eq {α β : Type*} [hb : Fintype β] :
 (Set.range # @Sum.inr α β).ncard = Fintype.card β := by
   rw [Fintype.card_eq_set_ncard, Set.range_eq_image]
   rw [Set.ncard_image_eq_iff_injOn Set.finite_univ]
   apply Set.injOn_of_injective Sum.inr_injective
 
-theorem Set.nonempty_range_equiv_self_iff_injective {α β : Type}
+theorem Set.nonempty_range_equiv_self_iff_injective.{u} {α β : Type u}
 [ha : Fintype α] {f : α → β} : Nonempty (Set.range f ≃ α) ↔ f.Injective := by
   rw [←fintype_card_range_eq_iff_injective, ←Cardinal.eq]; simp
 
 @[simp]
-theorem mk_finset_card_eq_fintype_card_iff_injective {α β}
+theorem mk_finset_card_eq_fintype_card_iff_injective.{u} {α β : Type u}
 [ha : Fintype α] {f : α → β} :
 (mk_finset f).card = Fintype.card α ↔ f.Injective := by
   classical
@@ -1480,7 +1480,7 @@ theorem mk_finset_card_eq_fintype_card_iff_injective {α β}
   simp [Fintype.card_eq_zero_iff]
 
 @[simp]
-theorem Finset.card_le_fintype_card {α : Type} [ha : Fintype α] {s : Finset α} :
+theorem Finset.card_le_fintype_card {α : Type*} [ha : Fintype α] {s : Finset α} :
 s.card ≤ Fintype.card α := Finset.card_le_univ s
 
 theorem inf_type : Infinite Type := by

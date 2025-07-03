@@ -1,13 +1,14 @@
-import AP.Util
+import AP.Map.Main
 
 @[ext]
-structure System (S T : Type) : Type where
+structure System.{u} (S T : Type u) where
   initial : Set S
   tr : S → T → Option S
 
 namespace System
 
-variable {S T} (sys : System S T)
+universe u
+variable {S T : Type u} (sys : System S T)
 
 @[simp]
 def tr_to (s : S) (t : T) (s₁ : S) : Prop :=
@@ -20,7 +21,7 @@ def has_tr (s : S) : Prop :=
   ∃ t, sys.valid_tr s t
 
 @[class]
-structure DecidableHasTr : Type where
+structure DecidableHasTr where
   h : Π s, Decidable # sys.has_tr s
 
 @[class]
@@ -31,14 +32,14 @@ def tr! (s : S) (t : T) : S :=
   (sys.tr s t).getD s
 
 @[simp]
-def trs {S T} (sys : System S T) (s : S) : List T → S × List T
+def trs {S T : Type u} (sys : System S T) (s : S) : List T → S × List T
 | [] => (s, [])
 | (t :: ts) => match sys.tr s t with
   | none => (s, t :: ts)
   | some s₁ => sys.trs s₁ ts
 
 @[simp]
-def simulate {S T} (sys : System S T) (f : S → T) (s : S) : ℕ → S × ℕ
+def simulate {S T : Type u} (sys : System S T) (f : S → T) (s : S) : ℕ → S × ℕ
 | 0 => (s, 0)
 | n + 1 => match sys.tr s # f s with
   | none => (s, n + 1)
@@ -52,7 +53,7 @@ def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
   sys.simp_path' a ts ∧ sys.trs a ts = (b, [])
 
 @[class]
-inductive Reachable {S T} (sys : System S T) : S → S → Prop where
+inductive Reachable {S T : Type u} (sys : System S T) : S → S → Prop where
 | refl : ∀ {a}, sys.Reachable a a
 | step : ∀ {a b c t}, sys.tr_to a t b → sys.Reachable b c → sys.Reachable a c
 

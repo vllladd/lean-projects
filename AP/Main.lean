@@ -1,97 +1,63 @@
 import AP.Basic
-import Mathlib.SetTheory.Cardinal.Pigeonhole
+import AP.Games.Main
 
-namespace AP
-
-def get_ps (r : ℕ) : List Point := do
-  let d : ℕ := r * 2 + 1
-  let cs := (List.range d).map # λ i => (i : ℤ) - (r : ℤ)
-  let y ← cs
-  let x ← cs
-  return ⟨x, y⟩
-
-def fa (s : State) : Point :=
-  let ⟨x, y⟩ := s.a_pos
-  ⟨1 - x, y⟩
-
-def fd (s : State) : Point :=
-  let xs := do
-    let p ← get_ps 3
-    guard # s.d_valid_move p
-    return p
-  match xs with
-  | [] => s.choose_d_move
-  | (p :: _) => p
-
-def f (s : State) : Point :=
-  match s.turn with
-  | .A => fa s
-  | .D => fd s
-
-instance : ToString Point := by
-  constructor
-  rintro ⟨x, y⟩
-  exact toString (x, y)
-
-def State.to_str (s : State) : String := String.mk # do
-  let d := 5
-  let p ← get_ps 5
-  let ⟨x, y⟩ := p
-  let sp := do
-    guard # x + d = 0 ∧ y + d ≠ 0
-    return '\n'
-  let c := if p = s.a_pos then '@'
-    else if p ∈ s.taken then '#'
-    else '.'
-  sp ++ [c]
-
-instance : ToString State := ⟨State.to_str⟩
-
-def logb : IO Unit := do
-  IO.println ""
-  IO.println # String.mk # List.replicate 100 '='
-  IO.println ""
-
-def _root_.main : IO Unit := do
-  let n := 100
-  let (res, k) := Rules.simulate f (init_state 1) n
-  IO.println # toString n ++ " ---> " ++ toString k
-  logb
-  IO.println # res
-
--- structure A (S : Set Type) : Type where
---   b : Bool
---   x : if b then ℕ else String
+-- namespace AP
 -- 
--- def S_cnd (S₁ S₂ : Set Type) : Prop := A S₁ = A S₂
--- def S₁ : Set Type := Classical.epsilon # λ S₁ => ∃ S₂, S_cnd S₁ S₂
--- def S₂ : Set Type := Classical.epsilon # λ S₂ => S_cnd S₁ S₂
+-- def get_ps (r : ℕ) : List Point := do
+--   let d : ℕ := r * 2 + 1
+--   let cs := (List.range d).map # λ i => (i : ℤ) - (r : ℤ)
+--   let y ← cs
+--   let x ← cs
+--   return ⟨x, y⟩
 -- 
--- theorem A_eq : A S₁ = A S₂ := by
---   unfold S₂
---   apply Classical.epsilon_spec (p := S_cnd S₁)
---   unfold S₁
---   apply Classical.epsilon_spec (p := λ S₁ => ∃ S₂, S_cnd S₁ S₂)
---   change ∃ S₁ S₂, A S₁ = A S₂
---   have h := @Cardinal.infinite_pigeonhole
---   specialize @h (Set Type) Type A _ _
---   · rw [←Cardinal.infinite_iff]
---     infer_instance
---   · simp
---     sorry
---   obtain ⟨a, ha⟩ := h
---   sorry
+-- def fa (s : State) : Point :=
+--   let ⟨x, y⟩ := s.a_pos
+--   ⟨1 - x, y⟩
+-- 
+-- def fd (s : State) : Point :=
+--   let xs := do
+--     let p ← get_ps 3
+--     guard # s.d_valid_move p
+--     return p
+--   match xs with
+--   | [] => s.choose_d_move
+--   | (p :: _) => p
+-- 
+-- def f (s : State) : Point :=
+--   match s.turn with
+--   | .A => fa s
+--   | .D => fd s
+-- 
+-- instance : ToString Point := by
+--   constructor
+--   rintro ⟨x, y⟩
+--   exact toString (x, y)
+-- 
+-- def State.to_str (s : State) : String := String.mk # do
+--   let d := 5
+--   let p ← get_ps 5
+--   let ⟨x, y⟩ := p
+--   let sp := do
+--     guard # x + d = 0 ∧ y + d ≠ 0
+--     return '\n'
+--   let c := if p = s.a_pos then '@'
+--     else if p ∈ s.taken then '#'
+--     else '.'
+--   sp ++ [c]
+-- 
+-- instance : ToString State := ⟨State.to_str⟩
+-- 
+-- def logb : IO Unit := do
+--   IO.println ""
+--   IO.println # String.mk # List.replicate 100 '='
+--   IO.println ""
+-- 
+-- def _root_.main : IO Unit := do
+--   let n := 100
+--   let (res, k) := Rules.simulate f (init_state 1) n
+--   IO.println # toString n ++ " ---> " ++ toString k
+--   logb
+--   IO.println # res
 
--- structure A : Type where
---   x : ℕ
--- 
--- structure B : Type where
---   x : String
--- 
--- def x : String := by
---   let a : A := ⟨0⟩
---   rw [(by sorry : A = B)] at a
---   exact a.x
--- 
--- def main : IO Unit := do
---   IO.println # x
+def main : IO Unit := do
+  IO.println "ok"
