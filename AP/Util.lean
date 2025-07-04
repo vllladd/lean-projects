@@ -660,20 +660,20 @@ theorem cons_snoc {α : Type*} {x y : α} {xs : List α} :
 
 theorem and_of {P Q : Prop} (h₁ : P) (h₂ : P → Q) : P ∧ Q := by tauto
 
+theorem List.snoc_elim {α : Type*} {xs ys : List α} (x : α)
+(h : xs ++ [x] = ys ++ [x]) : xs = ys := by
+  replace h := congrArg reverse h
+  simp at h
+  exact h
+
 @[simp]
-theorem snoc_inj {α : Type*} {xs ys : List α} {x y : α} :
-xs.snoc x = ys.snoc y ↔ xs = ys ∧ x = y := by
+theorem List.snoc_inj {α : Type*} {xs ys : List α} {x y : α} :
+xs ++ [x] = ys ++ [y] ↔ xs = ys ∧ x = y := by
   symm; constructor; rintro ⟨rfl, rfl⟩; rfl
   intro h
-  apply and_of
-  · replace h := congrArg List.init h
-    simp at h
-    exact h
-  · rintro rfl
-    induction xs; simp at h; exact h
-    nm z xs ih
-    simp at h
-    exact ih h
+  replace h := congrArg reverse h
+  simp at h
+  exact h.symm
 
 @[simp]
 theorem snoc_ne_self {α : Type*} {xs : List α} {x : α} : xs.snoc x ≠ xs := by
@@ -1535,3 +1535,104 @@ def Quotient.lift_out {α β : Type*} {s : Setoid α} (q : Quotient s) (f : α �
   · apply s.symm
     apply Quotient.eq_mk_iff_out.mp
     simpa
+
+theorem List.length_takeWhile_le {α : Type*} {P : α → Bool} {xs : List α} :
+(xs.takeWhile P).length ≤ xs.length := by
+  induction xs
+  · simp
+  nm x xs ih
+  simp [takeWhile]
+  split; simpa; simp
+
+theorem List.not_apply_of_takeWhile_append_cons_eq_self
+{α : Type*} {xs ys : List α} {P : α → Bool} {y}
+(h : xs.takeWhile P ++ y :: ys = xs) : P y = false := by
+  induction xs using right_induction generalizing y ys
+  · simp at h
+  nm xs x ih
+  rw [takeWhile_append] at h
+  split_ifs at h with h₁
+  · simp [takeWhile_cons] at h
+    split_ifs at h with h₂ <;> simp at h
+    simp [←h] at h₂
+    exact h₂
+  suffices h₂ : xs.takeWhile P ++ [y] <+: xs
+    by
+      obtain ⟨zs, h₂⟩ := h₂
+      simp at h₂
+      exact ih h₂
+  rw [append_cons] at h
+  induction ys using right_induction
+  · rw [append_nil, snoc_inj] at h
+    simp [h.1] at h₁
+  nm ys z x; clear x
+  rw [←append_assoc, snoc_inj] at h
+  rcases h with ⟨h, rfl⟩
+  use ys
+
+theorem List.exists_takeWhile_eq {α : Type*} (xs : List α) (P : α → Bool) :
+∃ k ≤ xs.length, xs.takeWhile P = xs.take k ∧ (∀ x ∈ xs.take k, P x) ∧
+((h : k < xs.length) → P xs[k] = false) := by
+  use (xs.takeWhile P).length
+  use length_takeWhile_le
+  use by rw [take_length_eq_of_prefix # takeWhile_prefix _]
+  constructor
+  · intro x hx
+    induction xs using List.right_induction
+    · simp at hx
+    nm xs y ih
+    rw [List.takeWhile_append] at hx
+    split_ifs at hx with h₁
+    · simp [List.take_append] at hx
+      simp [h₁] at ih
+      rcases hx with h₂ | h₂
+      · exact ih h₂
+      rw [List.takeWhile_cons] at h₂
+      split_ifs at h₂ with h₃
+      · simp at h₂
+        rwa [h₂]
+      simp at h₂
+    rw [List.take_append_eq_append_take] at hx
+    simp at hx
+    rcases hx with h₂ | h₂
+    · exact ih h₂
+    have h₃ : (takeWhile P xs).length - xs.length = 0 :=
+      by
+        exact Nat.sub_eq_zero_of_le length_takeWhile_le
+    simp [h₃] at h₂
+  have h₁ : takeWhile P xs <+: xs := takeWhile_prefix P
+  obtain ⟨ys, h₁⟩ := h₁
+  rw [←h₁]
+  cases ys
+  · simp at h₁ ⊢
+    rw [←List.takeWhile_eq_self_iff] at h₁
+    simp [h₁]
+  nm y ys
+  have h₂ := List.not_apply_of_takeWhile_append_cons_eq_self h₁
+  rw [append_cons, takeWhile_append, takeWhile_append, takeWhile_idem]
+  simp [h₂]
+
+@[simp]
+theorem List.init_snoc {α : Type*} {xs : List α} {x} :
+(xs ++ [x]).init = xs := by
+  induction xs generalizing x
+  · simp
+  nm y ys ih
+  simp
+  exact ih
+
+theorem List.ext {α : Type*} {xs ys : List α} : xs = ys ↔ xs.length = ys.length ∧
+∀ {i} (_ : i < xs.length) (_ : i < ys.length), xs[i] = ys[i] := by
+  constructor
+  · rintro rfl; simp
+  rintro ⟨h₁, h₂⟩
+  ext i x
+  have h₄ : i < xs.length ↔ i < ys.length := by rw [h₁]
+  by_cases h₃ : i < xs.length <;> simp [h₃] at h₄
+  · rw [List.getElem?_eq_getElem h₃]
+    rw [List.getElem?_eq_getElem h₄]
+    simp
+    rw [h₂ h₃ h₄]
+  simp at h₃
+  rw [List.getElem?_eq_none h₃]
+  rw [List.getElem?_eq_none h₄]
