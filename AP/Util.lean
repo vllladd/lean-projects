@@ -1636,3 +1636,45 @@ theorem List.ext {α : Type*} {xs ys : List α} : xs = ys ↔ xs.length = ys.len
   simp at h₃
   rw [List.getElem?_eq_none h₃]
   rw [List.getElem?_eq_none h₄]
+
+@[simp]
+theorem Multiset.ofList_toList_perm {α : Type*} {xs : List α} :
+(xs : Multiset α).toList.Perm xs := by
+  apply Quotient.mk_out (s := List.isSetoid α)
+
+@[simp]
+theorem Multiset.ofList_cons {α : Type*} {m : Multiset α} {x} :
+↑(x :: m.toList) = x ::ₘ m := by
+  induction m using Quotient.ind; simp
+
+@[simp]
+theorem Multiset.toList_append_perm {α : Type*} {m : Multiset α} {x} :
+(x ::ₘ m).toList.Perm (x :: m.toList) := by
+  simp [←Multiset.ofList_cons]
+
+@[simp]
+theorem Multiset.length_filter_toList_cons_eq {α : Type*}
+{P : α → Bool} {ms : Multiset α} {x} :
+((x ::ₘ ms).toList.filter P).length = (ms.toList.filter P).length +
+if P x then 1 else 0 := by
+  have h₁ : (x ::ₘ ms).toList.Perm (x :: ms.toList) := by simp
+  replace h₁ := List.Perm.filter P h₁
+  replace h₁ := List.Perm.length_eq h₁
+  rw [h₁]
+  rw [List.filter_cons]
+  split_ifs <;> simp
+
+theorem Finset.card_fin_eq_of {n m : ℕ} {s : Finset (Fin n)} {t : Finset (Fin m)}
+(hs : ∀ {i h}, ⟨i, h⟩ ∈ s → ∃ h, ⟨i, h⟩ ∈ t) (ht : ∀ {i h}, ⟨i, h⟩ ∈ t → ∃ h, ⟨i, h⟩ ∈ s) :
+s.card = t.card := by
+  rw [Finset.card_eq_card_iff_equiv]
+  rw [nonempty_equiv_iff_bijective]
+  refine' ⟨_, _⟩
+  · rintro ⟨⟨i, h₁⟩, h₂⟩
+    refine' ⟨⟨i, _⟩, _⟩ <;> obtain ⟨h₃, h₄⟩ := hs h₂ <;> assumption
+  constructor
+  · rintro ⟨⟨i, h₁⟩, h₂⟩ ⟨⟨j, h₃⟩, h₄⟩; simp
+  rintro ⟨⟨i, h₁⟩, h₂⟩
+  simp
+  obtain ⟨h₃, h₄⟩ := ht h₂
+  refine' ⟨_, h₄, rfl⟩
