@@ -19,13 +19,11 @@ def insertP (x : Σ i, β i) (mp : DMap α β) : DMap α β := by
   simp only [Std.DHashMap.insert_eq_insert]
   exact Std.DHashMap.Equiv.insert i x h
 
-instance : Insert (Σ i, β i) (DMap α β) := ⟨DMap.insertP⟩
+instance : Insert (Σ i, β i) (DMap α β) := ⟨insertP⟩
 
 @[simp]
-protected def insert (i : α) (x : β i) (mp : DMap α β) : DMap α β :=
+protected def insert (mp : DMap α β) (i : α) (x : β i) : DMap α β :=
   mp.insertP ⟨i, x⟩
-
-instance : Insert (Σ i, β i) (DMap α β) := ⟨insertP⟩
 
 def ofList (xs : List (Σ i, β i)) : DMap α β :=
   ⟦.ofList xs⟧
@@ -47,7 +45,7 @@ def ofList {β : Type u} (xs : List (α × β)) : Map α β :=
 
 end Map namespace DMap
 
-def map {γ : α → Type w} (f : ∀ {i}, β i → γ i) (mp : DMap α β) : DMap α γ := by
+def map {γ : α → Type w} (mp : DMap α β) (f : ∀ i, β i → γ i) : DMap α γ := by
   refine' Quotient.map _ _ mp
   use (·.map @f)
   intro a b h
@@ -66,8 +64,16 @@ instance : Membership α (DMap α β) := ⟨mem⟩
 
 variable {mp : DMap α β}
 
+theorem mem_def {i} : i ∈ mp ↔ mp.mem i := by rfl
+
+instance {i} : Decidable (mp.mem i) := by
+  unfold mem; infer_instance
+
+instance {i} : Decidable (i ∈ mp) := by
+  change Decidable (mp.mem i)
+  infer_instance
+
 theorem mem_iff_get?_eq_some {i : α} : i ∈ mp ↔ ∃ x, mp.get? i = some x := by
-  change mem _ _ ↔ _
   apply mp.ind; clear! mp; intro mp
   simp [mem, get?]
   rw [←Option.isSome_iff_exists]
@@ -80,14 +86,14 @@ theorem get?_eq_none_of_not_mem {i : α} (h : i ∉ mp) : mp.get? i = none := by
   simp [mem_iff_get?_eq_some] at h
   rwa [Option.eq_none_iff_forall_ne_some]
 
-theorem get?_map_eq {γ : α → Type w} {f : ∀ {i}, β i → γ i} {i : α} :
-(mp.map f).get? i = (mp.get? i).map f := by
+theorem get?_map_eq {γ : α → Type w} {f : ∀ i, β i → γ i} {i : α} :
+(mp.map f).get? i = (mp.get? i).map (f i) := by
   apply mp.ind; clear! mp; intro mp
   simp [get?, map]
 
-theorem get!_map_eq_of_pos {γ : α → Type w} {f : ∀ {i}, β i → γ i} {i : α}
+theorem get!_map_eq_of_pos {γ : α → Type w} {f : ∀ i, β i → γ i} {i : α}
 [ha : Inhabited (β i)] [hb : Inhabited (γ i)]
-(h : i ∈ mp) : (mp.map f).get! i = f (mp.get! i) := by
+(h : i ∈ mp) : (mp.map f).get! i = f i (mp.get! i) := by
   simp [get!]
   obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
   simp [get?_map_eq, hx]
@@ -130,6 +136,15 @@ def toList (mp : DMap α β) : List (Σ i, β i) := by
   simp [h₁] at h₂
   exact h₂
 
+end DMap namespace Map
+
+def toList {β : Type v} (mp : Map α β) : List (α × β) :=
+  (DMap.toList mp).map # λ ⟨i, x⟩ => (i, x)
+
+end Map namespace DMap
+
+variable {mp : DMap α β}
+
 @[simp]
 theorem ofList_nil : ofList (α := α) (β := β) [] = ∅ := rfl
 
@@ -138,54 +153,25 @@ theorem toList_empty : (∅ : DMap α β).toList = [] := by
   simp [empty_def, toList]
 
 @[simp]
-private def ofList' : List (Σ i, β i) → DMap α β
-| [] => ∅
-| (x :: xs) => insert x # ofList' xs
-
-theorem ofList_eq_ofList' {xs : List (Σ i, β i)} :
-ofList xs = ofList' xs := by
-  symm
-  unfold ofList
-  generalize hm₁ : ofList' xs = m₁
-  generalize hm₂ : ofList xs = m₂
-  revert hm₁ hm₂
-  induction m₁, m₂ using Quotient.inductionOn₂
-  nm m₁ m₂
-  intro hm₁ hm₂
-  symm at hm₁ hm₂
-  rw [Quotient.mk_eq_iff_out] at hm₁ hm₂ ⊢
-  change m₁.Equiv _ at hm₁ ⊢
-  change m₂.Equiv _ at hm₂
-  
-  induction xs generalizing m₁ m₂
-  · convert hm₁
-  nm x xs ih
-  
-  simp at hm₁
-  rw [Std.DHashMap.equiv_iff_get?] at hm₁ hm₂ ⊢
-  intro i
-  specialize hm₁ i
-  specialize hm₂ i
-  
-  sorry
-
--- #check 0 #exit
-
-@[simp]
 theorem ofList_snoc {x : Σ i, β i} {xs} :
 ofList (xs ++ [x]) = (ofList xs).insertP x := by
-  simp_rw [ofList_eq_ofList']
-  induction xs using List.reverseRecOn generalizing x
-  · simp; rfl
-  nm xs y ih
-  sorry
-
-#check 0 #exit
+  simp_rw [ofList]
+  unfold insertP
+  simp
+  rw [Quotient.eq_iff_equiv]
+  whnf
+  unfold Std.DHashMap.ofList
+  rw [Std.DHashMap.insertMany_append]
+  rfl
 
 @[simp]
 theorem mem_insertP {x : Σ i, β i} {i} :
 i ∈ mp.insertP x ↔ i = x.1 ∨ i ∈ mp := by
-  simp [insertP, mem_def]
+  rw [insertP, mem_def, mem]
+  apply mp.ind
+  intro m
+  simp
+  tauto
 
 theorem mem_insert {i x j} :
 j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by simp
@@ -193,34 +179,47 @@ j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by simp
 @[simp]
 theorem mem_ofList {xs : List (Σ i, β i)} {i} :
 i ∈ ofList xs ↔ ∃ x, ⟨i, x⟩ ∈ xs := by
-  induction xs using List.reverseRecOn
-  · simp [mem_def]
-  nm xs x ih
-  simp
-  constructor
-  · rintro (rfl | h)
-    · use x.2
-      simp
-    · rw [ih] at h
-      obtain ⟨y, hy⟩ := h
-      use y
-      simp [hy]
-  · rintro ⟨y, hy | rfl⟩
-    · right
-      rw [ih]
-      use y
-    · simp
+  simp only [ofList, mem_def, mem, Quotient.lift_mk, Std.DHashMap.mem_ofList,
+    List.contains_eq_mem, List.mem_map, Sigma.exists, exists_and_right,
+    exists_eq_right, decide_eq_true_eq]
 
 @[simp]
 theorem mem_range [fin : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ range f := by
   simp [range]
 
 @[simp]
-theorem mem_map {f : ∀ {i}, β i → β i} {i} : i ∈ mp.map f ↔ i ∈ mp := by
-  simp [map, mem_def]
-  obtain ⟨xs, h⟩ := mp
-  dsimp
-  induction xs <;> simp
-  nm x xs ih
-  specialize ih # listCnd_of_cons h
-  rw [ih]
+theorem mem_map {γ : α → Type w} {f : ∀ i, β i → γ i} {i} : i ∈ mp.map f ↔ i ∈ mp := by
+  simp_rw [mem_def, mem, map]
+  apply mp.ind
+  simp
+
+theorem eq_empty_iff : mp = ∅ ↔ ∀ i, i ∉ mp := by
+  simp_rw [mem_def, mem, empty_def]
+  apply mp.ind
+  intro m
+  rw [Quotient.eq_iff_equiv]
+  simp
+  change m.Equiv ∅ ↔ _
+  simp
+  exact Std.DHashMap.isEmpty_iff_forall_not_mem
+
+@[simp]
+theorem not_mem_empty' {i} : ¬(∅ : DMap α β).mem i := by
+  simp [mem, empty_def, empty]
+
+@[simp]
+theorem not_mem_empty {i} : i ∉ (∅ : DMap α β) :=
+  not_mem_empty'
+
+-- theorem ext_iff {m₁ m₂ : DMap α β} : m₁ = m₂ ↔ m₁.out.Equiv m₂.out := by
+--   symm
+--   induction m₁, m₂ using Quotient.inductionOn₂
+--   nm m₁ m₂
+--   change ⟦m₁⟧.out ≈ ⟦m₂⟧.out ↔ _
+--   rw [Quotient.eq_iff_equiv]
+--   simp
+--   rfl
+-- 
+-- @[ext]
+-- theorem ext {m₁ m₂ : DMap α β} (h : m₁.out.Equiv m₂.out) : m₁ = m₂ := by
+--   rwa [ext_iff]

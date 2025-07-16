@@ -1,52 +1,26 @@
-import AP.Util
+import AP.Util.Data.Map.Main
 
 universe u
-variable {ι : Type u} {α : ι → Type u} [hhι : LinearOrder ι]
 
-@[simp]
-def DMap.listCnd : List (Σ i, α i) → Prop
-| (x :: y :: xs) => x.1 < y.1 ∧ listCnd (y :: xs)
-| _ => True
+namespace Util.Data
 
-@[ext]
-structure DMap (ι : Type u) (α : ι → Type u) [LinearOrder ι] : Type u where
-  toList : List (Σ i, α i)
-  h : DMap.listCnd toList
+section type_defs
 
-abbrev Map (ι : Type u) (α : Type u) [LinearOrder ι] : Type u :=
-  DMap ι # λ _ => α
+variable (α : Type u) [hh₁ : LinearOrder α] [hh₂ : Hashable α]
 
-namespace DMap
+def Set : Type u
+  := Map α Unit
 
-def empty : DMap ι α :=
-  ⟨[], trivial⟩
+end type_defs
 
-instance : EmptyCollection (DMap ι α) := ⟨DMap.empty⟩
+namespace Set
 
-end DMap namespace Map
+variable {α : Type u} [hh₁ : LinearOrder α] [hh₂ : Hashable α]
 
-def empty {α : Type u} : Map ι α := ∅
+def empty : Set α := (∅ : Map α _)
 
-end Map namespace DMap
+instance : EmptyCollection (Set α) := ⟨empty⟩
 
-def insert' (x : Σ i, α i) : List (Σ i, α i) → List (Σ i, α i)
-| [] => [x]
-| (y :: xs) => match compare x.1 y.1 with
-  | .eq => x :: xs
-  | .lt => x :: y :: xs
-  | .gt => y :: insert' x xs
+theorem empty_def : (∅ : Set α) = (∅ : Map α _) := rfl
 
-@[simp]
-def ofList' (xs : List (Σ i, α i)) : List (Σ i, α i) → List (Σ i, α i)
-| [] => xs
-| (y :: ys) => ofList' (insert' y xs) ys
-
-@[simp]
-def get' (i : ι) : List (Σ i, α i) → Option (α i)
-| [] => none
-| (⟨j, x⟩ :: xs) => if h : i = j then some # h ▸ x else get' i xs
-
-@[simp]
-def mem' (i : ι) : List (Σ i, α i) → Bool
-| [] => false
-| (⟨j, _⟩ :: xs) => if i = j then true else mem' i xs
+end Set

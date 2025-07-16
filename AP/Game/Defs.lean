@@ -1,5 +1,7 @@
 import AP.System.Main
 
+open Util.Data
+
 universe u
 
 structure GameParams : Type (u + 1) where
@@ -61,10 +63,10 @@ structure GState : Type u where
   hist : T.Hist
 
 def initState
-(p : T.Player) (s : T.State) : T.GState :=
+(ps : Util.Data.Set T.Player) (p : T.Player) (s : T.State) : T.GState :=
   { player := p
   , state := s
-  , hist := DMap.range # λ _ => []
+  , hist := ps.toDMap # λ _ => []
   }
 
 def GPMove : Type u :=
@@ -78,7 +80,7 @@ def sys_tr (rules : T.GRules) (pmove : T.GPMove)
 (s : T.GState) (t : T.Trans) : Option T.GState :=
   if h : s.player = t.1 then do
     let (p₁, s₁) ← rules t.1 s.state t.2
-    some #
+    if p₁ ∉ s.hist then none else some #
       { player := p₁
       , state := s₁
       , hist := T.updateHist pmove s # h ▸ t.2
@@ -101,7 +103,8 @@ structure Game (T : GameParams) : Type u where
   sys : System T.GState T.Trans
   
   h_sys_init_nemp : sys.initial ≠ ∅
-  h_sys_init_valid : ∀ s [sys.Initial s], ∃ p s', s = T.initState p s'
+  h_sys_init_valid : ∀ s [sys.Initial s], ∃ ps p s',
+    T.initState ps p s' = s ∧ s.hist ≠ ∅
   h_sys_tr : sys.tr = T.sys_tr rules pmove
   h_choose_move : ∀ (s : T.GState),
     let p := s.player

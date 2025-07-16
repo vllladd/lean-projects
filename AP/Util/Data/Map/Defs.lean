@@ -31,13 +31,16 @@ def Map (β : Type v) : Type (max u v) :=
 
 end type_defs
 
+namespace DMap
+
 variable {α : Type u} [hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type v}
 
 def empty : DMap α β :=
-  Quotient.mk' ∅
+  ⟦∅⟧
 
 instance : EmptyCollection (DMap α β) := ⟨empty⟩
+instance {β : Type v} : EmptyCollection (Map α β) := ⟨empty⟩
 
 theorem empty_def : (∅ : DMap α β) = ⟦(∅ : Std.DHashMap α β)⟧ := rfl
 
-namespace DMap
+end DMap
