@@ -10,11 +10,10 @@ structure GameParams : Type (u + 1) where
   PMove : Player → Player → Type u
   Score : Type u
 
-  h_inh_player : Inhabited Player
-  h_hash_player : Hashable Player
-  h_inh_move : ∀ p, Inhabited # Move p
-  h_pl_fin : Fintype Player  
+  h_pl_inh : Inhabited Player
+  h_pl_hash : Hashable Player
   h_pl_lin : LinearOrder Player
+  h_move_inh : ∀ p, Inhabited # Move p
   h_score_lin : LinearOrder Score
   h_move_rfl : ∀ p, PMove p p = Move p
 
@@ -25,16 +24,13 @@ section instances
 variable {T : GameParams}
 
 instance : Inhabited T.Player :=
-  T.h_inh_player
+  T.h_pl_inh
 
 instance : Hashable T.Player :=
-  T.h_hash_player
+  T.h_pl_hash
 
 instance {p} : Inhabited # T.Move p :=
-  T.h_inh_move p
-
-instance : Fintype T.Player :=
-  T.h_pl_fin
+  T.h_move_inh p
 
 instance : LinearOrder T.Player :=
   T.h_pl_lin
