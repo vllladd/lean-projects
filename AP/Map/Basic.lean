@@ -295,7 +295,8 @@ theorem mem_insertProd {x : Σ i, α i} {i} :
 i ∈ mp.insertProd x ↔ i = x.1 ∨ i ∈ mp := by
   simp [insertProd, mem_def]
 
--- #check 0 #exit
+theorem mem_insert {i x j} :
+j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by simp
 
 @[simp]
 theorem mem_ofList {xs : List (Σ i, α i)} {i} :
@@ -306,12 +307,28 @@ i ∈ ofList xs ↔ ∃ x, ⟨i, x⟩ ∈ xs := by
   simp
   constructor
   · rintro (rfl | h)
-    · sorry
-    · sorry
-  · sorry
-
-#check 0 #exit
+    · use x.2
+      simp
+    · rw [ih] at h
+      obtain ⟨y, hy⟩ := h
+      use y
+      simp [hy]
+  · rintro ⟨y, hy | rfl⟩
+    · right
+      rw [ih]
+      use y
+    · simp
 
 @[simp]
 theorem mem_range [fin : Fintype ι] {f : (i : ι) → α i} {i : ι} : i ∈ range f := by
   simp [range]
+
+@[simp]
+theorem mem_map {f : ∀ {i}, α i → β i} {i} : i ∈ mp.map f ↔ i ∈ mp := by
+  simp [map, mem_def]
+  obtain ⟨xs, h⟩ := mp
+  dsimp
+  induction xs <;> simp
+  nm x xs ih
+  specialize ih # listCnd_of_cons h
+  rw [ih]

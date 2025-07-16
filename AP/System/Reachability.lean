@@ -111,7 +111,7 @@ theorem simulate_snd_eq_zero_of_le_and_eq_zero {f a k n}
   simp [h₃] at h₁
 
 theorem simulate_snd_eq_zero_of_has_tr {f} [hf : sys.SimFn f] {a n}
-(h : sys.has_tr # (sys.simulate f a n).1) : (sys.simulate f a n).2 = 0 := by
+(h : sys.has_tr (sys.simulate f a n).1) : (sys.simulate f a n).2 = 0 := by
   induction n generalizing a; rfl; nm n ih
   simp at h ⊢
   split at h
@@ -1149,3 +1149,33 @@ theorem simulate_exi_snd_pos_of_finite
       rw [h₄]
       linarith
   rw [←h₆, h₄]
+
+theorem simulate_add_eq_left_iff {f} [hf : sys.SimFn f] {a b n m} :
+sys.simulate f a (n + m) = (b, n) ↔ sys.simulate f a m = (b, 0) ∧
+(sys.valid_tr b (f b) → n = 0) := by
+  constructor <;> intro h
+  · rw [(by omega : m = n + m - n)]
+    use simulate_sub_eq_of h
+    intro h₁
+    rw [Prod.ext_iff] at h
+    rcases h with ⟨rfl, h⟩
+    dsimp at h
+    rw [←h]
+    exact simulate_snd_eq_zero_of_has_tr ⟨_, h₁⟩
+  rw [add_comm];
+  simp [simulate_add, h]
+  rcases h with ⟨h₁, h₂⟩
+  cases n
+  · rfl
+  nm n
+  simp at h₂ ⊢
+  split
+  · rfl
+  nm x s h₃
+  contrapose! h₂
+  exact ⟨_, _, h₃⟩
+
+theorem simulate_add_eq_right_iff {f} [hf : sys.SimFn f] {a b n m} :
+sys.simulate f a (n + m) = (b, m) ↔ sys.simulate f a n = (b, 0) ∧
+(sys.valid_tr b (f b) → m = 0) := by
+  rw [add_comm]; exact simulate_add_eq_left_iff
