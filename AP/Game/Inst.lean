@@ -25,7 +25,7 @@ theorem simFn_f : game.sys.SimFn inst.f := by
 
 instance : game.sys.SimFn inst.f := inst.simFn_f
 
-def step : Option game.Inst := do
+def step : Option game.Inst :=
   match h : game.sys.tr inst.s (inst.f inst.s) with
   | none => none
   | some s' => some #
@@ -56,10 +56,10 @@ def run (n : ℕ) : game.Inst × ℕ :=
       exact h.1
   }
 
-def outcome (n : ℕ) : Option (T.Player → T.Outcome) :=
+def score (n : ℕ) : Option (T.Player → T.Score) :=
   let (inst', m) := inst.run n
   let s := inst'.s
-  if m = 0 then none else some # game.outcome s.player s.state
+  if m = 0 then none else some # game.score s.player s.state
 
 end Game.Inst
 namespace Game

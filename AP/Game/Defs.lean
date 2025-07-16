@@ -8,14 +8,14 @@ structure GameParams : Type (u + 1) where
   Move : Player → Type u
   PState : Player → Type u
   PMove : Player → Player → Type u
-  Outcome : Type u
+  Score : Type u
 
   h_inh_player : Inhabited Player
   -- h_hash_player : Hashable Player
   h_inh_move : ∀ p, Inhabited # Move p
   h_pl_fin : Fintype Player  
   h_pl_lin : LinearOrder Player
-  h_out_lin : LinearOrder Outcome
+  h_score_lin : LinearOrder Score
   h_move_rfl : ∀ p, PMove p p = Move p
 
 namespace GameParams
@@ -35,8 +35,8 @@ instance {T : GameParams} : Fintype T.Player :=
 instance {T : GameParams} : LinearOrder T.Player :=
   T.h_pl_lin
 
-instance {T : GameParams} : LinearOrder T.Outcome :=
-  T.h_out_lin
+instance {T : GameParams} : LinearOrder T.Score :=
+  T.h_score_lin
 
 variable (T : GameParams)
 
@@ -94,7 +94,7 @@ structure Game (T : GameParams) : Type u where
   pstate : (p : T.Player) → T.State → T.PState p
   pmove : T.GPMove
   choose_move : (p : T.Player) → T.PState p → T.Move p
-  outcome : T.Player → T.State → T.Player → T.Outcome
+  score : T.Player → T.State → T.Player → T.Score
   
   sys : System T.GState T.Trans
   
