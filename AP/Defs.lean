@@ -70,11 +70,11 @@ def State.a_has_move (s : State) : Prop :=
 
 structure AStrat where
   fa : State → Point
-  ha : ∀ (s : State), s.turn = A → s.a_has_move → Rules.valid_tr s (fa s)
+  ha : ∀ (s : State), s.turn = A → s.a_has_move → Rules.validTr s (fa s)
 
 structure DStrat where
   fd : State → Point
-  hd : ∀ (s : State), s.turn = D → Rules.valid_tr s (fd s)
+  hd : ∀ (s : State), s.turn = D → Rules.validTr s (fd s)
 
 structure Game extends AStrat, DStrat
 
