@@ -1,28 +1,35 @@
 import AP.Util
 
+universe u
+variable {ι : Type u} {α : ι → Type u} [hhι : LinearOrder ι]
+
 @[simp]
-def Map.listCnd.{u} {ι α : Type u} [LinearOrder ι] [DecidableEq α] : List (ι × α) → Prop
-| (x :: y :: xs) => x.1 < y.1 ∧ Map.listCnd (y :: xs)
+def DMap.listCnd : List (Σ i, α i) → Prop
+| (x :: y :: xs) => x.1 < y.1 ∧ listCnd (y :: xs)
 | _ => True
 
 @[ext]
-structure Map.{u} (ι α : Type u) [LinearOrder ι] [DecidableEq α] : Type u where
-  toList : List (ι × α)
-  h : Map.listCnd toList
+structure DMap (ι : Type u) (α : ι → Type u) [LinearOrder ι] : Type u where
+  toList : List (Σ i, α i)
+  h : DMap.listCnd toList
 
-namespace Map
+abbrev Map (ι : Type u) (α : Type u) [LinearOrder ι] : Type u :=
+  DMap ι # λ _ => α
 
-set_option linter.unusedVariables false
-universe u
-variable {ι α : Type u} [hhι : LinearOrder ι] [hhα : DecidableEq α]
-set_option linter.unusedSectionVars true
+namespace DMap
 
-def empty : Map ι α :=
+def empty : DMap ι α :=
   ⟨[], trivial⟩
 
-instance : EmptyCollection (Map ι α) := ⟨Map.empty⟩
+instance : EmptyCollection (DMap ι α) := ⟨DMap.empty⟩
 
-def insert' (x : ι × α) : List (ι × α) → List (ι × α)
+end DMap namespace Map
+
+def empty {α : Type u} : Map ι α := ∅
+
+end Map namespace DMap
+
+def insert' (x : Σ i, α i) : List (Σ i, α i) → List (Σ i, α i)
 | [] => [x]
 | (y :: xs) => match compare x.1 y.1 with
   | .eq => x :: xs
@@ -30,10 +37,16 @@ def insert' (x : ι × α) : List (ι × α) → List (ι × α)
   | .gt => y :: insert' x xs
 
 @[simp]
-def ofList' (xs : List (ι × α)) : List (ι × α) → List (ι × α)
+def ofList' (xs : List (Σ i, α i)) : List (Σ i, α i) → List (Σ i, α i)
 | [] => xs
 | (y :: ys) => ofList' (insert' y xs) ys
 
-def lookup' (i : ι) : List (ι × α) → Option α
+@[simp]
+def get' (i : ι) : List (Σ i, α i) → Option (α i)
 | [] => none
-| ((j, x) :: xs) => if i == j then some x else lookup' i xs
+| (⟨j, x⟩ :: xs) => if h : i = j then some # h ▸ x else get' i xs
+
+@[simp]
+def mem' (i : ι) : List (Σ i, α i) → Bool
+| [] => false
+| (⟨j, _⟩ :: xs) => if i = j then true else mem' i xs
