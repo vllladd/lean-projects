@@ -22,6 +22,7 @@ abbrev Params : GameParams :=
   , Score := Bool
 
   , h_inh_player := inferInstance
+  , h_hash_player := inferInstance
   , h_inh_move := λ _ => inferInstance
   , h_pl_fin := inferInstance
   , h_pl_lin := inferInstance
@@ -73,7 +74,7 @@ def RPS : Game Params :=
 
 theorem stratCnd {p} {f : Params.StratFn p} : RPS.stratCnd f := by
   rintro s h₁ ⟨⟨p, t⟩, h₂⟩
-  rw [Game.valid_tr_iff] at h₂ ⊢
+  rw [Game.validTr_iff] at h₂ ⊢
   use h₁; dsimp
   rcases h₂ with ⟨rfl, r, h₂⟩
   dsimp at h₂

@@ -11,22 +11,22 @@ universe u
 variable {S T : Type u} (sys : System S T)
 
 @[simp]
-def tr_to (s : S) (t : T) (s₁ : S) : Prop :=
+def trTo (s : S) (t : T) (s₁ : S) : Prop :=
   sys.tr s t = some s₁
 
-def valid_tr (s : S) (t : T) : Prop :=
-  ∃ s₁, sys.tr_to s t s₁
+def validTr (s : S) (t : T) : Prop :=
+  ∃ s₁, sys.trTo s t s₁
 
-def has_tr (s : S) : Prop :=
-  ∃ t, sys.valid_tr s t
+def hasTr (s : S) : Prop :=
+  ∃ t, sys.validTr s t
 
 @[class]
 structure DecidableHasTr where
-  h : Π s, Decidable # sys.has_tr s
+  h : Π s, Decidable # sys.hasTr s
 
 @[class]
 structure SimFn (f : S → T) : Prop where
-  h : ∀ {s}, sys.has_tr s → sys.valid_tr s (f s)
+  h : ∀ {s}, sys.hasTr s → sys.validTr s (f s)
 
 def tr! (s : S) (t : T) : S :=
   (sys.tr s t).getD s
@@ -55,11 +55,11 @@ def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
 @[class]
 inductive Reachable {S T : Type u} (sys : System S T) : S → S → Prop where
 | refl : ∀ {a}, sys.Reachable a a
-| step : ∀ {a b c t}, sys.tr_to a t b → sys.Reachable b c → sys.Reachable a c
+| step : ∀ {a b c t}, sys.trTo a t b → sys.Reachable b c → sys.Reachable a c
 
 @[class]
 structure Acyclic (s : S) : Prop where
-  h : ∀ {a b t}, sys.Reachable s a → sys.tr_to a t b → ¬sys.Reachable b a
+  h : ∀ {a b t}, sys.Reachable s a → sys.trTo a t b → ¬sys.Reachable b a
 
 @[class]
 structure Tree (s : S) : Prop where

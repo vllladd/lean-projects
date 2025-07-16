@@ -1680,3 +1680,161 @@ theorem Real.add_inv_pow_lt_exp_one_of {a : ℝ} (h : 0 ≤ a) :
     mul_inv_lt_iff₀' # by positivity, add_comm]; simp
   nth_rw 2 [(by simp : a⁻¹ = a⁻¹ + 1 - 1)]; apply Real.log_lt_sub_one_of_pos
   positivity; apply ne_of_congr (· - 1); simp; linarith
+
+section card_type
+
+universe u v w q
+
+theorem nonempty_equiv_of_embed {α : Type u} {β : Type v}
+(h₁ : Nonempty (α ↪ β)) (h₂ : Nonempty (β ↪ α)) : Nonempty (α ≃ β) := by
+  obtain ⟨f, hf⟩ := h₁
+  obtain ⟨g, hg⟩ := h₂
+  rw [nonempty_equiv_iff_bijective]
+  exact Function.Embedding.schroeder_bernstein hf hg
+
+theorem nonempty_embed_trans {α : Type u} {β : Type v} {γ : Type w}
+(h₁ : Nonempty (α ↪ β)) (h₂ : Nonempty (β ↪ γ)) : Nonempty (α ↪ γ) := by
+  obtain ⟨f, hf⟩ := h₁
+  obtain ⟨g, hg⟩ := h₂
+  exact ⟨_, Function.Injective.comp hg hf⟩
+
+theorem nonempty_embed_iff_lift_left {α : Type v} {β : Type w} :
+Nonempty (α ↪ β) ↔ Nonempty (ULift.{u} α ↪ β) := by
+  constructor <;> rintro ⟨f, hf⟩
+  all_goals
+    refine' ⟨λ x => _, _⟩
+    first | exact f x.down | exact f (.up x)
+    intro x y h
+    simp at h
+    specialize hf h
+    simp at hf
+    exact hf
+
+theorem nonempty_embed_iff_lift_right {α : Type v} {β : Type w} :
+Nonempty (α ↪ β) ↔ Nonempty (α ↪ ULift.{u} β) := by
+  constructor <;> rintro ⟨f, hf⟩
+  all_goals
+    refine' ⟨λ x => _, _⟩
+    first | exact .up (f x) | exact (f x).down
+    intro x y h
+    simp at h
+    specialize hf h
+    exact hf
+
+theorem isEmpty_embed_iff_lift_left {α : Type v} {β : Type w} :
+IsEmpty (α ↪ β) ↔ IsEmpty (ULift.{u} α ↪ β) := by
+  rw [←not_iff_not]; simp; exact nonempty_embed_iff_lift_left
+
+theorem isEmpty_embed_iff_lift_right {α : Type v} {β : Type w} :
+IsEmpty (α ↪ β) ↔ IsEmpty (α ↪ ULift.{u} β) := by
+  rw [←not_iff_not]; simp; exact nonempty_embed_iff_lift_right
+
+theorem nonempty_embed_iff_lift {α : Type w} {β : Type q} :
+Nonempty (α ↪ β) ↔ Nonempty (ULift.{u} α ↪ ULift.{v} β) := by
+  constructor <;> rintro ⟨f, hf⟩
+  all_goals
+    refine' ⟨λ y => _, _⟩
+    first | exact .up (f y.down) | exact (f (.up y)).down
+    intro x y h
+    simp at h
+    specialize hf h
+    simp at hf
+    exact hf
+
+theorem isEmpty_embed_iff_lift {α : Type w} {β : Type q} :
+IsEmpty (α ↪ β) ↔ IsEmpty (ULift.{u} α ↪ ULift.{v} β) := by
+  rw [←not_iff_not]
+  simp
+  exact nonempty_embed_iff_lift
+
+theorem nonempty_embed_of_empty_embed_rev {α : Type u} {β : Type v}
+(h : IsEmpty (β ↪ α)) : Nonempty (α ↪ β) := by
+  rw [isEmpty_embed_iff_lift.{u, v}] at h
+  rw [nonempty_embed_iff_lift.{v, u}]
+  rw [←Cardinal.le_def]
+  contrapose! h
+  simp
+  rw [←Cardinal.le_def]
+  exact le_of_lt h
+
+theorem isEmpty_embed_of_isEmpty_of_nonempty {α : Type u} {β : Type v} {γ : Type w}
+(h₁ : IsEmpty (β ↪ α)) (h₂ : Nonempty (β ↪ γ)) : IsEmpty (γ ↪ α) := by
+  contrapose h₁
+  simp at h₁ ⊢
+  exact nonempty_embed_trans h₂ h₁
+
+@[simp]
+theorem isEmpty_set_embed {α : Type u} : IsEmpty (Set α ↪ α) := by
+  by_contra h
+  simp at h
+  rw [←Cardinal.le_def] at h
+  simp at h
+  contrapose! h
+  apply Cardinal.cantor
+
+theorem nonempty_embed_type {α : Type u} : Nonempty (α ↪ Type u) := by
+  use λ x => (embeddingToCardinal.1 x).out
+  intro x y h
+  simp at h
+  exact embeddingToCardinal.2 h
+
+theorem isEmpty_type_embed {α : Type u} : IsEmpty (Type u ↪ α) := by
+  apply isEmpty_embed_of_isEmpty_of_nonempty isEmpty_set_embed
+  exact nonempty_embed_type
+
+theorem cardinal_embed_type : Nonempty (Cardinal.{u} ↪ Type u) := by
+  use Quotient.out
+  intro x y h
+  simp at h
+  exact h
+
+theorem cardinal_embed_ordinal : Nonempty (Cardinal.{u} ↪ Ordinal.{u}) := by
+  use Cardinal.ord
+  intro x y h
+  simp at h
+  exact h
+
+theorem ifEmpty_embed_trans {α : Type u} {β : Type v} {γ : Type w}
+(h₁ : IsEmpty (α ↪ β)) (h₂ : IsEmpty (β ↪ γ)) : IsEmpty (α ↪ γ) := by
+  apply isEmpty_embed_of_isEmpty_of_nonempty h₂
+  exact nonempty_embed_of_empty_embed_rev h₁
+
+@[simp]
+theorem nonempty_lift_embed_iff {α : Type v} {β : Type w} :
+Nonempty (ULift.{u} α ↪ β) ↔ Nonempty (α ↪ β) :=
+  nonempty_embed_iff_lift_left.symm
+
+@[simp]
+theorem nonempty_embed_lift_iff {α : Type v} {β : Type w} :
+Nonempty (α ↪ ULift.{u} β) ↔ Nonempty (α ↪ β) :=
+  nonempty_embed_iff_lift_right.symm
+
+@[simp]
+theorem isEmpty_lift_embed_iff {α : Type v} {β : Type w} :
+IsEmpty (ULift.{u} α ↪ β) ↔ IsEmpty (α ↪ β) :=
+  isEmpty_embed_iff_lift_left.symm
+
+@[simp]
+theorem isEmpty_embed_lift_iff {α : Type v} {β : Type w} :
+IsEmpty (α ↪ ULift.{u} β) ↔ IsEmpty (α ↪ β) :=
+  isEmpty_embed_iff_lift_right.symm
+
+theorem nonempty_embed_type_max {α : Type v} :
+Nonempty (α ↪ Type (max v u)) := by
+  rw [nonempty_embed_iff_lift_left.{max u v}]
+  exact nonempty_embed_type
+
+theorem isEmpty_type_max_embed {α : Type v} :
+IsEmpty (Type (max v u) ↪ α) := by
+  apply isEmpty_embed_of_isEmpty_of_nonempty isEmpty_set_embed
+  exact nonempty_embed_type_max.{max u v}
+
+@[simp]
+theorem type_embed_type_succ : Nonempty (Type u ↪ Type (u + 1)) :=
+  nonempty_embed_type_max.{u + 1}
+
+@[simp]
+theorem not_type_succ_embed_type : IsEmpty (Type (u + 1) ↪ Type u) :=
+  isEmpty_type_max_embed.{u + 1}
+
+end card_type

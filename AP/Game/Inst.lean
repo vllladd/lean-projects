@@ -69,8 +69,8 @@ variable {T : GameParams} {game : Game T}
 def dfltStrat (p) : game.Strat p := by
   use λ s _ => game.choose_move p s
   rintro s rfl h₁
-  rw [has_tr_iff_exi_rules_ap_isSome] at h₁
-  rw [valid_tr_iff]
+  rw [hasTr_iff_exi_rules_ap_isSome] at h₁
+  rw [validTr_iff]
   use rfl
   dsimp
   obtain ⟨t, h₁⟩ := h₁

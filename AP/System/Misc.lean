@@ -8,18 +8,18 @@ variable {S T : Type u} {sys : System S T}
 set_option linter.unusedVariables false
 
 theorem aux₁ {s t s'}
-(h₁ : sys.valid_tr s t) (h₂ : sys.tr! s t = s') : sys.tr s t = some s' := by
+(h₁ : sys.validTr s t) (h₂ : sys.tr! s t = s') : sys.tr s t = some s' := by
   unfold tr! at h₂
   obtain ⟨a, ha⟩ := h₁
-  unfold tr_to at ha
+  unfold trTo at ha
   rw [ha] at h₂ ⊢
   simp at h₂
   rw [h₂]
 
-theorem aux₂ {s t} (h₁ : ¬sys.valid_tr s t) :
+theorem aux₂ {s t} (h₁ : ¬sys.validTr s t) :
 sys.tr! s t = s := by
   unfold tr!
-  unfold valid_tr tr_to at h₁
+  unfold validTr trTo at h₁
   simp at h₁
   rw [←Option.eq_none_iff_forall_ne_some] at h₁
   simp [h₁]
@@ -36,10 +36,10 @@ theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
   simp [Prod.ext_iff]
 
 theorem cntrex₁ : ¬∀ (S T : Type) (sys : System S T) (f s n),
-(∀ s', ¬sys.has_tr s') → ∃ k s', sys.simulate f s n = (s', k) ∧ 0 < k := by
+(∀ s', ¬sys.hasTr s') → ∃ k s', sys.simulate f s n = (s', k) ∧ 0 < k := by
   push_neg
   use Unit, Unit, ⟨∅, λ _ _ => none⟩, (λ _ => ()), (), 0
-  unfold has_tr
+  unfold hasTr
   simp
 
 theorem aux₆ {a b c}
@@ -58,7 +58,7 @@ DecidableHasTr sys → ∃ f, sys.SimFn f := by
   refine' ⟨⟨_⟩⟩
   intro s
   apply isFalse
-  unfold has_tr
+  unfold hasTr
   simp
 
 theorem aux₈ {f s n} :
@@ -77,7 +77,7 @@ theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (h₁ : sys.Acycli
 sn ≠ sm := by
   push_neg
   use Unit, Unit, ⟨∅, λ _ _ => none⟩, ()
-  simp [sim_fn_iff, has_tr]
+  simp [sim_fn_iff, hasTr]
   use default, 0, 1
   simp
 
@@ -123,7 +123,7 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
   use inferInstance, true
   simp
   use (λ _ => ())
-  simp [sim_fn_iff, has_tr]
+  simp [sim_fn_iff, hasTr]
   intro N
   use N + 1
   simp
@@ -136,7 +136,7 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
   use inferInstance, true
   simp [acyclic_iff]
   use default
-  simp [sim_fn_iff, has_tr]
+  simp [sim_fn_iff, hasTr]
   left
   intro N
   use N, by rfl
@@ -144,14 +144,14 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
   rw [simulate_eq_of_tr_eq_none] <;> simp
 
 theorem cntrex₇ : ¬∀ (S T : Type) (sys : System S T)
-(a ts₁ ts₂ b) (h₁ : ∀ t ∈ ts₁, sys.valid_tr b t),
+(a ts₁ ts₂ b) (h₁ : ∀ t ∈ ts₁, sys.validTr b t),
 sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
   push_neg
   use Bool, Unit, ⟨∅, λ b _ => if b then some true else none⟩
   use false, [()], [], true
-  simp [valid_tr]
+  simp [validTr]
 
-theorem aux₁₄ {a ts₁ ts₂} (h₁ : ∀ a, ∀ t ∈ ts₁, sys.valid_tr a t) :
+theorem aux₁₄ {a ts₁ ts₂} (h₁ : ∀ a, ∀ t ∈ ts₁, sys.validTr a t) :
 sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
   classical
   obtain ⟨b, hb⟩ : ∃ b, sys.trs a ts₁ = (b, []) :=
@@ -161,7 +161,7 @@ sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
       · use a; rfl
       nm t ts ih
       obtain ⟨t₁, h₂⟩ := h₁ a t # by simp
-      unfold tr_to at h₂
+      unfold trTo at h₂
       simp [h₂]
       apply ih
       intro c t₂ h₃

@@ -10,7 +10,7 @@ instance : Inhabited # System S T := ⟨⟨∅, default⟩⟩
 noncomputable
 def dflt_sim_fn [Inhabited # S → T] : S → T :=
   by classical exact
-  λ s => if h : sys.has_tr s then h.choose else (default : S → T) s
+  λ s => if h : sys.hasTr s then h.choose else (default : S → T) s
 
 instance [Inhabited # S → T] : sys.SimFn sys.dflt_sim_fn := by
   constructor
@@ -23,13 +23,13 @@ noncomputable
 def mk_sim_fn (f : S → T) : S → T := by
   classical
   intro s
-  by_cases h : sys.valid_tr s # f s
+  by_cases h : sys.validTr s # f s
   · exact f s
   haveI : Inhabited # S → T := ⟨λ _ => f s⟩
   use sys.dflt_sim_fn s
 
-theorem valid_tr_of_sim_fn_and_has_tr {f} [hf : sys.SimFn f] {s}
-(h : sys.has_tr s) : sys.valid_tr s (f s) := hf.h h
+theorem validTr_of_sim_fn_and_hasTr {f} [hf : sys.SimFn f] {s}
+(h : sys.hasTr s) : sys.validTr s (f s) := hf.h h
 
 instance {f} : sys.SimFn # sys.mk_sim_fn f := by
   constructor
@@ -37,7 +37,7 @@ instance {f} : sys.SimFn # sys.mk_sim_fn f := by
   unfold mk_sim_fn
   split_ifs with h₂
   · exact h₂
-  exact valid_tr_of_sim_fn_and_has_tr h₁
+  exact validTr_of_sim_fn_and_hasTr h₁
 
 @[simp, refl]
 theorem Reachable.refl' {a} : sys.Reachable a a :=
@@ -50,11 +50,11 @@ theorem Reachable.trans {a b c}
   nm x y z t h₁ h₃ ih
   exact Reachable.step h₁ # ih h₂
 
-theorem valid_tr_of_eq_some {s t s₁}
-(h : sys.tr s t = some s₁) : sys.valid_tr s t := ⟨_, h⟩
+theorem validTr_of_eq_some {s t s₁}
+(h : sys.tr s t = some s₁) : sys.validTr s t := ⟨_, h⟩
 
-theorem has_tr_of_eq_some {s t s₁}
-(h : sys.tr s t = some s₁) : sys.has_tr s := ⟨_, valid_tr_of_eq_some h⟩
+theorem hasTr_of_eq_some {s t s₁}
+(h : sys.tr s t = some s₁) : sys.hasTr s := ⟨_, validTr_of_eq_some h⟩
 
 theorem reachable_of_simulate
 {f} {s₁ s₂ n} (h : (sys.simulate f s₁ n).1 = s₂) :
@@ -100,14 +100,14 @@ theorem reachable_of_tr {a b t}
 (h : sys.tr a t = some b) : sys.Reachable a b := by
   apply reachable_left h; rfl
 
-theorem has_tr_of_reachable_and_ne {s₁ s₂}
-(h₁ : sys.Reachable s₁ s₂) (h₂ : s₁ ≠ s₂) : sys.has_tr s₁ := by
+theorem hasTr_of_reachable_and_ne {s₁ s₂}
+(h₁ : sys.Reachable s₁ s₂) (h₂ : s₁ ≠ s₂) : sys.hasTr s₁ := by
   cases h₁; simp at h₂
-  apply has_tr_of_eq_some <;> assumption
+  apply hasTr_of_eq_some <;> assumption
 
-theorem eq_of_reachable_and_not_has_tr {s₁ s₂}
-(h₁ : sys.Reachable s₁ s₂) (h₂ : ¬sys.has_tr s₁) : s₁ = s₂ := by
-  contrapose! h₂; exact has_tr_of_reachable_and_ne h₁ h₂
+theorem eq_of_reachable_and_not_hasTr {s₁ s₂}
+(h₁ : sys.Reachable s₁ s₂) (h₂ : ¬sys.hasTr s₁) : s₁ = s₂ := by
+  contrapose! h₂; exact hasTr_of_reachable_and_ne h₁ h₂
 
 theorem exi_tr_right_of_reachable_and_ne {a b}
 (h₁ : sys.Reachable a b) (h₂ : a ≠ b) :
@@ -272,12 +272,12 @@ sys.simulate f s (n - (sys.simulate f s n).2) = ((sys.simulate f s n).1, 0) := b
   simp [h₁]
   exact ih
 
-theorem sim_fn_iff {f} : sys.SimFn f ↔ ∀ {s}, sys.has_tr s → sys.valid_tr s (f s) :=
+theorem sim_fn_iff {f} : sys.SimFn f ↔ ∀ {s}, sys.hasTr s → sys.validTr s (f s) :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
 @[simp]
 theorem acyclic_iff {s} : sys.Acyclic s ↔
-∀ {a b t}, sys.Reachable s a → sys.tr_to a t b → ¬sys.Reachable b a :=
+∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
 @[simp]

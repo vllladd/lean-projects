@@ -26,8 +26,8 @@ game.rules t.1 a.state t.2 = some r ∧ b =
     use h₁
     simp [h₁, h₂]
 
-theorem tr_to_iff {a b} {t : T.Trans} :
-game.sys.tr_to a t b ↔ a.player = t.1 ∧ ∃ r,
+theorem trTo_iff {a b} {t : T.Trans} :
+game.sys.trTo a t b ↔ a.player = t.1 ∧ ∃ r,
 game.rules t.1 a.state t.2 = some r ∧ b =
 { player := r.1
 , state := r.2
@@ -104,7 +104,7 @@ theorem acyclic_gstate {a} [ha : game.sys.Valid a] : game.sys.Acyclic a := by
       exact System.reachable_right h₁ h₂
   replace h₁ := hist_suffix_of_reachable (p := p) h₁
   replace h₃ := hist_suffix_of_reachable (p := p) h₃
-  rw [tr_to_iff] at h₂
+  rw [tr_eq_some_iff] at h₂
   obtain ⟨h₂, ⟨p', t'⟩, h₄, rfl⟩:= h₂
   simp at h₃
   clear! p'
@@ -112,15 +112,15 @@ theorem acyclic_gstate {a} [ha : game.sys.Valid a] : game.sys.Acyclic a := by
   rw [DMap.get!_map_eq_of_pos game.player_mem_hist_of_valid] at h₃
   simp at h₃
 
-theorem valid_tr_iff {a} {t : T.Trans} :
-game.sys.valid_tr a t ↔ a.player = t.fst ∧
+theorem validTr_iff {a} {t : T.Trans} :
+game.sys.validTr a t ↔ a.player = t.fst ∧
 ∃ r, game.rules t.1 a.state t.2 = some r := by
-  simp only [System.valid_tr, System.tr_to, tr_eq_some_iff, Prod.exists,
+  simp only [System.validTr, System.trTo, tr_eq_some_iff, Prod.exists,
     exists_and_left, and_congr_right_iff]; tauto
 
-theorem has_tr_iff_exi_rules_ap_isSome {s : T.GState} :
-game.sys.has_tr s ↔ (∃ t, (game.rules s.player s.state t).isSome) := by
-  simp only [System.has_tr, valid_tr_iff]
+theorem hasTr_iff_exi_rules_ap_isSome {s : T.GState} :
+game.sys.hasTr s ↔ (∃ t, (game.rules s.player s.state t).isSome) := by
+  simp only [System.hasTr, validTr_iff]
   constructor
   · rintro ⟨⟨p, t⟩, rfl, r, h₂⟩
     dsimp at h₂

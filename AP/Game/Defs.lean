@@ -11,7 +11,7 @@ structure GameParams : Type (u + 1) where
   Score : Type u
 
   h_inh_player : Inhabited Player
-  -- h_hash_player : Hashable Player
+  h_hash_player : Hashable Player
   h_inh_move : ∀ p, Inhabited # Move p
   h_pl_fin : Fintype Player  
   h_pl_lin : LinearOrder Player
@@ -20,23 +20,29 @@ structure GameParams : Type (u + 1) where
 
 namespace GameParams
 
-instance {T : GameParams} : Inhabited T.Player :=
+section instances
+
+variable {T : GameParams}
+
+instance : Inhabited T.Player :=
   T.h_inh_player
 
--- instance {T : GameParams} : Hashable T.Player :=
---   T.h_hash_player
+instance : Hashable T.Player :=
+  T.h_hash_player
 
-instance {T : GameParams} {p} : Inhabited # T.Move p :=
+instance {p} : Inhabited # T.Move p :=
   T.h_inh_move p
 
-instance {T : GameParams} : Fintype T.Player :=
+instance : Fintype T.Player :=
   T.h_pl_fin
 
-instance {T : GameParams} : LinearOrder T.Player :=
+instance : LinearOrder T.Player :=
   T.h_pl_lin
 
-instance {T : GameParams} : LinearOrder T.Score :=
+instance : LinearOrder T.Score :=
   T.h_score_lin
+
+end instances
 
 variable (T : GameParams)
 
@@ -120,7 +126,7 @@ def runStratFn {s : T.GState} (f : T.StratFn s.player) : T.Trans :=
   f (game.pstate p s.state) (s.hist.get! p)
 
 def stratCnd {p : T.Player} (f : T.StratFn p) : Prop :=
-  ∀ (s : T.GState), s.player = p → game.sys.has_tr s → game.sys.valid_tr s
+  ∀ (s : T.GState), s.player = p → game.sys.hasTr s → game.sys.validTr s
   ⟨p, f (game.pstate p s.state) (s.hist.get! p)⟩
 
 structure Strat (p : T.Player) : Type u where
