@@ -10,7 +10,7 @@ namespace DMap
 theorem equiv_def {m₁ m₂ : Std.DHashMap α β} :
 m₁ ≈ m₂ ↔ m₁.Equiv m₂ := by rfl
 
-protected def insert' (x : Σ i, β i) (mp : DMap α β) : DMap α β := by
+def insertP (x : Σ i, β i) (mp : DMap α β) : DMap α β := by
   refine' mp.map _ _
   · intro mp
     exact insert x mp
@@ -19,14 +19,16 @@ protected def insert' (x : Σ i, β i) (mp : DMap α β) : DMap α β := by
   simp only [Std.DHashMap.insert_eq_insert]
   exact Std.DHashMap.Equiv.insert i x h
 
-instance : Insert (Σ i, β i) (DMap α β) := ⟨DMap.insert'⟩
+instance : Insert (Σ i, β i) (DMap α β) := ⟨DMap.insertP⟩
 
 @[simp]
-def insert (i : α) (x : β i) (mp : DMap α β) : DMap α β :=
-  mp.insert' ⟨i, x⟩
+protected def insert (i : α) (x : β i) (mp : DMap α β) : DMap α β :=
+  mp.insertP ⟨i, x⟩
+
+instance : Insert (Σ i, β i) (DMap α β) := ⟨insertP⟩
 
 def ofList (xs : List (Σ i, β i)) : DMap α β :=
-  Quotient.mk' # .ofList xs
+  ⟦.ofList xs⟧
 
 def get? (i : α) (mp : DMap α β) : Option (β i) := by
   refine' mp.lift _ _
@@ -91,46 +93,99 @@ theorem get!_map_eq_of_pos {γ : α → Type w} {f : ∀ {i}, β i → γ i} {i 
   simp [get?_map_eq, hx]
 
 def toList (mp : DMap α β) : List (Σ i, β i) := by
-  nm x; clear x
+  let r := λ (a b : Σ i, β i) => a.1 ≤ b.1
+  
   refine' mp.lift _ _
   · intro mp
-    exact mp.toList.mergeSort (·.1 ≤ ·.1)
+    exact mp.toList.mergeSort (r · ·)
   intro a b h
   rw [equiv_def] at h
   rw [Std.DHashMap.equiv_iff_toList_perm] at h
   
-  rw [←List.mergeSort_attach]
-  nth_rw 2 [←List.mergeSort_attach]
-  -- apply List.eq_of_perm_of_sorted
-  sorry
-
-#check 0 #exit
+  generalize hx : a.toList = xs at h ⊢
+  generalize hy : b.toList = ys at h ⊢
+  
+  have h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c :=
+    λ a b c _ _ _ ↦ Preorder.le_trans a.1 b.1 c.1
+  have h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a :=
+    λ a b _ _ ↦ LinearOrder.le_total a.1 b.1
+  
+  apply List.eq_of_perm_of_sorted_loc (r := r)
+  · trans xs
+    · apply List.mergeSort_perm
+    apply h.trans; symm
+    apply List.mergeSort_perm
+  · exact List.sorted_mergeSort_loc h_tra h_tot
+  · simp only [h.mem_iff] at h_tra h_tot
+    exact List.sorted_mergeSort_loc h_tra h_tot
+  all_goals simp only [List.mem_mergeSort]; try assumption
+  
+  clear h_tra h_tot
+  rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂ (h₃ : i ≤ j) (h₄ : j ≤ i)
+  have h₅ := le_antisymm h₃ h₄; clear h₃ h₄
+  subst h₅
+  simp
+  subst hx hy
+  rw [Std.DHashMap.mem_toList_iff_get?_eq_some] at h₁ h₂
+  simp [h₁] at h₂
+  exact h₂
 
 @[simp]
 theorem ofList_nil : ofList (α := α) (β := β) [] = ∅ := rfl
 
 @[simp]
-theorem toList_empty : (∅ : DMap α β).toList = [] := rfl
+theorem toList_empty : (∅ : DMap α β).toList = [] := by
+  simp [empty_def, toList]
+
+@[simp]
+private def ofList' : List (Σ i, β i) → DMap α β
+| [] => ∅
+| (x :: xs) => insert x # ofList' xs
+
+theorem ofList_eq_ofList' {xs : List (Σ i, β i)} :
+ofList xs = ofList' xs := by
+  symm
+  unfold ofList
+  generalize hm₁ : ofList' xs = m₁
+  generalize hm₂ : ofList xs = m₂
+  revert hm₁ hm₂
+  induction m₁, m₂ using Quotient.inductionOn₂
+  nm m₁ m₂
+  intro hm₁ hm₂
+  symm at hm₁ hm₂
+  rw [Quotient.mk_eq_iff_out] at hm₁ hm₂ ⊢
+  change m₁.Equiv _ at hm₁ ⊢
+  change m₂.Equiv _ at hm₂
+  
+  induction xs generalizing m₁ m₂
+  · convert hm₁
+  nm x xs ih
+  
+  simp at hm₁
+  rw [Std.DHashMap.equiv_iff_get?] at hm₁ hm₂ ⊢
+  intro i
+  specialize hm₁ i
+  specialize hm₂ i
+  
+  sorry
+
+-- #check 0 #exit
 
 @[simp]
 theorem ofList_snoc {x : Σ i, β i} {xs} :
-ofList (xs ++ [x]) = (ofList xs).insert' x := by
-  unfold ofList insert'
-  ext:1
-  dsimp only
-  generalize ha : [] = acc
-  nth_rewrite 2 [←ha]
-  clear ha
-  induction xs generalizing x acc
-  · simp
-  nm y ys ih
-  dsimp at ih ⊢
-  rw [ih]
+ofList (xs ++ [x]) = (ofList xs).insertP x := by
+  simp_rw [ofList_eq_ofList']
+  induction xs using List.reverseRecOn generalizing x
+  · simp; rfl
+  nm xs y ih
+  sorry
+
+#check 0 #exit
 
 @[simp]
-theorem mem_insert' {x : Σ i, β i} {i} :
-i ∈ mp.insert' x ↔ i = x.1 ∨ i ∈ mp := by
-  simp [insert', mem_def]
+theorem mem_insertP {x : Σ i, β i} {i} :
+i ∈ mp.insertP x ↔ i = x.1 ∨ i ∈ mp := by
+  simp [insertP, mem_def]
 
 theorem mem_insert {i x j} :
 j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by simp

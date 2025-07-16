@@ -847,16 +847,6 @@ theorem Set.not_nonempty_iff {α : Type*} {s : Set α} :
 theorem Set.setOf_compl {α : Type*} {P : α → Prop} :
 {x | P x}ᶜ = {x | ¬P x} := rfl
 
--- @[simp]
--- theorem not_mem_ordset_empty {α : Type*} [LinearOrder α] {x : α} :
--- x ∉ (∅ : Ordset α) := by
---   simp [Ordset.instEmptyCollection, Ordset.nil, Ordset.instMembership]; rfl
-
--- @[simp]
--- theorem Ordset.finite {α : Type*} [hi : LinearOrder α] {s : Ordset α} :
--- {x | x ∈ s}.Finite := by
---   sorry
-
 @[simp]
 theorem option_get!_with_bot_some {α : Type*} [Inhabited α] {x : α} :
 (WithBot.some x).get! = x := rfl
@@ -1855,36 +1845,191 @@ xs.Perm (x :: y :: ys) ↔ xs.Perm (y :: x :: ys) := by
   nth_rw 2 [List.perm_comm]
   exact perm_swap_left
 
+@[simp]
+theorem List.count_mergeSort {α : Type*} [ha : DecidableEq α]
+{xs : List α} {x r} : (xs.mergeSort r).count x = xs.count x := by
+  have h₁ := mergeSort_perm xs r
+  rw [perm_iff_count] at h₁
+  apply h₁
+
+theorem List.count_eq_count_unattach {α : Type*} [ha : DecidableEq α]
+{xs : List α} {ys : List {x // x ∈ xs}} {x} :
+count x ys = count x.1 ys.unattach := by
+  rcases x with ⟨x, hx⟩
+  dsimp
+  induction ys generalizing x
+  · rfl
+  nm y ys ih
+  simp only [unattach_cons, count_cons]
+  split_ifs with h₁ h₂ h₂ <;> simp at h₁ h₂ <;>
+    (try contradiction) <;> simp <;> apply ih
+
+theorem List.count_unattach_eq_ite {α : Type*} [ha : DecidableEq α]
+{xs : List α} {ys : List {x // x ∈ xs}} {x : α} :
+count x ys.unattach = if h : x ∈ xs then count ⟨x, h⟩ ys else 0 := by
+  split_ifs with h₁
+  · rw [count_eq_count_unattach]
+  · simp [count_eq_zero, h₁]
+
+theorem List.mergeSort_attach_perm {α : Type*} {xs : List α} {r} :
+(xs.attach.mergeSort (r ·.1 ·.1)).unattach.Perm (xs.mergeSort r) := by
+  classical
+  rw [perm_iff_count]
+  intro a
+  simp
+  rw [count_unattach_eq_ite]
+  split_ifs with ha
+  · convert @List.count_mergeSort {x // x ∈ xs} _ xs.attach
+      ⟨a, ha⟩ (r ·.1 ·.1)
+    convert (@count_attach α _ xs ⟨a, ha⟩).symm
+  symm; rwa [count_eq_zero]
+
+@[simp]
+theorem List.sorted_unattach {α : Type*}
+{xs : List α} {ys : List {x // x ∈ xs}} {r : α → α → Prop} :
+ys.unattach.Sorted r ↔ ys.Sorted (r ·.1 ·.1) := by
+  induction ys <;> simp
+  nm y ys ih
+  intro h
+  exact ih
+
 theorem List.mergeSort_attach {α : Type*} {xs : List α} {r} :
 (xs.attach.mergeSort (r ·.1 ·.1)).unattach = xs.mergeSort r := by
-  rw [List.ext_getElem?_iff]
+  rw [unattach, map_mergeSort (s := (r · ·))] <;> simp
+
+theorem List.eq_of_perm_of_sorted_loc {α : Type*} {xs ys : List α} {r}
+(hp : xs.Perm ys) (hx : xs.Sorted r) (hy : ys.Sorted r)
+(h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
+(h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a)
+(h_ant : ∀ a b, a ∈ xs → b ∈ xs → r a b → r b a → a = b) : xs = ys := by
+  induction xs generalizing ys
+  · simp at hp
+    rw [hp]
+  nm x xs ih
+  cases ys
+  · simp at hp
+  nm y ys
+  simp at ⊢
+  rw [sorted_cons] at hx hy
+  rcases hx with ⟨hx₁, hx₂⟩
+  rcases hy with ⟨hy₁, hy₂⟩
+  apply and_of
+  · by_contra hxy
+    change x ≠ y at hxy
+    have h₁ := @hp.mem_iff
+    have h₂ := h₁ x; simp [hxy] at h₂
+    have h₃ := h₁ y; simp [hxy.symm] at h₃
+    specialize hx₁ y h₃
+    specialize hy₁ x h₂
+    specialize h_ant x y
+    simp [hxy.symm, h₂, h₃, hx₁, hy₁] at h_ant
+    contradiction
+  rintro rfl
+  simp at hp
+  apply @ih ys hp hx₂ hy₂
+  · intro a b c ha hb hc h₁ h₂
+    apply h_tra a b c <;> simp [ha, hb, hc, h₁, h₂]
+  · intro a b ha hb
+    apply h_tot a b <;> simp [ha, hb]
+  · intro a b ha hb h₁ h₂
+    apply h_ant <;> simp [ha, hb, h₁, h₂]
+
+theorem List.sorted_mergeSort_loc' {α : Type*} {xs : List α} {r : α → α → Bool}
+(h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
+(h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a) :
+(xs.mergeSort r).Sorted (r · ·) := by
+  rw [←@mergeSort_attach α xs r]
   simp
-  intro n
-  induction n using Nat.strong_induction_on generalizing xs
-  nm n ih
-  generalize ha : xs.attach.mergeSort (r ·.1 ·.1) = as
-  generalize hb : xs.mergeSort r = bs
-  cases as
-  · replace ha := congrArg (·.length) ha
-    replace hb := congrArg (·.length) hb
-    simp at ha hb
-    symm at hb
-    simp [ha] at hb
-    simp [hb]
-  nm a as
-  cases bs
-  · replace ha := congrArg (·.length) ha
-    replace hb := congrArg (·.length) hb
-    simp at hb
-    simp [hb] at ha
-  nm b bs
-  have hab : a = b :=
-    by
-      sorry
-  cases n
-  · simpa
-  nm n
+  apply sorted_mergeSort
+  · rintro ⟨a, ha⟩ ⟨b, hb⟩ ⟨c, hc⟩
+    apply h_tra <;> assumption
+  · rintro ⟨a, ha⟩ ⟨b, hb⟩; simp
+    apply h_tot <;> assumption
+
+theorem List.sorted_mergeSort_loc {α : Type*} {xs : List α}
+{r : α → α → Prop} [hr : DecidableRel r]
+(h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
+(h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a) :
+(xs.mergeSort (r · ·)).Sorted r := by
+  have h₁ := sorted_mergeSort_loc' (xs := xs) (r := (r · ·))
+    (by simpa using h_tra) (by simpa using h_tot)
+  simp at h₁; exact h₁
+
+@[simp]
+theorem Std.DHashMap.toList_empty {α : Type*}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type*} :
+(∅ : Std.DHashMap α β).toList = [] := by
+  ext:1; simp
+
+@[simp]
+theorem Std.DHashMap.nodup_keys {α : Type*}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type*}
+{m : Std.DHashMap α β} : m.keys.Nodup := by
+  unfold List.Nodup
+  convert m.distinct_keys
   simp
-  -- xs' := remove first `a` from xs
-  -- use xs' in induction hypothesis
-  sorry
+
+@[simp]
+theorem Std.DHashMap.nodup_toList {α : Type*}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type*}
+{m : Std.DHashMap α β} : m.toList.Nodup := by
+  have h₁ := m.nodup_keys
+  rw [←map_fst_toList_eq_keys] at h₁
+  exact List.Nodup.of_map _ h₁
+
+theorem Std.DHashMap.equiv_iff_get? {α : Type*}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type*}
+{m₁ m₂ : Std.DHashMap α β} : m₁.Equiv m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
+  constructor <;> intro h
+  · intro i
+    by_cases h₁ : i ∈ m₁ <;> have h₂ := h₁ <;> rw [h.mem_iff] at h₂
+    · exact Equiv.get?_eq h
+    · rw [get?_eq_none h₁, get?_eq_none h₂]
+  rw [equiv_iff_toList_perm]
+  rw [List.perm_ext_iff_of_nodup nodup_toList nodup_toList]
+  rintro ⟨i, x⟩; simp [h]
+
+theorem Std.DHashMap.toList_ofList_perm {α : Type*}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type*}
+{xs : List (Σ i, β i)} (h : (xs.map (·.1)).Nodup) :
+(Std.DHashMap.ofList xs).toList.Perm xs := by
+  rw [List.perm_ext_iff_of_nodup nodup_toList # h.of_map _]
+  rintro ⟨i, x⟩
+  simp
+  constructor <;> intro h₁
+  · contrapose! h₁
+    by_cases h₂ : i ∈ ofList xs <;> simp at h₂
+    · obtain ⟨y, h₂⟩ := h₂
+      rw [get?_ofList_of_mem]
+      rotate_left
+      · simp
+        rfl
+      · exact y
+      · simp
+        unfold List.Nodup at h
+        rw [List.pairwise_map] at h
+        exact h
+      · exact h₂
+      simp
+      rintro rfl
+      contradiction
+    rw [get?_ofList_of_contains_eq_false]; simp
+    simpa
+  rw [get?_ofList_of_mem]
+  rotate_left
+  · simp
+    rfl
+  · exact x
+  · simp
+    unfold List.Nodup at h
+    rw [List.pairwise_map] at h
+    exact h
+  · exact h₁
+  simp
+
+theorem Std.DHashMap.ofList_toList_equiv {α : Type*}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type*}
+{m : Std.DHashMap α β} : (Std.DHashMap.ofList m.toList).Equiv m := by
+  rw [equiv_iff_toList_perm]
+  apply toList_ofList_perm
+  simp

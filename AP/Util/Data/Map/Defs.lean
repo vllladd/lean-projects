@@ -38,4 +38,6 @@ def empty : DMap α β :=
 
 instance : EmptyCollection (DMap α β) := ⟨empty⟩
 
+theorem empty_def : (∅ : DMap α β) = ⟦(∅ : Std.DHashMap α β)⟧ := rfl
+
 namespace DMap
