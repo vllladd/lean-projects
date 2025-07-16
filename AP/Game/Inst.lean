@@ -42,16 +42,21 @@ def step : Option game.Inst := do
 def run (n : ℕ) : game.Inst × ℕ :=
   match h : game.sys.simulate inst.f inst.s n with
   | (s', m) => ((·, m)) #
-    { inst with
-      s := s'
-    , h_sim := by
-        obtain ⟨k, h₁⟩ := inst.h_sim
-        have ⟨n, hn⟩ := Nat.exists_eq_add_of_le #
-          System.snd_le_of_simulate_eq h
-        subst hn
-        use k + n
-        rw [System.simulate_add, h₁]
-        simp
-        rw [System.simulate_add_eq_left_iff] at h
-        exact h.1
-    }
+  { inst with
+    s := s'
+  , h_sim := by
+      obtain ⟨k, h₁⟩ := inst.h_sim
+      have ⟨n, hn⟩ := Nat.exists_eq_add_of_le #
+        System.snd_le_of_simulate_eq h
+      subst hn
+      use k + n
+      rw [System.simulate_add, h₁]
+      simp
+      rw [System.simulate_add_eq_left_iff] at h
+      exact h.1
+  }
+
+def outcome (n : ℕ) : Option (T.Player → T.Outcome) :=
+  let (inst', m) := inst.run n
+  let s := inst'.s
+  if m = 0 then none else some # game.outcome s.player s.state

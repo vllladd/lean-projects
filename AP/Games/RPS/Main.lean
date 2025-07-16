@@ -46,10 +46,10 @@ def RPS : Game Params :=
   , pmove := pmove
   
   , outcome := λ _ s p =>
-      ∃ x y, let items := s.items
-      items.get? p = some x ∧
-      items.get? p.next = some y ∧
-      y < x
+      let items := s.items
+      match items.get? p, items.get? p.next with
+      | some x, some y => x = y.next
+      | _, _ => false
   
   , sys :=
     { initial := {Params.initState playerA State.init}
@@ -76,25 +76,36 @@ theorem stratCnd {p} {f : Params.StratFn p} : RPS.stratCnd f := by
 
 -----
 
-def aStrat : RPS.Strat playerA :=
-  { f := λ _ _ => 1
-  , h := stratCnd
-  }
+def Rock     : Fin 3 := 0
+def Paper    : Fin 3 := 1
+def Scissors : Fin 3 := 2
 
-def bStrat : RPS.Strat playerB :=
-  { f := λ _ _ => 0
-  , h := stratCnd
-  }
-
-def state₀ := Params.initState playerA State.init
-
-def inst : RPS.Inst :=
-  { strats := λ p => match p with
-      | 0 => aStrat
-      | 1 => bStrat
-  , s₀ := state₀
-  , s := state₀
-    
-  , h_init := ⟨rfl⟩
-  , h_sim := ⟨0, rfl⟩
-  }
+example :
+let run (x y : Item) : List ℕ :=
+  let aStrat : RPS.Strat playerA := ⟨λ _ _ => x, stratCnd⟩
+  let bStrat : RPS.Strat playerB := ⟨λ _ _ => y, stratCnd⟩
+  let state₀ := Params.initState playerA State.init
+  let inst : RPS.Inst :=
+    { strats := λ p => match p with
+        | 0 => aStrat
+        | 1 => bStrat
+    , s₀ := state₀
+    , s := state₀
+    , h_init := ⟨rfl⟩
+    , h_sim := ⟨0, rfl⟩
+    }
+  match inst.outcome 3 with
+  | none => [0, 0]
+  | some r => [r 0, r 1].map # λ (b : Bool) => ite b 1 0
+let tests : List # Item × Item × List ℕ :=
+  [ (Rock,     Rock,     [0, 0])
+  , (Rock,     Paper,    [0, 1])
+  , (Rock,     Scissors, [1, 0])
+  , (Paper,    Rock,     [1, 0])
+  , (Paper,    Paper,    [0, 0])
+  , (Paper,    Scissors, [0, 1])
+  , (Scissors, Rock,     [0, 1])
+  , (Scissors, Paper,    [1, 0])
+  , (Scissors, Scissors, [0, 0])
+  ]
+tests.all # λ ⟨x, y, r⟩ => run x y = r := rfl
