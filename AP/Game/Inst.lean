@@ -61,7 +61,8 @@ def outcome (n : ℕ) : Option (T.Player → T.Outcome) :=
   let s := inst'.s
   if m = 0 then none else some # game.outcome s.player s.state
 
-end Game.Inst namespace Game
+end Game.Inst
+namespace Game
 
 variable {T : GameParams} {game : Game T}
 

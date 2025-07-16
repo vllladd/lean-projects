@@ -11,6 +11,7 @@ structure GameParams : Type (u + 1) where
   Outcome : Type u
 
   h_inh_player : Inhabited Player
+  -- h_hash_player : Hashable Player
   h_inh_move : ∀ p, Inhabited # Move p
   h_pl_fin : Fintype Player  
   h_pl_lin : LinearOrder Player
@@ -21,6 +22,9 @@ namespace GameParams
 
 instance {T : GameParams} : Inhabited T.Player :=
   T.h_inh_player
+
+-- instance {T : GameParams} : Hashable T.Player :=
+--   T.h_hash_player
 
 instance {T : GameParams} {p} : Inhabited # T.Move p :=
   T.h_inh_move p
