@@ -1,52 +1,41 @@
 import AP.Util.Basic
 
-universe u
-variable {ι : Type u} {α : ι → Type u} [hhι : LinearOrder ι]
+universe u v
 
-@[simp]
-def DMap.listCnd : List (Σ i, α i) → Prop
-| (x :: y :: xs) => x.1 < y.1 ∧ listCnd (y :: xs)
-| _ => True
+namespace Util.Data
 
-@[ext]
-structure DMap (ι : Type u) (α : ι → Type u) [LinearOrder ι] : Type u where
-  toList : List (Σ i, α i)
-  h : DMap.listCnd toList
+section type_defs
 
-abbrev Map (ι : Type u) (α : Type u) [LinearOrder ι] : Type u :=
-  DMap ι # λ _ => α
+variable (α : Type u) [hh₁ : LinearOrder α] [hh₂ : Hashable α] (β : α → Type v)
+
+instance DMap.equiv {α : Type u} {β : α → Type v}
+[hh₁ : LinearOrder α] [hh₂ : Hashable α] :
+@Equivalence (Std.DHashMap α β) #
+Std.DHashMap.Equiv (α := α) (β := β) := by
+  constructor
+  · intro x
+    exact Std.DHashMap.Equiv.of_forall_get?_eq (congrFun rfl)
+  · intro x y h
+    exact h.symm
+  intro x y z h₁ h₂
+  exact (Std.DHashMap.Equiv.congr_right h₂).mp h₁
+
+instance DMap.setoid : Setoid (Std.DHashMap α β) :=
+  ⟨_, DMap.equiv (α := α) (β := β)⟩
+
+def DMap : Type (max u v) :=
+  Quotient # DMap.setoid α β
+
+def Map (β : Type v) : Type (max u v) :=
+  DMap α # λ _ => β
+
+end type_defs
+
+variable {α : Type u} [hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type v}
+
+def empty : DMap α β :=
+  Quotient.mk' ∅
+
+instance : EmptyCollection (DMap α β) := ⟨empty⟩
 
 namespace DMap
-
-def empty : DMap ι α :=
-  ⟨[], trivial⟩
-
-instance : EmptyCollection (DMap ι α) := ⟨DMap.empty⟩
-
-end DMap namespace Map
-
-def empty {α : Type u} : Map ι α := ∅
-
-end Map namespace DMap
-
-def insert' (x : Σ i, α i) : List (Σ i, α i) → List (Σ i, α i)
-| [] => [x]
-| (y :: xs) => match compare x.1 y.1 with
-  | .eq => x :: xs
-  | .lt => x :: y :: xs
-  | .gt => y :: insert' x xs
-
-@[simp]
-def ofList' (xs : List (Σ i, α i)) : List (Σ i, α i) → List (Σ i, α i)
-| [] => xs
-| (y :: ys) => ofList' (insert' y xs) ys
-
-@[simp]
-def get' (i : ι) : List (Σ i, α i) → Option (α i)
-| [] => none
-| (⟨j, x⟩ :: xs) => if h : i = j then some # h ▸ x else get' i xs
-
-@[simp]
-def mem' (i : ι) : List (Σ i, α i) → Bool
-| [] => false
-| (⟨j, _⟩ :: xs) => if i = j then true else mem' i xs

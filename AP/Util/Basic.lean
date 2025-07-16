@@ -1838,3 +1838,53 @@ theorem not_type_succ_embed_type : IsEmpty (Type (u + 1) ↪ Type u) :=
   isEmpty_type_max_embed.{u + 1}
 
 end card_type
+
+theorem List.perm_swap_left {α : Type*} {xs ys : List α} {x y} :
+(x :: y :: xs).Perm ys ↔ (y :: x :: xs).Perm ys := by
+  constructor <;> intro h
+  · trans x :: y :: xs
+    rotate_left; exact h
+    apply List.Perm.swap
+  · trans y :: x :: xs
+    rotate_left; exact h
+    apply List.Perm.swap
+
+theorem List.perm_swap_right {α : Type*} {xs ys : List α} {x y} :
+xs.Perm (x :: y :: ys) ↔ xs.Perm (y :: x :: ys) := by
+  rw [List.perm_comm]
+  nth_rw 2 [List.perm_comm]
+  exact perm_swap_left
+
+theorem List.mergeSort_attach {α : Type*} {xs : List α} {r} :
+(xs.attach.mergeSort (r ·.1 ·.1)).unattach = xs.mergeSort r := by
+  rw [List.ext_getElem?_iff]
+  simp
+  intro n
+  induction n using Nat.strong_induction_on generalizing xs
+  nm n ih
+  generalize ha : xs.attach.mergeSort (r ·.1 ·.1) = as
+  generalize hb : xs.mergeSort r = bs
+  cases as
+  · replace ha := congrArg (·.length) ha
+    replace hb := congrArg (·.length) hb
+    simp at ha hb
+    symm at hb
+    simp [ha] at hb
+    simp [hb]
+  nm a as
+  cases bs
+  · replace ha := congrArg (·.length) ha
+    replace hb := congrArg (·.length) hb
+    simp at hb
+    simp [hb] at ha
+  nm b bs
+  have hab : a = b :=
+    by
+      sorry
+  cases n
+  · simpa
+  nm n
+  simp
+  -- xs' := remove first `a` from xs
+  -- use xs' in induction hypothesis
+  sorry

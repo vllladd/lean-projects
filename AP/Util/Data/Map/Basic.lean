@@ -1,269 +1,121 @@
 import AP.Util.Data.Map.Defs
 
-universe u
-variable {ι : Type u} {α β : ι → Type u} [hhι : LinearOrder ι] {mp : DMap ι α}
+namespace Util.Data
+
+universe u v w
+variable {α : Type u} [hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type v}
 
 namespace DMap
 
-@[simp]
-theorem insert'_nil {x : Σ i, α i} : insert' x [] = [x] := rfl
+theorem equiv_def {m₁ m₂ : Std.DHashMap α β} :
+m₁ ≈ m₂ ↔ m₁.Equiv m₂ := by rfl
 
-@[simp]
-theorem insert'_cons {x y : Σ i, α i} {xs : List (Σ i, α i)} :
-insert' x (y :: xs) = (match compare x.1 y.1 with
-| .eq => x :: xs
-| .lt => x :: y :: xs
-| .gt => y :: insert' x xs) := rfl
-
-theorem listCnd_of_cons {x : Σ i, α i} {xs}
-(h : listCnd (x :: xs)) : listCnd xs := by
-  cases xs; trivial; exact h.2
-
-theorem listCnd_cons_of_le {x y : Σ i, α i} {xs}
-(h₁ : listCnd (x :: xs)) (h₂ : y.1 ≤ x.1) : listCnd (y :: xs) := by
-  cases xs
-  · simp
-  nm z xs
-  simp at h₁ ⊢
-  rcases h₁ with ⟨h₁, h₃⟩
-  simp [h₃]
-  exact lt_of_le_of_lt h₂ h₁
-
-theorem listCnd_cons_of_eq {x y : Σ i, α i} {xs}
-(h₁ : listCnd (x :: xs)) (h₂ : y.1 = x.1) : listCnd (y :: xs) := by
-  apply listCnd_cons_of_le h₁; rw [h₂]
-
-theorem listCnd_cons_of_lt {x y : Σ i, α i} {xs}
-(h₁ : listCnd (x :: xs)) (h₂ : y.1 < x.1) : listCnd (y :: xs) := by
-  apply listCnd_cons_of_le h₁; exact le_of_lt h₂
-
-theorem listCnd_map_of (f : ∀ {i}, α i → β i)
-{xs : List (Σ i, α i)} (h : listCnd xs) :
-listCnd # xs.map # λ x => ⟨x.1, f x.2⟩ := by
-  induction xs
-  · simp
-  nm x xs ih
-  specialize ih # listCnd_of_cons h
-  cases xs <;> simp
-  nm y xs
-  simp at h ih
-  use h.1
-
-theorem listCnd_insert'_of {xs : List (Σ i, α i)} {x}
-(h : listCnd xs) : listCnd (insert' x xs) := by
+protected def insert' (x : Σ i, β i) (mp : DMap α β) : DMap α β := by
+  refine' mp.map _ _
+  · intro mp
+    exact insert x mp
+  intro a b h
   rcases x with ⟨i, x⟩
-  generalize hn : xs.length = n
-  induction n using Nat.strong_induction_on generalizing i x xs
-  nm n ih
-  cases xs
-  · simp
-  nm y xs
-  rcases y with ⟨j, y⟩
-  simp
-  split <;> nm a h₁ <;> clear a
-  · rw [compare_eq_iff_eq] at h₁
-    subst h₁
-    exact listCnd_cons_of_eq h rfl
-  · rw [compare_lt_iff_lt] at h₁
-    simp
-    use h₁
-  rw [compare_gt_iff_gt, gt_iff_lt] at h₁
-  simp at hn
-  have h₂ := ih (n - 1)
-  rw [←hn] at h₂
-  specialize @h₂ (by simp) xs (listCnd_of_cons h) i x (by simp)
-  generalize hy : insert' ⟨i, x⟩ xs = ys at h₂ ⊢
-  cases ys
-  · simp
-  nm z ys
-  simp [h₂]
-  cases xs
-  · simp at hy
-    simpa [←hy.1]
-  nm r xs
-  simp at h hy
-  split at hy <;> nm a h₃ <;> clear a <;>
-    simp at hy <;> rcases hy with ⟨rfl, hy⟩
-  · rw [compare_eq_iff_eq] at h₃
-    subst h₃
-    exact h.1
-  · rw [compare_lt_iff_lt] at h₃
-    exact h₁
-  exact h.1
+  simp only [Std.DHashMap.insert_eq_insert]
+  exact Std.DHashMap.Equiv.insert i x h
 
-def insertProd (x : Σ i, α i) (mp : DMap ι α) : DMap ι α :=
-  ⟨_, listCnd_insert'_of (x := x) mp.h⟩
-
-instance : Insert (Σ i, α i) (DMap ι α) :=
-  ⟨λ p mp => mp.insertProd p⟩
+instance : Insert (Σ i, β i) (DMap α β) := ⟨DMap.insert'⟩
 
 @[simp]
-def insert (i : ι) (x : α i) (mp : DMap ι α) : DMap ι α :=
-  mp.insertProd ⟨i, x⟩
+def insert (i : α) (x : β i) (mp : DMap α β) : DMap α β :=
+  mp.insert' ⟨i, x⟩
 
-theorem listCnd_ofList'_of {xs ys : List (Σ i, α i)}
-(h : listCnd xs) : listCnd (ofList' xs ys) := by
-  induction ys generalizing xs
-  · simpa
-  nm y ys ih
-  exact ih # listCnd_insert'_of h
+def ofList (xs : List (Σ i, β i)) : DMap α β :=
+  Quotient.mk' # .ofList xs
 
-@[simp]
-theorem listCnd_ofList'_of_fst_nil {xs : List (Σ i, α i)} :
-listCnd (ofList' [] xs) := by
-  apply listCnd_ofList'_of; simp
+def get? (i : α) (mp : DMap α β) : Option (β i) := by
+  refine' mp.lift _ _
+  · intro mp
+    exact mp.get? i
+  intro a b h
+  exact Std.DHashMap.Equiv.get?_eq h
 
-def ofList (xs : List (Σ i, α i)) : DMap ι α :=
-  ⟨_, listCnd_ofList'_of_fst_nil (xs := xs)⟩
-
-def get? (i : ι) (mp : DMap ι α) : Option (α i) :=
-  get' i mp.toList
-
-def get! (i : ι) [h : Inhabited (α i)] (mp : DMap ι α) : α i :=
+def get! (i : α) [h : Inhabited (β i)] (mp : DMap α β) : β i :=
   (mp.get? i).get!
 
 end DMap namespace Map
 
-def ofList {α : Type u} (xs : List (ι × α)) : Map ι α :=
+def ofList {β : Type u} (xs : List (α × β)) : Map α β :=
   DMap.ofList # xs.map # λ ⟨i, x⟩ => ⟨i, x⟩
 
 end Map namespace DMap
 
-theorem lt_of_listCnd_cons_and_mem {xs : List (Σ i, α i)} {x y}
-(h₁ : listCnd (x :: xs)) (h₂ : y ∈ xs) : x.1 < y.1 := by
-  generalize hn : xs.length = n
-  induction n using Nat.strong_induction_on generalizing x y xs
-  nm n ih
-  cases xs
-  · simp at h₂
-  nm z xs
-  simp at h₁
-  rcases h₁ with ⟨h₁, h₃⟩
-  simp at h₂
-  rcases h₂ with rfl | h₂
-  · exact h₁
-  specialize @ih (n - 1)
-  rw [←hn] at ih
-  apply @ih (by simp) xs x y _ h₂ (by simp)
-  exact listCnd_cons_of_lt h₃ h₁
+def map {γ : α → Type w} (f : ∀ {i}, β i → γ i) (mp : DMap α β) : DMap α γ := by
+  refine' Quotient.map _ _ mp
+  use (·.map @f)
+  intro a b h
+  exact Std.DHashMap.Equiv.map _ h
 
-theorem listCnd_cons_of_forall_le {xs : List (Σ i, α i)} {x}
-(h₁ : listCnd xs) (h₂ : ∀ y ∈ xs, x.1 < y.1) : listCnd (x :: xs) := by
-  cases xs
-  · simp
-  nm z xs
-  simp [h₁]
-  specialize h₂ z
-  simp at h₂
-  exact h₂
-
-theorem listCnd_cons_iff {xs : List (Σ i, α i)} {x} :
-listCnd (x :: xs) ↔ listCnd xs ∧ ∀ y ∈ xs, x.1 < y.1 := by
-  use λ h => ⟨listCnd_of_cons h, λ _ => lt_of_listCnd_cons_and_mem h⟩
-  use λ h => listCnd_cons_of_forall_le h.1 h.2
-
-theorem sorted_of_listCnd {xs : List (Σ i, α i)}
-(h : listCnd xs) : xs.Sorted # λ (x y : Σ i, α i) => x.1 < y.1 := by
-  induction xs
-  · simp
-  nm x xs ih
-  specialize ih # listCnd_of_cons h
-  rw [List.sorted_cons]
-  simp only [ih, and_true]
-  intro y hy
-  exact lt_of_listCnd_cons_and_mem h hy
-
-theorem listCnd_of_sorted {xs : List (Σ i, α i)}
-(h : xs.Sorted # λ (x y : Σ i, α i) => x.1 < y.1) : listCnd xs := by
-  induction xs
-  · simp
-  nm x xs ih
-  rw [List.sorted_cons] at h
-  rcases h with ⟨h₁, h₂⟩
-  specialize ih h₂
-  rw [listCnd_cons_iff]
-  use ih
-
-theorem listCnd_iff_sorted {xs : List (Σ i, α i)} :
-listCnd xs ↔ xs.Sorted (λ (x y : Σ i, α i) => x.1 < y.1) :=
-  ⟨sorted_of_listCnd, listCnd_of_sorted⟩
-
-theorem nodup_of_listCnd {xs : List (Σ i, α i)} (h : listCnd xs) : xs.Nodup := by
-  induction xs
-  · simp
-  nm x xs ih
-  specialize ih # listCnd_of_cons h
-  simp [ih]
-  rw [listCnd_cons_iff] at h
-  replace h := h.2
-  intro hx
-  specialize h x hx
-  simp at h
-
-def map (f : ∀ {i}, α i → β i) : DMap ι β := by
-  use mp.toList.map # λ ⟨i, x⟩ => ⟨i, f x⟩
-  apply listCnd_map_of
-  exact mp.h
-
-def range [fin : Fintype ι] (f : (i : ι) → α i) : DMap ι α :=
+def range [fin : Fintype α] (f : (i : α) → β i) : DMap α β :=
   ofList # fin.1.to_sorted_list.map # λ i => ⟨i, f i⟩
 
-def mem (mp : DMap ι α) (i : ι) : Prop :=
-  mem' i mp.toList
+def mem (mp : DMap α β) (i : α) : Prop := by
+  apply mp.lift (i ∈ ·)
+  intro a b h
+  simp
+  exact Std.DHashMap.Equiv.mem_iff h
 
-instance : Membership ι (DMap ι α) := ⟨mem⟩
+instance : Membership α (DMap α β) := ⟨mem⟩
 
-theorem mem_def {i : ι} : i ∈ mp ↔ mem' i mp.toList := by rfl
+variable {mp : DMap α β}
 
-theorem mem_iff_get?_eq_some {i : ι} : i ∈ mp ↔ ∃ x, mp.get? i = some x := by
-  rcases mp with ⟨xs, h₁⟩
-  simp [mem_def]
-  simp [get?]; clear h₁
-  induction xs <;> simp
-  nm x xs ih
-  split_ifs with h₁ <;> simp [h₁]
-  exact ih
+theorem mem_iff_get?_eq_some {i : α} : i ∈ mp ↔ ∃ x, mp.get? i = some x := by
+  change mem _ _ ↔ _
+  apply mp.ind; clear! mp; intro mp
+  simp [mem, get?]
+  rw [←Option.isSome_iff_exists]
+  exact Std.DHashMap.mem_iff_isSome_get?
 
-theorem get?_eq_some_of_mem {i : ι} (h : i ∈ mp) : ∃ x, mp.get? i = some x := by
+theorem get?_eq_some_of_mem {i : α} (h : i ∈ mp) : ∃ x, mp.get? i = some x := by
   rwa [←mem_iff_get?_eq_some]
 
-theorem get?_eq_none_of_not_mem {i : ι} (h : i ∉ mp) : mp.get? i = none := by
+theorem get?_eq_none_of_not_mem {i : α} (h : i ∉ mp) : mp.get? i = none := by
   simp [mem_iff_get?_eq_some] at h
   rwa [Option.eq_none_iff_forall_ne_some]
 
-theorem get?_map_eq {f : ∀ {i}, α i → β i} {i : ι} :
+theorem get?_map_eq {γ : α → Type w} {f : ∀ {i}, β i → γ i} {i : α} :
 (mp.map f).get? i = (mp.get? i).map f := by
-  rcases mp with ⟨xs, h⟩
+  apply mp.ind; clear! mp; intro mp
   simp [get?, map]
-  clear h
-  induction xs
-  · rfl
-  nm x xs ih
-  simp
-  split_ifs with h₁
-  · subst h₁
-    simp
-  exact ih
 
-theorem get!_map_eq_of_pos {f : ∀ {i}, α i → β i} {i : ι}
-[ha : Inhabited (α i)] [hb : Inhabited (β i)]
+theorem get!_map_eq_of_pos {γ : α → Type w} {f : ∀ {i}, β i → γ i} {i : α}
+[ha : Inhabited (β i)] [hb : Inhabited (γ i)]
 (h : i ∈ mp) : (mp.map f).get! i = f (mp.get! i) := by
-  rcases mp with ⟨xs, h₁⟩
-  simp [get!, get?_map_eq]
-  rw [mem_iff_get?_eq_some] at h
-  obtain ⟨x, h⟩ := h
-  simp [h]
+  simp [get!]
+  obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
+  simp [get?_map_eq, hx]
+
+def toList (mp : DMap α β) : List (Σ i, β i) := by
+  nm x; clear x
+  refine' mp.lift _ _
+  · intro mp
+    exact mp.toList.mergeSort (·.1 ≤ ·.1)
+  intro a b h
+  rw [equiv_def] at h
+  rw [Std.DHashMap.equiv_iff_toList_perm] at h
+  
+  rw [←List.mergeSort_attach]
+  nth_rw 2 [←List.mergeSort_attach]
+  -- apply List.eq_of_perm_of_sorted
+  sorry
+
+#check 0 #exit
 
 @[simp]
-theorem ofList_nil : ofList (ι := ι) (α := α) [] = ∅ := rfl
+theorem ofList_nil : ofList (α := α) (β := β) [] = ∅ := rfl
 
 @[simp]
-theorem toList_empty : (∅ : DMap ι α).toList = [] := rfl
+theorem toList_empty : (∅ : DMap α β).toList = [] := rfl
 
 @[simp]
-theorem ofList_snoc {x : Σ i, α i} {xs} :
-ofList (xs ++ [x]) = (ofList xs).insertProd x := by
-  unfold ofList insertProd
+theorem ofList_snoc {x : Σ i, β i} {xs} :
+ofList (xs ++ [x]) = (ofList xs).insert' x := by
+  unfold ofList insert'
   ext:1
   dsimp only
   generalize ha : [] = acc
@@ -276,30 +128,15 @@ ofList (xs ++ [x]) = (ofList xs).insertProd x := by
   rw [ih]
 
 @[simp]
-theorem mem'_insert' {x : Σ i, α i} {xs i} :
-mem' i (insert' x xs) ↔ i = x.1 ∨ mem' i xs := by
-  induction xs generalizing x
-  · simp
-  nm y xs ih
-  simp
-  split <;> nm x h₁ <;> clear x
-  · rw [compare_eq_iff_eq] at h₁
-    simp [h₁]
-  · simp
-  · rw [compare_gt_iff_gt, gt_iff_lt] at h₁
-    simp [ih]
-    tauto
-
-@[simp]
-theorem mem_insertProd {x : Σ i, α i} {i} :
-i ∈ mp.insertProd x ↔ i = x.1 ∨ i ∈ mp := by
-  simp [insertProd, mem_def]
+theorem mem_insert' {x : Σ i, β i} {i} :
+i ∈ mp.insert' x ↔ i = x.1 ∨ i ∈ mp := by
+  simp [insert', mem_def]
 
 theorem mem_insert {i x j} :
 j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by simp
 
 @[simp]
-theorem mem_ofList {xs : List (Σ i, α i)} {i} :
+theorem mem_ofList {xs : List (Σ i, β i)} {i} :
 i ∈ ofList xs ↔ ∃ x, ⟨i, x⟩ ∈ xs := by
   induction xs using List.reverseRecOn
   · simp [mem_def]
@@ -320,11 +157,11 @@ i ∈ ofList xs ↔ ∃ x, ⟨i, x⟩ ∈ xs := by
     · simp
 
 @[simp]
-theorem mem_range [fin : Fintype ι] {f : (i : ι) → α i} {i : ι} : i ∈ range f := by
+theorem mem_range [fin : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ range f := by
   simp [range]
 
 @[simp]
-theorem mem_map {f : ∀ {i}, α i → β i} {i} : i ∈ mp.map f ↔ i ∈ mp := by
+theorem mem_map {f : ∀ {i}, β i → β i} {i} : i ∈ mp.map f ↔ i ∈ mp := by
   simp [map, mem_def]
   obtain ⟨xs, h⟩ := mp
   dsimp
