@@ -1636,3 +1636,22 @@ theorem List.ext {α : Type*} {xs ys : List α} : xs = ys ↔ xs.length = ys.len
   simp at h₃
   rw [List.getElem?_eq_none h₃]
   rw [List.getElem?_eq_none h₄]
+
+def Fin.next {n} (k : Fin n) : Fin n := by
+  let k₁ := k.1 + 1
+  use if k₁ = n then 0 else k₁
+  split_ifs <;> omega
+
+theorem Fin.toNat_next_eq {n} {k : Fin n} :
+k.next.toNat = if k.toNat + 1 = n then 0 else k.toNat + 1 := by rfl
+
+theorem List.suffix_cons_of_suffix {α : Type*} {xs ys : List α} {y}
+(h : xs <:+ ys) : xs <:+ y :: ys := by
+  simp [List.suffix_cons_iff, h]
+
+@[simp]
+theorem List.not_cons_suffix {α : Type*} {xs : List α} {x} : ¬(x :: xs <:+ xs) := by
+  rintro ⟨ys, h⟩
+  replace h := congrArg (·.length) h
+  simp at h
+  linarith

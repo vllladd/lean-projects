@@ -120,8 +120,11 @@ listCnd (ofList' [] xs) := by
 def ofList (xs : List (ι × α)) : Map ι α :=
   ⟨_, listCnd_ofList'_of_fst_nil (xs := xs)⟩
 
-def lookup (i : ι) (mp : Map ι α) : Option α :=
+def get? (i : ι) (mp : Map ι α) : Option α :=
   lookup' i mp.toList
+
+def get! [Inhabited α] (i : ι) (mp : Map ι α) : α :=
+  (mp.get? i).get!
 
 theorem lt_of_listCnd_cons_and_mem {xs : List (ι × α)} {x y}
 (h₁ : listCnd (x :: xs)) (h₂ : y ∈ xs) : x.1 < y.1 := by
