@@ -19,13 +19,13 @@ abbrev Params : GameParams :=
   , Move := λ _ => Item
   , PState := λ _ => Unit
   , PMove := λ a b => if a = b then Item else Unit
-  , Outcome := Bool
+  , Score := Bool
 
   , h_inh_player := inferInstance
   , h_inh_move := λ _ => inferInstance
   , h_pl_fin := inferInstance
   , h_pl_lin := inferInstance
-  , h_out_lin := inferInstance
+  , h_score_lin := inferInstance
   , h_move_rfl := by simp
   }
 
@@ -46,7 +46,7 @@ def RPS : Game Params :=
   , pmove := pmove
   , choose_move := λ _ _ => 0
   
-  , outcome := λ _ s p =>
+  , score := λ _ s p =>
       let items := s.items
       match items.get? p, items.get? p.next with
       | some x, some y => x = y.next
@@ -101,7 +101,7 @@ let run (x y : Item) : List ℕ :=
     , h_init := ⟨rfl⟩
     , h_sim := ⟨0, rfl⟩
     }
-  match inst.outcome 3 with
+  match inst.score 3 with
   | none => [0, 0]
   | some r => [r 0, r 1].map # λ (b : Bool) => ite b 1 0
 let tests : List # Item × Item × List ℕ :=
