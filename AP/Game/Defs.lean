@@ -89,6 +89,7 @@ structure Game (T : GameParams) : Type u where
   rules : T.GRules
   pstate : (p : T.Player) → T.State → T.PState p
   pmove : T.GPMove
+  choose_move : (p : T.Player) → T.PState p → T.Move p
   outcome : T.Player → T.State → T.Player → T.Outcome
   
   sys : System T.GState T.Trans
@@ -96,6 +97,10 @@ structure Game (T : GameParams) : Type u where
   h_sys_init_nemp : sys.initial ≠ ∅
   h_sys_init_valid : ∀ s [sys.Initial s], ∃ p s', s = T.initState p s'
   h_sys_tr : sys.tr = T.sys_tr rules pmove
+  h_choose_move : ∀ (s : T.GState),
+    let p := s.player
+    let t := choose_move p (pstate p s.state)
+    (∃ t, (rules p s.state t).isSome) → (rules p s.state t).isSome
 
 namespace Game
 

@@ -60,3 +60,38 @@ def outcome (n : ℕ) : Option (T.Player → T.Outcome) :=
   let (inst', m) := inst.run n
   let s := inst'.s
   if m = 0 then none else some # game.outcome s.player s.state
+
+end Game.Inst namespace Game
+
+variable {T : GameParams} {game : Game T}
+
+def dfltStrat (p) : game.Strat p := by
+  use λ s _ => game.choose_move p s
+  rintro s rfl h₁
+  rw [has_tr_iff_exi_rules_ap_isSome] at h₁
+  rw [valid_tr_iff]
+  use rfl
+  dsimp
+  obtain ⟨t, h₁⟩ := h₁
+  have h₂ := game.h_choose_move s
+  simp at h₂
+  specialize h₂ _ h₁
+  rwa [←Option.isSome_iff_exists]
+
+instance {p} : Inhabited # game.Strat p := ⟨dfltStrat p⟩
+
+def dfltInst (s) [hs : game.sys.Initial s] : game.Inst :=
+  { strats := dfltStrat
+  , s₀ := s
+  , s := s
+  , h_init := hs
+  , h_sim := ⟨0, rfl⟩
+  }
+
+instance : Nonempty game.Inst := by
+  classical
+  have h₁ := game.h_sys_init_nemp
+  simp [Set.eq_empty_iff] at h₁
+  obtain ⟨s, h₁⟩ := h₁
+  rw [←System.initial_iff] at h₁
+  exact ⟨game.dfltInst s⟩

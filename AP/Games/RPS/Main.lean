@@ -44,6 +44,7 @@ def RPS : Game Params :=
   { rules := rules
   , pstate := λ _ _ => ()
   , pmove := pmove
+  , choose_move := λ _ _ => 0
   
   , outcome := λ _ s p =>
       let items := s.items
@@ -60,6 +61,12 @@ def RPS : Game Params :=
   , h_sys_init_valid := by
       simp [System.initial_iff]
   , h_sys_tr := rfl
+  , h_choose_move := by
+      simp
+      intro s h₁ h₂
+      rw [Option.isSome_iff_exists] at h₂ ⊢
+      simp [rules] at h₂ ⊢
+      exact h₂
   }
 
 -----

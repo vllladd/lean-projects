@@ -117,3 +117,21 @@ game.sys.valid_tr a t ↔ a.player = t.fst ∧
 ∃ r, game.rules t.1 a.state t.2 = some r := by
   simp only [System.valid_tr, System.tr_to, tr_eq_some_iff, Prod.exists,
     exists_and_left, and_congr_right_iff]; tauto
+
+theorem has_tr_iff_exi_rules_ap_isSome {s : T.GState} :
+game.sys.has_tr s ↔ (∃ t, (game.rules s.player s.state t).isSome) := by
+  simp only [System.has_tr, valid_tr_iff]
+  constructor
+  · rintro ⟨⟨p, t⟩, rfl, r, h₂⟩
+    dsimp at h₂
+    use t
+    simp [h₂]
+  · rintro ⟨t, h₁⟩
+    refine' ⟨⟨_, t⟩, rfl, _⟩
+    rwa [←Option.isSome_iff_exists]
+
+instance : Nonempty T.GState := by
+  have h₁ := game.h_sys_init_nemp
+  simp [Set.eq_empty_iff] at h₁
+  obtain ⟨s, h₁⟩ := h₁
+  exact ⟨s⟩
