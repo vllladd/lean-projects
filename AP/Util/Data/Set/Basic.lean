@@ -31,7 +31,7 @@ def toMap {β : Type v} (s : Set α) (f : α → β) : Map α β :=
 
 variable {s : Set α}
 
-theorem mem_def {i} : i ∈ s ↔ DMap.mem s i := by rfl
+theorem mem_def {i} : i ∈ s ↔ DMap.instMembership.mem s i := by rfl
 
 instance {i} : Decidable (s.mem i) := by
   change Decidable (DMap.mem s i)
@@ -46,6 +46,10 @@ theorem mem_toDMap {β : α → Type v} {f : (i : α) → β i} {i} :
 i ∈ s.toDMap f ↔ i ∈ s := by simp [toDMap]
 
 @[simp]
+theorem mem_toMap {β : Type v} {f : α → β} {i} :
+i ∈ s.toMap f ↔ i ∈ s := by simp [toMap, Map.mem_def]
+
+@[simp]
 theorem not_mem_empty' {i} : ¬(∅ : Set α).mem i := by
   simp [empty_def, mem]; exact DMap.not_mem_empty'
 
@@ -53,21 +57,81 @@ theorem not_mem_empty' {i} : ¬(∅ : Set α).mem i := by
 theorem not_mem_empty {i} : i ∉ (∅ : Set α) :=
   not_mem_empty'
 
+theorem eq_empty_iff : s = ∅ ↔ ∀ i, i ∉ s := DMap.eq_empty_iff
+
 @[simp]
 theorem toDMap_empty {β : α → Type v} {f : (i : α) → β i} :
 (∅ : Set α).toDMap f = ∅ := by simp [DMap.eq_empty_iff]
 
--- theorem ext_iff {s₁ s₂ : Set α} : s₁ = s₂ ↔ ∀ i, i ∈ s₁ ↔ i ∈ s₂ := by
---   unfold Set at s₁ s₂
---   
--- 
--- #check 0 #exit
--- 
--- @[simp]
--- theorem toDMap_eq_empty_iff {β : α → Type v} {f : (i : α) → β i} :
--- s.toDMap f = ∅ ↔ s = ∅ := by
---   symm; constructor
---   · rintro rfl
---     simp
---   · intro h
---     simp at h
+theorem ext_iff {s₁ s₂ : Set α} : s₁ = s₂ ↔ ∀ i, i ∈ s₁ ↔ i ∈ s₂ := by
+  unfold Set at s₁ s₂
+  rw [DMap.ext_iff]
+  apply forall_congr'
+  intro i
+  simp_rw [DMap.get?_eq_ite_of_unit]
+  split_ifs with h₁ h₂ h₂ <;> simp [h₁, h₂]
+
+@[ext]
+theorem ext {s₁ s₂ : Set α} (h : ∀ i, i ∈ s₁ ↔ i ∈ s₂) : s₁ = s₂ := by
+  rwa [ext_iff]
+
+@[simp]
+theorem toDMap_eq_empty_iff {β : α → Type v} {f : (i : α) → β i} :
+s.toDMap f = ∅ ↔ s = ∅ := by simp [eq_empty_iff, DMap.eq_empty_iff]
+
+@[simp]
+theorem toMap_eq_empty_iff {β : Type v} {f : α → β} :
+s.toMap f = ∅ ↔ s = ∅ := by simp [eq_empty_iff, Map.eq_empty_iff]
+
+theorem ofList_eq_ofList_iff {xs ys : List α}
+(hx : xs.Nodup) (hy : ys.Nodup) : ofList xs = ofList ys ↔ xs.Perm ys := by
+  convert DMap.ofList_eq_ofList_iff _ _
+  rw [List.perm_ext_iff_of_nodup hx hy]
+  rw [List.perm_ext_iff_of_nodup]
+  any_goals
+    try simp
+    rwa [List.nodup_map_iff]
+    intro a b h
+    simp at h
+    exact h
+  simp
+  constructor
+  · rintro h ⟨x, u⟩
+    simp [h]
+  · intro h x
+    specialize h ⟨x, ()⟩
+    simp at h
+    exact h
+
+@[simp]
+theorem mem_ofList {xs : List α} {i} :
+i ∈ ofList xs ↔ i ∈ xs := by simp [mem_def, ofList]
+
+def ofFinset (s : Finset α) : Set α := by
+  rcases s with ⟨m, h⟩
+  apply m.liftWith ofList
+  intro xs ys h₁ h₂
+  generalize hz : m.out = zs at h₁ h₂ ⊢
+  change m.toList = _ at hz
+  change zs.Perm xs at h₁
+  change zs.Perm ys at h₂
+  have h₃ : zs.Nodup :=
+    by
+      subst zs
+      simpa
+  have h₄ := h₁.nodup h₃
+  have h₅ := h₂.nodup h₃
+  rw [ofList_eq_ofList_iff h₄ h₅]
+  exact h₁.symm.trans h₂
+
+@[simp]
+theorem mem_ofFinset {s : Finset α} {i} : i ∈ ofFinset s ↔ i ∈ s := by
+  rcases s with ⟨m, h⟩
+  simp [ofFinset]
+  exact Multiset.mem_toList
+
+def univ [ha : Fintype α] : Set α :=
+  ofFinset ha.elems
+
+@[simp]
+theorem mem_univ [ha : Fintype α] {i : α} : i ∈ univ := by simp [univ]

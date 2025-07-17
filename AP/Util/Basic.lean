@@ -1300,7 +1300,7 @@ theorem fintype_card_set_eq_ncard {α : Type*}
   simp
 
 @[simp]
-theorem Cardinal.mk_eq_mk_iff_of_finite.{u} {α β : Type u}
+theorem Cardinal.mk_eq_mk_of_finite.{u} {α β : Type u}
 [ha : Fintype α] [hb : Fintype β] :
 Cardinal.mk α = Cardinal.mk β ↔ Fintype.card α = Fintype.card β := by
   rw [Cardinal.eq, Fintype.card_eq]
@@ -1495,8 +1495,13 @@ instance : Infinite Type := inf_type
 theorem card_lt_pi {α : Type*} : Cardinal.mk α < Cardinal.mk (α → Prop) := by
   simp [Cardinal.mk_pi]; apply Cardinal.cantor
 
-def Quotient.lift_out {α β : Type*} {s : Setoid α} (q : Quotient s) (f : α → β)
-(h : ∀ (x y : α), s.r x q.out → s.r y q.out → f x = f y) : β := by
+theorem Setoid.comm {α : Type*} (s : Setoid α) {x y : α} : s x y ↔ s y x := by
+  rcases s with ⟨r, h₁, h₂, h₃⟩
+  exact ⟨h₂, h₂⟩
+
+def Quotient.liftWith {α β : Type*} {s : Setoid α} (q : Quotient s) (f : α → β)
+(h : ∀ (x y : α), s q.out x → s q.out y → f x = f y) : β := by
+  simp_rw [s.comm] at h
   induction q using Quotient.hrecOn
   · nm x
     use f x
@@ -2033,3 +2038,136 @@ theorem Std.DHashMap.ofList_toList_equiv {α : Type*}
   rw [equiv_iff_toList_perm]
   apply toList_ofList_perm
   simp
+
+theorem Quotient.apply_of {α : Type*} [s : Setoid α]
+{p : α → Prop} {q : Quotient s} {h} :
+p q.out ↔ q.lift p h := by
+  unfold Quotient.out Quot.out
+  generalize_proofs h₁
+  have h₂ := h₁.choose_spec
+  nth_rw 2 [←h₂]
+
+@[simp]
+theorem Multiset.nodup_toList_iff {α : Type*}
+{m : Multiset α} : m.toList.Nodup ↔ m.Nodup := Quotient.apply_of
+
+@[simp]
+theorem Quotient.mk_out_aux {α : Type*} {s : Setoid α} {q : Quotient s} :
+Quot.mk s q.out = q := by
+  rw [←Quotient.out_equiv_out, ←Quotient.eq_mk_iff_out]; rfl
+
+theorem Quotient.eq_mk_out {α : Type*} {s : Setoid α} {q : Quotient s} :
+q = Quot.mk s q.out := by simp
+
+theorem Quotient.mk_eq_mk {α : Type*} {s : Setoid α} {x y} :
+Quotient.mk s x = Quotient.mk s y ↔ s x y := by rw [Quotient.eq'']
+
+theorem Quot.mk_eq_mk {α : Type*} {s : Setoid α} {x y} :
+Quot.mk s x = Quot.mk s y ↔ s x y := Quotient.mk_eq_mk
+
+theorem Quot.rec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quot s}
+{f : α → β} {h} : q.rec f h = f q.out := by
+  unfold Quot.rec Eq.ndrecOn Quot.indep
+  revert h
+  simp
+  intro h
+  unfold Quot.out
+  generalize_proofs h₁ h₂
+  have h₃ := h₂.choose_spec
+  obtain ⟨w, rfl⟩ := h₂
+  simp_all only [PSigma.mk.injEq, heq_eq_eq]
+  generalize_proofs h₂ at h₃ ⊢
+  apply h
+  rw [Quot.mk_eq_mk] at h₃
+  symm
+  exact h₃
+
+theorem Quotient.rec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quotient s}
+{f : α → β} {h₁} : q.rec f h₁ = f q.out := by
+  apply Quot.rec_eq_apply_out; exact h₁
+
+theorem Quotient.extracted_1.{u_2, u_1} {α : Type u_1} {β : Type u_2} {s : Setoid.{u_1 + 1} α}
+  {q : @Quotient.{u_1 + 1} α s} {f : α → β}
+  {h :
+    ∀ (x y : α),
+      @Setoid.r.{u_1 + 1} α s (@Quotient.out.{u_1 + 1} α s q) x →
+        @Setoid.r.{u_1 + 1} α s (@Quotient.out.{u_1 + 1} α s q) y → @Eq.{u_2 + 1} β (f x) (f y)}
+  (h₁ :
+    ∀ (a b : α),
+      @Setoid.r.{u_1 + 1} α s a b →
+        @Eq.{u_1 + 1} (@Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) a)
+          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) b))
+  (h₂ :
+    ∀ (a b : α) (p : @Setoid.r.{u_1 + 1} α s a b),
+      @Eq.{u_2 + 1}
+        ((fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
+            (fun (q : @Quotient.{u_1 + 1} α s) ↦
+                (∀ (x y : α),
+                    @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
+                      @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) →
+                  β)
+              x)
+          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) b))
+        (@Eq.ndrec.{u_2 + 1, u_1 + 1} (@Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s))
+          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) a)
+          (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
+            (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
+                (fun (q : @Quotient.{u_1 + 1} α s) ↦
+                    (∀ (x y : α),
+                        @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
+                          @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) →
+                      β)
+                  x)
+              x)
+          (fun
+              (h :
+                ∀ (x y : α),
+                  @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
+                    @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
+                      @Eq.{u_2 + 1} β (f x) (f y)) ↦
+            f a)
+          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) b) (h₁ a b p))
+        fun
+          (h :
+            ∀ (x y : α),
+              @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s b)) →
+                @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s b)) →
+                  @Eq.{u_2 + 1} β (f x) (f y)) ↦
+        f b)
+  (h₃ :
+    ∀ (x y : α),
+      @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
+        @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) :
+  @Eq.{u_2 + 1} β
+    (@Quot.rec.{u_1 + 1, u_2 + 1} α (@Setoid.r.{u_1 + 1} α s)
+      (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
+        (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
+            (fun (q : @Quotient.{u_1 + 1} α s) ↦
+                (∀ (x y : α),
+                    @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
+                      @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) →
+                  β)
+              x)
+          x)
+      (fun (a : α)
+          (h :
+            ∀ (x y : α),
+              @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
+                @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
+                  @Eq.{u_2 + 1} β (f x) (f y)) ↦
+        f a)
+      h₂ q h₃)
+(f (@Quotient.out.{u_1 + 1} α s q)) := by
+  sorry
+
+-- #check 0 #exit
+
+@[simp]
+theorem Quotient.liftWith_eq {α β : Type*} {s : Setoid α} {q : Quotient s}
+{f : α → β} {h : ∀ (x y : α), s q.out x → s q.out y → f x = f y} :
+q.liftWith f h = f q.out := by
+  classical
+  unfold liftWith Quotient.hrecOn Quot.hrecOn Quot.recOn
+  generalize_proofs h₁ h₂ h₃
+  apply Quotient.extracted_1
+  exact h

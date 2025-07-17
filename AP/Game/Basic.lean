@@ -9,7 +9,7 @@ variable {T : GameParams.{u}} {game : Game T}
 
 theorem tr_eq_some_iff {a b} {t : T.Trans} :
 game.sys.tr a t = some b ↔ a.player = t.1 ∧ ∃ p s',
-game.rules t.1 a.state t.2 = some ⟨p, s'⟩ ∧ p ∈ a.hist ∧ b =
+game.rules t.1 a.state t.2 = some ⟨p, s'⟩ ∧ b =
 { player := p
 , state := s'
 , hist := game.updateHist a t
@@ -24,13 +24,13 @@ game.rules t.1 a.state t.2 = some ⟨p, s'⟩ ∧ p ∈ a.hist ∧ b =
     nm x y z h₃
     use z.1, z.2
     simp [h₁, h₂, h₃]
-  · rintro ⟨h₁, p, s', h₂, h₃, rfl⟩
+  · rintro ⟨h₁, p, s', h₂, rfl⟩
     use h₁
-    simp [h₁, h₂, h₃]
+    simp [h₁, h₂]
 
 theorem trTo_iff {a b} {t : T.Trans} :
 game.sys.trTo a t b ↔ a.player = t.1 ∧ ∃ p s',
-game.rules t.1 a.state t.2 = some ⟨p, s'⟩ ∧ p ∈ a.hist ∧ b =
+game.rules t.1 a.state t.2 = some ⟨p, s'⟩ ∧ b =
 { player := p
 , state := s'
 , hist := game.updateHist a t
@@ -108,35 +108,42 @@ a.hist.get! p <:+ b.hist.get! p := by
 theorem exi_mem_hist_of_valid {a} [ha : game.sys.Valid a] : ∃ p, p ∈ a.hist := by
   rw [System.valid_iff] at ha
   obtain ⟨z, h₁, h₂⟩ := ha
-  obtain ⟨ps, p, s', rfl, h₄⟩ := game.h_sys_init_valid z
+  obtain ⟨ps, p', s', rfl, h₄⟩ := game.h_sys_init_valid z
   simp [GameParams.initState] at h₄
-
-#check 0 #exit
+  simp [Util.Data.Set.eq_empty_iff] at h₄
+  obtain ⟨p, hx⟩ := h₄
+  use p
+  apply mem_hist_of_reachable h₂
+  simpa
 
 theorem acyclic_gstate {a} [ha : game.sys.Valid a] : game.sys.Acyclic a := by
   rw [System.acyclic_iff]
   intro b c t h₁ h₂ h₃
-  generalize (default : T.Player) = p
   have hb := System.valid_of_reachable h₁
   have hc : game.sys.Valid c :=
     by
       apply System.valid_of_reachable (a := a)
       exact System.reachable_right h₁ h₂
-  replace h₁ := hist_suffix_of_reachable (p := p) h₁
-  replace h₃ := hist_suffix_of_reachable (p := p) h₃
   rw [tr_eq_some_iff] at h₂
-  obtain ⟨h₂, p', t', h₄, h₅, rfl⟩:= h₂
-  simp at h₃
-  clear! p'
+  obtain ⟨h₂, p, t', h₄, h₅, rfl⟩:= h₂
+  have hp := game.h_rules_player_mem h₄
+  replace h₁ := hist_suffix_of_reachable h₁ hp
+  replace h₃ := hist_suffix_of_reachable h₃ hp
   simp [updateHist, h₂, GameParams.updateHist] at h₃
-  rw [DMap.get!_map_eq_of_pos] at h₃
+  rw [DMap.get!_map_eq_of_pos hp] at h₃
   simp at h₃
 
 theorem validTr_iff {a} {t : T.Trans} :
-game.sys.validTr a t ↔ a.player = t.fst ∧
+game.sys.validTr a t ↔ a.player = t.1 ∧
 ∃ r, game.rules t.1 a.state t.2 = some r := by
-  simp only [System.validTr, System.trTo, tr_eq_some_iff, Prod.exists,
-    exists_and_left, and_congr_right_iff]; tauto
+  simp only [System.validTr, System.trTo, tr_eq_some_iff, exists_and_left,
+    Prod.exists, and_congr_right_iff]
+  intro h
+  constructor
+  · rintro ⟨b, p, s, h₁, rfl⟩
+    simp [h₁, ←h]
+  · rintro ⟨p, s, h₁⟩
+    simp [h₁]
 
 theorem hasTr_iff_exi_rules_ap_isSome {s : T.GState} :
 game.sys.hasTr s ↔ (∃ t, (game.rules s.player s.state t).isSome) := by
@@ -148,7 +155,8 @@ game.sys.hasTr s ↔ (∃ t, (game.rules s.player s.state t).isSome) := by
     simp [h₂]
   · rintro ⟨t, h₁⟩
     refine' ⟨⟨_, t⟩, rfl, _⟩
-    rwa [←Option.isSome_iff_exists]
+    rw [Option.isSome_iff_exists] at h₁
+    exact h₁
 
 instance : Nonempty T.GState := by
   have h₁ := game.h_sys_init_nemp

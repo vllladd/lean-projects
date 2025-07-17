@@ -1,5 +1,7 @@
 import AP.Game.Main
 
+open Util.Data
+
 namespace GameRPS
 
 abbrev Player := Fin 2
@@ -21,12 +23,11 @@ abbrev Params : GameParams :=
   , PMove := λ a b => if a = b then Item else Unit
   , Score := Bool
 
-  , h_inh_player := inferInstance
-  , h_hash_player := inferInstance
-  , h_inh_move := λ _ => inferInstance
-  , h_pl_fin := inferInstance
-  , h_pl_lin := inferInstance
-  , h_score_lin := inferInstance
+  , h_inhabited_player := inferInstance
+  , h_hashable_player := inferInstance
+  , h_linearOrder_player := inferInstance
+  , h_inhabited_move := inferInstance
+  , h_linearOrder_score := inferInstance
   , h_move_rfl := by simp
   }
 
@@ -54,7 +55,7 @@ def RPS : Game Params :=
       | _, _ => false
   
   , sys :=
-    { initial := {Params.initState playerA State.init}
+    { initial := {Params.initState .univ playerA State.init}
     , tr := Params.sys_tr rules pmove
     }
   

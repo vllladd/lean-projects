@@ -35,12 +35,18 @@ namespace DMap
 
 variable {α : Type u} [hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : α → Type v}
 
-def empty : DMap α β :=
-  ⟦∅⟧
+def empty : DMap α β := ⟦∅⟧
 
 instance : EmptyCollection (DMap α β) := ⟨empty⟩
-instance {β : Type v} : EmptyCollection (Map α β) := ⟨empty⟩
 
 theorem empty_def : (∅ : DMap α β) = ⟦(∅ : Std.DHashMap α β)⟧ := rfl
 
-end DMap
+end DMap namespace Map
+
+variable {α : Type u} [hh₁ : LinearOrder α] [hh₂ : Hashable α] {β : Type v}
+
+def empty : Map α β := DMap.empty
+
+instance {β : Type v} : EmptyCollection (Map α β) := ⟨empty⟩
+
+theorem empty_def : (∅ : Map α β) = (∅ : DMap α (λ _ => β)) := rfl

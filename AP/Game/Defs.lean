@@ -12,11 +12,11 @@ structure GameParams : Type (u + 1) where
   PMove : Player → Player → Type u
   Score : Type u
 
-  h_pl_inh : Inhabited Player
-  h_pl_hash : Hashable Player
-  h_pl_lin : LinearOrder Player
-  h_move_inh : ∀ p, Inhabited # Move p
-  h_score_lin : LinearOrder Score
+  h_inhabited_player : Inhabited Player
+  h_hashable_player : Hashable Player
+  h_linearOrder_player : LinearOrder Player
+  h_inhabited_move : ∀ p, Inhabited # Move p
+  h_linearOrder_score : LinearOrder Score
   h_move_rfl : ∀ p, PMove p p = Move p
 
 namespace GameParams
@@ -26,19 +26,19 @@ section instances
 variable {T : GameParams}
 
 instance : Inhabited T.Player :=
-  T.h_pl_inh
+  T.h_inhabited_player
 
 instance : Hashable T.Player :=
-  T.h_pl_hash
+  T.h_hashable_player
 
 instance {p} : Inhabited # T.Move p :=
-  T.h_move_inh p
+  T.h_inhabited_move p
 
 instance : LinearOrder T.Player :=
-  T.h_pl_lin
+  T.h_linearOrder_player
 
 instance : LinearOrder T.Score :=
-  T.h_score_lin
+  T.h_linearOrder_score
 
 end instances
 
@@ -80,7 +80,7 @@ def sys_tr (rules : T.GRules) (pmove : T.GPMove)
 (s : T.GState) (t : T.Trans) : Option T.GState :=
   if h : s.player = t.1 then do
     let (p₁, s₁) ← rules t.1 s.state t.2
-    if p₁ ∉ s.hist then none else some #
+    some #
       { player := p₁
       , state := s₁
       , hist := T.updateHist pmove s # h ▸ t.2
@@ -105,6 +105,8 @@ structure Game (T : GameParams) : Type u where
   h_sys_init_nemp : sys.initial ≠ ∅
   h_sys_init_valid : ∀ s [sys.Initial s], ∃ ps p s',
     T.initState ps p s' = s ∧ s.hist ≠ ∅
+  h_rules_player_mem : ∀ {s : T.GState} {t : T.Trans} {r},
+    rules t.1 s.state t.2 = some r → r.1 ∈ s.hist
   h_sys_tr : sys.tr = T.sys_tr rules pmove
   h_choose_move : ∀ (s : T.GState),
     let p := s.player

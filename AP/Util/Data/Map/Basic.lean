@@ -73,6 +73,22 @@ instance {i} : Decidable (i ∈ mp) := by
   change Decidable (mp.mem i)
   infer_instance
 
+end DMap namespace Map
+
+variable {β : Type v} {mp : Map α β}
+
+instance : Membership α (Map α β) := ⟨DMap.mem⟩
+
+theorem mem_def {i} : i ∈ mp ↔ DMap.instMembership.mem mp i := by rfl
+
+instance {i} : Decidable (i ∈ mp) := by
+  change Decidable (mp.mem i)
+  infer_instance
+
+end Map namespace DMap
+
+variable {mp : DMap α β}
+
 theorem mem_iff_get?_eq_some {i : α} : i ∈ mp ↔ ∃ x, mp.get? i = some x := by
   apply mp.ind; clear! mp; intro mp
   simp [mem, get?]
@@ -86,7 +102,15 @@ theorem get?_eq_none_of_not_mem {i : α} (h : i ∉ mp) : mp.get? i = none := by
   simp [mem_iff_get?_eq_some] at h
   rwa [Option.eq_none_iff_forall_ne_some]
 
-theorem get?_map_eq {γ : α → Type w} {f : ∀ i, β i → γ i} {i : α} :
+@[simp]
+theorem get?_eq_none_iff {i} : mp.get? i = none ↔ i ∉ mp := by
+  refine' ⟨_, get?_eq_none_of_not_mem⟩
+  intro h
+  contrapose! h
+  obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
+  simp [hx]
+
+theorem get?_map {γ : α → Type w} {f : ∀ i, β i → γ i} {i : α} :
 (mp.map f).get? i = (mp.get? i).map (f i) := by
   apply mp.ind; clear! mp; intro mp
   simp [get?, map]
@@ -96,7 +120,7 @@ theorem get!_map_eq_of_pos {γ : α → Type w} {f : ∀ i, β i → γ i} {i : 
 (h : i ∈ mp) : (mp.map f).get! i = f i (mp.get! i) := by
   simp [get!]
   obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
-  simp [get?_map_eq, hx]
+  simp [get?_map, hx]
 
 def toList (mp : DMap α β) : List (Σ i, β i) := by
   let r := λ (a b : Σ i, β i) => a.1 ≤ b.1
@@ -211,15 +235,80 @@ theorem not_mem_empty' {i} : ¬(∅ : DMap α β).mem i := by
 theorem not_mem_empty {i} : i ∉ (∅ : DMap α β) :=
   not_mem_empty'
 
--- theorem ext_iff {m₁ m₂ : DMap α β} : m₁ = m₂ ↔ m₁.out.Equiv m₂.out := by
---   symm
---   induction m₁, m₂ using Quotient.inductionOn₂
---   nm m₁ m₂
---   change ⟦m₁⟧.out ≈ ⟦m₂⟧.out ↔ _
---   rw [Quotient.eq_iff_equiv]
---   simp
---   rfl
--- 
--- @[ext]
--- theorem ext {m₁ m₂ : DMap α β} (h : m₁.out.Equiv m₂.out) : m₁ = m₂ := by
---   rwa [ext_iff]
+theorem ext_iff' {m₁ m₂ : DMap α β} : m₁ = m₂ ↔ m₁.out.Equiv m₂.out := by
+  symm
+  induction m₁, m₂ using Quotient.inductionOn₂
+  nm m₁ m₂
+  change ⟦m₁⟧.out ≈ ⟦m₂⟧.out ↔ _
+  rw [Quotient.eq_iff_equiv]
+  simp
+  rfl
+
+theorem ext' {m₁ m₂ : DMap α β} (h : m₁.out.Equiv m₂.out) : m₁ = m₂ := by
+  rwa [ext_iff']
+
+theorem ext_iff {m₁ m₂ : DMap α β} : m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
+  induction m₁, m₂ using Quotient.inductionOn₂
+  rw [Quotient.eq_iff_equiv]
+  exact Std.DHashMap.equiv_iff_get?
+
+@[ext]
+theorem ext {m₁ m₂ : DMap α β} (h : ∀ i, m₁.get? i = m₂.get? i) : m₁ = m₂ := by
+  rwa [ext_iff]
+
+theorem get?_eq_ite_of_unit {m : Map α Unit} {i} :
+m.get? i = if i ∈ m then some () else none := by
+  split_ifs with h
+  · obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
+    simp [hx]
+  rw [get?_eq_none_of_not_mem h]
+
+end DMap namespace Map
+
+variable {β : Type v} {mp : Map α β}
+
+theorem ext_iff {m₁ m₂ : Map α β} : m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i :=
+  DMap.ext_iff
+
+@[ext]
+theorem ext {m₁ m₂ : Map α β} (h : ∀ i, m₁.get? i = m₂.get? i) : m₁ = m₂ :=
+  DMap.ext h
+
+@[simp]
+theorem get?_empty {i} : (∅ : Map α β).get? i = none := by simp [empty_def]
+
+theorem eq_empty_iff : mp = ∅ ↔ ∀ i, i ∉ mp := DMap.eq_empty_iff
+
+end Map namespace DMap
+
+variable {mp : DMap α β}
+
+@[simp]
+theorem get?_empty {i} : (∅ : DMap α β).get? i = none := by simp
+
+theorem ofList_eq_ofList_iff {xs ys : List (Σ i, β i)}
+(hx : (xs.map (·.1)).Nodup) (hy : (ys.map (·.1)).Nodup) :
+ofList xs = ofList ys ↔ xs.Perm ys := by
+  have hx' := hx.of_map _
+  have hy' := hy.of_map _
+  unfold ofList
+  rw [Quotient.eq_iff_equiv]
+  change Std.DHashMap.Equiv _ _ ↔ _
+  rw [Std.DHashMap.equiv_iff_toList_perm]
+  rw [List.perm_ext_iff_of_nodup hx' hy']
+  rw [List.perm_ext_iff_of_nodup (by simp) (by simp)]
+  apply forall_congr'
+  rintro ⟨i, x⟩
+  simp
+  generalize h₁ : Std.DHashMap.ofList xs = m₁
+  generalize h₂ : Std.DHashMap.ofList ys = m₂
+  have h₃ : xs.Perm m₁.toList :=
+    by
+      subst h₁
+      exact (Std.DHashMap.toList_ofList_perm hx).symm
+  have h₄ : ys.Perm m₂.toList :=
+    by
+      subst h₂
+      exact (Std.DHashMap.toList_ofList_perm hy).symm
+  rw [h₃.mem_iff, h₄.mem_iff]
+  simp
