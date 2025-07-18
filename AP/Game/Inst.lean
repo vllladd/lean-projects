@@ -56,10 +56,10 @@ def run (n : ℕ) : game.Inst × ℕ :=
       exact h.1
   }
 
-def score (n : ℕ) : Option (T.Player → T.Score) :=
+def outcome (n : ℕ) : Option T.Outcome :=
   let (inst', m) := inst.run n
   let s := inst'.s
-  if m = 0 then none else some # game.score s.player s.state
+  if m = 0 then none else some # game.outcome s
 
 end Game.Inst
 namespace Game

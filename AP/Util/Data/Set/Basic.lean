@@ -102,6 +102,7 @@ theorem ofList_eq_ofList_iff {xs ys : List α}
     specialize h ⟨x, ()⟩
     simp at h
     exact h
+  all_goals simpa
 
 @[simp]
 theorem mem_ofList {xs : List α} {i} :
@@ -135,3 +136,85 @@ def univ [ha : Fintype α] : Set α :=
 
 @[simp]
 theorem mem_univ [ha : Fintype α] {i : α} : i ∈ univ := by simp [univ]
+
+def min (s : Set α) : Option α :=
+  s.toList.head?
+
+def max (s : Set α) : Option α :=
+  s.toList.getLast?
+
+@[simp]
+theorem mem_insert {x y} : y ∈ insert x s ↔ y = x ∨ y ∈ s :=
+  DMap.mem_insert
+
+theorem nonempty_insert {x} : insert x s ≠ ∅ :=
+  DMap.nonempty_insert
+
+@[simp]
+theorem nodup_toList : s.toList.Nodup := by
+  unfold Set at s
+  unfold toList
+  rw [List.nodup_map_iff_inj_on # by simp]
+  rintro ⟨i, x⟩ hx ⟨j, y⟩ hy h
+  dsimp at h
+  simp [h]
+
+@[simp]
+theorem sorted_toList : s.toList.Sorted (· ≤ ·) := by
+  unfold Set at s
+  unfold toList
+  let lin : LinearOrder (Σ (i : α), Unit) :=
+    by
+      sorry -- of equiv
+  rw [StrictMono.sorted_le_listMap]
+  rotate_left
+  · intro x y h
+    sorry -- rfl
+  sorry -- exact DMap.sorted_toList
+
+#check 0 #exit
+
+@[simp]
+theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
+  unfold toList get?
+  apply mp.ind
+  intro m
+  rcases x with ⟨i, x⟩
+  simp
+
+@[simp]
+theorem toList_eq_toList {m₁ m₂ : DMap α β} :
+m₁.toList = m₂.toList ↔ m₁ = m₂ := by
+  refine' ⟨λ h => _, λ h => by rw [h]⟩
+  rw [List.eq_iff_of_nodup_and_sorted (·.1 ≤ ·.1)] at h
+  any_goals simp
+  rotate_left
+  · rintro ⟨i, x⟩ ⟨j, y⟩
+    simp
+    intro h₁ h₂ h₃ h₄
+    have h₅ := le_antisymm h₃ h₄
+    subst h₅
+    use rfl
+    simp [h₁] at h₂
+    simpa
+  rw [ext_iff]
+  intro i
+  ext x
+  specialize h ⟨i, x⟩
+  simp at h
+  exact h
+
+@[simp]
+theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
+  rw [←toList_empty, toList_eq_toList]
+
+-----
+
+theorem min_of_nonempty (h : s ≠ ∅) : ∃ x, s.max = some x := by
+  unfold max
+  simp [ext_iff] at h
+  contrapose! h
+  rw [←Option.eq_none_iff_forall_ne_some] at h
+  simp at h
+  intro x
+  simp [Li]

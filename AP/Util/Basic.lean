@@ -664,6 +664,9 @@ theorem cons_snoc {α : Type*} {x y : α} {xs : List α} :
 
 theorem and_of {P Q : Prop} (h₁ : P) (h₂ : P → Q) : P ∧ Q := by tauto
 
+theorem iff_of {P Q : Prop} (h₁ : P → Q)
+(h₂ : (P → Q) → (Q → P)) : P ↔ Q := by tauto
+
 theorem List.snoc_elim {α : Type*} {xs ys : List α} (x : α)
 (h : xs ++ [x] = ys ++ [x]) : xs = ys := by
   replace h := congrArg reverse h
@@ -2065,102 +2068,83 @@ Quotient.mk s x = Quotient.mk s y ↔ s x y := by rw [Quotient.eq'']
 theorem Quot.mk_eq_mk {α : Type*} {s : Setoid α} {x y} :
 Quot.mk s x = Quot.mk s y ↔ s x y := Quotient.mk_eq_mk
 
-theorem Quot.rec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quot s}
-{f : α → β} {h} : q.rec f h = f q.out := by
+@[simp]
+theorem Quot.mk_out_rel {α : Type*} {s : Setoid α} {x} : s (mk s x).out x := by
+  apply Quotient.mk_out
+
+@[simp]
+theorem Quot.rel_mk_out {α : Type*} {s : Setoid α} {x} : s x (mk s x).out := by
+  symm; exact mk_out_rel
+
+def quot_aux₁ {α : Type*} {β : α → Type*} {s : Setoid α}
+{f : (i : α) → β i} (h : ∀ (x y : α), s x y → HEq (f x) (f y)) (x) :
+β x = β (Quot.mk s x).out :=
+  type_eq_of_heq # h x (Quot.mk s x).out Quot.rel_mk_out
+
+def quot_aux₂ {α : Type*} {β : α → Type*} {s : Setoid α}
+{f : (i : α) → β i} (h : ∀ (x y : α), s x y → HEq (f x) (f y)) :
+∀ (a b : α) (p : s a b), Quot.sound p ▸
+  (λ x => cast (quot_aux₁ h x) (f x)) a =
+  (λ x => cast (quot_aux₁ h x) (f x)) b
+:= by
+  intro x y h₁
+  specialize h x y h₁
+  rw [eq_cast_iff_heq]
+  simpa
+
+theorem Quot.rec_eq_apply_out {α : Type*} {β : α → Type*}
+{s : Setoid α} {q : Quot s} {f : (i : α) → β i}
+(h : ∀ (x y : α), s x y → HEq (f x) (f y)) :
+Quot.rec (λ x => cast (quot_aux₁ h x) (f x)) (quot_aux₂ h) q = f q.out := by
   unfold Quot.rec Eq.ndrecOn Quot.indep
   revert h
   simp
   intro h
   unfold Quot.out
-  generalize_proofs h₁ h₂
-  have h₃ := h₂.choose_spec
-  obtain ⟨w, rfl⟩ := h₂
+  generalize_proofs h₁ h₂ h₃ h₄ h₅ h₆
+  have h₇ := h₁.choose_spec
+  obtain ⟨w, rfl⟩ := h₁
   simp_all only [PSigma.mk.injEq, heq_eq_eq]
-  generalize_proofs h₂ at h₃ ⊢
-  apply h
-  rw [Quot.mk_eq_mk] at h₃
-  symm
-  exact h₃
+  generalize_proofs h₈ h₉ at h₄ ⊢
+  rw [mk_eq_mk] at h₇
+  generalize_proofs at h₇
+  specialize h _ _ h₇
+  symm at h
+  clear! h₂ h₃ h₇ h₉
+  apply eq_of_heq
+  trans f w; simp; exact h
 
-theorem Quotient.rec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quotient s}
-{f : α → β} {h₁} : q.rec f h₁ = f q.out := by
-  apply Quot.rec_eq_apply_out; exact h₁
+theorem Quot.ndrec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quot s}
+{f : α → β} {h} : q.rec f h = f q.out := by
+  apply @rec_eq_apply_out α (λ _ => β)
+  simp at h ⊢; exact h
 
-theorem Quotient.extracted_1.{u_2, u_1} {α : Type u_1} {β : Type u_2} {s : Setoid.{u_1 + 1} α}
-  {q : @Quotient.{u_1 + 1} α s} {f : α → β}
-  {h :
-    ∀ (x y : α),
-      @Setoid.r.{u_1 + 1} α s (@Quotient.out.{u_1 + 1} α s q) x →
-        @Setoid.r.{u_1 + 1} α s (@Quotient.out.{u_1 + 1} α s q) y → @Eq.{u_2 + 1} β (f x) (f y)}
-  (h₁ :
-    ∀ (a b : α),
-      @Setoid.r.{u_1 + 1} α s a b →
-        @Eq.{u_1 + 1} (@Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) a)
-          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) b))
-  (h₂ :
-    ∀ (a b : α) (p : @Setoid.r.{u_1 + 1} α s a b),
-      @Eq.{u_2 + 1}
-        ((fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
-            (fun (q : @Quotient.{u_1 + 1} α s) ↦
-                (∀ (x y : α),
-                    @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
-                      @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) →
-                  β)
-              x)
-          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) b))
-        (@Eq.ndrec.{u_2 + 1, u_1 + 1} (@Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s))
-          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) a)
-          (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
-            (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
-                (fun (q : @Quotient.{u_1 + 1} α s) ↦
-                    (∀ (x y : α),
-                        @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
-                          @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) →
-                      β)
-                  x)
-              x)
-          (fun
-              (h :
-                ∀ (x y : α),
-                  @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
-                    @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
-                      @Eq.{u_2 + 1} β (f x) (f y)) ↦
-            f a)
-          (@Quot.mk.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s) b) (h₁ a b p))
-        fun
-          (h :
-            ∀ (x y : α),
-              @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s b)) →
-                @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s b)) →
-                  @Eq.{u_2 + 1} β (f x) (f y)) ↦
-        f b)
-  (h₃ :
-    ∀ (x y : α),
-      @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
-        @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) :
-  @Eq.{u_2 + 1} β
-    (@Quot.rec.{u_1 + 1, u_2 + 1} α (@Setoid.r.{u_1 + 1} α s)
-      (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
-        (fun (x : @Quot.{u_1 + 1} α (@Setoid.r.{u_1 + 1} α s)) ↦
-            (fun (q : @Quotient.{u_1 + 1} α s) ↦
-                (∀ (x y : α),
-                    @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s q) →
-                      @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s q) → @Eq.{u_2 + 1} β (f x) (f y)) →
-                  β)
-              x)
-          x)
-      (fun (a : α)
-          (h :
-            ∀ (x y : α),
-              @Setoid.r.{u_1 + 1} α s x (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
-                @Setoid.r.{u_1 + 1} α s y (@Quotient.out.{u_1 + 1} α s (@Quotient.mk.{u_1 + 1} α s a)) →
-                  @Eq.{u_2 + 1} β (f x) (f y)) ↦
-        f a)
-      h₂ q h₃)
-(f (@Quotient.out.{u_1 + 1} α s q)) := by
-  sorry
+theorem Quotient.rec_eq_apply_out {α : Type*} {β : α → Type*}
+{s : Setoid α} {q : Quotient s} {f : (i : α) → β i}
+(h : ∀ (x y : α), s x y → HEq (f x) (f y)) :
+Quotient.rec (λ x => cast (quot_aux₁ h x) (f x)) (quot_aux₂ h) q = f q.out :=
+  Quot.rec_eq_apply_out h
 
--- #check 0 #exit
+theorem Quotient.ndrec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quotient s}
+{f : α → β} {h} : q.rec f h = f q.out := by
+  apply Quot.ndrec_eq_apply_out; exact h
+
+@[simp]
+theorem Quot.mk_out_rel_iff {α : Type*} {s : Setoid α} {x y} :
+s (mk s x).out y ↔ s x y := by
+  constructor <;> intro h
+  · exact s.trans' rel_mk_out h
+  · apply s.trans' mk_out_rel h
+
+@[simp]
+theorem Quot.rel_mk_out_iff {α : Type*} {s : Setoid α} {x y} :
+s x (mk s y).out ↔ s x y := by
+  constructor <;> intro h
+  · exact s.trans' h mk_out_rel
+  · apply s.trans' h rel_mk_out
+
+theorem heq_fn {α β γ : Type*} {f : α → β} {p : γ → Prop} {x : α} {y z : γ}
+(h : p y = p z) : HEq (λ (_ : p y) => f x) (λ (_ : p z) => f x) := by rw [h]
 
 @[simp]
 theorem Quotient.liftWith_eq {α β : Type*} {s : Setoid α} {q : Quotient s}
@@ -2169,5 +2153,132 @@ q.liftWith f h = f q.out := by
   classical
   unfold liftWith Quotient.hrecOn Quot.hrecOn Quot.recOn
   generalize_proofs h₁ h₂ h₃
-  apply Quotient.extracted_1
-  exact h
+  apply congrFun
+  have h₄ := @Quot.rec_eq_apply_out
+  specialize @h₄
+    α (β := λ a => (∀ (x y : α), s x a →
+    s y a → f x = f y) → β) s q
+    (λ a h => f a) _
+  · clear h₄
+    intro x y hx
+    dsimp
+    apply Function.hfunext
+    · ext
+      rw [forall_congr]; intro a
+      rw [forall_congr]; intro b
+      ext
+      constructor <;> intro h₄ h₅ h₆ <;> apply h₄ <;>
+        (apply s.trans' # by assumption) <;>
+        first | exact hx | exact s.symm' hx
+    · intro h₄ h₅ h₆
+      clear h₆
+      rw [heq_eq_eq]
+      specialize h₄ x y
+      exact h₄ (s.refl' _) # s.symm' hx
+  unfold Quotient.out
+  dsimp at h₄ ⊢
+  convert h₄
+  nm x h₅
+  generalize_proofs h₆
+  symm
+  apply congrFun
+  rw [cast_eq_iff_heq]
+  apply @heq_fn α β α f # λ z =>
+    ∀ (x y : α), s x z → s y z → f x = f y
+  simp [Quotient.mk]
+
+@[simp]
+theorem fst_comp_mk_sigma_eq_id {α : Type*} {β : α → Type*} {f : (i : α) → β i} :
+((λ (x : Σ i, β i) => x.fst) ∘ (λ i => ⟨i, f i⟩)) = (λ i => i) := by
+  ext x; simp
+
+theorem List.eq_iff_of_nodup_and_sorted {α : Type*}
+(r : α → α → Prop) {xs ys : List α} (hx₁ : xs.Nodup) (hy₁ : ys.Nodup)
+(h_ant : ∀ a b, a ∈ xs → b ∈ xs → r a b → r b a → a = b)
+(hx₂ : xs.Sorted r) (hy₂ : ys.Sorted r) :
+xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
+  refine' ⟨λ h => by simp [h], λ h => _⟩
+  induction xs generalizing ys
+  · cases ys
+    · rfl
+    nm y ys
+    specialize h y
+    simp at h
+  nm x xs ih
+  cases ys
+  · specialize h x
+    simp at h
+  nm y ys
+  simp at h ⊢
+  simp at hx₁ hx₂ hy₁ hy₂
+  rcases hx₁ with ⟨hx₁, hx₃⟩
+  rcases hy₁ with ⟨hy₁, hy₃⟩
+  rcases hx₂ with ⟨hx₂, hx₄⟩
+  rcases hy₂ with ⟨hy₂, hy₄⟩
+  apply and_of
+  · by_contra! h₁
+    have h₂ := h x
+    have h₃ := h y
+    simp [h₁, h₁.symm] at h₂ h₃
+    specialize hx₂ _ h₃
+    specialize hy₂ _ h₂
+    apply h₁
+    apply h_ant <;> simp [h₂, h₃, hx₂, hy₂]
+  rintro rfl
+  apply ih hx₃ hy₃
+  · intro a b ha hb h₁ h₂
+    apply h_ant <;> simp [ha, hb, h₁, h₂]
+  any_goals assumption
+  intro z
+  specialize h z
+  by_cases hz : z = x
+  · subst hz
+    tauto
+  · simp [hz] at h
+    exact h
+
+theorem List.take_length_add {α : Type*} {xs : List α} {n} :
+xs.take (xs.length + n) = xs := by
+  simp [take_add]
+
+@[simp]
+theorem Multiset.ofList_toList_perm {α : Type*} {xs : List α} :
+(xs : Multiset α).toList.Perm xs := by
+  apply Quotient.mk_out (s := List.isSetoid α)
+
+@[simp]
+theorem Multiset.ofList_cons {α : Type*} {m : Multiset α} {x} :
+↑(x :: m.toList) = x ::ₘ m := by
+  induction m using Quotient.ind; simp
+
+@[simp]
+theorem Multiset.toList_append_perm {α : Type*} {m : Multiset α} {x} :
+(x ::ₘ m).toList.Perm (x :: m.toList) := by
+  simp [←Multiset.ofList_cons]
+
+@[simp]
+theorem Multiset.length_filter_toList_cons_eq {α : Type*}
+{P : α → Bool} {ms : Multiset α} {x} :
+((x ::ₘ ms).toList.filter P).length = (ms.toList.filter P).length +
+if P x then 1 else 0 := by
+  have h₁ : (x ::ₘ ms).toList.Perm (x :: ms.toList) := by simp
+  replace h₁ := List.Perm.filter P h₁
+  replace h₁ := List.Perm.length_eq h₁
+  rw [h₁]
+  rw [List.filter_cons]
+  split_ifs <;> simp
+
+theorem Finset.card_fin_eq_of {n m : ℕ} {s : Finset (Fin n)} {t : Finset (Fin m)}
+(hs : ∀ {i h}, ⟨i, h⟩ ∈ s → ∃ h, ⟨i, h⟩ ∈ t) (ht : ∀ {i h}, ⟨i, h⟩ ∈ t → ∃ h, ⟨i, h⟩ ∈ s) :
+s.card = t.card := by
+  rw [Finset.card_eq_card_iff_equiv]
+  rw [nonempty_equiv_iff_bijective]
+  refine' ⟨_, _⟩
+  · rintro ⟨⟨i, h₁⟩, h₂⟩
+    refine' ⟨⟨i, _⟩, _⟩ <;> obtain ⟨h₃, h₄⟩ := hs h₂ <;> assumption
+  constructor
+  · rintro ⟨⟨i, h₁⟩, h₂⟩ ⟨⟨j, h₃⟩, h₄⟩; simp
+  rintro ⟨⟨i, h₁⟩, h₂⟩
+  simp
+  obtain ⟨h₃, h₄⟩ := ht h₂
+  refine' ⟨_, h₄, rfl⟩

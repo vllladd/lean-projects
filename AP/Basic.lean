@@ -1,4 +1,6 @@
-import AP.Point
+import AP.Defs
+
+open Util.Data
 
 namespace AP
 
@@ -8,7 +10,7 @@ def State.choose_d_move (s : State) : Point :=
 @[simp]
 theorem choose_d_move_ne_a_pos {s : State} : s.choose_d_move ≠ s.a_pos := by
   unfold State.choose_d_move
-  have h₁ := Finset.insert_nonempty s.a_pos s.taken
+  have h₁ := Set.nonempty_insert (x := s.a_pos) (s := s.taken)
   obtain ⟨p, hp⟩ := Finset.max_of_nonempty h₁
   rw [hp]
   simp
@@ -26,7 +28,7 @@ theorem choose_d_move_ne_a_pos {s : State} : s.choose_d_move ≠ s.a_pos := by
 @[simp]
 theorem choose_d_move_not_mem_taken {s : State} : s.choose_d_move ∉ s.taken := by
   unfold State.choose_d_move
-  have h₁ := Finset.insert_nonempty s.a_pos s.taken
+  have h₁ := Finset.nonempty_insert s.a_pos s.taken
   obtain ⟨p, hp⟩ := Finset.max_of_nonempty h₁
   rw [hp]
   simp

@@ -1,19 +1,9 @@
 import AP.Game.Main
+import AP.Point
+
+open Util.Data
 
 namespace AP
-
-@[ext]
-structure Point where
-  x : ℤ
-  y : ℤ
-
-instance : DecidableEq Point := λ a b =>
-match h : decide # a.x = b.x ∧ a.y = b.y with
-| true => isTrue # by ext <;> simp_all
-| false => isFalse # by rintro rfl; simp at h
-
-def Point.dist (a b : Point) : ℕ :=
-  Int.toNat # max |a.x - b.x| |a.y - b.y|
 
 inductive Player where
 | A : Player
@@ -24,7 +14,7 @@ open Player
 @[ext]
 structure State where
   pw : ℕ
-  taken : Finset Point
+  taken : Util.Data.Set Point
   a_pos : Point
   hist : List Point
   turn : Player

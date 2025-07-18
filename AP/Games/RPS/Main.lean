@@ -48,11 +48,12 @@ def RPS : Game Params :=
   , pmove := pmove
   , choose_move := λ _ _ => 0
   
-  , score := λ _ s p =>
-      let items := s.items
-      match items.get? p, items.get? p.next with
-      | some x, some y => x = y.next
-      | _, _ => false
+  , outcome := λ _ =>
+      -- let items := s.items
+      -- match items.get? p, items.get? p.next with
+      -- | some x, some y => x = y.next
+      -- | _, _ => false
+      by sorry
   
   , sys :=
     { initial := {Params.initState .univ playerA State.init}
@@ -62,6 +63,15 @@ def RPS : Game Params :=
   , h_sys_init_nemp := by simp
   , h_sys_init_valid := by
       simp [System.initial_iff]
+      unfold Params GameParams.initState
+      simp [Util.Data.Set.eq_empty_iff]
+  , h_rules_player_mem := by
+      intro s h t r h
+      simp [rules] at h
+      rw [←h.2]; clear h
+      split <;> simp
+      · sorry
+      · sorry
   , h_sys_tr := rfl
   , h_choose_move := by
       simp
@@ -69,7 +79,13 @@ def RPS : Game Params :=
       rw [Option.isSome_iff_exists] at h₂ ⊢
       simp [rules] at h₂ ⊢
       exact h₂
+  , h_mem_outcome := by
+      sorry
+  , h_outcome_no_hist := by
+      sorry
   }
+
+#check 0 #exit
 
 -----
 

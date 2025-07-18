@@ -90,6 +90,9 @@ def sys_tr (rules : T.GRules) (pmove : T.GPMove)
 abbrev StratFn (p : T.Player) : Type u :=
   T.PState p → List (T.PTrans p) → T.Move p
 
+abbrev Outcome : Type u :=
+  Map T.Player T.Score
+
 end GameParams
 
 @[ext]
@@ -98,20 +101,25 @@ structure Game (T : GameParams) : Type u where
   pstate : (p : T.Player) → T.State → T.PState p
   pmove : T.GPMove
   choose_move : (p : T.Player) → T.PState p → T.Move p
-  score : T.Player → T.State → T.Player → T.Score
+  outcome : T.GState → T.Outcome
   
   sys : System T.GState T.Trans
   
   h_sys_init_nemp : sys.initial ≠ ∅
   h_sys_init_valid : ∀ s [sys.Initial s], ∃ ps p s',
     T.initState ps p s' = s ∧ s.hist ≠ ∅
-  h_rules_player_mem : ∀ {s : T.GState} {t : T.Trans} {r},
+  h_rules_player_mem : ∀ {s : T.GState} [sys.Valid s] {t : T.Trans} {r},
     rules t.1 s.state t.2 = some r → r.1 ∈ s.hist
   h_sys_tr : sys.tr = T.sys_tr rules pmove
   h_choose_move : ∀ (s : T.GState),
     let p := s.player
     let t := choose_move p (pstate p s.state)
     (∃ t, (rules p s.state t).isSome) → (rules p s.state t).isSome
+  h_mem_outcome : ∀ {s : T.GState} [sys.Valid s],
+    ¬sys.hasTr s → ∀ p, p ∈ outcome s ↔ p ∈ s.hist
+  h_outcome_no_hist : ∀ {s₁ s₂ : T.GState} [sys.Valid s₁] [sys.Valid s₂],
+    ¬sys.hasTr s₁ → ¬sys.hasTr s₂ → s₁.player = s₂.player → s₁.state = s₂.state →
+    ∀ p x y, (outcome s₁).get? p = some x → (outcome s₂).get? p = some y → x = y
 
 namespace Game
 

@@ -51,9 +51,6 @@ def map {γ : α → Type w} (mp : DMap α β) (f : ∀ i, β i → γ i) : DMap
   intro a b h
   exact Std.DHashMap.Equiv.map _ h
 
-def range [fin : Fintype α] (f : (i : α) → β i) : DMap α β :=
-  ofList # fin.1.to_sorted_list.map # λ i => ⟨i, f i⟩
-
 def mem (mp : DMap α β) (i : α) : Prop := by
   apply mp.lift (i ∈ ·)
   intro a b h
@@ -197,8 +194,13 @@ i ∈ mp.insertP x ↔ i = x.1 ∨ i ∈ mp := by
   simp
   tauto
 
-theorem mem_insert {i x j} :
+@[simp]
+theorem mem_insert' {i x j} :
 j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by simp
+
+@[simp]
+theorem mem_insert {x i} :
+i ∈ insert x mp ↔ i = x.1 ∨ i ∈ mp := by simp [insert]
 
 @[simp]
 theorem mem_ofList {xs : List (Σ i, β i)} {i} :
@@ -206,10 +208,6 @@ i ∈ ofList xs ↔ ∃ x, ⟨i, x⟩ ∈ xs := by
   simp only [ofList, mem_def, mem, Quotient.lift_mk, Std.DHashMap.mem_ofList,
     List.contains_eq_mem, List.mem_map, Sigma.exists, exists_and_right,
     exists_eq_right, decide_eq_true_eq]
-
-@[simp]
-theorem mem_range [fin : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ range f := by
-  simp [range]
 
 @[simp]
 theorem mem_map {γ : α → Type w} {f : ∀ i, β i → γ i} {i} : i ∈ mp.map f ↔ i ∈ mp := by
@@ -312,3 +310,89 @@ ofList xs = ofList ys ↔ xs.Perm ys := by
       exact (Std.DHashMap.toList_ofList_perm hy).symm
   rw [h₃.mem_iff, h₄.mem_iff]
   simp
+
+def range [ha : Fintype α] (f : (i : α) → β i) : DMap α β := by
+  rcases ha with ⟨⟨m, hm⟩, ha⟩
+  refine' m.liftWith _ _
+  · intro xs
+    exact ofList # xs.map # λ i => ⟨i, f i⟩
+  clear ha
+  replace hm : m.toList.Nodup := by simpa
+  intro xs ys (hx : m.toList.Perm xs) (hy : m.toList.Perm ys)
+  rw [ofList_eq_ofList_iff]
+  rotate_left
+  · simp; exact hx.nodup hm
+  · simp; exact hy.nodup hm
+  rw [List.map_perm_map_iff]
+  · exact hx.symm.trans hy
+  intro x y h
+  simp at h
+  exact h.1
+  
+@[simp]
+theorem mem_range [ha : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ range f := by
+  simp [range]
+  change i ∈ ha.elems.val.toList
+  simp
+
+theorem nonempty_insert {x} : insert x mp ≠ ∅ := by
+  simp [eq_empty_iff]
+  use x.1
+  tauto
+
+@[simp]
+theorem nodup_toList : mp.toList.Nodup := by
+  unfold toList
+  apply mp.ind
+  intro m
+  simp
+
+@[simp]
+theorem sorted_toList : mp.toList.Sorted (·.1 ≤ ·.1) := by
+  unfold toList
+  apply mp.ind
+  intro m
+  simp
+  apply List.sorted_mergeSort_loc
+  · rintro ⟨i, x⟩ ⟨j, y⟩ ⟨k, z⟩
+    simp
+    intro h₁ h₂ h₃ h₄ h₅
+    exact h₄.trans h₅
+  · rintro ⟨i, x⟩ ⟨j, y⟩
+    simp
+    intro h₁ h₂
+    apply le_total
+
+@[simp]
+theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
+  unfold toList get?
+  apply mp.ind
+  intro m
+  rcases x with ⟨i, x⟩
+  simp
+
+@[simp]
+theorem toList_eq_toList {m₁ m₂ : DMap α β} :
+m₁.toList = m₂.toList ↔ m₁ = m₂ := by
+  refine' ⟨λ h => _, λ h => by rw [h]⟩
+  rw [List.eq_iff_of_nodup_and_sorted (·.1 ≤ ·.1)] at h
+  any_goals simp
+  rotate_left
+  · rintro ⟨i, x⟩ ⟨j, y⟩
+    simp
+    intro h₁ h₂ h₃ h₄
+    have h₅ := le_antisymm h₃ h₄
+    subst h₅
+    use rfl
+    simp [h₁] at h₂
+    simpa
+  rw [ext_iff]
+  intro i
+  ext x
+  specialize h ⟨i, x⟩
+  simp at h
+  exact h
+
+@[simp]
+theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
+  rw [←toList_empty, toList_eq_toList]

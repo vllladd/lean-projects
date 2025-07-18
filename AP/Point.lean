@@ -1,6 +1,16 @@
-import AP.Defs
+import AP.Util.Main
 
 namespace AP
+
+@[ext]
+structure Point where
+  x : ℤ
+  y : ℤ
+
+instance : DecidableEq Point := λ a b =>
+match h : decide # a.x = b.x ∧ a.y = b.y with
+| true => isTrue # by ext <;> simp_all
+| false => isFalse # by rintro rfl; simp at h
 
 instance : Inhabited Point := ⟨0, 0⟩
 
@@ -76,8 +86,13 @@ instance : Ord Point := ⟨Point.compare⟩
 theorem point_mk_ord {x₁ y₁ x₂ y₂} :
 compare (⟨x₁, y₁⟩ : Point) ⟨x₂, y₂⟩ = Point.compare ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := by rfl
 
-@[simp] def Point.min (a b : Point) := if a ≤ b then a else b
-@[simp] def Point.max (a b : Point) := if a ≤ b then b else a
+@[simp]
+protected def Point.min (a b : Point) :=
+  if a ≤ b then a else b
+
+@[simp]
+protected def Point.max (a b : Point) :=
+  if a ≤ b then b else a
 
 instance : Min Point := ⟨Point.min⟩
 instance : Max Point := ⟨Point.max⟩
@@ -135,6 +150,15 @@ instance : LinearOrder Point := by
   · infer_instance
   · infer_instance
 
+def Point.dist (a b : Point) : ℕ :=
+  Int.toNat # max |a.x - b.x| |a.y - b.y|
+
 @[simp, symm]
 theorem Point.dist.comm {a b : Point} : a.dist b = b.dist a := by
   simp [Point.dist, abs_sub_comm]
+
+def Point.toProd (p : Point) : ℤ × ℤ :=
+  (p.1, p.2)
+
+instance : Hashable Point :=
+  ⟨λ p => hash # p.toProd⟩
