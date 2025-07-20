@@ -1,4 +1,3 @@
-#check 0 #exit
 import AP.Basic
 import AP.Games.Main
 

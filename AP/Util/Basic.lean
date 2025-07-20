@@ -2282,3 +2282,15 @@ s.card = t.card := by
   simp
   obtain ⟨h₃, h₄⟩ := ht h₂
   refine' ⟨_, h₄, rfl⟩
+
+theorem Nat.le_exp₁ {a b : ℕ} (h : 2 ≤ b) : a ≤ b ^ a := by
+  induction a; simp; rename_i a ha; simp [pow_succ]
+  replace ha := Nat.add_le_add_right ha 1; apply ha.trans
+  obtain ⟨b, rfl⟩ := Nat.exists_eq_add_of_le h; simp [mul_add, mul_two]
+  suffices 1 ≤ (2 + b) ^ a + (2 + b) ^ a * b by linarith
+  by_contra h; simp at h
+
+theorem Nat.le_exp₂ {a b : ℕ} (h : b ≠ 0) : a ≤ a ^ b := by
+  cases b; simp at h; rename_i b; simp [pow_add]; cases a
+  simp; rename_i a; cases b; simp; rename_i b
+  simp [pow_add]; by_contra h₁; simp at h₁
