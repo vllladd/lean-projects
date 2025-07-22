@@ -137,11 +137,13 @@ def univ [ha : Fintype α] : Set α :=
 @[simp]
 theorem mem_univ [ha : Fintype α] {i : α} : i ∈ univ := by simp [univ]
 
-def min (s : Set α) : Option α :=
-  s.toList.head?
+-- Implement min and max using folding
 
-def max (s : Set α) : Option α :=
-  s.toList.getLast?
+-- def min (s : Set α) : Option α :=
+--   s.toList.head?
+-- 
+-- def max (s : Set α) : Option α :=
+--   s.toList.getLast?
 
 @[simp]
 theorem mem_insert {x y} : y ∈ insert x s ↔ y = x ∨ y ∈ s :=

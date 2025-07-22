@@ -335,6 +335,7 @@ theorem mem_range [ha : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ ran
   change i ∈ ha.elems.val.toList
   simp
 
+@[simp]
 theorem nonempty_insert {x} : insert x mp ≠ ∅ := by
   simp [eq_empty_iff]
   use x.1

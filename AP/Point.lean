@@ -161,4 +161,4 @@ def Point.toProd (p : Point) : ℤ × ℤ :=
   (p.1, p.2)
 
 instance : Hashable Point :=
-  ⟨λ p => hash # p.toProd⟩
+  ⟨λ p => hash p.toProd⟩
