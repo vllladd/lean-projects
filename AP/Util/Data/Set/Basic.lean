@@ -137,14 +137,6 @@ def univ [ha : Fintype α] : Set α :=
 @[simp]
 theorem mem_univ [ha : Fintype α] {i : α} : i ∈ univ := by simp [univ]
 
--- Implement min and max using folding
-
--- def min (s : Set α) : Option α :=
---   s.toList.head?
--- 
--- def max (s : Set α) : Option α :=
---   s.toList.getLast?
-
 @[simp]
 theorem mem_insert {x y} : y ∈ insert x s ↔ y = x ∨ y ∈ s :=
   DMap.mem_insert
@@ -165,50 +157,80 @@ theorem nodup_toList : s.toList.Nodup := by
 theorem sorted_toList : s.toList.Sorted (· ≤ ·) := by
   unfold Set at s
   unfold toList
-  let lin : LinearOrder (Σ (i : α), Unit) :=
+  set f : α → Σ (i : α), Unit := λ x => ⟨x, ()⟩ with hf
+  set g : (Σ (i : α), Unit) → α := λ x => x.1 with hg
+  have hb : f.Bijective :=
     by
-      sorry -- of equiv
+      constructor
+      · intro a b h
+        simp [hf] at h
+        exact h
+      · intro y
+        use y.1
+  let e : Equiv _ _ := by
+    apply Equiv.mk f g
+    · intro x
+      rfl
+    · intro x
+      rfl
+  let lin := e.toLinearOrder
   rw [StrictMono.sorted_le_listMap]
   rotate_left
   · intro x y h
-    sorry -- rfl
-  sorry -- exact DMap.sorted_toList
+    exact h
+  exact DMap.sorted_toList
 
-#check 0 #exit
+def has (x : α) : Bool :=
+  (s.get? x).isSome
 
 @[simp]
-theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
-  unfold toList get?
-  apply mp.ind
-  intro m
-  rcases x with ⟨i, x⟩
+theorem mem_toList {x} : x ∈ s.toList ↔ s.has x := by
+  simp [toList, has, Option.isSome_iff_exists]
+
+@[simp]
+theorem toList_eq_toList {s₁ s₂ : Set α} :
+s₁.toList = s₂.toList ↔ s₁ = s₂ := by
+  refine' ⟨λ h => _, by rintro rfl; rfl⟩
+  unfold toList at h
+  rw [←DMap.toList_eq_toList]
+  rwa [List.map_inj_right] at h
+  rintro ⟨x, _⟩ ⟨y, _⟩
   simp
 
 @[simp]
-theorem toList_eq_toList {m₁ m₂ : DMap α β} :
-m₁.toList = m₂.toList ↔ m₁ = m₂ := by
-  refine' ⟨λ h => _, λ h => by rw [h]⟩
-  rw [List.eq_iff_of_nodup_and_sorted (·.1 ≤ ·.1)] at h
-  any_goals simp
-  rotate_left
-  · rintro ⟨i, x⟩ ⟨j, y⟩
-    simp
-    intro h₁ h₂ h₃ h₄
-    have h₅ := le_antisymm h₃ h₄
-    subst h₅
-    use rfl
-    simp [h₁] at h₂
-    simpa
-  rw [ext_iff]
-  intro i
-  ext x
-  specialize h ⟨i, x⟩
-  simp at h
-  exact h
+theorem toList_eq_nil_iff : s.toList = [] ↔ s = ∅ := by
+  simp [toList]
 
-@[simp]
-theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
-  rw [←toList_empty, toList_eq_toList]
+def map {β : Type*} [hb₁ : LinearOrder β] [hb₂ : Hashable β]
+(f : α → β) (s : Set α) : Set β := by
+  nm x; clear x
+  sorry
+
+#check 0 #exit
+
+section Fold
+
+variable {β : Type*} (op : β → β → β)
+  [hc : Std.Commutative op] [ha : Std.Associative op]
+
+def fold (b : β) (f : α → β) (s : Set α) : β :=
+
+end Fold
+
+def fold {β : Type*} (f : α → β → β) (z : β)
+(h_comm : ∀ {x y}, )
+
+#check 0 #exit
+
+Implement min and max using folding
+
+def min (s : Set α) : Option α :=
+  s.toList.head?
+
+def max (s : Set α) : Option α :=
+  s.toList.getLast?
+
+#check 0 #exit
 
 -----
 
@@ -220,3 +242,14 @@ theorem min_of_nonempty (h : s ≠ ∅) : ∃ x, s.max = some x := by
   simp at h
   intro x
   simp [Li]
+
+def map {β : Type*} [Hashable β] [LinearOrder β] (f : α → β) (s : Set α) : Set β := by
+  nm x h₂ h₃; clear x
+  refine' s.lift _ _
+  · intro m
+    apply Set.ofList
+    exact m.keys.map f
+  intro m₁ m₂ h
+  simp
+
+#check 0 #exit
