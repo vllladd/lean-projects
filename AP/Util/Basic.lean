@@ -2330,7 +2330,7 @@ def Equiv.toLinearOrder {α β : Type*}
       · intro a b c ha hb
         exact ha.trans hb
       · intro a b
-        exact lt_iff_le_not_le
+        exact lt_iff_le_not_ge
   let h₇ : PartialOrder β :=
     by
       constructor
