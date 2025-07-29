@@ -256,9 +256,11 @@ def map {β : Type*} [Hashable β] [LinearOrder β] (f : α → β) (s : Set α)
 
 theorem mem_union_iff {a : α} (m₁ m₂ : HashSet α) :
 a ∈ m₁.union m₂ ↔ a ∈ m₁ ∨ a ∈ m₂ := by
-  sorry
-
-theorem contains_toArray_iff {a : α} (m : HashSet α) :
-m.contains a ↔ m.toArray.contains a := by
-  rw [contains_iff_mem]
-  unfold toArray
+  simp [union, fold_eq_foldl_toList]
+  rw [mem_iff_contains (m:= m₂), ← contains_toList]
+  generalize m₂.toList = l
+  induction l generalizing m₁ with
+  | nil => simp
+  | cons hd tl ih =>
+    simp [ih]
+    grind
