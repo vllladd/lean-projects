@@ -1,0 +1,331 @@
+import AP.Util.Function
+
+namespace Nat
+
+noncomputable
+def findRaw (P : ℕ → Prop) : ℕ :=
+  haveI := Classical.propDecidable
+  if h : ∃ n, P n ∧ ∀ k < n, ¬P k then h.choose else 0
+
+-----
+
+theorem rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
+  induction n <;> simp_all only [rec_zero]
+
+theorem rec_succ' {α : Type*} {z : α} (f : ℕ → α → α) {n : ℕ} :
+@rec (λ _ => α) z f (n + 1) =
+@rec (λ _ => α) (f 0 z) (λ m => f (m + 1)) n := by
+  induction n generalizing z f; simp
+  nm n ih; exact congrArg (f (n + 1)) (ih f)
+
+theorem infi_eq_zero_of {f : ℕ → ℕ} k (h : f k = 0) : ⨅ x, f x = 0 := by
+  rw [iInf, sInf_eq_zero]; left; simp; use k
+
+theorem le_sub_add_of {a b c : ℕ} (h : a ≤ b) : a ≤ b - c + c := by
+  trans b; exact h; exact le_tsub_add
+
+theorem le_sub_add_add_of {a b c d : ℕ} (h : a ≤ b) : a ≤ b - c + d + c := by
+  rw [add_assoc]; nth_rewrite 2 [add_comm]
+  rw [←add_assoc]; trans b - c + c
+  exact le_sub_add_of h; apply le_add_right
+
+theorem rec_le_of_sub_sub {n z : ℕ} (f g : ℕ → ℕ) :
+@rec (λ _ => ℕ) z (λ k x => x - f k - g k) n ≤
+@rec (λ _ => ℕ) z (λ k x => x - f k) n := by
+  induction n <;> simp
+  nm n ih; exact le_sub_add_add_of ih
+
+@[simp]
+theorem ite_11_iff : ∀ {P Q h₁ h₂},
+@ite _ P h₁ 1 0 = @ite _ Q h₂ 1 0 ↔ (P ↔ Q) := by
+  apply prop_ind <;> apply prop_ind <;> simp
+
+@[simp]
+theorem ite_00_iff : ∀ {P Q h₁ h₂},
+@ite _ P h₁ 0 1 = @ite _ Q h₂ 0 1 ↔ (P ↔ Q) := by
+  apply prop_ind <;> apply prop_ind <;> simp
+
+@[simp]
+theorem ite_10_iff : ∀ {P Q h₁ h₂},
+@ite _ P h₁ 1 0 = @ite _ Q h₂ 0 1 ↔ (P ↔ ¬Q) := by
+  apply prop_ind <;> apply prop_ind <;> simp
+
+@[simp]
+theorem ite_01_iff : ∀ {P Q h₁ h₂},
+@ite _ P h₁ 0 1 = @ite _ Q h₂ 1 0 ↔ (P ↔ ¬Q) := by
+  apply prop_ind <;> apply prop_ind <;> simp
+
+theorem rec_sub {n k m : ℕ} {f : ℕ → ℕ} :
+@rec (λ _ => ℕ) (n - k) (λ k a => a - f k) m =
+@rec (λ _ => ℕ) n (λ k a => a - f k) m - k := by
+  induction m <;> simp
+  nm m ih; rw [ih]; apply Nat.sub_right_comm
+
+@[simp]
+theorem add_succ_max_ne_left {x a b : ℕ} :
+x + (max a b + 1) ≠ a := by
+  simp; apply ne_of_gt; apply Nat.lt_add_left
+  apply lt_add_one_of_le; apply le_max_left
+
+@[simp]
+theorem add_succ_max_ne_right {x a b : ℕ} : x + (max a b + 1) ≠ b := by
+  rw [max_comm]; simp
+
+@[simp]
+theorem left_lt_succ_max {a b : ℕ} : a < max a b + 1 := by
+  simp [Nat.lt_add_one_iff]
+
+@[simp]
+theorem right_lt_succ_max {a b : ℕ} : b < max a b + 1 := by
+  simp [Nat.lt_add_one_iff]
+
+theorem add_add_sub_cancel {a b c : ℕ} : a + b + c - b = a + c := by
+  rw [add_assoc, Nat.add_sub_assoc] <;> simp
+
+theorem add_succ_ne_right {a b : ℕ} : a + (b + 1) ≠ b := by
+  nth_rewrite 2 [add_comm]; rw [←add_assoc]; simp
+
+theorem fn_set_add {a b : ℕ} {f : ℕ → ℕ} {x : ℕ} :
+fn_set a (f a + b) f x = f x + if x = a then b else 0 := by
+  rw [fn_set_eq]; aesop
+
+theorem eq_add_of_sub_eq_succ {a b c} (h : a - b = c + 1) :
+a = c + 1 + b := by
+  rw [Nat.sub_eq_iff_eq_add] at h; exact h; by_contra! h₁
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt h₁
+  rw [add_assoc, sub_add_eq] at h; simp at h
+
+theorem eq_add_iff_sub_eq_succ {a b c} :
+a = c + 1 + b ↔ a - b = c + 1 := by
+  apply Iff.intro <;> intro h; simp [h]
+  exact eq_add_of_sub_eq_succ h
+
+theorem eq_add_of_one_eq_sub {a b : ℕ} (h : 1 = a - b) : a = b + 1 := by
+  have h₁ : b ≤ a := by
+    apply le_of_lt; apply Nat.lt_of_sub_pos; simp [←h]
+  have h₂ : b + 1 = b + (a - b) := by rw [h]
+  rw [←Nat.add_sub_assoc h₁] at h₂
+  simp at h₂; exact h₂.symm
+
+theorem one_eq_sub_iff {a b : ℕ} : 1 = a - b ↔ a = b + 1 :=
+  ⟨eq_add_of_one_eq_sub, by rintro rfl; simp⟩
+
+@[simp]
+theorem not_lt_sub {a b : ℕ} : ¬(a < a - b) := by simp
+
+theorem sub_eq_left_iff {a b : ℕ} : a - b = a ↔ a = 0 ∨ b = 0 := by
+  cases a <;> simp; cases b <;> simp
+  exact ne_of_lt # sub_lt_of_lt # by simp
+
+@[simp]
+theorem ite_10_le_one {P : Prop} [Decidable P] : ite P 1 0 ≤ 1 := by
+  split_ifs <;> simp
+
+@[simp]
+theorem ite_01_le_one {P : Prop} [Decidable P] : ite P 0 1 ≤ 1 := by
+  split_ifs <;> simp
+
+theorem even_iff_exi {n : ℕ} : Even n ↔ ∃ k, n = k * 2 := by
+  rw [Even]; ring_nf
+
+theorem odd_iff_exi {n : ℕ} : Odd n ↔ ∃ k, n = k * 2 + 1 := by
+  rw [Odd]; ring_nf
+
+theorem mod_2_ind {P : ℕ → Prop}
+(h₁ : ∀ n, P (n * 2)) (h₂ : ∀ n, P (n * 2 + 1)) (n : ℕ) : P n := by
+  rcases even_or_odd n with h | h
+  · obtain ⟨k, rfl⟩ := even_iff_exi.mp h; apply h₁
+  · obtain ⟨k, rfl⟩ := odd_iff_exi.mp h; apply h₂
+
+theorem not_even_mul_2_succ {n : ℕ} : ¬Even (n * 2 + 1) := by simp
+
+@[simp]
+theorem not_odd_mul_2 {n : ℕ} : ¬Odd (n * 2) := by simp
+
+@[simp]
+theorem even_succ_iff {n : ℕ} : Even (n + 1) ↔ Odd n := by
+  simp [even_add_one]
+
+@[simp]
+theorem odd_succ_iff {n : ℕ} : Odd (n + 1) ↔ Even n := by
+  simp [odd_add_one]
+
+theorem even_of_succ_div_2_eq {n : ℕ}
+(h : (n + 1) / 2 = n / 2) : Even n := by
+  contrapose! h; simp [odd_iff_exi] at h
+  obtain ⟨n, rfl⟩ := h; rw [div_eq]
+  simp; induction n; simp; nm n ih; contrapose! ih; ring_nf at ih ⊢
+  have h₁ : (n * 2 + 1 + 2) / 2 = (n * 2 + 1) / 2 + 1 := by simp
+  ring_nf at h₁; rw [h₁, add_comm] at ih; nth_rewrite 2 [add_comm] at ih
+  rw [add_comm]; exact succ_inj.mp ih
+
+theorem odd_of_succ_div_2_eq {n : ℕ}
+(h : (n + 1) / 2 = n / 2 + 1) : Odd n := by
+  contrapose! h; simp [even_iff_exi] at h;
+  obtain ⟨n, rfl⟩ := h; rw [div_eq]; induction n; trivial
+  nm n ih; cases n; trivial; nm n; simp [add_mul] at ih ⊢
+  change (_ + (1 + 2)) / _ ≠ _; rw [←add_assoc]; simpa
+
+theorem le_one_iff {n : ℕ} : n ≤ 1 ↔ n = 0 ∨ n = 1 := by
+  cases n; simp; nm n; cases n <;> simp
+
+theorem of_between_succ {a b : ℕ} (h₁ : a ≤ b) (h₂ : b ≤ a + 1) :
+b = a ∨ b = a + 1 := by
+  obtain ⟨k, rfl⟩ := exists_add_of_le h₁
+  simp at h₂ ⊢; rw [le_one_iff] at h₂; exact h₂
+
+theorem succ_div_2_eq_or_eq (n : ℕ) :
+(n + 1) / 2 = n / 2 ∨ (n + 1) / 2 = n / 2 + 1 := by
+  have h₁ := add_div_le_add_div n 1 2
+  have h₂ := add_div_le_add_div (n + 1) 1 2
+  simp [add_assoc] at h₁ h₂; exact of_between_succ h₁ h₂
+
+@[simp]
+theorem succ_div_2_eq_div_iff {n : ℕ} :
+(n + 1) / 2 = n / 2 ↔ Even n := by
+  refine' ⟨even_of_succ_div_2_eq, _⟩
+  intro h; contrapose h; simp
+  apply odd_of_succ_div_2_eq
+  rcases succ_div_2_eq_or_eq n with h₃ | h₃
+  contradiction; exact h₃
+
+@[simp]
+theorem succ_div_2_eq_div_iff' {n : ℕ} :
+n / 2 = (n + 1) / 2 ↔ Even n := by
+  rw [eq_comm]; exact succ_div_2_eq_div_iff
+
+@[simp]
+theorem succ_div_2_eq_div_succ_iff {n : ℕ} :
+(n + 1) / 2 = n / 2 + 1 ↔ Odd n := by
+  cases n; simp; nm n; simp [add_assoc]
+
+@[simp]
+theorem succ_div_2_eq_div_succ_iff' {n : ℕ} :
+n / 2 + 1 = (n + 1) / 2 ↔ Odd n := by
+  rw [eq_comm]; exact succ_div_2_eq_div_succ_iff
+
+@[simp]
+theorem mul_2_succ_div_2_eq (n : ℕ) : (n * 2 + 1) / 2 = n := by
+  suffices (n * 2 + 1) / 2 = n * 2 / 2 by simp at this; assumption
+  rw [succ_div_2_eq_div_iff]; simp
+
+theorem findRaw_eq {P} :
+haveI := Classical.propDecidable
+findRaw P = if h : ∃ n, P n then Nat.find h else 0 := by
+  classical
+  unfold findRaw
+  symm
+  by_cases h₁ : ∃ n, P n
+  · have h₂ : ∃ n, P n ∧ ∀ k < n, ¬P k :=
+      by
+        use Nat.find h₁
+        rw [←Nat.find_eq_iff h₁]
+    simp [h₁, h₂]
+    generalize_proofs
+    rw [Nat.find_eq_iff h₁]
+    exact h₂.choose_spec
+  split_ifs with h₂
+  · simp at h₁
+    obtain ⟨n, h₂⟩ := h₂
+    cases h₁ n h₂.1
+  rfl
+
+theorem findRaw_spec' {P : ℕ → Prop} (h : ∃ n, P n) : P (findRaw P) ∧
+∀ k, P k → findRaw P ≤ k := by
+  classical
+  simp [findRaw_eq, h]
+  use Nat.find_spec h
+  intro k hk
+  use k
+
+theorem findRaw_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (findRaw P) := by
+  exact (findRaw_spec' h).1
+
+theorem findRaw_eq_of {P : ℕ → Prop} {n} (h₁ : P n) (h₂ : ∀ k < n, ¬P k) :
+findRaw P = n := by
+  classical
+  rw [findRaw_eq]
+  split_ifs with h₃
+  · rw [Nat.find_eq_iff]
+    tauto
+  simp at h₃
+  specialize h₃ n
+  contradiction
+
+theorem findRaw_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : findRaw P = 0 := by
+  rw [findRaw_eq]
+  split_ifs with h₁
+  · contrapose! h
+    exact h₁
+  rfl
+
+theorem findRaw_eq_iff {P : ℕ → Prop} {n} : by classical exact (
+findRaw P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0)) := by
+  split_ifs with h₁
+  · rw [findRaw_eq]; simp [h₁, Nat.find_eq_iff]
+  simp at h₁
+  rw [findRaw_eq_zero_of h₁, eq_comm]
+
+theorem findRaw_min {P : ℕ → Prop} {n} (h : n < findRaw P) : ¬P n := by
+  classical
+  rw [findRaw_eq] at h
+  split_ifs at h with h₁
+  · exact Nat.find_min h₁ h
+  simp at h
+
+theorem findRaw_eq_of_not_ap_zero {P : ℕ → Prop}
+(h₁ : ∃ n, P n) (h₂ : ¬P 0) : findRaw P = findRaw (λ m => P (m + 1)) + 1 := by
+  apply findRaw_eq_of
+  · apply @findRaw_spec (P # · + 1)
+    obtain ⟨n, hn⟩ := h₁
+    cases n
+    · contradiction
+    nm n
+    use n
+  intro k hk
+  cases k
+  · exact h₂
+  nm k
+  simp at hk
+  apply @findRaw_min (P # · + 1)
+  exact hk
+
+theorem findRaw_eq_of_not_ap_le {P : ℕ → Prop}
+(n : ℕ) (h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
+findRaw P = findRaw (λ m => P (n + m)) + n := by
+  classical
+  induction n generalizing P
+  · simp
+  nm n ih
+  have h₃ : ¬P 0 :=
+    by
+      apply h₂; simp
+  specialize @ih (P # · + 1) _ _ <;> try dsimp
+  · obtain ⟨k, hk⟩ := h₁
+    cases k
+    · contradiction
+    nm k
+    use k
+  · intro k hk
+    apply h₂
+    simpa
+  rw [findRaw_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
+  ring_nf
+
+theorem add_one_add {a b : ℕ} : a + 1 + b = a + b + 1 := by ring
+
+theorem add_one_sub {a b : ℕ} (h : b ≤ a) : a + 1 - b = a - b + 1 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  ring_nf; simp [add_add_sub_cancel]
+
+theorem le_exp_left {a b : ℕ} (h : 2 ≤ b) : a ≤ b ^ a := by
+  induction a; simp; rename_i a ha; simp [pow_succ]
+  replace ha := Nat.add_le_add_right ha 1; apply ha.trans
+  obtain ⟨b, rfl⟩ := Nat.exists_eq_add_of_le h; simp [mul_add, mul_two]
+  suffices 1 ≤ (2 + b) ^ a + (2 + b) ^ a * b by linarith
+  by_contra h; simp at h
+
+theorem le_exp_right {a b : ℕ} (h : b ≠ 0) : a ≤ a ^ b := by
+  cases b; simp at h; rename_i b; simp [pow_add]; cases a
+  simp; rename_i a; cases b; simp; rename_i b
+  simp [pow_add]; by_contra h₁; simp at h₁
