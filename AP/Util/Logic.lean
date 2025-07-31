@@ -129,3 +129,18 @@ end
 
 theorem heq_fn {α β γ : Type*} {f : α → β} {p : γ → Prop} {x : α} {y z : γ}
 (h : p y ↔ p z) : HEq (λ (_ : p y) => f x) (λ (_ : p z) => f x) := by rw [h]
+
+theorem inst_decidable_eq {P : Prop} {H₁ H₂ : Decidable P} : H₁ = H₂ := by
+  rcases H₁ with h₁ | h₁ <;> rcases H₂ with h₂ | h₂
+  all_goals first | contradiction | simp [h₁]
+
+theorem inst_decidablePred_eq {α : Type*} {p : α → Prop}
+{H₁ H₂ : DecidablePred p} : H₁ = H₂ := by
+  ext; exact inst_decidable_eq
+
+theorem inst_decidableRel_eq {α β : Type*} {r : α → β → Prop}
+{H₁ H₂ : DecidableRel r} : H₁ = H₂ := by
+  ext; exact inst_decidable_eq
+
+theorem inst_decidableEq_eq {α : Type*} {H₁ H₂ : DecidableEq α} : H₁ = H₂ :=
+  inst_decidableRel_eq

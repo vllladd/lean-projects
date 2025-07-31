@@ -390,3 +390,97 @@ xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
 theorem take_length_add {α : Type*} {xs : List α} {n} :
 xs.take (xs.length + n) = xs := by
   simp [take_add]
+
+@[simp]
+theorem mergeSort_perm' {α : Type*} {xs : List α} {r : α → α → Bool} :
+xs.mergeSort r ~ xs := by apply mergeSort_perm
+
+@[simp]
+theorem perm_mergeSort {α : Type*} {xs : List α} {r : α → α → Bool} :
+xs ~ xs.mergeSort r := by symm; simp
+
+theorem perm_of_mergeSort_perm_mergeSort {α : Type*}
+{xs ys : List α} {r₁ r₂ : α → α → Bool}
+(h : xs.mergeSort r₁ ~ ys.mergeSort r₂) : xs ~ ys := by
+  trans xs.mergeSort r₁; simp
+  apply h.trans; simp
+
+theorem perm_of_mergeSort_eq_mergeSort {α : Type*}
+{xs ys : List α} {r₁ r₂ : α → α → Bool}
+(h : xs.mergeSort r₁ = ys.mergeSort r₂) : xs ~ ys := by
+  trans xs.mergeSort r₁; simp; simp [h]
+
+@[simp]
+theorem mergeSort_eq_nil_iff {α : Type*} {xs : List α} {r : α → α → Bool} :
+xs.mergeSort r = [] ↔ xs = [] := by
+  cases xs <;> simp
+  apply ne_of_congr List.length
+  simp
+
+@[simp]
+theorem sorted_map {α β : Type*} {xs : List α} {f : α → β} {r : β → β → Prop} :
+(xs.map f).Sorted r ↔ xs.Sorted (λ a b => r (f a) (f b)) := by
+  induction xs; simp
+  nm x xs ih
+  simp
+  intro h
+  exact ih
+
+theorem foldl_eq_foldl_of_perm {α β : Type*}
+{f : β → α → β} {z : β} {xs ys : List α}
+(hf : ∀ acc x y, f (f acc x) y = f (f acc y) x)
+(h : xs ~ ys) : xs.foldl f z = ys.foldl f z := by
+  induction h generalizing z <;> clear xs ys
+  · rfl
+  · nm x xs ys h ih; simp [ih]
+  · nm x y xs; simp [hf]
+  · nm xs ys zs h₁ h₂ ih₁ ih₂; rw [ih₁, ih₂]
+
+open Classical in
+theorem foldl_bool_to_prop {α : Type*}
+{xs : List α} {f : Bool → α → Bool} {z : Bool} :
+xs.foldl f z = @xs.foldl Prop α (λ acc x => f acc x) z := by
+  induction xs generalizing z; simp
+  nm x xs ih; simp [ih]
+
+@[simp]
+theorem snoc_perm_iff {α : Type*} {xs ys : List α} {x} :
+xs ++ [x] ~ ys ↔ x :: xs ~ ys := by
+  classical
+  rw [←reverse_perm']
+  simp [cons_perm_iff_perm_erase]
+
+@[simp]
+theorem perm_snoc_iff {α : Type*} {xs ys : List α} {y} :
+xs ~ ys ++ [y] ↔ xs ~ y :: ys := by
+  rw [perm_comm]; nth_rw 2 [perm_comm]; simp
+
+@[simp]
+theorem cons_reverse_perm_iff {α : Type*} {xs ys : List α} {x} :
+x :: xs.reverse ~ ys ↔ x :: xs ~ ys := by
+  classical simp [cons_perm_iff_perm_erase]
+
+@[simp]
+theorem perm_cons_reverse_iff {α : Type*} {xs ys : List α} {y} :
+xs ~ y :: ys.reverse ↔ xs ~ y :: ys := by
+  rw [perm_comm]; nth_rw 2 [perm_comm]; simp
+
+theorem foldl_and_eq_all {α : Type*} {xs : List α} {p : α → Bool} :
+xs.foldl (λ a x => a && p x) true = xs.all p := by
+  induction xs using List.reverseRecOn; simp
+  nm xs x ih; simp [ih]
+
+theorem mem_iff_mem_iff_subset {α : Type*} {xs ys : List α} :
+(∀ x, x ∈ xs ↔ x ∈ ys) ↔ xs.Subset ys ∧ ys.Subset xs := by
+  unfold List.Subset
+  constructor
+  · intro h; simp [h]
+  rintro ⟨h₁, h₂⟩ a
+  constructor
+  · apply h₁
+  · apply h₂
+
+theorem perm_iff_subset_of_nodup {α : Type*} {xs ys : List α}
+(hx : xs.Nodup) (hy : ys.Nodup) : xs ~ ys ↔ xs.Subset ys ∧ ys.Subset xs := by
+  rw [List.perm_ext_iff_of_nodup hx hy]
+  exact mem_iff_mem_iff_subset

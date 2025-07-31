@@ -213,3 +213,14 @@ q.liftWith f h = f q.out := by
   dsimp
   intro h h₃
   exact h₂
+
+theorem Quotient.lift_eq {α β : Type*} {s : Setoid α} {q : Quotient s}
+{f : α → β} {h : ∀ (x y : α), s x y → f x = f y} :
+q.lift f h = f q.out := by
+  classical
+  apply q.ind
+  clear q
+  intro x
+  simp
+  apply h
+  exact s.symm # mk_out x

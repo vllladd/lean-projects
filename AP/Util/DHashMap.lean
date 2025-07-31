@@ -1,0 +1,256 @@
+import Std
+import AP.Util.List
+import AP.Util.Sigma
+import AP.Util.Fintype
+import AP.Util.Quotient
+import AP.Util.Multiset
+
+variable {α : Type*} {β : α → Type*} {γ : α → Type*}
+variable [hh₁ : LinearOrder α] [hh₂ : Hashable α]
+variable {mp : Std.DHashMap α β}
+
+namespace Std.DHashMap
+
+@[simp]
+theorem toList_empty : (∅ : Std.DHashMap α β).toList = [] := by
+  ext:1; simp
+
+@[simp]
+theorem nodup_keys : mp.keys.Nodup := by
+  unfold List.Nodup
+  convert mp.distinct_keys
+  simp
+
+@[simp]
+theorem nodup_toList : mp.toList.Nodup := by
+  have h₁ := mp.nodup_keys
+  rw [←map_fst_toList_eq_keys] at h₁
+  exact List.Nodup.of_map _ h₁
+
+theorem equiv_iff_get? {m₁ m₂ : Std.DHashMap α β} :
+m₁.Equiv m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
+  constructor <;> intro h
+  · intro i
+    by_cases h₁ : i ∈ m₁ <;> have h₂ := h₁ <;> rw [h.mem_iff] at h₂
+    · exact Equiv.get?_eq h
+    · rw [get?_eq_none h₁, get?_eq_none h₂]
+  rw [equiv_iff_toList_perm]
+  rw [List.perm_ext_iff_of_nodup nodup_toList nodup_toList]
+  rintro ⟨i, x⟩; simp [h]
+
+theorem toList_ofList_perm {xs : List (Σ i, β i)} (h : (xs.map (·.1)).Nodup) :
+(Std.DHashMap.ofList xs).toList.Perm xs := by
+  rw [List.perm_ext_iff_of_nodup nodup_toList # h.of_map _]
+  rintro ⟨i, x⟩
+  simp
+  constructor <;> intro h₁
+  · contrapose! h₁
+    by_cases h₂ : i ∈ ofList xs <;> simp at h₂
+    · obtain ⟨y, h₂⟩ := h₂
+      rw [get?_ofList_of_mem]
+      rotate_left
+      · simp
+        rfl
+      · exact y
+      · simp
+        unfold List.Nodup at h
+        rw [List.pairwise_map] at h
+        exact h
+      · exact h₂
+      simp
+      rintro rfl
+      contradiction
+    rw [get?_ofList_of_contains_eq_false]; simp
+    simpa
+  rw [get?_ofList_of_mem]
+  rotate_left
+  · simp
+    rfl
+  · exact x
+  · simp
+    unfold List.Nodup at h
+    rw [List.pairwise_map] at h
+    exact h
+  · exact h₁
+  simp
+
+theorem ofList_toList_equiv : ofList mp.toList ~m mp := by
+  rw [equiv_iff_toList_perm]
+  apply toList_ofList_perm
+  simp
+
+instance : HasEquiv (Std.DHashMap α β) :=
+  ⟨Std.DHashMap.Equiv⟩
+
+theorem equiv_def {m₁ m₂ : Std.DHashMap α β} : m₁ ≈ m₂ ↔ m₁ ~m m₂ := by rfl
+
+def toSortedList (m : Std.DHashMap α β) : List (Σ i, β i) :=
+  m.toList.mergeSort (·.1 ≤ ·.1)
+
+theorem toSortedList_eq_of {m₁ m₂ : Std.DHashMap α β}
+(h : m₁ ~m m₂) : m₁.toSortedList = m₂.toSortedList := by
+  rename' m₁ => a
+  rename' m₂ => b
+  let r := λ (a b : Σ i, β i) => a.1 ≤ b.1
+  change a.toList.mergeSort (r · ·) = b.toList.mergeSort (r · ·)
+  rw [Std.DHashMap.equiv_iff_toList_perm] at h
+  generalize hx : a.toList = xs at h ⊢
+  generalize hy : b.toList = ys at h ⊢
+  have h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c :=
+    λ a b c _ _ _ => Preorder.le_trans a.1 b.1 c.1
+  have h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a :=
+    λ a b _ _ => LinearOrder.le_total a.1 b.1
+  apply List.eq_of_perm_of_sorted_loc (r := r)
+  · trans xs
+    · apply List.mergeSort_perm
+    apply h.trans; symm
+    apply List.mergeSort_perm
+  · exact List.sorted_mergeSort_loc h_tra h_tot
+  · simp only [h.mem_iff] at h_tra h_tot
+    exact List.sorted_mergeSort_loc h_tra h_tot
+  all_goals simp only [List.mem_mergeSort]; try assumption
+  clear h_tra h_tot
+  rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂ (h₃ : i ≤ j) (h₄ : j ≤ i)
+  have h₅ := le_antisymm h₃ h₄; clear h₃ h₄
+  subst h₅
+  simp
+  subst hx hy
+  rw [Std.DHashMap.mem_toList_iff_get?_eq_some] at h₁ h₂
+  simp [h₁] at h₂
+  exact h₂
+
+@[simp]
+theorem toSortedList_eq {m₁ m₂ : Std.DHashMap α β} :
+m₁.toSortedList = m₂.toSortedList ↔ m₁ ~m m₂ := by
+  refine' ⟨λ h => _, toSortedList_eq_of⟩
+  unfold toSortedList at h
+  rw [equiv_iff_toList_perm]
+  exact List.perm_of_mergeSort_eq_mergeSort h
+
+@[simp]
+theorem nodup_toSortedList : mp.toSortedList.Nodup := by
+  simp [toSortedList]
+
+@[simp]
+theorem sorted_toSortedList : mp.toSortedList.Sorted (·.1 ≤ ·.1) := by
+  apply List.sorted_mergeSort_loc
+  · rintro ⟨i, x⟩ ⟨j, y⟩ ⟨k, z⟩
+    simp
+    intro h₁ h₂ h₃ h₄ h₅
+    exact h₄.trans h₅
+  · rintro ⟨i, x⟩ ⟨j, y⟩
+    simp
+    intro h₁ h₂
+    apply le_total
+
+theorem ofList_snoc {xs} {x : Σ i, β i} :
+ofList (xs ++ [x]) = (ofList xs).insert x.fst x.snd := by
+  simp_rw [ofList, insertMany_append]; rfl
+
+@[simp]
+theorem toList_eq_nil_iff : mp.toList = [] ↔ mp ~m ∅ := by
+  rw [←toList_empty, List.ext_get_iff]
+  simp [isEmpty_eq_size_eq_zero]
+
+theorem fold_eq_fold_of_equiv {γ : Type*}
+{f : γ → (i : α) → β i → γ} {z : γ} {m₁ m₂ : Std.DHashMap α β}
+(hf : ∀ acc i x j y, f (f acc i x) j y = f (f acc j y) i x)
+(h : m₁ ~m m₂) : m₁.fold f z = m₂.fold f z := by
+  simp [DHashMap.fold_eq_foldl_toList]
+  replace h := Equiv.toList_perm h
+  generalize m₁.toList = xs at h ⊢
+  generalize m₂.toList = ys at h ⊢
+  refine' List.foldl_eq_foldl_of_perm (λ a x y => _) h
+  simp [hf]
+
+def decideEquiv [∀ i, DecidableEq # β i] (m₁ m₂ : DHashMap α β) : Bool :=
+  m₁.size = m₂.size ∧ m₁.fold (λ acc i x => acc && m₂.get? i = some x) true
+
+theorem mem_of_get?_eq_some {i x} (h : mp.get? i = some x) : i ∈ mp := by
+  simp [mem_iff_isSome_get?, h]
+
+theorem get?_eq_some_iff_find?_toList {i x} :
+mp.get? i = some x ↔ mp.toList.find?
+(λ (x : Σ (i : α), β i) => x.1 = i) = some ⟨i, x⟩ := by
+  generalize hx : mp.toList = xs
+  replace hx : mp.toList.Perm xs := by rw [hx]
+  induction xs generalizing mp
+  · simp at hx ⊢
+    intro h
+    replace h := mem_of_get?_eq_some h
+    exact not_mem_of_isEmpty hx h
+  nm y xs ih
+  rcases y with ⟨j, y⟩
+  simp
+  have h₁ : ∀ z ∈ xs, z.1 ≠ j :=
+    by
+      rintro ⟨k, z⟩ hz rfl
+      have h₁ := mp.nodup_keys
+      dsimp at hx
+      rw [←map_fst_toList_eq_keys] at h₁
+      rw [List.nodup_map_iff_inj_on # by simp] at h₁
+      specialize h₁ ⟨k, y⟩ _ ⟨k, z⟩ _
+      · simp [hx.mem_iff]
+      · simp [hx.mem_iff, hz]
+      simp at h₁
+      symm at h₁
+      subst h₁
+      replace hx : (⟨k, z⟩ :: xs).Nodup := by
+        simp [hx.symm.nodup_iff]
+      simp at hx
+      tauto
+  by_cases hj : j = i <;> simp [hj]
+  · subst hj
+    replace hx : mp.get? j = some y :=
+      by
+        rw [←mem_toList_iff_get?_eq_some]
+        simp [hx.mem_iff]
+    simp at hx
+    simp [hx]
+  specialize @ih (mp.erase j) _
+  · rw [List.perm_ext_iff_of_nodup # by simp]
+    · rintro ⟨k, z⟩
+      simp
+      rw [get?_erase]
+      simp
+      by_cases hk : j = k <;> simp [hk]
+      · subst hk
+        intro h
+        specialize h₁ _ h
+        simp at h₁
+      rw [←mem_toList_iff_get?_eq_some]
+      rw [hx.mem_iff]
+      simp
+      intro h₂
+      tauto
+    suffices (⟨j, y⟩ :: xs).Nodup from List.Nodup.of_cons this
+    rw [hx.symm.nodup_iff]; simp
+  rw [get?_erase] at ih
+  simp [hj] at ih
+  exact ih
+
+#check 0 #exit
+
+theorem equiv_iff_decideEquiv [hb : ∀ i, DecidableEq # β i]
+{m₁ m₂ : DHashMap α β} : m₁.decideEquiv m₂ ↔ m₁ ~m m₂ := by
+  simp [decideEquiv]
+  rw [fold_eq_foldl_toList]
+  simp_rw [←length_toList]
+  rw [equiv_iff_toList_perm]
+  simp_rw [get?_eq_some_iff_find?_toList]
+  rw [List.perm_ext_iff_of_nodup (by simp) (by simp)]
+  generalize m₁.toList = xs
+  generalize m₂.toList = ys
+  clear m₁ m₂
+  simp only [Sigma.eta, List.find?_eq_some_iff_getElem, decide_true,
+    Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+    true_and, List.foldl_and_eq_all, List.all_eq_true,
+    decide_eq_true_eq]
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    apply iff_of
+    · intro h
+      specialize h₂ _ h
+      obtain ⟨j, h₂, h₃, h₄⟩ := h₂
+      exact List.mem_of_getElem h₃
+    intro h₃
