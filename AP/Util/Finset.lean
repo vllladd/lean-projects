@@ -109,7 +109,7 @@ insert (f ⟨n, by linarith⟩) (mkRaw # λ (⟨k, hk⟩ : Fin n) => f ⟨k, by 
 theorem mkRaw_card_le {α β} [ha₁ : Fintype α] {f : α → β} :
 (mkRaw f).card ≤ Fintype.card α := by
   apply Finset.card_le_card_of_surjOn f
-  simp [mkRaw_eq]
+  simp
   intro y
   simp
 

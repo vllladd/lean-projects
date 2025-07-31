@@ -128,14 +128,10 @@ def equiv_toLinearOrder_aux {α β : Type*}
   · intro a b
     simp_rw [Ord.le_def, Ord.lt_def]
     simp [h_ord, compare_eq]
-    split_ifs <;> simp
-    · nm h₁ h₂
-      contrapose! h₁
-      exact le_of_lt h₂
-    · nm h₁ h₂ h₃
-      simp [h₃] at h₁
-    · nm h₁ h₂ h₃ h₄
-      simp [h₂] at h₄
+    split_ifs <;> simp_all
+    nm h₁ h₂ h₃;
+    contrapose! h₂
+    exact le_of_lt h₃
   · intro a b
     simp_rw [Ord.le_def]
     simp [h_ord, compare_eq]
@@ -183,7 +179,7 @@ def Equiv.toLinearOrder {α β : Type*}
       · intro a b c ha hb
         exact ha.trans hb
       · intro a b
-        exact lt_iff_le_not_le
+        exact lt_iff_le_not_ge
   let h₇ : PartialOrder β :=
     by
       constructor

@@ -158,18 +158,18 @@ theorem exists_takeWhile_eq {α : Type*} (xs : List α) (P : α → Bool) :
     induction xs using reverseRecOn
     · simp at hx
     nm xs y ih
-    rw [List.takeWhile_append] at hx
+    rw [takeWhile_append] at hx
     split_ifs at hx with h₁
-    · simp [List.take_append] at hx
+    · simp [take_append, take_add] at hx
       simp [h₁] at ih
       rcases hx with h₂ | h₂
       · exact ih h₂
-      rw [List.takeWhile_cons] at h₂
+      rw [takeWhile_cons] at h₂
       split_ifs at h₂ with h₃
       · simp at h₂
         rwa [h₂]
       simp at h₂
-    rw [List.take_append_eq_append_take] at hx
+    rw [take_append] at hx
     simp at hx
     rcases hx with h₂ | h₂
     · exact ih h₂
@@ -182,10 +182,10 @@ theorem exists_takeWhile_eq {α : Type*} (xs : List α) (P : α → Bool) :
   rw [←h₁]
   cases ys
   · simp at h₁ ⊢
-    rw [←List.takeWhile_eq_self_iff] at h₁
+    rw [←takeWhile_eq_self_iff] at h₁
     simp [h₁]
   nm y ys
-  have h₂ := List.not_apply_of_takeWhile_append_cons_eq_self h₁
+  have h₂ := not_apply_of_takeWhile_append_cons_eq_self h₁
   rw [append_cons, takeWhile_append, takeWhile_append, takeWhile_idem]
   simp [h₂]
 
@@ -309,7 +309,7 @@ theorem eq_of_perm_of_sorted_loc {α : Type*} {xs ys : List α} {r}
     specialize hx₁ y h₃
     specialize hy₁ x h₂
     specialize h_ant x y
-    simp [hxy.symm, h₂, h₃, hx₁, hy₁] at h_ant
+    simp [hxy.symm, h₃, hx₁, hy₁] at h_ant
     contradiction
   rintro rfl
   simp at hp
@@ -373,7 +373,7 @@ xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
     specialize hx₂ _ h₃
     specialize hy₂ _ h₂
     apply h₁
-    apply h_ant <;> simp [h₂, h₃, hx₂, hy₂]
+    apply h_ant <;> simp [h₃, hx₂, hy₂]
   rintro rfl
   apply ih hx₃ hy₃
   · intro a b ha hb h₁ h₂

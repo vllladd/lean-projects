@@ -12,7 +12,7 @@ theorem not_mem_empty' {i : α} : i ∉ (∅ : Std.ExtDHashMap α β) :=
 
 @[simp]
 theorem not_mem_lift_empty {i : α} :
-¬Membership.mem (γ := Std.ExtDHashMap α β) ⟦∅⟧ i :=
+¬Membership.mem (γ := Std.ExtDHashMap α β) ⟨⟦∅⟧⟩ i :=
   not_mem_empty
 
 theorem mem_iff_get?_eq_some {i : α} : i ∈ mp ↔ ∃ x, mp.get? i = some x := by
@@ -35,7 +35,7 @@ theorem get?_eq_none_iff {i} : mp.get? i = none ↔ i ∉ mp := by
   simp [hx]
 
 def toList (mp : Std.ExtDHashMap α β) : List (Σ i, β i) :=
-  mp.lift Std.DHashMap.toSortedList # by simp [Std.DHashMap.equiv_def]
+  mp.lift Std.DHashMap.toSortedList # by simp
 
 @[simp]
 theorem toList_empty : (∅ : Std.ExtDHashMap α β).toList = [] := by
@@ -61,7 +61,9 @@ i ∈ ofList xs ↔ ∃ x, ⟨i, x⟩ ∈ xs := by
     Sigma.exists, exists_and_right, exists_eq_right, decide_eq_true_eq]
 
 theorem eq_empty_iff : mp = ∅ ↔ ∀ i, i ∉ mp := by
-  change mp = ⟦∅⟧ ↔ _
+  change mp = ⟨⟦∅⟧⟩ ↔ _
+  rcases mp with ⟨mp⟩
+  simp
   apply mp.ind
   intro m
   rw [Quotient.eq_iff_equiv]
@@ -70,8 +72,9 @@ theorem eq_empty_iff : mp = ∅ ↔ ∀ i, i ∉ mp := by
   exact Std.DHashMap.isEmpty_iff_forall_not_mem
 
 theorem ext_iff' {m₁ m₂ : Std.ExtDHashMap α β} :
-m₁ = m₂ ↔ m₁.out.Equiv m₂.out := by
-  symm
+m₁ = m₂ ↔ m₁.1.out.Equiv m₂.1.out := by
+  rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+  symm; simp
   induction m₁, m₂ using Quotient.inductionOn₂
   nm m₁ m₂
   change ⟦m₁⟧.out ≈ ⟦m₂⟧.out ↔ _
@@ -81,6 +84,7 @@ m₁ = m₂ ↔ m₁.out.Equiv m₂.out := by
 
 theorem ext_iff {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
+  rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
   induction m₁, m₂ using Quotient.inductionOn₂
   rw [Quotient.eq_iff_equiv]
   exact Std.DHashMap.equiv_iff_get?
@@ -97,8 +101,7 @@ theorem ofList_eq_ofList_iff {xs ys : List (Σ i, β i)}
 ofList xs = ofList ys ↔ xs.Perm ys := by
   have hx' := hx.of_map _
   have hy' := hy.of_map _
-  unfold ofList Quotient.mk'
-  rw [Quotient.eq_iff_equiv]
+  simp [ofList]
   change Std.DHashMap.Equiv _ _ ↔ _
   rw [Std.DHashMap.equiv_iff_toList_perm]
   rw [List.perm_ext_iff_of_nodup hx' hy']
@@ -144,23 +147,26 @@ theorem mem_range [ha : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ ran
   simp
 
 @[simp]
-theorem nonempty_insert {x} : Insert.insert x mp ≠ ⟦∅⟧ := by
+theorem nonempty_insert {x} : Insert.insert x mp ≠ ⟨⟦∅⟧⟩ := by
   apply ne_of_congr (x.1 ∈ ·); simp
 
 @[simp]
 theorem nodup_toList : mp.toList.Nodup := by
+  rcases mp with ⟨mp⟩
   apply mp.ind; intro mp
   exact Std.DHashMap.nodup_toSortedList
 
 @[simp]
 theorem sorted_toList : mp.toList.Sorted (·.1 ≤ ·.1) := by
-  apply mp.ind; simp [toList]
+  rcases mp with ⟨mp⟩
+  apply mp.ind; simp [toList, lift]
 
 @[simp]
 theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
-  unfold toList get?
+  rcases mp with ⟨mp⟩
+  unfold toList get? lift
   apply mp.ind
-  intro m
+  clear mp; intro mp
   rcases x with ⟨i, x⟩
   simp [Std.DHashMap.toSortedList]
 
@@ -189,6 +195,14 @@ m₁.toList = m₂.toList ↔ m₁ = m₂ := by
 @[simp]
 theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
   rw [←toList_empty, toList_eq_toList]
+
+theorem eq_iff_inner_eq {m₁ m₂ : Std.ExtDHashMap α β} :
+m₁ = m₂ ↔ m₁.1 = m₂.1 := by
+  rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
+
+theorem inner_eq_iff_eq {m₁ m₂ : Std.ExtDHashMap α β} :
+m₁.1 = m₂.1 ↔ m₁ = m₂ := by
+  rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
 
 def fold {γ : Type*}
 (mp : Std.ExtDHashMap α β) (f : γ → (i : α) → β i → γ) (z : γ)

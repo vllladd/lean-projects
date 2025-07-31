@@ -132,7 +132,7 @@ theorem heq_fn {α β γ : Type*} {f : α → β} {p : γ → Prop} {x : α} {y 
 
 theorem inst_decidable_eq {P : Prop} {H₁ H₂ : Decidable P} : H₁ = H₂ := by
   rcases H₁ with h₁ | h₁ <;> rcases H₂ with h₂ | h₂
-  all_goals first | contradiction | simp [h₁]
+  all_goals first | contradiction | simp
 
 theorem inst_decidablePred_eq {α : Type*} {p : α → Prop}
 {H₁ H₂ : DecidablePred p} : H₁ = H₂ := by

@@ -252,7 +252,7 @@ theorem Finset.mkRaw_card_eq_fintype_card_iff_injective.{u} {α β : Type u}
   constructor <;> intro h
   · simp [h]
   rwa [Cardinal.toNat_eq_iff] at h
-  simp [Fintype.card_eq_zero_iff]
+  simp
 
 @[simp]
 theorem Finset.card_le_fintype_card {α : Type*} [ha : Fintype α] {s : Finset α} :

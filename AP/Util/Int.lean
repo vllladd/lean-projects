@@ -68,10 +68,9 @@ theorem succ_div_2_eq_div_succ_iff {n : ℤ} (hp : 0 ≤ n) :
   by_cases hn : n = 0; simp [hn]; obtain ⟨k, hk⟩ := hv # n - 1
   replace hk := congrArg (· + 1) hk; simp at hk; subst hk
   replace hp : 0 ≤ k := by
-    cases k <;> nm k; simp only [Int.ofNat_eq_coe, Nat.cast_nonneg,
-      implies_true, imp_self]
+    cases k <;> nm k; simp only [Int.ofNat_eq_coe, Nat.cast_nonneg]
     cases k; simp only [Int.reduceNegSucc, neg_add_cancel,
-      implies_true, imp_self, not_true_eq_false] at hn
+      not_true_eq_false] at hn
     nm k; rw [negSucc_succ] at hp
     have := Int.negSucc_lt_zero k; linarith
   rw [add_assoc]; simp

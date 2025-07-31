@@ -14,11 +14,11 @@ namespace Map
 
 open Std.DHashMap
 
-def empty : Map α β := ⟨⟦∅⟧⟩
+def empty : Map α β := ⟨∅⟩
 
 instance : EmptyCollection (Map α β) := ⟨empty⟩
 
-theorem empty_def : (∅ : Map α β) = ⟨⟦∅⟧⟩ := rfl
+theorem empty_def : (∅ : Map α β) = ⟨∅⟩ := rfl
 
 def insertP (x : α × β) (mp : Map α β) : Map α β :=
   ⟨insert x.toSigma mp.inner⟩
@@ -83,7 +83,7 @@ theorem get!_map_eq_of_pos {f : α → β → γ} {i : α}
 
 def toList (mp : Map α β) : List (α × β) :=
   mp.inner.lift (λ m => m.toSortedList.map Sigma.toProd) #
-    by simp [equiv_def]
+    by simp
 
 @[simp]
 theorem ofList_nil : ofList (α := α) (β := β) [] = ∅ := rfl
@@ -136,12 +136,12 @@ theorem not_mem_empty {i} : i ∉ (∅ : Map α β) :=
   not_mem_empty'
 
 theorem ext_iff' {m₁ m₂ : Map α β} :
-m₁ = m₂ ↔ m₁.inner.out ~m m₂.inner.out := by
+m₁ = m₂ ↔ m₁.inner.1.out ~m m₂.inner.1.out := by
   rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
   exact Std.ExtDHashMap.ext_iff'
 
 theorem ext' {m₁ m₂ : Map α β}
-(h : m₁.inner.out ~m m₂.inner.out) : m₁ = m₂ := by
+(h : m₁.inner.1.out ~m m₂.inner.1.out) : m₁ = m₂ := by
   rwa [ext_iff']
 
 theorem ext_iff {m₁ m₂ : Map α β} : m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
@@ -180,41 +180,51 @@ theorem mem_range [ha : Fintype α] {f : α → β} {i : α} : i ∈ range f :=
 @[simp]
 theorem nonempty_insert {x} : Insert.insert x mp ≠ ∅ := by
   simp [ext_iff', ←equiv_def]
-  exact Std.ExtDHashMap.nonempty_insert
+  rcases mp with ⟨mp⟩
+  rw [insert_def]
+  simp
+  have h₁ := @Std.ExtDHashMap.nonempty_insert α (λ _ => β) _ _
+    mp x.toSigma
+  simp at h₁
+  rwa [Std.ExtDHashMap.inner_eq_iff_eq]
 
 @[simp]
 theorem nodup_toList : mp.toList.Nodup := by
-  rcases mp with ⟨mp⟩
-  rw [toList, Quotient.lift_eq]
+  rcases mp with ⟨⟨mp⟩⟩; unfold toList Std.ExtDHashMap.lift
+  rw [Quotient.lift_eq]
   rw [List.nodup_map_iff # by simp]
   simp
 
 @[simp]
 theorem sorted_toList : mp.toList.Sorted (·.1 ≤ ·.1) := by
-  rcases mp with ⟨mp⟩
-  apply mp.ind; simp [toList]
+  rcases mp with ⟨⟨mp⟩⟩; unfold toList Std.ExtDHashMap.lift
+  apply mp.ind; simp
 
 @[simp]
 theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
-  rcases mp with ⟨mp⟩
+  rcases mp with ⟨⟨mp⟩⟩; unfold toList
   apply mp.ind
   clear mp; intro mp
-  unfold toList toSortedList get? Std.ExtDHashMap.get?
+  unfold toSortedList get? Std.ExtDHashMap.get?
   rcases x with ⟨x, y⟩
+  unfold Std.ExtDHashMap.lift
   simp
 
 @[simp]
 theorem toList_eq_toList {m₁ m₂ : Map α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
-  rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+  rcases m₁ with ⟨⟨m₁⟩⟩; rcases m₂ with ⟨⟨m₂⟩⟩
   simp [toList, Quotient.lift_eq, ←equiv_def]
 
 @[simp]
 theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
-  rcases mp with ⟨mp⟩
+  rcases mp with ⟨⟨mp⟩⟩; unfold toList
   apply mp.ind; clear mp; intro mp
-  simp [empty_def, toList]
-  rw [Quotient.mk_eq_mk]
+  simp [empty_def]
+  unfold Std.ExtDHashMap.lift
+  simp
+  change _ ↔ _ = Std.ExtDHashMap.mk' _
+  simp
   change _ ↔ _ ~m _
   simp [toSortedList]
 

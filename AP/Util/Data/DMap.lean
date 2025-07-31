@@ -14,11 +14,11 @@ variable {α : Type u} {β : α → Type v} {γ : α → Type w}
 variable [hh₁ : LinearOrder α] [hh₂ : Hashable α]
 variable {mp : DMap α β}
 
-def empty : DMap α β := ⟨⟦∅⟧⟩
+def empty : DMap α β := ⟨∅⟩
 
 instance : EmptyCollection (DMap α β) := ⟨empty⟩
 
-theorem empty_def : (∅ : DMap α β) = ⟨⟦∅⟧⟩ := rfl
+theorem empty_def : (∅ : DMap α β) = ⟨∅⟩ := rfl
 
 def insertP (x : Σ i, β i) (mp : DMap α β) : DMap α β :=
   ⟨insert x mp.inner⟩
@@ -82,7 +82,7 @@ theorem get!_map_eq_of_pos {f : ∀ i, β i → γ i} {i : α}
   simp [get!, get?_map, hx]
 
 def toList (mp : DMap α β) : List (Σ i, β i) :=
-  mp.inner.lift toSortedList # by simp [equiv_def]
+  mp.inner.lift toSortedList # by simp
 
 @[simp]
 theorem ofList_nil : ofList (α := α) (β := β) [] = ∅ := rfl
@@ -134,12 +134,12 @@ theorem not_mem_empty {i} : i ∉ (∅ : DMap α β) :=
   not_mem_empty'
 
 theorem ext_iff' {m₁ m₂ : DMap α β} :
-m₁ = m₂ ↔ m₁.inner.out ~m m₂.inner.out := by
+m₁ = m₂ ↔ m₁.inner.1.out ~m m₂.inner.1.out := by
   rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
   exact Std.ExtDHashMap.ext_iff'
 
 theorem ext' {m₁ m₂ : DMap α β}
-(h : m₁.inner.out ~m m₂.inner.out) : m₁ = m₂ := by
+(h : m₁.inner.1.out ~m m₂.inner.1.out) : m₁ = m₂ := by
   rwa [ext_iff']
 
 theorem ext_iff {m₁ m₂ : DMap α β} : m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
@@ -174,6 +174,9 @@ theorem mem_range [ha : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ ran
 @[simp]
 theorem nonempty_insert {x} : Insert.insert x mp ≠ ∅ := by
   simp [ext_iff', ←equiv_def]
+  rcases mp with ⟨mp⟩
+  simp [insert_def]
+  apply ne_of_congr Std.ExtDHashMap.mk'
   exact Std.ExtDHashMap.nonempty_insert
 
 @[simp]

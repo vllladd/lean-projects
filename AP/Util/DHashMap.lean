@@ -229,28 +229,28 @@ mp.get? i = some x ↔ mp.toList.find?
   simp [hj] at ih
   exact ih
 
-#check 0 #exit
-
-theorem equiv_iff_decideEquiv [hb : ∀ i, DecidableEq # β i]
-{m₁ m₂ : DHashMap α β} : m₁.decideEquiv m₂ ↔ m₁ ~m m₂ := by
-  simp [decideEquiv]
-  rw [fold_eq_foldl_toList]
-  simp_rw [←length_toList]
-  rw [equiv_iff_toList_perm]
-  simp_rw [get?_eq_some_iff_find?_toList]
-  rw [List.perm_ext_iff_of_nodup (by simp) (by simp)]
-  generalize m₁.toList = xs
-  generalize m₂.toList = ys
-  clear m₁ m₂
-  simp only [Sigma.eta, List.find?_eq_some_iff_getElem, decide_true,
-    Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-    true_and, List.foldl_and_eq_all, List.all_eq_true,
-    decide_eq_true_eq]
-  constructor
-  · rintro ⟨h₁, h₂⟩
-    apply iff_of
-    · intro h
-      specialize h₂ _ h
-      obtain ⟨j, h₂, h₃, h₄⟩ := h₂
-      exact List.mem_of_getElem h₃
-    intro h₃
+-- #check 0 #exit
+-- 
+-- theorem equiv_iff_decideEquiv [hb : ∀ i, DecidableEq # β i]
+-- {m₁ m₂ : DHashMap α β} : m₁.decideEquiv m₂ ↔ m₁ ~m m₂ := by
+--   simp [decideEquiv]
+--   rw [fold_eq_foldl_toList]
+--   simp_rw [←length_toList]
+--   rw [equiv_iff_toList_perm]
+--   simp_rw [get?_eq_some_iff_find?_toList]
+--   rw [List.perm_ext_iff_of_nodup (by simp) (by simp)]
+--   generalize m₁.toList = xs
+--   generalize m₂.toList = ys
+--   clear m₁ m₂
+--   simp only [Sigma.eta, List.find?_eq_some_iff_getElem, decide_true,
+--     Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+--     true_and, List.foldl_and_eq_all, List.all_eq_true,
+--     decide_eq_true_eq]
+--   constructor
+--   · rintro ⟨h₁, h₂⟩
+--     apply iff_of
+--     · intro h
+--       specialize h₂ _ h
+--       obtain ⟨j, h₂, h₃, h₄⟩ := h₂
+--       exact List.mem_of_getElem h₃
+--     intro h₃

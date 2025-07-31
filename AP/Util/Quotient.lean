@@ -108,7 +108,7 @@ Quot.rec (λ x => cast (quot_aux₁ h x) (f x)) (quot_aux₂ h) q = f q.out := b
   generalize_proofs h₁ h₂ h₃ h₄ h₅ h₆
   have h₇ := h₁.choose_spec
   obtain ⟨w, rfl⟩ := h₁
-  simp_all only [PSigma.mk.injEq, heq_eq_eq]
+  dsimp
   generalize_proofs h₈ h₉ at h₄ ⊢
   rw [mk_eq_mk] at h₇
   generalize_proofs at h₇
