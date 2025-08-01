@@ -484,3 +484,59 @@ theorem perm_iff_subset_of_nodup {α : Type*} {xs ys : List α}
 (hx : xs.Nodup) (hy : ys.Nodup) : xs ~ ys ↔ xs.Subset ys ∧ ys.Subset xs := by
   rw [List.perm_ext_iff_of_nodup hx hy]
   exact mem_iff_mem_iff_subset
+
+@[simp]
+theorem nil_subset' {α : Type*} {xs : List α} : [].Subset xs := by
+  apply nil_subset
+
+-- theorem cons_subset_cons_iff_of_nodup {α : Type*} {xs ys : List α} {x}
+-- (hx : xs.Nodup) (hy : ys.Nodup) : (x :: xs).Subset (x :: ys) ↔ xs.Subset ys := by
+--   sorry
+
+-- #check 0 #exit
+
+theorem nodup_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
+(h₁ : xs.Nodup) (h₂ : xs.Subset ys)
+(h₃ : xs.length = ys.length) : ys.Nodup := by
+  classical
+  generalize hn : ys.length = n at h₃
+  induction n generalizing xs ys
+  · simp at hn
+    simp [hn]
+  nm n ih
+  cases xs <;> simp at h₃; nm x xs
+  cases ys <;> simp at hn; nm y ys
+  simp at h₁ ⊢
+  rcases h₁ with ⟨h₁, h₄⟩
+  
+  specialize @ih ((x :: xs).erase y) ys _ _ _
+  · unfold List.erase
+    split <;> nm b h₅ <;> simp at h₅
+    · simpa [h₅]
+    simp
+    constructor
+    · rw [mem_erase_of_ne h₅]; exact h₁
+    exact h₄.erase y
+  · intro z hz
+    unfold List.erase at hz
+    split at hz <;> nm b h₅ <;> simp at h₅
+    · subst h₅
+      specialize @h₂ z
+      simp [hz] at h₂
+      rcases h₂ with (rfl | h₂)
+      · contradiction
+      · exact h₂
+    simp at hz
+    rcases hz with (rfl | hz)
+  by_cases hy : y = x
+  · subst hy
+    simp at ih
+    simp [ih]
+
+#check 0 #exit
+
+theorem subset_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
+(hx : xs.Nodup) (h₁ : xs.Subset ys)
+(h₂ : xs.length = ys.length) : ys.Subset xs := by
+  have hy := nodup_of_nodup_and_subset_and_length_eq hx h₁ h₂
+  sorry
