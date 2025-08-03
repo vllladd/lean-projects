@@ -1,6 +1,33 @@
+import AP.Util.Nat
 import AP.Util.Fintype
+import AP.Util.Function
 
 namespace Finset
+
+theorem sum_eq_sum_of_fn_cong {S : Finset ℕ} {f g : ℕ → ℕ}
+(h : ∀ i ∈ S, f i = g i) : ∑ x ∈ S, f x = ∑ x ∈ S, g x := by
+  apply Finset.sum_equiv (e := Equiv.refl ℕ); simp; simpa
+
+@[simp]
+theorem sum_fn_set_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ} (ha : a ∈ S) :
+∑ x ∈ S, fn_set a b f x =
+∑ x ∈ S, f x + b - f a := by
+  have h₁ : ∑ x ∈ S.erase a, f x + f a = ∑ x ∈ S, f x := by
+    apply Finset.sum_erase_add; exact ha
+  have h₂ : ∑ x ∈ S.erase a, fn_set a b f x + b =
+  ∑ x ∈ S, fn_set a b f x := by
+    convert Finset.sum_erase_add _ _ ha; simp
+  rw [←h₁, ←h₂, Nat.add_add_sub_cancel]; clear h₁ h₂
+  congr 1; apply sum_eq_sum_of_fn_cong
+  intro i hi; simp at hi; simp [fn_set_eq, hi]
+
+@[simp]
+theorem sum_fn_swap_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ}
+(ha : a ∈ S) (hb : b ∈ S) :
+∑ x ∈ S, fn_swap a b f x =
+∑ x ∈ S, f x := by
+  apply Finset.sum_equiv (e := fn_swap'_equiv a b) <;>
+    intros <;> simp [fn_swap'] <;> aesop
 
 def toSortedList {α : Type*} [h : LinearOrder α]
 (s : Finset α) : List α := by
@@ -128,3 +155,55 @@ f '' s.toSet = (s.image f).toSet := by
 
 theorem ncard_toSet {α : Type*} {s : Finset α} :
 s.toSet.ncard = s.card := by simp
+
+theorem sum_insert_eq_of_mem {α : Type*} [ha : DecidableEq α] {s : Finset α} {x}
+{f : α → ℕ} (h₁ : x ∈ s) : ∑ i ∈ s, f i = ∑ i ∈ (s.erase x), f i := by
+  sorry
+
+#check 0 #exit
+
+end Finset namespace Multiset
+
+theorem card_eq_sum_count_of_subset {α : Type*} [ha : DecidableEq α]
+{m₁ m₂ : Multiset α} (h₁ : m₁ ⊆ m₂) :
+m₁.card = ∑ i ∈ m₁.toFinset ∪ m₂.toFinset, m₁.count i := by
+  induction m₁ using Multiset.induction generalizing m₂ <;> simp
+  nm x m₁ ih
+  simp at h₁
+  rcases h₁ with ⟨h₁, h₂⟩
+
+#check 0 #exit
+
+theorem eq_of_le_and_card_eq {α : Type*} {m₁ m₂ : Multiset α}
+(h₁ : m₁ ≤ m₂) (h₂ : m₁.card = m₂.card) : m₁ = m₂ := by
+  classical
+  ext x
+  apply le_antisymm # count_le_of_le x h₁
+
+end Multiset namespace List
+
+#check 0 #exit
+
+theorem perm_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
+(hx : xs.Nodup) (h₁ : xs.Subset ys)
+(h₂ : xs.length = ys.length) : ys.Subset xs
+
+theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
+(h₁ : xs <+~ ys) (h₂ : xs.length = ys.length) : ys <+~ xs := by
+  generalize hm₁ : Multiset.ofList xs = m₁
+  generalize hm₂ : Multiset.ofList ys = m₂
+  replace h₁ : m₁ ≤ m₂ := by subst m₁ m₂; simpa
+  replace h₂ : m₁.card = m₂.card := by subst m₁ m₂; simpa
+  suffices m₂ ≤ m₁ by subst m₁ m₂; simp at this; exact this
+  clear hm₁ hm₂
+
+#check 0 #exit
+
+theorem subset_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
+(h₁ : xs.Nodup) (h₂ : xs ⊆ ys)
+(h₃ : xs.length = ys.length) : ys ⊆ xs := by
+  have h₄ := nodup_of_nodup_and_subset_and_length_eq h₁ h₂ h₃
+  rw [subset_iff_subperm_of_nodup h₁] at h₂
+  apply le_antisymmrw [subset_iff_subperm_of_nodup h₄]
+
+end List namespace Finset

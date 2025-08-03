@@ -1,5 +1,8 @@
 import AP.Util.Function
 
+import Init.Data.List.Perm
+import Init.Data.List.Sublist
+
 namespace List
 
 @[simp]
@@ -471,8 +474,8 @@ xs.foldl (λ a x => a && p x) true = xs.all p := by
   nm xs x ih; simp [ih]
 
 theorem mem_iff_mem_iff_subset {α : Type*} {xs ys : List α} :
-(∀ x, x ∈ xs ↔ x ∈ ys) ↔ xs.Subset ys ∧ ys.Subset xs := by
-  unfold List.Subset
+(∀ x, x ∈ xs ↔ x ∈ ys) ↔ xs ⊆ ys ∧ ys ⊆ xs := by
+  unfold instHasSubset List.Subset
   constructor
   · intro h; simp [h]
   rintro ⟨h₁, h₂⟩ a
@@ -481,62 +484,39 @@ theorem mem_iff_mem_iff_subset {α : Type*} {xs ys : List α} :
   · apply h₂
 
 theorem perm_iff_subset_of_nodup {α : Type*} {xs ys : List α}
-(hx : xs.Nodup) (hy : ys.Nodup) : xs ~ ys ↔ xs.Subset ys ∧ ys.Subset xs := by
+(hx : xs.Nodup) (hy : ys.Nodup) : xs ~ ys ↔ xs ⊆ ys ∧ ys ⊆ xs := by
   rw [List.perm_ext_iff_of_nodup hx hy]
   exact mem_iff_mem_iff_subset
 
 @[simp]
-theorem nil_subset' {α : Type*} {xs : List α} : [].Subset xs := by
+theorem nil_subset' {α : Type*} {xs : List α} : [] ⊆ xs := by
   apply nil_subset
 
--- theorem cons_subset_cons_iff_of_nodup {α : Type*} {xs ys : List α} {x}
--- (hx : xs.Nodup) (hy : ys.Nodup) : (x :: xs).Subset (x :: ys) ↔ xs.Subset ys := by
---   sorry
+theorem perm_of_nodup_and_subperm_and_length_eq {α : Type*} {xs ys : List α}
+(h₁ : xs <+~ ys) (h₂ : xs.length = ys.length) : ys ~ xs := by
+  classical
+  obtain ⟨zs, h₁, h₃⟩ := h₁
+  trans zs
+  rotate_left
+  · exact h₁
+  rw [h₁.symm.length_eq] at h₂
+  clear! xs
+  symm
+  suffices zs = ys by rw [this]
+  rwa [←h₃.length_eq]
 
--- #check 0 #exit
+theorem subset_iff_subperm_of_nodup {α : Type*} {xs ys : List α}
+(h : xs.Nodup) : xs ⊆ ys ↔ xs <+~ ys := by
+  use subperm_of_subset h
+  rintro ⟨zs, h₁, h₂⟩
+  apply Subset.trans (l₂ := zs)
+  · exact h₁.symm.subset
+  · exact h₂.subset
 
 theorem nodup_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
-(h₁ : xs.Nodup) (h₂ : xs.Subset ys)
+(h₁ : xs.Nodup) (h₂ : xs ⊆ ys)
 (h₃ : xs.length = ys.length) : ys.Nodup := by
   classical
-  generalize hn : ys.length = n at h₃
-  induction n generalizing xs ys
-  · simp at hn
-    simp [hn]
-  nm n ih
-  cases xs <;> simp at h₃; nm x xs
-  cases ys <;> simp at hn; nm y ys
-  simp at h₁ ⊢
-  rcases h₁ with ⟨h₁, h₄⟩
-  
-  specialize @ih ((x :: xs).erase y) ys _ _ _
-  · unfold List.erase
-    split <;> nm b h₅ <;> simp at h₅
-    · simpa [h₅]
-    simp
-    constructor
-    · rw [mem_erase_of_ne h₅]; exact h₁
-    exact h₄.erase y
-  · intro z hz
-    unfold List.erase at hz
-    split at hz <;> nm b h₅ <;> simp at h₅
-    · subst h₅
-      specialize @h₂ z
-      simp [hz] at h₂
-      rcases h₂ with (rfl | h₂)
-      · contradiction
-      · exact h₂
-    simp at hz
-    rcases hz with (rfl | hz)
-  by_cases hy : y = x
-  · subst hy
-    simp at ih
-    simp [ih]
-
-#check 0 #exit
-
-theorem subset_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
-(hx : xs.Nodup) (h₁ : xs.Subset ys)
-(h₂ : xs.length = ys.length) : ys.Subset xs := by
-  have hy := nodup_of_nodup_and_subset_and_length_eq hx h₁ h₂
-  sorry
+  rw [subset_iff_subperm_of_nodup h₁] at h₂
+  have h₄ := perm_of_nodup_and_subperm_and_length_eq h₂ h₃
+  rwa [h₄.nodup_iff]
