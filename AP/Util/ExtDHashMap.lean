@@ -208,3 +208,39 @@ def fold {γ : Type*}
 (mp : Std.ExtDHashMap α β) (f : γ → (i : α) → β i → γ) (z : γ)
 (h : ∀ acc i x j y, f (f acc i x) j y = f (f acc j y) i x) : γ :=
   mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv h
+
+def decideEq [hh : ∀ i, DecidableEq # β i]
+(m₁ m₂ : Std.ExtDHashMap α β) : Bool := by
+  classical
+  rcases m₁ with ⟨m₁⟩
+  rcases m₂ with ⟨m₂⟩
+  apply m₁.liftOn₂ m₂ Std.DHashMap.decideEquiv
+  clear m₁ m₂
+  intro a₁ b₁ a₂ b₂ ha hb
+  simp
+  change a₁.Equiv a₂ at ha
+  change b₁.Equiv b₂ at hb
+  constructor <;> intro h
+  · trans a₁; exact ha.symm
+    trans b₁ <;> assumption
+  · trans a₂; exact ha
+    trans b₂; exact h
+    exact hb.symm
+
+theorem eq_iff_decideEq [hh : ∀ i, DecidableEq # β i]
+{m₁ m₂ : Std.ExtDHashMap α β} : m₁ = m₂ ↔ m₁.decideEq m₂ := by
+  rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+  simp [decideEq]
+  induction m₁, m₂ using Quotient.inductionOn₂
+  simp; rfl
+
+instance [hh : ∀ i, DecidableEq # β i] :
+DecidableEq (Std.ExtDHashMap α β) :=
+  λ m₁ m₂ => match h : m₁.decideEq m₂ with
+  | true => isTrue # by rwa [eq_iff_decideEq]
+  | false => isFalse # by simpa [eq_iff_decideEq]
+
+@[simp]
+theorem decideEq_eq [hh : ∀ i, DecidableEq # β i]
+{m₁ m₂ : Std.ExtDHashMap α β} : m₁.decideEq m₂ = decide (m₁ = m₂) := by
+  simp [eq_iff_decideEq]

@@ -1,6 +1,8 @@
 import Std
+
 import AP.Util.List
 import AP.Util.Sigma
+import AP.Util.Finset
 import AP.Util.Fintype
 import AP.Util.Quotient
 import AP.Util.Multiset
@@ -229,25 +231,79 @@ mp.get? i = some x ↔ mp.toList.find?
   simp [hj] at ih
   exact ih
 
-#check 0 #exit
+@[simp]
+theorem get_keys_eq_get_keys_iff
+{i j} {h₁ : i < mp.keys.length} {h₂ : j < mp.keys.length} :
+mp.keys[i] = mp.keys[j] ↔ i = j :=
+  mp.nodup_keys.getElem_inj_iff
+
+@[simp]
+theorem fst_get_toList_eq_fst_get_toList_iff
+{i j} {h₁ : i < mp.toList.length} {h₂ : j < mp.toList.length} :
+mp.toList[i].fst = mp.toList[j].fst ↔ i = j := by
+  have h₃ := @mp.get_keys_eq_get_keys_iff (i := i) (j := j)
+  specialize @h₃ _ _
+  · convert h₁; simp
+  · convert h₂; simp
+  simp only [←map_fst_toList_eq_keys, List.getElem_map] at h₃
+  exact h₃
 
 theorem equiv_iff_decideEquiv [hb : ∀ i, DecidableEq # β i]
-{m₁ m₂ : DHashMap α β} : m₁.decideEquiv m₂ ↔ m₁ ~m m₂ := by
-  simp [decideEquiv]
+{m₁ m₂ : DHashMap α β} : m₁ ~m m₂ ↔ m₁.decideEquiv m₂ := by
+  symm; simp [decideEquiv]
   rw [fold_eq_foldl_toList]
   simp_rw [←length_toList]
   rw [equiv_iff_toList_perm]
   simp_rw [get?_eq_some_iff_find?_toList]
   rw [List.perm_iff_subset_of_nodup (by simp) (by simp)]
-  generalize m₁.toList = xs
-  generalize m₂.toList = ys
-  clear m₁ m₂
+  generalize hx : m₁.toList = xs
+  generalize hy : m₂.toList = ys
   simp [Sigma.eta, List.find?_eq_some_iff_getElem, decide_true,
     Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
     true_and, List.foldl_and_eq_all, List.all_eq_true,
     decide_eq_true_eq]
+  have hnx : xs.Nodup := by simp [←hx]
+  have hny : ys.Nodup := by simp [←hy]
+  have h₃ : ∀ i j (h : i < ys.length) (hj : j < i), ys[j].1 ≠ ys[i].1 :=
+    by
+      subst hy
+      intro i j h₁ h₂
+      simp
+      linarith
+  have h₄ : (∀ x ∈ xs, ∃ i, ∃ (h : i < ys.length), ys[i] = x ∧
+    ∀ (j : ℕ) (hj : j < i), ¬ys[j].fst = x.fst) ↔
+    ∀ x ∈ xs, ∃ i, ∃ (h : i < ys.length), ys[i] = x :=
+    by
+      constructor
+      · intro h₁ x h₂
+        specialize h₁ x h₂
+        obtain ⟨y, h₃, h₄, h₅⟩ := h₁
+        use y, h₃
+      · intro h₁ x h₂
+        specialize h₁ x h₂
+        obtain ⟨y, h₃, h₄⟩ := h₁
+        use y, h₃, h₄
+        subst h₄
+        nm h₅
+        intro j hj
+        exact h₅ y j h₃ hj
+  rw [h₄]; clear h₃ h₄
+  rw [List.exi_get_iff_subset]
   constructor
   · rintro ⟨h₁, h₂⟩
-    constructor
-    · intro x hx
-      specialize h₂ _ hx
+    use h₂
+    exact List.subset_of_nodup_and_subset_and_length_eq hnx h₂ h₁
+  rintro ⟨h₁, h₂⟩
+  refine' ⟨_, h₁⟩
+  exact List.length_eq_of_subset_and_nodup hnx hny h₁ h₂
+
+instance [hh : ∀ i, DecidableEq # β i]
+{m₁ m₂ : Std.DHashMap α β} : Decidable (m₁ ~m m₂) :=
+  match h : m₁.decideEquiv m₂ with
+  | true => isTrue # by rw [←equiv_iff_decideEquiv] at h; exact h
+  | false => isFalse # by contrapose! h; simpa [←equiv_iff_decideEquiv]
+
+@[simp]
+theorem decideEquiv_eq [hh : ∀ i, DecidableEq # β i]
+{m₁ m₂ : Std.DHashMap α β} : m₁.decideEquiv m₂ = decide (m₁ ~m m₂) := by
+  simp [equiv_iff_decideEquiv]

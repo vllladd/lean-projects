@@ -520,3 +520,18 @@ theorem nodup_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
   rw [subset_iff_subperm_of_nodup h₁] at h₂
   have h₄ := perm_of_nodup_and_subperm_and_length_eq h₂ h₃
   rwa [h₄.nodup_iff]
+
+theorem perm_iff_mem_iff_of_nodup {α : Type*} {xs ys : List α}
+(hx : xs.Nodup) (hy : ys.Nodup) : xs ~ ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
+  rw [perm_iff_subset_of_nodup hx hy]
+  change (∀ _, _) ∧ (∀ _, _) ↔ _
+  use λ ⟨h₁, h₂⟩ x => ⟨h₁ x, h₂ x⟩
+  intro h; simp [h]
+
+theorem subset_iff_exi_get {α  : Type*} {xs ys : List α} :
+xs ⊆ ys ↔ ∀ x ∈ xs, ∃ (i : ℕ) (_ : i < ys.length), ys[i] = x := by
+  simp_rw [←mem_iff_getElem]; rfl
+
+theorem exi_get_iff_subset {α  : Type*} {xs ys : List α} :
+(∀ x ∈ xs, ∃ (i : ℕ) (_ : i < ys.length), ys[i] = x) ↔ xs ⊆ ys :=
+  subset_iff_exi_get.symm

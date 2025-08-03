@@ -1,9 +1,9 @@
+import Mathlib.Data.Finset.Union
+import Mathlib.Data.Multiset.Fold
+import Mathlib.Data.Multiset.Count
+
 import AP.Util.Quotient
 import AP.Util.List
-
-import Mathlib.Data.Multiset.Count
-import Mathlib.Data.Multiset.Fold
-import Mathlib.Data.Finset.Union
 
 namespace Multiset
 

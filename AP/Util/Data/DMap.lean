@@ -201,3 +201,12 @@ m₁.toList = m₂.toList ↔ m₁ = m₂ := by
 theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
   rcases mp with ⟨mp⟩; simp [empty_def]
   exact Std.ExtDHashMap.toList_eq_nil_iff
+
+instance [hh : ∀ i, DecidableEq # β i] : DecidableEq (DMap α β) :=
+  λ m₁ m₂ => match h : decide # m₁.inner = m₂.inner with
+  | true => isTrue # by
+    rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+    simp at h; simpa
+  | false => isFalse # by
+    rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+    simp at h; simpa

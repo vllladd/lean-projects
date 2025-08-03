@@ -239,3 +239,12 @@ def toMap (mp : DMap α (λ _ => β)) : Map α β :=
   ⟨mp.inner⟩
 
 end DMap namespace Map
+
+instance [hh : DecidableEq β] : DecidableEq (Map α β) :=
+  λ m₁ m₂ => match h : decide # m₁.inner = m₂.inner with
+  | true => isTrue # by
+    rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+    simp at h; simpa
+  | false => isFalse # by
+    rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
+    simp at h; simpa

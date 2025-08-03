@@ -4,9 +4,9 @@ import AP.Util.Function
 
 namespace Finset
 
-theorem sum_eq_sum_of_fn_cong {S : Finset ℕ} {f g : ℕ → ℕ}
+theorem sum_eq_sum_of_fn_cong {α : Type*} {S : Finset α} {f g : α → ℕ}
 (h : ∀ i ∈ S, f i = g i) : ∑ x ∈ S, f x = ∑ x ∈ S, g x := by
-  apply Finset.sum_equiv (e := Equiv.refl ℕ); simp; simpa
+  apply Finset.sum_equiv (e := Equiv.refl α); simp; simpa
 
 @[simp]
 theorem sum_fn_set_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ} (ha : a ∈ S) :
@@ -156,11 +156,37 @@ f '' s.toSet = (s.image f).toSet := by
 theorem ncard_toSet {α : Type*} {s : Finset α} :
 s.toSet.ncard = s.card := by simp
 
-theorem sum_insert_eq_of_mem {α : Type*} [ha : DecidableEq α] {s : Finset α} {x}
-{f : α → ℕ} (h₁ : x ∈ s) : ∑ i ∈ s, f i = ∑ i ∈ (s.erase x), f i := by
-  sorry
+theorem sum_eq_add_sum_erase_of_mem {α : Type*} [ha : DecidableEq α]
+{s : Finset α} {x} {f : α → ℕ} (h : x ∈ s) :
+∑ i ∈ s, f i = f x + ∑ i ∈ s.erase x, f i := by
+  rwa [add_sum_erase]
 
-#check 0 #exit
+theorem eq_of_sum_eq_sum_and_forall_le {α : Type*} {s : Finset α}
+{f g : α → ℕ} (h₁ : ∑ i ∈ s, f i = ∑ i ∈ s, g i)
+(h₂ : ∀ i ∈ s, f i ≤ g i) {i} (h₃ : i ∈ s) : f i = g i := by
+  classical
+  apply le_antisymm # h₂ i h₃
+  obtain ⟨r, hr⟩ : ∃ (r : α → ℕ), ∀ i ∈ s, g i = f i + r i :=
+    by
+      clear! i
+      let p := λ i k => f i + k = g i
+      use λ i => Classical.epsilon # p i
+      intro i h₃
+      specialize h₂ i h₃
+      have h₄ := Classical.epsilon_spec (p := p i)
+      specialize h₄ _
+      · simp [p]
+        obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h₂
+        simp [hk]
+      simp [p] at h₄ ⊢
+      rw [h₄]
+  nth_rw 2 [sum_eq_sum_of_fn_cong (g := λ i => f i + r i)] at h₁
+  rotate_left; exact hr
+  simp [sum_add_distrib] at h₁
+  specialize hr i h₃
+  rw [hr]
+  simp
+  exact h₁ i h₃
 
 end Finset namespace Multiset
 
@@ -171,22 +197,72 @@ m₁.card = ∑ i ∈ m₁.toFinset ∪ m₂.toFinset, m₁.count i := by
   nm x m₁ ih
   simp at h₁
   rcases h₁ with ⟨h₁, h₂⟩
+  rw [Finset.insert_eq_of_mem # by simp [h₁]]
+  rw [ih h₂]
+  clear! ih
+  generalize hs : m₁.toFinset ∪ m₂.toFinset = s
+  have h₃ : x ∈ s :=
+    by
+      subst hs
+      simp [h₁]
+  simp [Finset.sum_eq_add_sum_erase_of_mem h₃]
+  nth_rw 2 [Finset.sum_eq_sum_of_fn_cong (g := m₁.count)]
+  rotate_left
+  · rintro y hy
+    simp at hy
+    rcases hy with ⟨h₄, h₅⟩
+    rw [count_cons_of_ne h₄]
+  ring_nf
 
-#check 0 #exit
+@[simp]
+theorem subset_add_left' {α : Type*} {m₁ m₂ : Multiset α} :
+m₁ ⊆ m₁ + m₂ := subset_add_left
+
+@[simp]
+theorem subset_add_right' {α : Type*} {m₁ m₂ : Multiset α} :
+m₁ ⊆ m₂ + m₁ := subset_add_right
 
 theorem eq_of_le_and_card_eq {α : Type*} {m₁ m₂ : Multiset α}
 (h₁ : m₁ ≤ m₂) (h₂ : m₁.card = m₂.card) : m₁ = m₂ := by
   classical
   ext x
-  apply le_antisymm # count_le_of_le x h₁
+  have h₃ := subset_of_le h₁
+  rw [card_eq_sum_count_of_subset h₃] at h₂
+  rw [le_iff_count] at h₁
+  have h₄ : m₂ ⊆ m₁ + m₂ := by simp
+  rw [card_eq_sum_count_of_subset h₄] at h₂
+  rw [toFinset_add] at h₂
+  nth_rw 3 [Finset.union_comm] at h₂
+  rw [Finset.union_left_idem] at h₂
+  nth_rw 2 [Finset.union_comm] at h₂
+  by_cases hx : x ∉ m₂
+  · rw [count_eq_zero_of_notMem hx]
+    rw [count_eq_zero_of_notMem]
+    contrapose! hx
+    exact h₃ hx
+  simp at hx
+  clear h₄
+  apply Finset.eq_of_sum_eq_sum_and_forall_le h₂
+  rotate_left
+  · simp [hx]
+  simp
+  intro y hy
+  apply h₁
+
+theorem eq_of_le_and_le {α : Type*} {m₁ m₂ : Multiset α}
+(h₁ : m₁ ≤ m₂) (h₂ : m₂ ≤ m₁) : m₁ = m₂ := by
+  apply eq_of_le_and_card_eq h₁
+  apply le_antisymm
+  · exact card_le_card h₁
+  · exact card_le_card h₂
+
+theorem eq_of_nodup_and_subset_and_subset {α : Type*} {m₁ m₂ : Multiset α}
+(h₁ : m₁.Nodup) (h₂ : m₂.Nodup) (h₃ : m₁ ⊆ m₂) (h₄ : m₂ ⊆ m₁) : m₁ = m₂ := by
+  rw [←le_iff_subset h₁] at h₃
+  rw [←le_iff_subset h₂] at h₄
+  exact eq_of_le_and_le h₃ h₄
 
 end Multiset namespace List
-
-#check 0 #exit
-
-theorem perm_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
-(hx : xs.Nodup) (h₁ : xs.Subset ys)
-(h₂ : xs.length = ys.length) : ys.Subset xs
 
 theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
 (h₁ : xs <+~ ys) (h₂ : xs.length = ys.length) : ys <+~ xs := by
@@ -196,14 +272,55 @@ theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
   replace h₂ : m₁.card = m₂.card := by subst m₁ m₂; simpa
   suffices m₂ ≤ m₁ by subst m₁ m₂; simp at this; exact this
   clear hm₁ hm₂
+  apply le_of_eq; symm
+  exact Multiset.eq_of_le_and_card_eq h₁ h₂
 
-#check 0 #exit
+theorem perm_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
+(hx : xs.Nodup) (h₁ : xs ⊆ ys)
+(h₂ : xs.length = ys.length) : ys ~ xs := by
+  generalize hm₁ : Multiset.ofList xs = m₁
+  generalize hm₂ : Multiset.ofList ys = m₂
+  replace h₁ : m₁ ⊆ m₂ := by subst m₁ m₂; simpa
+  replace h₂ : m₁.card = m₂.card := by subst m₁ m₂; simpa
+  suffices m₁ = m₂ by subst m₁ m₂; simp at this; exact this.symm
+  replace hx : m₁.Nodup := by subst hm₁; simpa
+  clear hm₁ hm₂
+  apply Multiset.eq_of_le_and_card_eq _ h₂
+  rwa [Multiset.le_iff_subset hx]
 
-theorem subset_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
-(h₁ : xs.Nodup) (h₂ : xs ⊆ ys)
+theorem subset_of_nodup_and_subset_and_length_eq
+{α : Type*} {xs ys : List α} (h₁ : xs.Nodup) (h₂ : xs ⊆ ys)
 (h₃ : xs.length = ys.length) : ys ⊆ xs := by
-  have h₄ := nodup_of_nodup_and_subset_and_length_eq h₁ h₂ h₃
-  rw [subset_iff_subperm_of_nodup h₁] at h₂
-  apply le_antisymmrw [subset_iff_subperm_of_nodup h₄]
+  apply Perm.subset
+  exact perm_of_nodup_and_subset_and_length_eq h₁ h₂ h₃
+
+@[simp]
+theorem count_eq_zero' {α : Type*} [ha : DecidableEq α]
+{xs : List α} {x} : xs.count x = 0 ↔ x ∉ xs := count_eq_zero
+
+theorem mem_iff_count_ne_zero {α : Type*} [ha : DecidableEq α]
+{xs : List α} {x} : x ∈ xs ↔ xs.count x ≠ 0 := by
+  rw [←not_iff_comm']; simp
+
+theorem perm_of_subset_and_nodup {α : Type*} {xs ys : List α}
+(h₁ : xs.Nodup) (h₂ : ys.Nodup) (h₃ : xs ⊆ ys) (h₄ : ys ⊆ xs) :
+xs ~ ys := by
+  classical
+  generalize hm₁ : Multiset.ofList xs = m₁
+  generalize hm₂ : Multiset.ofList ys = m₂
+  replace h₁ : m₁.Nodup := by subst hm₁; simpa
+  replace h₂ : m₂.Nodup := by subst hm₂; simpa
+  replace h₃ : m₁ ⊆ m₂ := by subst hm₁ hm₂; simpa
+  replace h₄ : m₂ ⊆ m₁ := by subst hm₁ hm₂; simpa
+  suffices m₁ = m₂ by
+    subst hm₁ hm₂
+    exact Multiset.coe_eq_coe.mp this
+  exact Multiset.eq_of_nodup_and_subset_and_subset h₁ h₂ h₃ h₄
+
+theorem length_eq_of_subset_and_nodup {α : Type*} {xs ys : List α}
+(h₁ : xs.Nodup) (h₂ : ys.Nodup) (h₃ : xs ⊆ ys) (h₄ : ys ⊆ xs) :
+xs.length = ys.length := by
+  apply Perm.length_eq
+  exact perm_of_subset_and_nodup h₁ h₂ h₃ h₄
 
 end List namespace Finset
