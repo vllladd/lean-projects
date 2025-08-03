@@ -226,7 +226,7 @@ theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
   change _ ↔ _ = Std.ExtDHashMap.mk' _
   simp
   change _ ↔ _ ~m _
-  simp [toSortedList]
+  simp
 
 @[simp]
 def toDMap (mp : Map α β) : DMap α (λ _ => β) :=

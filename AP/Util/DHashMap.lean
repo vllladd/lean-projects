@@ -3,6 +3,7 @@ import Std
 import AP.Util.List
 import AP.Util.Sigma
 import AP.Util.Finset
+import AP.Util.Option
 import AP.Util.Fintype
 import AP.Util.Quotient
 import AP.Util.Multiset
@@ -307,3 +308,75 @@ instance [hh : ∀ i, DecidableEq # β i]
 theorem decideEquiv_eq [hh : ∀ i, DecidableEq # β i]
 {m₁ m₂ : Std.DHashMap α β} : m₁.decideEquiv m₂ = decide (m₁ ~m m₂) := by
   simp [equiv_iff_decideEquiv]
+
+def toSortedKeys (m : Std.DHashMap α β) : List α :=
+  m.toSortedList.map (·.1)
+
+@[simp]
+theorem nodup_toSortedKeys : mp.toSortedKeys.Nodup := by
+  unfold toSortedKeys toSortedList
+  rw [List.nodup_map_iff_inj_on] <;> simp
+  rintro ⟨i, x⟩ hx ⟨j, y⟩ hy h
+  rw [mem_toList_iff_get?_eq_some] at hx hy
+  dsimp at h
+  subst h
+  simp [hx] at hy
+  simp [hy]
+
+@[simp]
+theorem sorted_toSortedKeys : mp.toSortedKeys.Sorted (· ≤ ·) := by
+  simp [toSortedKeys]
+
+@[simp]
+theorem toSortedList_perm_toList : mp.toSortedList.Perm mp.toList := by
+  simp [toSortedList]
+
+@[simp]
+theorem toList_perm_toSortedList : mp.toList.Perm mp.toSortedList :=
+  toSortedList_perm_toList.symm
+
+@[simp]
+theorem mem_toSortedList_iff {x} :
+x ∈ mp.toSortedList ↔ x ∈ mp.toList :=
+  mp.toSortedList_perm_toList.mem_iff
+
+theorem equiv_iff_toSortedList_perm {m₁ m₂ : Std.DHashMap α β} :
+m₁ ~m m₂ ↔ m₁.toSortedList.Perm m₂.toSortedList := by
+  rw [equiv_iff_toList_perm]
+  apply iff_of_isEquiv <;> simp
+
+@[simp]
+theorem nodup_map_fst_toSortedList : (mp.toSortedList.map (·.1)).Nodup :=
+  nodup_toSortedKeys
+
+@[simp]
+theorem toSortedKeys_eq {m₁ m₂ : Std.DHashMap α β}
+[hb : ∀ i, Subsingleton # β i] :
+m₁.toSortedKeys = m₂.toSortedKeys ↔ m₁ ~m m₂ := by
+  unfold toSortedKeys
+  rw [equiv_iff_toSortedList_perm]
+  rw [List.perm_iff_mem_iff_of_nodup (by simp) (by simp)]
+  constructor <;> intro h
+  · rintro ⟨i, x⟩
+    replace h := congrArg (i ∈ ·) h
+    simp [Option.eq_iff_of_subsingleton] at h ⊢
+    apply h x
+  · rw [List.eq_iff_of_nodup_and_sorted (r := (· ≤ ·))] <;> simp
+    rotate_left
+    · intro i j x h₁ y h₂ h₃ h₄
+      exact le_antisymm h₃ h₄
+    simp [Option.eq_iff_of_subsingleton]
+    intro i x
+    specialize h ⟨i, x⟩
+    simp at h
+    simp [Option.eq_iff_of_subsingleton] at h
+    exact h
+
+@[simp]
+theorem toSortedList_eq_nil_iff : mp.toSortedList = [] ↔ mp ~m ∅ := by
+  simp [toSortedList]
+
+@[simp]
+theorem toSortedKeys_eq_nil_iff :
+mp.toSortedKeys = [] ↔ mp ~m ∅ := by
+  simp [toSortedKeys]

@@ -19,3 +19,8 @@ theorem guard_bind_eq_some_iff {α : Type*} {P : Prop} [Decidable P]
 @[simp]
 theorem get!_with_bot_some {α : Type*} [Inhabited α] {x : α} :
 (WithBot.some x).get! = x := rfl
+
+theorem eq_iff_of_subsingleton {α : Type*} [ha : Subsingleton α]
+{x y : Option α} : x = y ↔ (x.isSome ↔ y.isSome) := by
+  rcases x with ⟨⟩ | x <;> rcases y with ⟨⟩ | y <;> simp
+  apply ha.1

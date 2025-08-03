@@ -144,3 +144,17 @@ theorem inst_decidableRel_eq {α β : Type*} {r : α → β → Prop}
 
 theorem inst_decidableEq_eq {α : Type*} {H₁ H₂ : DecidableEq α} : H₁ = H₂ :=
   inst_decidableRel_eq
+
+theorem forall_iff_of {α : Type*} {p q : α → Prop}
+(h : ∀ x, p x ↔ q x) : (∀ x, p x) ↔ (∀ x, q x) := by
+  simp [h]
+
+theorem iff_of_isEquiv {α : Type*} {r : α → α → Prop}
+[hr : IsEquiv α r] {a b c d : α} (h₁ : r a c) (h₂ : r b d) :
+r a b ↔ r c d := by
+  constructor <;> intro h
+  · trans a; apply hr.symm; exact h₁
+    trans b <;> assumption
+  · trans c; exact h₁
+    trans d; exact h
+    apply hr.symm; exact h₂

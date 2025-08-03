@@ -539,3 +539,8 @@ theorem exi_get_iff_subset {α  : Type*} {xs ys : List α} :
 @[simp]
 theorem take_prefix' {α : Type*} {xs : List α} {n} :
 xs.take n <+: xs := take_prefix _ _
+
+instance {α : Type*} : IsEquiv (List α) List.Perm where
+  refl := Perm.refl
+  symm := λ _ _ => Perm.symm
+  trans := λ _ _ _ => Perm.trans
