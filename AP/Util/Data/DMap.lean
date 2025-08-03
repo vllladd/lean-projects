@@ -20,6 +20,8 @@ instance : EmptyCollection (DMap α β) := ⟨empty⟩
 
 theorem empty_def : (∅ : DMap α β) = ⟨∅⟩ := rfl
 
+instance : Inhabited (DMap α β) := ⟨∅⟩
+
 def insertP (x : Σ i, β i) (mp : DMap α β) : DMap α β :=
   ⟨insert x mp.inner⟩
 
@@ -210,3 +212,10 @@ instance [hh : ∀ i, DecidableEq # β i] : DecidableEq (DMap α β) :=
   | false => isFalse # by
     rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
     simp at h; simpa
+
+def all (mp : DMap α β) (p : (i : α) → β i → Bool) : Bool :=
+  mp.1.all p
+
+@[simp]
+theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
+  simp [all]; rfl

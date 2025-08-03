@@ -22,6 +22,8 @@ instance : EmptyCollection (Set' α) := ⟨empty⟩
 
 theorem empty_def : (∅ : Set' α) = ⟨∅⟩ := rfl
 
+instance : Inhabited (Map α β) := ⟨∅⟩
+
 def insertP (x : α) (s : Set' α) : Set' α :=
   ⟨insert ⟨x, ()⟩ s.inner⟩
 
@@ -200,3 +202,19 @@ instance : DecidableEq (Set' α) :=
   | false => isFalse # by
     rcases s₁ with ⟨s₁⟩; rcases s₂ with ⟨s₂⟩
     simp at h; simpa
+
+instance : Inhabited (Set α) := ⟨∅⟩
+
+def values (s : Set' α) : List α :=
+  s.1.keys
+
+@[simp]
+theorem mem_values {i} : i ∈ s.values ↔ i ∈ s := by
+  simp [values]; rfl
+
+def all (s : Set' α) (p : α → Bool) : Bool :=
+  s.1.all # λ i _ => p i
+
+@[simp]
+theorem all_def {p} : s.all p = decide (∀ x ∈ s.values, p x) := by
+  simp [all, values, Option.eq_iff_of_subsingleton]

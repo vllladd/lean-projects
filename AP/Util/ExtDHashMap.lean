@@ -244,3 +244,23 @@ DecidableEq (Std.ExtDHashMap α β) :=
 theorem decideEq_eq [hh : ∀ i, DecidableEq # β i]
 {m₁ m₂ : Std.ExtDHashMap α β} : m₁.decideEq m₂ = decide (m₁ = m₂) := by
   simp [eq_iff_decideEq]
+
+def all (mp : ExtDHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
+  mp.inner.lift (·.all p) # by
+    intro m₁ m₂ (h : m₁.Equiv m₂); simp
+    rw [Std.DHashMap.equiv_iff_get?] at h
+    simp [h]
+
+@[simp]
+theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
+  rcases mp with ⟨mp⟩; apply mp.ind; simp [all, get?, lift]
+
+def keys (mp : Std.ExtDHashMap α β) : List α :=
+  mp.lift Std.DHashMap.toSortedKeys # λ m₁ _ =>
+    m₁.toSortedKeys_eq_of_equiv
+
+@[simp]
+theorem mem_keys {i} : i ∈ mp.keys ↔ i ∈ mp := by
+  rcases mp with ⟨mp⟩
+  apply mp.ind; intro mp
+  simp [keys, lift]; rfl

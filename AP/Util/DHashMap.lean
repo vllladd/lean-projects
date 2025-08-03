@@ -350,33 +350,61 @@ theorem nodup_map_fst_toSortedList : (mp.toSortedList.map (·.1)).Nodup :=
   nodup_toSortedKeys
 
 @[simp]
-theorem toSortedKeys_eq {m₁ m₂ : Std.DHashMap α β}
+theorem mem_toSortedKeys {i} : i ∈ mp.toSortedKeys ↔ i ∈ mp := by
+  simp [toSortedKeys, ←Option.isSome_iff_exists]
+
+@[simp]
+theorem toSortedList_perm_iff {m₁ m₂ : Std.DHashMap α β} :
+m₁.toSortedList.Perm m₂.toSortedList ↔ m₁ ~m m₂ := by
+  simp [toSortedList]; exact equiv_iff_toList_perm.symm
+
+theorem toSortedKeys_eq_of_equiv {m₁ m₂ : Std.DHashMap α β}
+(h : m₁ ~m m₂) : m₁.toSortedKeys = m₂.toSortedKeys := by
+  unfold toSortedKeys
+  apply List.eq_of_perm_of_sorted_loc (r := (· ≤ ·)) <;> try simp
+  · rw [List.map_perm_map_iff_loc]; try simpa
+    rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂ rfl
+    simp
+    rw [equiv_iff_get?] at h
+    simp [h] at h₁ h₂
+    simp [h₁] at h₂
+    exact h₂
+  · intro i j k x h₁ y h₂ z h₃ h₄ h₅
+    exact h₄.trans h₅
+  · intro i j k h₁ x h₂
+    apply le_total
+  · intro i j x h₁ y h₂
+    exact le_antisymm
+
+@[simp]
+theorem toSortedKeys_eq_iff_of_subsingleton {m₁ m₂ : Std.DHashMap α β}
 [hb : ∀ i, Subsingleton # β i] :
 m₁.toSortedKeys = m₂.toSortedKeys ↔ m₁ ~m m₂ := by
-  unfold toSortedKeys
+  refine' ⟨λ h => _, toSortedKeys_eq_of_equiv⟩
   rw [equiv_iff_toSortedList_perm]
   rw [List.perm_iff_mem_iff_of_nodup (by simp) (by simp)]
-  constructor <;> intro h
-  · rintro ⟨i, x⟩
-    replace h := congrArg (i ∈ ·) h
-    simp [Option.eq_iff_of_subsingleton] at h ⊢
-    apply h x
-  · rw [List.eq_iff_of_nodup_and_sorted (r := (· ≤ ·))] <;> simp
-    rotate_left
-    · intro i j x h₁ y h₂ h₃ h₄
-      exact le_antisymm h₃ h₄
-    simp [Option.eq_iff_of_subsingleton]
-    intro i x
-    specialize h ⟨i, x⟩
-    simp at h
-    simp [Option.eq_iff_of_subsingleton] at h
-    exact h
+  rintro ⟨i, x⟩
+  replace h := congrArg (i ∈ ·) h
+  simp [Option.eq_iff_of_subsingleton] at h ⊢
+  exact h
 
 @[simp]
 theorem toSortedList_eq_nil_iff : mp.toSortedList = [] ↔ mp ~m ∅ := by
   simp [toSortedList]
 
 @[simp]
-theorem toSortedKeys_eq_nil_iff :
-mp.toSortedKeys = [] ↔ mp ~m ∅ := by
+theorem toSortedKeys_eq_nil_iff : mp.toSortedKeys = [] ↔ mp ~m ∅ := by
   simp [toSortedKeys]
+
+def all (mp : DHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
+  mp.fold (λ acc i x => acc && p i x) true
+
+@[simp]
+theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
+  simp [all, fold_eq_foldl_toList, List.foldl_and_eq_all]
+  rw [Bool.eq_iff_iff]; simp
+
+@[simp]
+theorem mem_toList_iff_get?_eq_some' (x : (i : α) × β i) :
+x ∈ mp.toList ↔ mp.get? x.1 = some x.2 := by
+  rcases x with ⟨i, x⟩; simp

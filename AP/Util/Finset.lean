@@ -262,6 +262,40 @@ theorem eq_of_nodup_and_subset_and_subset {α : Type*} {m₁ m₂ : Multiset α}
   rw [←le_iff_subset h₂] at h₄
   exact eq_of_le_and_le h₃ h₄
 
+@[simp]
+theorem card_filter_eq_eq_count {α : Type*} [ha : DecidableEq α]
+{m : Multiset α} {x} : (m.filter (x = ·)).card = m.count x := by
+  rw [←count_eq_card_filter_eq]
+
+theorem map_eq_map_iff_loc {α β : Type*} {m₁ m₂ : Multiset α} {f : α → β}
+(hf : ∀ x y, x ∈ m₁ ∨ x ∈ m₂ → y ∈ m₁ ∨ y ∈ m₂ → f x = f y → x = y) :
+m₁.map f = m₂.map f ↔ m₁ = m₂ := by
+  classical
+  refine' ⟨λ h => _, by rintro rfl; rfl⟩
+  ext x
+  replace h := congrArg (·.count # f x) h
+  simp [count_map] at h
+  by_cases hx : x ∉ m₁ ∧ x ∉ m₂
+  · rw [count_eq_zero_of_notMem hx.1]
+    rw [count_eq_zero_of_notMem hx.2]
+  rw [not_and_or] at hx
+  simp at hx
+  obtain ⟨h₁, h₂⟩ :
+    m₁.filter (f x = f ·) = m₁.filter (x = ·) ∧
+    m₂.filter (f x = f ·) = m₂.filter (x = ·) := by
+    constructor
+    all_goals
+      clear h
+      ext y
+      simp [count_filter]
+      by_cases hx : x = y <;> simp [hx]
+      intro h₁
+      contrapose! hx
+      apply hf <;> try simp_all
+  rw [h₁, h₂] at h; clear h₁ h₂
+  simp at h
+  exact h
+
 end Multiset namespace List
 
 theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
@@ -322,5 +356,18 @@ theorem length_eq_of_subset_and_nodup {α : Type*} {xs ys : List α}
 xs.length = ys.length := by
   apply Perm.length_eq
   exact perm_of_subset_and_nodup h₁ h₂ h₃ h₄
+
+theorem map_perm_map_iff_loc {α β : Type*} {xs ys : List α} {f : α → β}
+(hf : ∀ x y, x ∈ xs ∨ x ∈ ys → y ∈ xs ∨ y ∈ ys → f x = f y → x = y) :
+xs.map f ~ ys.map f ↔ xs ~ ys := by
+  classical
+  obtain ⟨m₁, hm₁⟩ := hv # Multiset.ofList xs
+  obtain ⟨m₂, hm₂⟩ := hv # Multiset.ofList ys
+  trans m₁ = m₂; rotate_left; simp [hm₁, hm₂]
+  trans m₁.map f = m₂.map f; simp [hm₁, hm₂]
+  replace hf : ∀ x y, x ∈ m₁ ∨ x ∈ m₂ →
+    y ∈ m₁ ∨ y ∈ m₂ → f x = f y → x = y :=
+    by simpa [hm₁, hm₂]
+  exact Multiset.map_eq_map_iff_loc hf
 
 end List namespace Finset

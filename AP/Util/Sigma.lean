@@ -72,3 +72,7 @@ end List namespace Sigma
 theorem fst_eq_fst_and_eq_iff {α : Type*} {β : α → Type*} {x y : Σ (i : α), β i} :
 x.fst = y.fst ∧ x = y ↔ x = y := by
   rcases x with ⟨i, x⟩; rcases y with ⟨j, y⟩; simp
+
+@[simp]
+theorem foall_nd {α : Type*} {β : Type*} {p : (Σ (_ : α), β) → Prop} :
+(∀ x, p x) ↔ ∀ x y, p ⟨x, y⟩ := ⟨λ h _ _ => h _, λ h _ => h _ _⟩

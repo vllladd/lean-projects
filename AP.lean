@@ -1,5 +1,7 @@
-import AP.System.Main
 import Mathlib.Tactic
+
+import AP.System.Main
+import AP.Sokoban.Main
 
 def mp₁ : Map ℕ String :=
   .ofList [(5, "x"), (7, "y")]

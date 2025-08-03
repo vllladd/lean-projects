@@ -544,3 +544,21 @@ instance {α : Type*} : IsEquiv (List α) List.Perm where
   refl := Perm.refl
   symm := λ _ _ => Perm.symm
   trans := λ _ _ _ => Perm.trans
+
+def atMostOne : List Bool → Bool
+| [] => true
+| b :: bs => if b then !bs.or else bs.atMostOne
+
+@[simp]
+theorem mergeSort_perm_mergeSort {α : Type*}
+{r₁ r₂ : α → α → Bool} {xs ys : List α} :
+xs.mergeSort r₁ ~ ys.mergeSort r₂ ↔ xs ~ ys := by
+  apply iff_of_isEquiv <;> simp
+
+@[simp]
+theorem eq_nil_of_isEmpty {α : Type*} [ha : IsEmpty α]
+{xs : List α} : xs = [] := by
+  cases xs; rfl
+  nm x xs
+  simp
+  exact ha.1 x
