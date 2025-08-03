@@ -4,7 +4,7 @@ import AP.Util.Function
 
 namespace Finset
 
-theorem sum_eq_sum_of_fn_cong {α : Type*} {S : Finset α} {f g : α → ℕ}
+theorem sum_eq_sum_of_fn_congr {α : Type*} {S : Finset α} {f g : α → ℕ}
 (h : ∀ i ∈ S, f i = g i) : ∑ x ∈ S, f x = ∑ x ∈ S, g x := by
   apply Finset.sum_equiv (e := Equiv.refl α); simp; simpa
 
@@ -18,7 +18,7 @@ theorem sum_fn_set_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ} (ha : a ∈
   ∑ x ∈ S, fn_set a b f x := by
     convert Finset.sum_erase_add _ _ ha; simp
   rw [←h₁, ←h₂, Nat.add_add_sub_cancel]; clear h₁ h₂
-  congr 1; apply sum_eq_sum_of_fn_cong
+  congr 1; apply sum_eq_sum_of_fn_congr
   intro i hi; simp at hi; simp [fn_set_eq, hi]
 
 @[simp]
@@ -180,7 +180,7 @@ theorem eq_of_sum_eq_sum_and_forall_le {α : Type*} {s : Finset α}
         simp [hk]
       simp [p] at h₄ ⊢
       rw [h₄]
-  nth_rw 2 [sum_eq_sum_of_fn_cong (g := λ i => f i + r i)] at h₁
+  nth_rw 2 [sum_eq_sum_of_fn_congr (g := λ i => f i + r i)] at h₁
   rotate_left; exact hr
   simp [sum_add_distrib] at h₁
   specialize hr i h₃
@@ -206,7 +206,7 @@ m₁.card = ∑ i ∈ m₁.toFinset ∪ m₂.toFinset, m₁.count i := by
       subst hs
       simp [h₁]
   simp [Finset.sum_eq_add_sum_erase_of_mem h₃]
-  nth_rw 2 [Finset.sum_eq_sum_of_fn_cong (g := m₁.count)]
+  nth_rw 2 [Finset.sum_eq_sum_of_fn_congr (g := m₁.count)]
   rotate_left
   · rintro y hy
     simp at hy

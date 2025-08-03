@@ -402,7 +402,7 @@ theorem exi_simulate_of_simp_path {a b ts} [ht : Inhabited # S → T]
 sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   classical
   obtain ⟨f, hf⟩ := hv # sys.mk_sim_fn # λ s =>
-    ts[nat_find # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dflt_sim_fn s
+    ts[Nat.findRaw # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dflt_sim_fn s
   use f
   constructor
   · rw [hf]; infer_instance
@@ -419,7 +419,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   subst hf
   unfold mk_sim_fn
   dsimp
-  rw [nat_find_eq_of (n := k)]
+  rw [Nat.findRaw_eq_of (n := k)]
   rotate_left
   · ext1
     rfl
@@ -491,7 +491,7 @@ sys.simp_path a [t] b ↔ a ≠ b ∧ sys.trTo a t b := by
   nm x xs
   simp at hx
   rcases hx with ⟨rfl, rfl⟩
-  simp [h₁, h₂] at h₃
+  simp [h₁] at h₃
   cases ys
   · simp [h₃] at h₂
   nm y ys
@@ -594,7 +594,7 @@ theorem simp_path'_nil {a} : sys.simp_path' a [] := by simp [simp_path']
 theorem exi_simp_path_prefix_of_not_simp_path' {a ts}
 (h₁ : ¬sys.simp_path' a ts) : ∃ xs t, xs ++ [t] <+: ts ∧
 sys.simp_path' a xs ∧ ¬sys.simp_path' a (xs ++ [t]) := by
-  induction ts using List.right_induction
+  induction ts using List.reverseRecOn
   · simp at h₁
   nm ts t ih
   rw [←or_iff_not_imp_left] at ih
@@ -607,7 +607,7 @@ sys.simp_path' a xs ∧ ¬sys.simp_path' a (xs ++ [t]) := by
 theorem exi_trs_full_of_simp_path' {a ts}
 (h : sys.simp_path' a ts) : ∃ b, sys.trs a ts = (b, []) := by
   classical
-  induction ts using List.right_induction
+  induction ts using List.reverseRecOn
   · use a; rfl
   nm ts t ih
   clear ih
@@ -728,7 +728,7 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts}
   rotate_left
   · intro k hk
     specialize h₂ (xs.take k) xs
-    simp [hy, hb] at h₂
+    simp [hb] at h₂
     rw [h₄ k # by linarith]
     intro h₆
     specialize h₂ h₆
@@ -1073,7 +1073,7 @@ theorem simulate_snd_eq_zero_of_tr_and_eq_zero {f a b n}
 
 theorem simulate_finset_card_eq_of_acyclic
 [hs : DecidableEq S] {f} [hf : sys.SimFn f] {a} [ha : sys.Acyclic a] {n}
-(h₁ : (sys.simulate f a n).2 = 0) : (mk_finset # λ (k : Fin # n + 1) =>
+(h₁ : (sys.simulate f a n).2 = 0) : (Finset.mkRaw # λ (k : Fin # n + 1) =>
 (sys.simulate f a k).1).card = n + 1 := by
   induction n generalizing a
   · simp
@@ -1081,12 +1081,12 @@ theorem simulate_finset_card_eq_of_acyclic
   dsimp at h₁
   split at h₁; simp at h₁
   nm x b h₂; clear x
-  rw [mk_finset_fin_succ_eq_insert]
+  rw [Finset.mkRaw_fin_succ_eq_insert]
   simp [h₂]
   have hb := acyclic_of_tr h₂
   have h₃ := simulate_snd_eq_zero_of_tr_and_eq_zero h₁ h₂
   rw [Finset.card_insert_of_notMem]
-  · simp [@ih b _ h₁]; exact ih h₃
+  · simp; exact ih h₃
   simp
   rintro ⟨k, hk⟩
   simp
@@ -1111,7 +1111,7 @@ theorem simulate_exi_snd_pos_of_finite'
   specialize h₂ (sys.simulate f a n).2
   simp [Prod.ext_iff] at h₂
   specialize h₁ # simulate_snd_eq_zero_of_le_and_eq_zero h₂ hn
-  have h₃ : (mk_finset # λ (k : Fin # N + 1) =>
+  have h₃ : (Finset.mkRaw # λ (k : Fin # N + 1) =>
     (sys.simulate f a k).1).card ≤ N :=
     by
       simp [←hN]
@@ -1122,7 +1122,7 @@ theorem simulate_exi_snd_pos_of_finite
 ∃ x N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
   classical
   obtain ⟨N, h₄⟩ := @simulate_exi_snd_pos_of_finite' S T sys h₁ s h₂ f h₃
-  obtain ⟨m, hm⟩ := hv # nat_find λ n => (sys.simulate f s n).2 ≠ 0
+  obtain ⟨m, hm⟩ := hv # Nat.findRaw λ n => (sys.simulate f s n).2 ≠ 0
   use (sys.simulate f s m).1, N
   intro n hn
   specialize h₄ n hn
@@ -1133,7 +1133,7 @@ theorem simulate_exi_snd_pos_of_finite
   have h₅ : (sys.simulate f s m).2 ≠ 0 :=
     by
       subst hm
-      rw [nat_find_eq]
+      rw [Nat.findRaw_eq]
       split_ifs with h₅
       · have h₆ := Nat.find_spec h₅
         convert h₆

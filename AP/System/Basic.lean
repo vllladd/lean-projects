@@ -264,9 +264,7 @@ sys.simulate f s (n - (sys.simulate f s n).2) = ((sys.simulate f s n).1, 0) := b
   · rfl
   nm n ih
   simp
-  split
-  · nm x h₁
-    simp [h₁]
+  split; simp
   nm x s₁ h₁; clear x
   rw [Nat.add_one_sub simulate_snd_le]
   simp [h₁]

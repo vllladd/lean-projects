@@ -5,8 +5,6 @@ namespace System
 universe u
 variable {S T : Type u} {sys : System S T}
 
-set_option linter.unusedVariables false
-
 theorem aux₁ {s t s'}
 (h₁ : sys.validTr s t) (h₂ : sys.tr! s t = s') : sys.tr s t = some s' := by
   unfold tr! at h₂
@@ -65,15 +63,15 @@ theorem aux₈ {f s n} :
 ∃! (p : S × ℕ), sys.simulate f s n = (p.1, p.2) := by simp
 
 theorem cntrex₃ : ¬∀ (α β : Type) (P : α → Prop)
-(h₁ : ¬∀ x, P x), ¬(∀ x (y : β), P x) := by
+(_ : ¬∀ x, P x), ¬(∀ x (_ : β), P x) := by
   push_neg
   use Unit, Empty, λ _ => False
   simp
 
-theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (h₁ : sys.Acyclic s)
-(f) (h₂ : SimFn sys f) (n m sn sm x y) (h₃ : n < m)
-(h₄ : sys.simulate f s n = (sn, x))
-(h₅ : sys.simulate f s m = (sm, y)),
+theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (_ : sys.Acyclic s)
+(f) (_ : SimFn sys f) (n m sn sm x y) (_ : n < m)
+(_ : sys.simulate f s n = (sn, x))
+(_ : sys.simulate f s m = (sm, y)),
 sn ≠ sm := by
   push_neg
   use Unit, Unit, ⟨∅, λ _ _ => none⟩, ()
@@ -83,8 +81,8 @@ sn ≠ sm := by
 
 theorem aux₉ {s} [h₁ : sys.Acyclic s] {f} [h₂ : SimFn sys f]
 {n m sn sm} (h₃ : n < m) : ∃ x y, ∀
-(h₄ : sys.simulate f s n = (sn, x))
-(h₅ : sys.simulate f s m = (sm, y)),
+(_ : sys.simulate f s n = (sn, x))
+(_ : sys.simulate f s m = (sm, y)),
 sn ≠ sm := by
   use 0, 0
   intro h₄ h₅
@@ -95,8 +93,8 @@ sn ≠ sm := by
 
 theorem aux₁₀ {s} [h₁ : sys.Acyclic s] {f} [h₂ : SimFn sys f]
 {n m sn sm} (h₃ : n < m) : ∃ x, ∀
-(h₄ : sys.simulate f s n = (sn, x))
-(h₅ : sys.simulate f s m = (sm, x)),
+(_ : sys.simulate f s n = (sn, x))
+(_ : sys.simulate f s m = (sm, x)),
 sn ≠ sm := by
   use 0
   intro h₄ h₅
@@ -115,8 +113,8 @@ sn ≠ sm := by
   specialize h₁ f n m # by rw [h₄, h₅]
   linarith
 
-theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
-{s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f],
+theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
+{s} [Acyclic sys s] {f} [SimFn sys f],
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∀ x, sys.simulate f s n = (x, k) := by
   push_neg
   use Bool, Unit, ⟨∅, λ _ _ => none⟩
@@ -128,8 +126,8 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
   use N + 1
   simp
 
-theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
-{s} [h₂ : Acyclic sys s] {f} [h₃ : SimFn sys f] {x},
+theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
+{s} [Acyclic sys s] {f} [SimFn sys f] {x},
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
   push_neg
   use Bool, Unit, ⟨∅, λ _ _ => none⟩
@@ -144,7 +142,7 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [h₁ : Finite S]
   rw [simulate_eq_of_tr_eq_none] <;> simp
 
 theorem cntrex₇ : ¬∀ (S T : Type) (sys : System S T)
-(a ts₁ ts₂ b) (h₁ : ∀ t ∈ ts₁, sys.validTr b t),
+(a ts₁ ts₂ b) (_ : ∀ t ∈ ts₁, sys.validTr b t),
 sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
   push_neg
   use Bool, Unit, ⟨∅, λ b _ => if b then some true else none⟩
@@ -182,5 +180,3 @@ theorem aux₁₆ : ∃! (f : ℕ → ℕ), f 0 = 0 ∧ ∀ n, f (n + 1) = f (f 
   · exact h₁
   nm n ih
   simpa [h₂, ih]
-
-set_option linter.unusedVariables true

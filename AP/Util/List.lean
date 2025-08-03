@@ -535,3 +535,7 @@ xs ⊆ ys ↔ ∀ x ∈ xs, ∃ (i : ℕ) (_ : i < ys.length), ys[i] = x := by
 theorem exi_get_iff_subset {α  : Type*} {xs ys : List α} :
 (∀ x ∈ xs, ∃ (i : ℕ) (_ : i < ys.length), ys[i] = x) ↔ xs ⊆ ys :=
   subset_iff_exi_get.symm
+
+@[simp]
+theorem take_prefix' {α : Type*} {xs : List α} {n} :
+xs.take n <+: xs := take_prefix _ _
