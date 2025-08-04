@@ -264,3 +264,29 @@ theorem mem_keys {i} : i ∈ mp.keys ↔ i ∈ mp := by
   rcases mp with ⟨mp⟩
   apply mp.ind; intro mp
   simp [keys, lift]; rfl
+
+def modifyMany (mp : ExtDHashMap α β)
+(xs : List ((i : α) × (β i → β i))) : ExtDHashMap α β :=
+  mk' # mp.1.map (·.modifyMany xs) # λ a _ =>
+    a.modifyMany_equiv_modifyMany_of_equiv
+
+@[simp]
+theorem modifyMany_nil : mp.modifyMany [] = mp := by
+  rcases mp with ⟨mp⟩; apply mp.ind; simp [modifyMany]
+
+@[simp]
+theorem modifyMany_cons {i x xs} :
+mp.modifyMany (⟨i, x⟩ :: xs) = (mp.modify i x).modifyMany xs := by
+  rcases mp with ⟨mp⟩; apply mp.ind; intro mp; rfl
+
+theorem get!_eq_get? {i} [hb : Inhabited (β i)] :
+mp.get! i = (mp.get? i).get! := by
+  rcases mp with ⟨mp⟩; apply mp.ind; intro mp
+  simp [get!, get?, lift]; exact mp.get!_eq_get!_get?
+
+theorem get?_eq_ite {i} [hb : Inhabited # β i] :
+mp.get? i = if i ∈ mp then some # mp.get! i else none := by
+  rw [get!_eq_get!_get?]
+  split_ifs with h₁ <;> simp [mem_iff_get?_eq_some] at h₁
+  · obtain ⟨x, h₁⟩ := h₁; simp [h₁]
+  · rw [Option.eq_none_iff_forall_ne_some.mpr h₁]

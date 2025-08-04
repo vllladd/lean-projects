@@ -24,3 +24,18 @@ theorem eq_iff_of_subsingleton {α : Type*} [ha : Subsingleton α]
 {x y : Option α} : x = y ↔ (x.isSome ↔ y.isSome) := by
   rcases x with ⟨⟩ | x <;> rcases y with ⟨⟩ | y <;> simp
   apply ha.1
+
+@[simp]
+theorem bind_eq_some_iff' {α β : Type*} {x : Option α} {y} {f : α → Option β} :
+x.bind f = some y ↔ ∃ a, x = some a ∧ f a = some y :=
+  bind_eq_some_iff
+
+theorem bind_dite {α β : Type*} {P} [hp : Decidable P]
+{f : P → Option α} {g : ¬P → Option α} {r : α → Option β} :
+(if h : P then f h else g h).bind r = if h : P then (f h).bind r else (g h).bind r := by
+  split_ifs <;> simp
+
+theorem bind_ite {α β : Type*} {P} [hp : Decidable P]
+{x y : Option α} {f : α → Option β} :
+(if P then x else y).bind f = if P then x.bind f else y.bind f := by
+  split_ifs <;> simp

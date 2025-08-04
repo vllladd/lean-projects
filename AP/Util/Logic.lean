@@ -158,3 +158,5 @@ r a b ↔ r c d := by
   · trans c; exact h₁
     trans d; exact h
     apply hr.symm; exact h₂
+
+theorem not_and_iff_or {P Q} : ¬(P ∧ Q) ↔ ¬P ∨ ¬Q := by tauto

@@ -1,1 +1,1 @@
-import AP.Sokoban.Defs
+import AP.Sokoban.Basic

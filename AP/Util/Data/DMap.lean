@@ -41,7 +41,7 @@ def get? (i : α) (mp : DMap α β) : Option (β i) :=
   mp.inner.get? i
 
 def get! (i : α) [h : Inhabited (β i)] (mp : DMap α β) : β i :=
-  (mp.get? i).get!
+  mp.inner.get! i
 
 def map (mp : DMap α β) (f : ∀ i, β i → γ i) : DMap α γ :=
   ⟨mp.inner.map f⟩
@@ -79,9 +79,11 @@ theorem get?_map {f : ∀ i, β i → γ i} {i : α} :
 theorem get!_map_eq_of_pos {f : ∀ i, β i → γ i} {i : α}
 [ha : Inhabited (β i)] [hb : Inhabited (γ i)]
 (h : i ∈ mp) : (mp.map f).get! i = f i (mp.get! i) := by
-  rcases mp with ⟨mp⟩
+  rcases mp with ⟨⟨mp⟩⟩
   obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
-  simp [get!, get?_map, hx]
+  induction mp using Quotient.inductionOn
+  simp [get?] at hx
+  simp [get!, Std.ExtDHashMap.get!_eq_get?, map, hx]
 
 def toList (mp : DMap α β) : List (Σ i, β i) :=
   mp.inner.lift toSortedList # by simp
@@ -219,3 +221,48 @@ def all (mp : DMap α β) (p : (i : α) → β i → Bool) : Bool :=
 @[simp]
 theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
   simp [all]; rfl
+
+def modify (mp : DMap α β) (i : α) (f : β i → β i) : DMap α β :=
+  ⟨mp.1.modify i f⟩
+
+def modifyMany (mp : DMap α β) (xs : List ((i : α) × (β i → β i))) : DMap α β :=
+  ⟨mp.1.modifyMany xs⟩
+
+@[simp]
+theorem modifyMany_nil : mp.modifyMany [] = mp := by
+  simp [modifyMany]
+
+@[simp]
+theorem modifyMany_cons {i x xs} :
+mp.modifyMany (⟨i, x⟩ :: xs) = (mp.modify i x).modifyMany xs := by
+  simp [modifyMany, modify]
+
+def insertMany (mp : DMap α β) (xs : List ((i : α) × β i)) : DMap α β :=
+  ⟨mp.1.insertMany xs⟩
+
+@[simp]
+theorem insertMany_nil : mp.insertMany [] = mp := by
+  simp [insertMany]
+
+@[simp]
+theorem insertMany_cons {i x xs} :
+mp.insertMany (⟨i, x⟩ :: xs) = (mp.insert i x).insertMany xs := by
+  simp [insertMany, Std.ExtDHashMap.insertMany_cons, Std.ExtDHashMap.insert]
+
+theorem get?_eq_ite {i} [hb : Inhabited # β i] :
+mp.get? i = if i ∈ mp then some # mp.get! i else none :=
+  mp.1.get?_eq_ite
+
+@[simp]
+theorem mem_modify {i j x} : i ∈ mp.modify j x ↔ i ∈ mp :=
+  Std.ExtDHashMap.mem_modify
+
+theorem get!_eq_get?_get! {i} [Inhabited (β i)] : mp.get! i = (mp.get? i).get! :=
+  Std.ExtDHashMap.get!_eq_get!_get?
+
+@[simp]
+theorem get?_modify {i} {f : β i → β i} {j} :
+(mp.modify i f).get? j = if h : i = j then
+h ▸ ((mp.get? j).map (λ x => f (h.symm ▸ x))) else mp.get? j := by
+  convert Std.ExtDHashMap.get?_modify <;> simp
+  generalize_proofs h₁; subst h₁; simp [get?]

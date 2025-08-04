@@ -3,6 +3,7 @@ import AP.System.Main
 
 namespace Sokoban
 
+@[ext]
 structure Tile where
   player : Bool
   box : Bool
@@ -10,6 +11,7 @@ structure Tile where
   wall : Bool
 deriving Inhabited
 
+@[ext]
 structure State where
   width : ℕ
   height : ℕ
@@ -22,7 +24,7 @@ inductive Move where
 | left : Move
 | right : Move
 | down : Move
-deriving Inhabited
+deriving Inhabited, Fintype
 
 -----
 
@@ -47,5 +49,40 @@ def Move.toPoint : Move → PointZ
 | .right => ⟨1, 0⟩
 | .down => ⟨0, 1⟩
 
+def State.movePlayer (s : State) (p : PointZ) : State :=
+  { s with
+    player := p
+    grid := s.grid.modifyMany
+      [ (s.player, λ d => {d with player := false})
+      , (p, λ d => {d with player := true})
+      ]
+  }
+
+def State.moveBox (s : State) (p₁ p₂ : PointZ) : State :=
+  { s with
+    grid := s.grid.modifyMany
+      [ (p₁, λ d => {d with box := false})
+      , (p₂, λ d => {d with box := true})
+      ]
+  }
+
+def State.move (s : State) (m : Move) : Option State := do
+  let p_dif := m.toPoint
+  let p₁ := s.player + p_dif
+  let d₁ ← s.grid.get? p₁
+  guard # !d₁.wall
+  if !d₁.box then s.movePlayer p₁ else do
+    let p₂ := p₁ + p_dif
+    let d₂ ← s.grid.get? p₂
+    guard # !(d₂.box || d₂.wall)
+    s.moveBox p₁ p₂ |>.movePlayer p₁
+
 def State.solved (s : State) : Bool :=
   s.grid.all # λ _ d => d.target → d.box
+
+-----
+
+def sys : System State Move :=
+  { initial := {s | s.Valid}
+  , tr := State.move
+  }

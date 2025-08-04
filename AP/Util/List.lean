@@ -562,3 +562,14 @@ theorem eq_nil_of_isEmpty {α : Type*} [ha : IsEmpty α]
   nm x xs
   simp
   exact ha.1 x
+
+@[simp]
+theorem atMostOne_nil : [].atMostOne = true := rfl
+
+@[simp]
+theorem atMostOne_true_succ {bs} :
+(true :: bs).atMostOne = !bs.or := rfl
+
+@[simp]
+theorem atMostOne_false_succ {bs} :
+(false :: bs).atMostOne = bs.atMostOne := rfl

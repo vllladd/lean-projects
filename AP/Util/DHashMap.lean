@@ -408,3 +408,33 @@ theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
 theorem mem_toList_iff_get?_eq_some' (x : (i : α) × β i) :
 x ∈ mp.toList ↔ mp.get? x.1 = some x.2 := by
   rcases x with ⟨i, x⟩; simp
+
+@[simp]
+def modifyMany (mp : DHashMap α β) :
+List ((i : α) × (β i → β i)) → DHashMap α β
+| [] => mp
+| ⟨i, f⟩ :: xs => mp.modify i f |>.modifyMany xs
+
+theorem modify_equiv_modify_of_equiv
+{m₁ m₂ : Std.DHashMap α β} {i x} (h : m₁ ~m m₂) :
+m₁.modify i x ~m m₂.modify i x := h.modify i x
+
+theorem modifyMany_equiv_modifyMany_of_equiv
+{m₁ m₂ : Std.DHashMap α β} {xs} (h : m₁ ~m m₂) :
+m₁.modifyMany xs ~m m₂.modifyMany xs := by
+  induction xs generalizing m₁ m₂; simpa
+  nm x xs ih
+  rcases x with ⟨i, x⟩
+  simp
+  exact ih # h.modify i x
+
+theorem mem_iff_get?_eq_some {i : α} : i ∈ mp ↔ ∃ x, mp.get? i = some x := by
+  rw [←Option.isSome_iff_exists]
+  exact mem_iff_isSome_get?
+
+theorem get?_eq_ite {i} [hb : Inhabited # β i] :
+mp.get? i = if i ∈ mp then some # mp.get! i else none := by
+  rw [get!_eq_get!_get?]
+  split_ifs with h₁ <;> simp [mem_iff_get?_eq_some] at h₁
+  · obtain ⟨x, h₁⟩ := h₁; simp [h₁]
+  · rw [Option.eq_none_iff_forall_ne_some.mpr h₁]

@@ -1,4 +1,4 @@
-import AP.System.Reachability
+import AP.System.Invariant
 
 namespace System
 
