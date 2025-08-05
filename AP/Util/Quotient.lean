@@ -73,17 +73,17 @@ theorem Quot.mk_eq_mk {α : Type*} {s : Setoid α} {x y} :
 Quot.mk s x = Quot.mk s y ↔ s x y := Quotient.mk_eq_mk
 
 @[simp]
-theorem Quot.mk_out_rel {α : Type*} {s : Setoid α} {x} : s (mk s x).out x := by
+theorem Quot.mk_out_equiv {α : Type*} {s : Setoid α} {x} : s (mk s x).out x := by
   apply Quotient.mk_out
 
 @[simp]
-theorem Quot.rel_mk_out {α : Type*} {s : Setoid α} {x} : s x (mk s x).out := by
-  symm; exact mk_out_rel
+theorem Quot.equiv_mk_out {α : Type*} {s : Setoid α} {x} : s x (mk s x).out := by
+  symm; exact mk_out_equiv
 
 def quot_aux₁ {α : Type*} {β : α → Type*} {s : Setoid α}
 {f : (i : α) → β i} (h : ∀ (x y : α), s x y → HEq (f x) (f y)) (x) :
 β x = β (Quot.mk s x).out :=
-  type_eq_of_heq # h x (Quot.mk s x).out Quot.rel_mk_out
+  type_eq_of_heq # h x (Quot.mk s x).out Quot.equiv_mk_out
 
 def quot_aux₂ {α : Type*} {β : α → Type*} {s : Setoid α}
 {f : (i : α) → β i} (h : ∀ (x y : α), s x y → HEq (f x) (f y)) :
@@ -134,18 +134,18 @@ theorem Quotient.ndrec_eq_apply_out {α β : Type*} {s : Setoid α} {q : Quotien
   apply Quot.ndrec_eq_apply_out; exact h
 
 @[simp]
-theorem Quot.mk_out_rel_iff {α : Type*} {s : Setoid α} {x y} :
+theorem Quot.mk_out_equiv_iff {α : Type*} {s : Setoid α} {x y} :
 s (mk s x).out y ↔ s x y := by
   constructor <;> intro h
-  · exact s.trans' rel_mk_out h
-  · apply s.trans' mk_out_rel h
+  · exact s.trans' equiv_mk_out h
+  · apply s.trans' mk_out_equiv h
 
 @[simp]
-theorem Quot.rel_mk_out_iff {α : Type*} {s : Setoid α} {x y} :
+theorem Quot.equiv_mk_out_iff {α : Type*} {s : Setoid α} {x y} :
 s x (mk s y).out ↔ s x y := by
   constructor <;> intro h
-  · exact s.trans' h mk_out_rel
-  · apply s.trans' h rel_mk_out
+  · exact s.trans' h mk_out_equiv
+  · apply s.trans' h equiv_mk_out
 
 def liftWith_aux₂ {α β : Type*} {s : Setoid α} (q : Quotient s) (f : α → β)
 (h : ∀ (x y : α), s x q.out → s y q.out → f x = f y) : β := by
@@ -224,3 +224,11 @@ q.lift f h = f q.out := by
   simp
   apply h
   exact s.symm # mk_out x
+
+@[simp]
+theorem Quotient.out_equiv {α : Type*} {s : Setoid α} {x : α} :
+(⟦x⟧ : Quotient s).out ≈ x := by rw [←eq_mk_iff_out]
+
+@[simp]
+theorem Quotient.equiv_out {α : Type*} {s : Setoid α} {x : α} :
+x ≈ (⟦x⟧ : Quotient s).out := s.symm' out_equiv

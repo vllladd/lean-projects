@@ -9,7 +9,7 @@ structure Tile where
   box : Bool
   target : Bool
   wall : Bool
-deriving Inhabited
+deriving Inhabited, DecidableEq, Fintype
 
 @[ext]
 structure State where
@@ -17,14 +17,14 @@ structure State where
   height : ℕ
   grid : Map PointZ Tile
   player : PointZ
-deriving Inhabited
+deriving Inhabited, DecidableEq
 
 inductive Move where
 | up : Move
 | left : Move
 | right : Move
 | down : Move
-deriving Inhabited, Fintype
+deriving Inhabited, DecidableEq, Fintype
 
 -----
 

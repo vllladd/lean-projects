@@ -9,7 +9,7 @@ import AP.Util.Quotient
 import AP.Util.Multiset
 
 variable {α : Type*} {β : α → Type*} {γ : α → Type*}
-variable [hh₁ : LinearOrder α] [hh₂ : Hashable α]
+variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
 variable {mp : Std.DHashMap α β}
 
 namespace Std.DHashMap
@@ -87,10 +87,10 @@ instance : HasEquiv (Std.DHashMap α β) :=
 
 theorem equiv_def {m₁ m₂ : Std.DHashMap α β} : m₁ ≈ m₂ ↔ m₁ ~m m₂ := by rfl
 
-def toSortedList (m : Std.DHashMap α β) : List (Σ i, β i) :=
+def toSortedList [LinearOrder α] (m : Std.DHashMap α β) : List (Σ i, β i) :=
   m.toList.mergeSort (·.1 ≤ ·.1)
 
-theorem toSortedList_eq_of {m₁ m₂ : Std.DHashMap α β}
+theorem toSortedList_eq_of [LinearOrder α] {m₁ m₂ : Std.DHashMap α β}
 (h : m₁ ~m m₂) : m₁.toSortedList = m₂.toSortedList := by
   rename' m₁ => a
   rename' m₂ => b
@@ -123,7 +123,7 @@ theorem toSortedList_eq_of {m₁ m₂ : Std.DHashMap α β}
   exact h₂
 
 @[simp]
-theorem toSortedList_eq {m₁ m₂ : Std.DHashMap α β} :
+theorem toSortedList_eq [LinearOrder α] {m₁ m₂ : Std.DHashMap α β} :
 m₁.toSortedList = m₂.toSortedList ↔ m₁ ~m m₂ := by
   refine' ⟨λ h => _, toSortedList_eq_of⟩
   unfold toSortedList at h
@@ -131,11 +131,11 @@ m₁.toSortedList = m₂.toSortedList ↔ m₁ ~m m₂ := by
   exact List.perm_of_mergeSort_eq_mergeSort h
 
 @[simp]
-theorem nodup_toSortedList : mp.toSortedList.Nodup := by
+theorem nodup_toSortedList [LinearOrder α] : mp.toSortedList.Nodup := by
   simp [toSortedList]
 
 @[simp]
-theorem sorted_toSortedList : mp.toSortedList.Sorted (·.1 ≤ ·.1) := by
+theorem sorted_toSortedList [LinearOrder α] : mp.toSortedList.Sorted (·.1 ≤ ·.1) := by
   apply List.sorted_mergeSort_loc
   · rintro ⟨i, x⟩ ⟨j, y⟩ ⟨k, z⟩
     simp
@@ -146,6 +146,7 @@ theorem sorted_toSortedList : mp.toSortedList.Sorted (·.1 ≤ ·.1) := by
     intro h₁ h₂
     apply le_total
 
+@[simp]
 theorem ofList_snoc {xs} {x : Σ i, β i} :
 ofList (xs ++ [x]) = (ofList xs).insert x.fst x.snd := by
   simp_rw [ofList, insertMany_append]; rfl
@@ -309,11 +310,11 @@ theorem decideEquiv_eq [hh : ∀ i, DecidableEq # β i]
 {m₁ m₂ : Std.DHashMap α β} : m₁.decideEquiv m₂ = decide (m₁ ~m m₂) := by
   simp [equiv_iff_decideEquiv]
 
-def toSortedKeys (m : Std.DHashMap α β) : List α :=
+def toSortedKeys [LinearOrder α] (m : Std.DHashMap α β) : List α :=
   m.toSortedList.map (·.1)
 
 @[simp]
-theorem nodup_toSortedKeys : mp.toSortedKeys.Nodup := by
+theorem nodup_toSortedKeys [LinearOrder α] : mp.toSortedKeys.Nodup := by
   unfold toSortedKeys toSortedList
   rw [List.nodup_map_iff_inj_on] <;> simp
   rintro ⟨i, x⟩ hx ⟨j, y⟩ hy h
@@ -324,41 +325,41 @@ theorem nodup_toSortedKeys : mp.toSortedKeys.Nodup := by
   simp [hy]
 
 @[simp]
-theorem sorted_toSortedKeys : mp.toSortedKeys.Sorted (· ≤ ·) := by
+theorem sorted_toSortedKeys [LinearOrder α] : mp.toSortedKeys.Sorted (· ≤ ·) := by
   simp [toSortedKeys]
 
 @[simp]
-theorem toSortedList_perm_toList : mp.toSortedList.Perm mp.toList := by
+theorem toSortedList_perm_toList [LinearOrder α] : mp.toSortedList.Perm mp.toList := by
   simp [toSortedList]
 
 @[simp]
-theorem toList_perm_toSortedList : mp.toList.Perm mp.toSortedList :=
+theorem toList_perm_toSortedList [LinearOrder α] : mp.toList.Perm mp.toSortedList :=
   toSortedList_perm_toList.symm
 
 @[simp]
-theorem mem_toSortedList_iff {x} :
+theorem mem_toSortedList_iff {x} [LinearOrder α] :
 x ∈ mp.toSortedList ↔ x ∈ mp.toList :=
   mp.toSortedList_perm_toList.mem_iff
 
-theorem equiv_iff_toSortedList_perm {m₁ m₂ : Std.DHashMap α β} :
+theorem equiv_iff_toSortedList_perm [LinearOrder α] {m₁ m₂ : Std.DHashMap α β} :
 m₁ ~m m₂ ↔ m₁.toSortedList.Perm m₂.toSortedList := by
   rw [equiv_iff_toList_perm]
   apply iff_of_isEquiv <;> simp
 
 @[simp]
-theorem nodup_map_fst_toSortedList : (mp.toSortedList.map (·.1)).Nodup :=
+theorem nodup_map_fst_toSortedList [LinearOrder α] : (mp.toSortedList.map (·.1)).Nodup :=
   nodup_toSortedKeys
 
 @[simp]
-theorem mem_toSortedKeys {i} : i ∈ mp.toSortedKeys ↔ i ∈ mp := by
+theorem mem_toSortedKeys {i} [LinearOrder α] : i ∈ mp.toSortedKeys ↔ i ∈ mp := by
   simp [toSortedKeys, ←Option.isSome_iff_exists]
 
 @[simp]
-theorem toSortedList_perm_iff {m₁ m₂ : Std.DHashMap α β} :
+theorem toSortedList_perm_iff [LinearOrder α] {m₁ m₂ : Std.DHashMap α β} :
 m₁.toSortedList.Perm m₂.toSortedList ↔ m₁ ~m m₂ := by
   simp [toSortedList]; exact equiv_iff_toList_perm.symm
 
-theorem toSortedKeys_eq_of_equiv {m₁ m₂ : Std.DHashMap α β}
+theorem toSortedKeys_eq_of_equiv [LinearOrder α] {m₁ m₂ : Std.DHashMap α β}
 (h : m₁ ~m m₂) : m₁.toSortedKeys = m₂.toSortedKeys := by
   unfold toSortedKeys
   apply List.eq_of_perm_of_sorted_loc (r := (· ≤ ·)) <;> try simp
@@ -377,7 +378,7 @@ theorem toSortedKeys_eq_of_equiv {m₁ m₂ : Std.DHashMap α β}
     exact le_antisymm
 
 @[simp]
-theorem toSortedKeys_eq_iff_of_subsingleton {m₁ m₂ : Std.DHashMap α β}
+theorem toSortedKeys_eq_iff_of_subsingleton [LinearOrder α] {m₁ m₂ : Std.DHashMap α β}
 [hb : ∀ i, Subsingleton # β i] :
 m₁.toSortedKeys = m₂.toSortedKeys ↔ m₁ ~m m₂ := by
   refine' ⟨λ h => _, toSortedKeys_eq_of_equiv⟩
@@ -389,11 +390,11 @@ m₁.toSortedKeys = m₂.toSortedKeys ↔ m₁ ~m m₂ := by
   exact h
 
 @[simp]
-theorem toSortedList_eq_nil_iff : mp.toSortedList = [] ↔ mp ~m ∅ := by
+theorem toSortedList_eq_nil_iff [LinearOrder α] : mp.toSortedList = [] ↔ mp ~m ∅ := by
   simp [toSortedList]
 
 @[simp]
-theorem toSortedKeys_eq_nil_iff : mp.toSortedKeys = [] ↔ mp ~m ∅ := by
+theorem toSortedKeys_eq_nil_iff [LinearOrder α] : mp.toSortedKeys = [] ↔ mp ~m ∅ := by
   simp [toSortedKeys]
 
 def all (mp : DHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
@@ -438,3 +439,16 @@ mp.get? i = if i ∈ mp then some # mp.get! i else none := by
   split_ifs with h₁ <;> simp [mem_iff_get?_eq_some] at h₁
   · obtain ⟨x, h₁⟩ := h₁; simp [h₁]
   · rw [Option.eq_none_iff_forall_ne_some.mpr h₁]
+
+theorem get?_ofList_eq_some_iff {xs : List ((i : α) × β i)} {i x}
+(h : (xs.map (·.1)).Nodup) : (ofList xs).get? i = some x ↔ ⟨i, x⟩ ∈ xs := by
+  induction xs using List.reverseRecOn; simp
+  nm xs y ih
+  rcases y with ⟨j, y⟩
+  simp [get?_insert]
+  simp [List.map_append] at h
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  split_ifs with h₃
+  · subst h₃; simp [h₁]; exact eq_comm
+  · simp [ih, ne_symm' h₃]

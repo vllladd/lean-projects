@@ -1,6 +1,43 @@
 import AP.Util.Nat
-import AP.Util.Fintype
+import AP.Util.List
 import AP.Util.Function
+import AP.Util.Quotient
+
+namespace Fintype
+
+variable {α : Type*} [ha : Fintype α]
+
+theorem exi_iter_cycle
+{f : α → α} {x : α} : ∃ n m, n < m ∧ f^[n] x = f^[m] x := by
+  obtain ⟨g, hg⟩ := hv # λ n => f^[n] x
+  suffices h : ∃ n m, g n = g m ∧ n ≠ m by
+    subst hg
+    obtain ⟨n, m, h₁, h₂⟩ := h
+    wlog h₃ : n < m with ih
+    · symm at h₁ h₂
+      apply @ih α _ f x m n h₁ h₂ _
+      simp at h₃
+      exact Nat.lt_of_le_of_ne h₃ h₂
+    use n, m
+  by_contra! h₁
+  exact Fintype.false # Fintype.ofInjective g h₁
+
+@[simp]
+theorem complete' {x : α} : x ∈ Fintype.elems := Fintype.complete _
+
+instance {α : Type*} [h : IsEmpty α] : Fintype α := ⟨{}, by simp⟩
+
+noncomputable
+instance {β : Type*} {f : α → β} : Fintype # Set.range f := Fintype.ofFinite _
+
+@[simp]
+theorem elems_eq_empty_iff : ha.elems = ∅ ↔ ∀ (_ : α), False := by
+  simp [Finset.ext_iff]
+
+noncomputable
+instance {s : Set α} : Fintype s := Fintype.ofFinite _
+
+end Fintype
 
 namespace Finset
 
@@ -296,6 +333,19 @@ m₁.map f = m₂.map f ↔ m₁ = m₂ := by
   simp at h
   exact h
 
+@[simp]
+theorem toList_ofList_perm {α : Type*} {xs : List α} : (ofList xs).toList.Perm xs := by
+  change ⟦xs⟧.out ≈ xs; exact Quotient.out_equiv
+
+@[simp]
+theorem nodup_out_iff {α : Type*} {m : Multiset α} : m.out.Nodup ↔ m.Nodup := by
+  induction m using Quotient.inductionOn
+  nm xs
+  simp
+  apply List.Perm.nodup_iff
+  change (ofList xs).toList.Perm xs
+  simp
+
 end Multiset namespace List
 
 theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
@@ -370,4 +420,94 @@ xs.map f ~ ys.map f ↔ xs ~ ys := by
     by simpa [hm₁, hm₂]
   exact Multiset.map_eq_map_iff_loc hf
 
+theorem nodup_of_nodup_and_subperm {α : Type*} {xs ys : List α}
+(h₁ : ys.Nodup) (h₂ : xs <+~ ys) : xs.Nodup := by
+  classical
+  obtain ⟨m₁, hm₁⟩ := hv # Multiset.ofList xs
+  obtain ⟨m₂, hm₂⟩ := hv # Multiset.ofList ys
+  replace h₂ : m₁ ≤ m₂ := by subst hm₁ hm₂; simpa
+  simp only [←Multiset.coe_nodup, ←hm₁, ←hm₂] at h₁ ⊢
+  exact Multiset.nodup_of_le h₂ h₁
+
+theorem nodup_filterMap_of_nodup_map_aux {α β : Type*} {f : α → Option β} {xs : List α}
+(h : (xs.map f).Nodup) : (xs.filterMap f).Nodup := by
+  classical
+  by_cases hb : IsEmpty β
+  · cases h₁ : xs.filterMap f; simp
+    nm y ys
+    cases hb.1 y
+  simp at hb
+  replace hb := hb.Inhabited
+  rw [filterMap_eq]
+  rw [List.nodup_map_iff_inj_on]
+  rotate_left; apply h.filter
+  intro x hx y hy h₁
+  simp at hx hy
+  replace hx := hx.2
+  replace hy := hy.2
+  rw [Option.isSome_iff_exists] at hx hy
+  obtain ⟨x, rfl⟩ := hx
+  obtain ⟨y, rfl⟩ := hy
+  simp at h₁
+  simp [h₁]
+
+-- theorem nodup_filterMap_iff {α β : Type*} [ha : DecidableEq α]
+-- {f : α → Option β} {xs : List α} :
+-- (xs.filterMap f).Nodup ↔ ∀ x ∈ xs, ∀ y, f x = some y → xs.count x ≤ 1 := by
+--   classical
+--   induction xs <;> simp
+--   nm x xs ih
+--   simp [filterMap, count_cons]
+--   split <;> simp [ih] <;> clear ih
+--   · nm o h₁; clear o
+--     constructor
+--     · intro h₂
+--       simp [h₁]
+--       intro a h₃ b h₄
+--       split_ifs with hx <;> simp
+--       · subst hx; simp [h₁] at h₄
+--       · exact h₂ _ h₃ _ h₄
+--     · intro ⟨h₂, h₃⟩ a h₄ b h₅
+--       specialize h₃ _ h₄ _ h₅
+--       split_ifs at h₃ with hx
+--       · subst hx; simp [h₁] at h₅
+--       · exact h₃
+--   nm o y h₁; clear o
+--   simp [h₁]
+--   constructor
+--   · intro ⟨h₂, h₃⟩
+--     constructor
+--     · intro hx
+--       specialize h₂ _ hx
+--       exact h₂ h₁
+--     intro a h₄ b h₅
+--     specialize h₃ _ h₄ _ h₅
+--     split_ifs with hx
+--     · subst hx
+--       simp [h₁] at h₅
+--       subst h₅
+--       simp [h₂ _ h₄] at h₁
+--     exact h₃
+--   · intro ⟨h₂, h₃⟩
+--     constructor
+--     · intro a h₄ h₅
+--       specialize h₃ _ h₄ _ h₅
+--       rw [if_neg] at h₃
+
+-- #check 0 #exit
+
 end List namespace Finset
+
+variable {α : Type*}
+
+@[simp]
+theorem nodup_out_val {s : Finset α} : s.val.out.Nodup := by
+  rcases s with ⟨m, h⟩; simpa
+
+@[simp]
+theorem nodup_val {s : Finset α} : s.val.Nodup := by
+  rcases s with ⟨m, h⟩; simpa
+
+@[simp]
+theorem mem_out_val {s : Finset α} {x} : x ∈ s.val.out ↔ x ∈ s :=
+  mem_toList

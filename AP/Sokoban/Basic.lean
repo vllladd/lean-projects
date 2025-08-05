@@ -248,3 +248,9 @@ theorem sys_valid_iff {s} : sys.Valid s ↔ s.Valid := by
     split_ifs at hp₁ <;> subst hp₁ <;> simp
     any_goals assumption
     nm H₁ H₂; simpa [H₁, hp.player_iff]
+
+theorem valid_of_reachable {s s' : State} [hs : s.Valid]
+(hr : sys.Reachable s s') : s'.Valid := by
+  rw [←sys_valid_iff, sys.valid_iff] at hs ⊢
+  obtain ⟨s₀, h₁, h₂⟩ := hs
+  use s₀, h₁, h₂.trans hr

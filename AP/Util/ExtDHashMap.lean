@@ -1,7 +1,7 @@
 import AP.Util.DHashMap
 
 variable {α : Type*} {β : α → Type*} {γ : α → Type*}
-variable [hh₁ : LinearOrder α] [hh₂ : Hashable α]
+variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
 variable {mp : Std.ExtDHashMap α β}
 
 namespace Std.ExtDHashMap
@@ -34,11 +34,11 @@ theorem get?_eq_none_iff {i} : mp.get? i = none ↔ i ∉ mp := by
   obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
   simp [hx]
 
-def toList (mp : Std.ExtDHashMap α β) : List (Σ i, β i) :=
+def toList [LinearOrder α] (mp : Std.ExtDHashMap α β) : List (Σ i, β i) :=
   mp.lift Std.DHashMap.toSortedList # by simp
 
 @[simp]
-theorem toList_empty : (∅ : Std.ExtDHashMap α β).toList = [] := by
+theorem toList_empty [LinearOrder α] : (∅ : Std.ExtDHashMap α β).toList = [] := by
   change List.mergeSort _ _ = _; simp
 
 @[simp]
@@ -122,12 +122,44 @@ ofList xs = ofList ys ↔ xs.Perm ys := by
   rw [h₃.mem_iff, h₄.mem_iff]
   simp
 
-def range [ha : Fintype α] (f : (i : α) → β i) : Std.ExtDHashMap α β := by
+def range' [ha : Fintype α] (f : (i : α) → Option (β i)) : Std.ExtDHashMap α β := by
+  apply ha.1.1.liftWith # λ xs => ofList # xs.filterMap # λ i => (f i).map (⟨i, ·⟩)
+  classical
   rcases ha with ⟨⟨m, hm⟩, ha⟩
-  refine' m.liftWith _ _
-  · intro xs
-    exact ofList # xs.map # λ i => ⟨i, f i⟩
-  clear ha
+  replace hm : m.toList.Nodup := by simpa
+  intro xs ys (hx : m.toList.Perm xs) (hy : m.toList.Perm ys)
+  rw [ofList_eq_ofList_iff]
+  rotate_left
+  -- · simp [List.map_filterMap]
+  --   rw [List.filterMap_eq]
+  --   rw [List.nodup_map_iff_inj_on]
+  --   · intro x h₁ y h₂ h₃
+  --     rw [Option.ext_iff] at h₃
+  --     have h₄ := h₃ x
+  --     have h₅ := h₃ y
+  --     clear h₃
+  --     simp at h₄ h₅
+  --     by_contra h
+  --     simp [h, ne_symm' h] at h₄ h₅
+  --   exact hx.nodup hm
+  -- · simp; exact hy.nodup hm
+  -- rw [List.map_perm_map_iff]
+  -- · exact hx.symm.trans hy
+  -- intro x y h
+  -- simp at h
+  -- exact h.1
+  · simp [List.map_filterMap]
+    unfold Function.comp
+    dsimp
+    -- rw [List.nodup_iff_count]
+    -- intro x
+    -- rw [List.count_filterMap]
+
+#check 0 #exit
+
+def range [ha : Fintype α] (f : (i : α) → β i) : Std.ExtDHashMap α β := by
+  apply ha.1.1.liftWith # λ xs => ofList # xs.map # λ i => ⟨i, f i⟩
+  rcases ha with ⟨⟨m, hm⟩, ha⟩
   replace hm : m.toList.Nodup := by simpa
   intro xs ys (hx : m.toList.Perm xs) (hy : m.toList.Perm ys)
   rw [ofList_eq_ofList_iff]
@@ -143,26 +175,24 @@ def range [ha : Fintype α] (f : (i : α) → β i) : Std.ExtDHashMap α β := b
 @[simp]
 theorem mem_range [ha : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ range f := by
   simp [range]
-  change i ∈ ha.elems.val.toList
-  simp
 
 @[simp]
 theorem nonempty_insert {x} : Insert.insert x mp ≠ ⟨⟦∅⟧⟩ := by
   apply ne_of_congr (x.1 ∈ ·); simp
 
 @[simp]
-theorem nodup_toList : mp.toList.Nodup := by
+theorem nodup_toList [LinearOrder α] : mp.toList.Nodup := by
   rcases mp with ⟨mp⟩
   apply mp.ind; intro mp
   exact Std.DHashMap.nodup_toSortedList
 
 @[simp]
-theorem sorted_toList : mp.toList.Sorted (·.1 ≤ ·.1) := by
+theorem sorted_toList [LinearOrder α] : mp.toList.Sorted (·.1 ≤ ·.1) := by
   rcases mp with ⟨mp⟩
   apply mp.ind; simp [toList, lift]
 
 @[simp]
-theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
+theorem mem_toList {x} [LinearOrder α] : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
   rcases mp with ⟨mp⟩
   unfold toList get? lift
   apply mp.ind
@@ -171,7 +201,7 @@ theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
   simp [Std.DHashMap.toSortedList]
 
 @[simp]
-theorem toList_eq_toList {m₁ m₂ : Std.ExtDHashMap α β} :
+theorem toList_eq_toList [LinearOrder α] {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   refine' ⟨λ h => _, λ h => by rw [h]⟩
   rw [List.eq_iff_of_nodup_and_sorted (·.1 ≤ ·.1)] at h
@@ -193,7 +223,7 @@ m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   exact h
 
 @[simp]
-theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
+theorem toList_eq_nil_iff [LinearOrder α] : mp.toList = [] ↔ mp = ∅ := by
   rw [←toList_empty, toList_eq_toList]
 
 theorem eq_iff_inner_eq {m₁ m₂ : Std.ExtDHashMap α β} :
@@ -252,15 +282,15 @@ def all (mp : ExtDHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
     simp [h]
 
 @[simp]
-theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
+theorem all_def {p} [LinearOrder α] : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
   rcases mp with ⟨mp⟩; apply mp.ind; simp [all, get?, lift]
 
-def keys (mp : Std.ExtDHashMap α β) : List α :=
+def keys [LinearOrder α] (mp : Std.ExtDHashMap α β) : List α :=
   mp.lift Std.DHashMap.toSortedKeys # λ m₁ _ =>
     m₁.toSortedKeys_eq_of_equiv
 
 @[simp]
-theorem mem_keys {i} : i ∈ mp.keys ↔ i ∈ mp := by
+theorem mem_keys [LinearOrder α] {i} : i ∈ mp.keys ↔ i ∈ mp := by
   rcases mp with ⟨mp⟩
   apply mp.ind; intro mp
   simp [keys, lift]; rfl
@@ -290,3 +320,41 @@ mp.get? i = if i ∈ mp then some # mp.get! i else none := by
   split_ifs with h₁ <;> simp [mem_iff_get?_eq_some] at h₁
   · obtain ⟨x, h₁⟩ := h₁; simp [h₁]
   · rw [Option.eq_none_iff_forall_ne_some.mpr h₁]
+
+theorem get?_ofList_eq_some_iff {xs : List ((i : α) × β i)} {i x}
+(h : (xs.map (·.1)).Nodup) : (ofList xs).get? i = some x ↔ ⟨i, x⟩ ∈ xs :=
+  Std.DHashMap.get?_ofList_eq_some_iff h
+
+@[simp]
+theorem get?_range [ha : Fintype α] {f : (i : α) → β i} {i} :
+(range f).get? i = some (f i) := by
+  simp [range]
+  rw [get?_ofList_eq_some_iff # by simp]
+  simp
+
+theorem injective_range [ha : Fintype α] :
+Function.Injective (Std.ExtDHashMap.range (α := α) (β := β)) := by
+  intro f g h
+  ext i
+  rw [ext_iff] at h
+  specialize h i
+  simp at h
+  exact h
+
+-- #check 0 #exit
+
+instance [ha : Fintype α] [hb : ∀ i, Fintype (β i)] : Fintype (Std.ExtDHashMap α β) := by
+  have hf : Fintype # (i : α) → β i := inferInstance
+  replace hf := hf.1
+  refine' ⟨hf.map ⟨_, injective_range⟩, _⟩
+  intro m
+  simp
+  use λ i => mp.get! i
+
+#check 0 #exit
+
+instance [ha : Finite α] [hb : ∀ i, Finite (β i)] : Finite (Std.ExtDHashMap α β) := by
+  apply Fintype.finite
+  replace ha := @Fintype.ofFinite α ha
+  replace hb := λ i => @Fintype.ofFinite _ # hb i
+  infer_instance

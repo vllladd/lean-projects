@@ -3,7 +3,7 @@ import AP.Util.Basic
 universe u v w
 
 structure DMap (α : Type u) (β : α → Type v)
-[hh₁ : LinearOrder α] [hh₂ : Hashable α] : Type (max u v) where
+[hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type (max u v) where
   inner : Std.ExtDHashMap α β
 
 namespace DMap
@@ -11,7 +11,7 @@ namespace DMap
 open Std.DHashMap
 
 variable {α : Type u} {β : α → Type v} {γ : α → Type w}
-variable [hh₁ : LinearOrder α] [hh₂ : Hashable α]
+variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
 variable {mp : DMap α β}
 
 def empty : DMap α β := ⟨∅⟩
@@ -85,7 +85,7 @@ theorem get!_map_eq_of_pos {f : ∀ i, β i → γ i} {i : α}
   simp [get?] at hx
   simp [get!, Std.ExtDHashMap.get!_eq_get?, map, hx]
 
-def toList (mp : DMap α β) : List (Σ i, β i) :=
+def toList [LinearOrder α] (mp : DMap α β) : List (Σ i, β i) :=
   mp.inner.lift toSortedList # by simp
 
 @[simp]
@@ -97,7 +97,7 @@ ofList (xs ++ [x]) = (ofList xs).insertP x := by
   unfold insertP ofList; simp
 
 @[simp]
-theorem toList_empty : (∅ : DMap α β).toList = [] :=
+theorem toList_empty [LinearOrder α] : (∅ : DMap α β).toList = [] :=
   Std.ExtDHashMap.toList_empty
 
 @[simp]
@@ -184,25 +184,25 @@ theorem nonempty_insert {x} : Insert.insert x mp ≠ ∅ := by
   exact Std.ExtDHashMap.nonempty_insert
 
 @[simp]
-theorem nodup_toList : mp.toList.Nodup :=
+theorem nodup_toList [LinearOrder α] : mp.toList.Nodup :=
   Std.ExtDHashMap.nodup_toList
 
 @[simp]
-theorem sorted_toList : mp.toList.Sorted (·.1 ≤ ·.1) :=
+theorem sorted_toList [LinearOrder α] : mp.toList.Sorted (·.1 ≤ ·.1) :=
   Std.ExtDHashMap.sorted_toList
 
 @[simp]
-theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 :=
+theorem mem_toList [LinearOrder α] {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 :=
   Std.ExtDHashMap.mem_toList
 
 @[simp]
-theorem toList_eq_toList {m₁ m₂ : DMap α β} :
+theorem toList_eq_toList [LinearOrder α] {m₁ m₂ : DMap α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
   exact Std.ExtDHashMap.toList_eq_toList
 
 @[simp]
-theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
+theorem toList_eq_nil_iff [LinearOrder α] : mp.toList = [] ↔ mp = ∅ := by
   rcases mp with ⟨mp⟩; simp [empty_def]
   exact Std.ExtDHashMap.toList_eq_nil_iff
 
@@ -219,7 +219,7 @@ def all (mp : DMap α β) (p : (i : α) → β i → Bool) : Bool :=
   mp.1.all p
 
 @[simp]
-theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
+theorem all_def {p} [LinearOrder α] : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
   simp [all]; rfl
 
 def modify (mp : DMap α β) (i : α) (f : β i → β i) : DMap α β :=

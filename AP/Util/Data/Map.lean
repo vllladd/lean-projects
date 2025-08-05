@@ -3,11 +3,11 @@ import AP.Util.Data.DMap
 universe u v w
 
 structure Map (α : Type u) (β : Type v)
-[hh₁ : LinearOrder α] [hh₂ : Hashable α] : Type (max u v) where
+[hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type (max u v) where
   inner : Std.ExtDHashMap α (λ _ => β)
 
 variable {α : Type u} {β : Type v} {γ : Type w}
-variable [hh₁ : LinearOrder α] [hh₂ : Hashable α]
+variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
 variable {mp : Map α β}
 
 namespace Map
@@ -85,7 +85,7 @@ theorem get!_map_eq_of_pos {f : α → β → γ} {i : α}
   simp [get?] at hx
   simp [get!, Std.ExtDHashMap.get!_eq_get?, map, hx]
 
-def toList (mp : Map α β) : List (α × β) :=
+def toList [LinearOrder α] (mp : Map α β) : List (α × β) :=
   mp.inner.lift (λ m => m.toSortedList.map Sigma.toProd) #
     by simp
 
@@ -98,7 +98,7 @@ ofList (xs ++ [x]) = (ofList xs).insertP x := by
   unfold insertP ofList; simp
 
 @[simp]
-theorem toList_empty : (∅ : Map α β).toList = [] := by
+theorem toList_empty [LinearOrder α] : (∅ : Map α β).toList = [] := by
   change List.map _ _ = _; simp [toSortedList]
 
 @[simp]
@@ -193,19 +193,19 @@ theorem nonempty_insert {x} : Insert.insert x mp ≠ ∅ := by
   rwa [Std.ExtDHashMap.inner_eq_iff_eq]
 
 @[simp]
-theorem nodup_toList : mp.toList.Nodup := by
+theorem nodup_toList [LinearOrder α] : mp.toList.Nodup := by
   rcases mp with ⟨⟨mp⟩⟩; unfold toList Std.ExtDHashMap.lift
   rw [Quotient.lift_eq]
   rw [List.nodup_map_iff # by simp]
   simp
 
 @[simp]
-theorem sorted_toList : mp.toList.Sorted (·.1 ≤ ·.1) := by
+theorem sorted_toList [LinearOrder α] : mp.toList.Sorted (·.1 ≤ ·.1) := by
   rcases mp with ⟨⟨mp⟩⟩; unfold toList Std.ExtDHashMap.lift
   apply mp.ind; simp
 
 @[simp]
-theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
+theorem mem_toList [LinearOrder α] {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
   rcases mp with ⟨⟨mp⟩⟩; unfold toList
   apply mp.ind
   clear mp; intro mp
@@ -215,13 +215,13 @@ theorem mem_toList {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 := by
   simp
 
 @[simp]
-theorem toList_eq_toList {m₁ m₂ : Map α β} :
+theorem toList_eq_toList [LinearOrder α] {m₁ m₂ : Map α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   rcases m₁ with ⟨⟨m₁⟩⟩; rcases m₂ with ⟨⟨m₂⟩⟩
   simp [toList, Quotient.lift_eq, ←equiv_def]
 
 @[simp]
-theorem toList_eq_nil_iff : mp.toList = [] ↔ mp = ∅ := by
+theorem toList_eq_nil_iff [LinearOrder α] : mp.toList = [] ↔ mp = ∅ := by
   rcases mp with ⟨⟨mp⟩⟩; unfold toList
   apply mp.ind; clear mp; intro mp
   simp [empty_def]
@@ -253,14 +253,14 @@ instance [hh : DecidableEq β] : DecidableEq (Map α β) :=
     rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
     simp at h; simpa
 
-def values (mp : Map α β) : List β :=
+def values [LinearOrder α] (mp : Map α β) : List β :=
   mp.toList.map (·.2)
 
 def all (mp : Map α β) (p : α → β → Bool) : Bool :=
   mp.1.all p
 
 @[simp]
-theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
+theorem all_def [LinearOrder α] {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
   simp [all]; rfl
 
 def modify (mp : Map α β) (i : α) (f : β → β) : Map α β :=
@@ -309,5 +309,5 @@ theorem get?_modify {i} {f : β → β} {j} :
   simp [modify, get?, Std.ExtDHashMap.get?_modify, ne_symm' h₁]
 
 @[simp]
-theorem mem_values {x} : x ∈ mp.values ↔ ∃ i, mp.get? i = some x := by
+theorem mem_values [LinearOrder α] {x} : x ∈ mp.values ↔ ∃ i, mp.get? i = some x := by
   simp [values]

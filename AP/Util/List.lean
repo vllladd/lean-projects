@@ -582,3 +582,15 @@ theorem atMostOne_false_succ {bs} :
 theorem atMostOne_pair {b₁ b₂} :
 [b₁, b₂].atMostOne = (!b₁ || !b₂) := by
   simp [atMostOne]
+
+@[simp]
+theorem nodup_snoc {α : Type*} {xs : List α} {x} :
+(xs ++ [x]).Nodup ↔ x ∉ xs ∧ xs.Nodup := by
+  rw [←nodup_reverse]; simp
+
+theorem filterMap_eq {α β : Type*} [hb : Inhabited β] {xs : List α} {f : α → Option β} :
+xs.filterMap f = (xs.map f |>.filter Option.isSome |>.map Option.get!) := by
+  induction xs; rfl
+  nm x xs ih
+  simp [filterMap, filter]
+  split <;> nm b h <;> simpa [h]

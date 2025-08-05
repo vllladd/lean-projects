@@ -3,13 +3,13 @@ import AP.Util.Data.Map
 universe u v w
 
 structure Set' (α : Type u)
-[hh₁ : LinearOrder α] [hh₂ : Hashable α] : Type (max u v) where
+[hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type (max u v) where
   inner : Std.ExtDHashMap α (λ _ => Unit)
 
 variable {α : Type u} {β : Type v} {γ : Type w}
-variable [ha₁ : LinearOrder α] [ha₂ : Hashable α]
-variable [hb₁ : LinearOrder β] [hb₂ : Hashable β]
-variable [hc₁ : LinearOrder γ] [hc₂ : Hashable γ]
+variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
+variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
 variable {s : Set' α}
 
 namespace Set'
@@ -52,7 +52,7 @@ instance {i} : Decidable (s.mem i) := by
 instance {i} : Decidable (i ∈ s) := by
   change Decidable # s.mem i; infer_instance
 
-def toList (s : Set' α) : List α :=
+def toList [LinearOrder α] (s : Set' α) : List α :=
   s.inner.lift (·.toSortedKeys) # by
     intro s₁ s₂ h; dsimp; unfold toSortedKeys; congr 1; simpa
 
@@ -65,7 +65,7 @@ ofList (xs ++ [x]) = (ofList xs).insertP x := by
   unfold insertP ofList; simp
 
 @[simp]
-theorem toList_empty : (∅ : Set' α).toList = [] := by
+theorem toList_empty [LinearOrder α] : (∅ : Set' α).toList = [] := by
   change List.map _ _ = _; simp [toSortedList]
 
 @[simp]
@@ -149,18 +149,18 @@ theorem nonempty_insert {x} : Insert.insert x s ≠ ∅ := by
   rwa [Std.ExtDHashMap.inner_eq_iff_eq]
 
 @[simp]
-theorem nodup_toList : s.toList.Nodup := by
+theorem nodup_toList [LinearOrder α] : s.toList.Nodup := by
   rcases s with ⟨⟨s⟩⟩; unfold toList Std.ExtDHashMap.lift
   rw [Quotient.lift_eq]
   simp
 
 @[simp]
-theorem sorted_toList : s.toList.Sorted (· ≤ ·) := by
+theorem sorted_toList [LinearOrder α] : s.toList.Sorted (· ≤ ·) := by
   rcases s with ⟨⟨s⟩⟩; unfold toList Std.ExtDHashMap.lift
   apply s.ind; simp
 
 @[simp]
-theorem mem_toList {x} : x ∈ s.toList ↔ x ∈ s := by
+theorem mem_toList [LinearOrder α] {x} : x ∈ s.toList ↔ x ∈ s := by
   rcases s with ⟨⟨s⟩⟩; unfold toList
   apply s.ind; clear s; intro s
   unfold toSortedKeys Std.ExtDHashMap.lift
@@ -168,14 +168,14 @@ theorem mem_toList {x} : x ∈ s.toList ↔ x ∈ s := by
   simp [Option.eq_iff_of_subsingleton]
 
 @[simp]
-theorem toList_eq_toList {s₁ s₂ : Set' α} :
+theorem toList_eq_toList [LinearOrder α] {s₁ s₂ : Set' α} :
 s₁.toList = s₂.toList ↔ s₁ = s₂ := by
   rcases s₁ with ⟨⟨s₁⟩⟩; rcases s₂ with ⟨⟨s₂⟩⟩
   simp [toList, Quotient.lift_eq]
   exact Quotient.out_equiv_out (x := s₁)
 
 @[simp]
-theorem toList_eq_nil_iff : s.toList = [] ↔ s = ∅ := by
+theorem toList_eq_nil_iff [LinearOrder α] : s.toList = [] ↔ s = ∅ := by
   rcases s with ⟨⟨s⟩⟩; unfold toList
   apply s.ind; clear s; intro s
   simp [empty_def]
@@ -205,16 +205,16 @@ instance : DecidableEq (Set' α) :=
 
 instance : Inhabited (Set α) := ⟨∅⟩
 
-def values (s : Set' α) : List α :=
+def values [LinearOrder α] (s : Set' α) : List α :=
   s.1.keys
 
 @[simp]
-theorem mem_values {i} : i ∈ s.values ↔ i ∈ s := by
+theorem mem_values [LinearOrder α] {i} : i ∈ s.values ↔ i ∈ s := by
   simp [values]; rfl
 
 def all (s : Set' α) (p : α → Bool) : Bool :=
   s.1.all # λ i _ => p i
 
 @[simp]
-theorem all_def {p} : s.all p = decide (∀ x ∈ s.values, p x) := by
+theorem all_def [LinearOrder α] {p} : s.all p = decide (∀ x ∈ s.values, p x) := by
   simp [all, values, Option.eq_iff_of_subsingleton]

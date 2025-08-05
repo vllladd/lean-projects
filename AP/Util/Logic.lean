@@ -164,3 +164,7 @@ theorem not_and_iff_or {P Q} : ¬(P ∧ Q) ↔ ¬P ∨ ¬Q := by tauto
 theorem ne_symm' {α : Type*} {a b : α} (h : ¬(a = b)) : ¬(b = a) := by tauto
 
 theorem ne_comm' {α : Type*} {a b : α} : ¬(a = b) ↔ ¬(b = a) := by tauto
+
+noncomputable
+def Nonempty.Inhabited {α : Type*} [h : Nonempty α] : Inhabited α :=
+  Classical.inhabited_of_nonempty h

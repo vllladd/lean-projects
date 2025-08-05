@@ -460,3 +460,7 @@ theorem Equiv.bijective_toFun {α β : Type*} (e : α ≃ β) : e.toFun.Bijectiv
 theorem Equiv.bijective_invFun {α β : Type*} (e : α ≃ β) : e.invFun.Bijective := by
   rw [Function.bijective_iff_has_inverse]
   exact ⟨e.toFun, e.right_inv, e.left_inv⟩
+
+theorem Set.finite_of_subset_finset {α : Type*} {set : Set α}
+(s : Finset α) (h : ∀ x ∈ set, x ∈ s) : set.Finite := by
+  classical apply Finite.ofFinset (s := s.filter (· ∈ set)); simpa
