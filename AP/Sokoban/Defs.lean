@@ -28,16 +28,27 @@ deriving Inhabited, Fintype
 
 -----
 
+@[class]
+structure State.Get (s : State) (p : PointZ) (d : Tile) : Prop where
+  h : s.grid.get? p = d
+
+@[class]
+structure State.Get' (s : State) (d : Tile) : Prop where
+  h : ∃ p, s.Get p d
+
+@[class]
 structure Tile.Valid (d : Tile) : Prop where
-  h₁ : [d.player, d.box, d.wall].atMostOne
-  h₂ : [d.target, d.wall].atMostOne
+  h_tw : [d.target, d.wall].atMostOne
+  h_pbw : [d.player, d.box, d.wall].atMostOne
 
+@[class]
 structure State.Valid (s : State) : Prop where
-  h₁ : ∀ p, p ∈ s.grid ↔ 0 ≤ p.x ∧ 0 ≤ p.y ∧
+  h_bounds : ∀ {p}, p ∈ s.grid ↔ 0 ≤ p.x ∧ 0 ≤ p.y ∧
     p.x < s.width ∧ p.y < s.height
-  h₂ : ∀ d ∈ s.grid.values, d.Valid
-  h₃ : ∀ p ∈ s.grid, (s.grid.get! p).player ↔ s.player = p
+  h_grid : ∀ {d}, s.Get' d → d.Valid
+  h_player : ∀ {p d}, s.Get p d → (d.player ↔ s.player = p)
 
+@[class]
 structure State.ValidTargets (s : State) extends State.Valid s where
   h₄ : s.grid.values.countP (·.box) = s.grid.values.countP (·.target)
 

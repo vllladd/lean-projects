@@ -2,6 +2,29 @@ import AP.Sokoban.Defs
 
 namespace Sokoban
 
+theorem State.get_iff {s : State} {p d} : s.Get p d ↔ s.grid.get? p = some d :=
+  ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+theorem State.get'_iff {s : State} {d} : s.Get' d ↔ ∃ p, s.grid.get? p = some d := by
+  constructor
+  · rintro ⟨h⟩; simp [get_iff] at h; exact h
+  · intro h; constructor; simpa [get_iff]
+
+theorem State.get?_grid_eq_some_iff {s : State} {p d} :
+s.grid.get? p = some d ↔ s.Get p d := State.get_iff.symm
+
+theorem State.Get.eq_of {s : State} {p d₁ d₂}
+(h₁ : s.Get p d₁) (h₂ : s.Get p d₂) : d₁ = d₂ := by
+  rw [s.get_iff] at h₁ h₂; simp [h₁] at h₂; exact h₂
+
+theorem State.Get.get' {s : State} {p d} (hd : s.Get p d) : s.Get' d := ⟨⟨_, hd⟩⟩
+
+theorem State.Get.valid {s : State} {p d} [hs : s.Valid] (hd : s.Get p d) : d.Valid :=
+  hs.h_grid hd.get'
+
+theorem State.Get'.valid {s : State} {d} [hs : s.Valid] (hd : s.Get' d) : d.Valid :=
+  hs.h_grid hd
+
 @[simp]
 theorem sys_initial_iff {s} : sys.Initial s ↔ s.Valid := by
   rw [System.initial_iff]; rfl
@@ -47,10 +70,9 @@ p ∈ (s.moveBox p₁ p₂).grid ↔ p ∈ s.grid := by
 theorem get?_grid_movePlayer {s : State} {p₁ p} :
 (s.movePlayer p₁).grid.get? p =
 (s.grid.get? p).map (λ d =>
-  if p = p₁ then {d with player := true}
-  else if p = s.player then {d with player := false}
-  else d
-) := by
+if p₁ = p then {d with player := true}
+else if s.player = p then {d with player := false}
+else d) := by
   symm; simp [State.movePlayer, Map.get?_eq_ite]
   by_cases h₁ : p ∈ s.grid <;> simp [h₁]
   rw [Map.mem_iff_get?_eq_some] at h₁
@@ -69,10 +91,9 @@ theorem get?_grid_movePlayer {s : State} {p₁ p} :
 theorem get?_grid_moveBox {s : State} {p₁ p₂ p} :
 (s.moveBox p₁ p₂).grid.get? p =
 (s.grid.get? p).map (λ d =>
-  if p = p₂ then {d with box := true}
-  else if p = p₁ then {d with box := false}
-  else d
-) := by
+if p₂ = p then {d with box := true}
+else if p₁ = p then {d with box := false}
+else d) := by
   symm; simp [State.moveBox, Map.get?_eq_ite]
   by_cases h₁ : p ∈ s.grid <;> simp [h₁]
   rw [Map.mem_iff_get?_eq_some] at h₁
@@ -86,6 +107,20 @@ theorem get?_grid_moveBox {s : State} {p₁ p₂ p} :
   simp [h₂, h₃]
   simp_rw [eq_comm (a := p₁)]
   split_ifs with h₄ <;> simp
+
+@[simp]
+theorem get_movePlayer {s : State} {p₁ p d} :
+(s.movePlayer p₁).Get p d ↔ ∃ d', s.Get p d' ∧
+(if p₁ = p then {d' with player := true}
+else if s.player = p then {d' with player := false} else d') = d := by
+  simp [State.get_iff]
+
+@[simp]
+theorem get_moveBox {s : State} {p₁ p₂ p d} :
+(s.moveBox p₁ p₂).Get p d ↔ ∃ d', s.Get p d' ∧
+(if p₂ = p then {d' with box := true}
+else if p₁ = p then {d' with box := false} else d') = d := by
+  simp [State.get_iff]
 
 theorem movePlayer_moveBox {s : State} {p₁ p₂ p₃} :
 (s.moveBox p₁ p₂).movePlayer p₃ = (s.movePlayer p₃).moveBox p₁ p₂ := by
@@ -115,10 +150,11 @@ let p_dif := t.toPoint
 let p₁ := s.player + p_dif
 let p₂ := p₁ + p_dif
 let s₁ := s.movePlayer p₁
-∃ d₁, s.grid.get? p₁ = some d₁ ∧ !d₁.wall ∧ if !d₁.box then s' = s₁
-else ∃ d₂, s.grid.get? p₂ = some d₂ ∧ d₂.box = false ∧
-d₂.wall = false ∧ s' = s₁.moveBox p₁ p₂ := by
-  simp [State.move, Map.get?_eq_ite]
+∃ d₁, s.Get p₁ d₁ ∧ !d₁.wall ∧ if !d₁.box then s₁ = s'
+else ∃ d₂, s.Get p₂ d₂ ∧ d₂.box = false ∧
+d₂.wall = false ∧ s₁.moveBox p₁ p₂ = s' := by
+  simp [State.move, Map.get?_eq_ite, s.get_iff]
+  simp only [eq_comm (b := s')]
   intro h₁ h₂
   simp [ite_eq_iff, Option.bind_ite]
   split_ifs with h₃ <;> simp [h₃]
@@ -130,161 +166,85 @@ d₂.wall = false ∧ s' = s₁.moveBox p₁ p₂ := by
   revert s'
   simp [movePlayer_moveBox]
 
+@[simp]
+theorem Move.toPoint_ne_zero {t : Move} : t.toPoint ≠ 0 := by
+  cases t <;> decide
+
+theorem State.Get.player_eq {s : State} {p d} [hs : s.Valid] (hd : s.Get p d) :
+s.player = p ↔ d.player := hs.h_player hd |>.symm
+
+theorem State.Get.player_iff {s : State} {p d} [hs : s.Valid] (hd : s.Get p d) :
+d.player = decide (s.player = p) := by simp [hd.player_eq]
+
+theorem State.Get.player_of_get_player {s : State} {d} [hs : s.Valid]
+(hd : s.Get s.player d) : d.player := by simp [hd.player_iff]
+
+theorem State.Get.not_box_and_not_wall_of_get_player {s : State} {d} [hs : s.Valid]
+(hd : s.Get s.player d) : d.box = false ∧ d.wall = false := by
+  have h₁ := hd.valid.h_pbw
+  simp [hd.player_of_get_player] at h₁
+  exact h₁
+
 theorem sys_valid_iff {s} : sys.Valid s ↔ s.Valid := by
   symm; constructor
   · simp [System.valid_iff]; intro h; use s
   intro h
   apply sys.invariant_init h; simp
-  clear! s; intro s s' t h₁ h₂
+  clear! s; intro s s' t hs h₂
   simp at h₂
   obtain ⟨d₁, h₂, h₃, h₄⟩ := h₂
   split_ifs at h₄ with h₅
   · obtain ⟨d₂, h₄, h₆, h₇, rfl⟩ := h₄
     constructor
-    · simp; exact h₁.1
-    · intro d hd
-      rw [Map.mem_values] at hd
+    · simp; exact hs.h_bounds
+    · intro d ⟨p, hd⟩
       simp at hd
-      obtain ⟨p, d₃, hd₁, hd₂⟩ := hd
-      split_ifs at hd₂
-      · nm hd₃ hd₄
-        subst hd₃
-        cases hsp : s.player
-        simp [hsp] at hd₄
-        cases t <;> simp [Move.toPoint] at hd₄
-      · nm hd₃ hd₄ hd₅
-        rw [hd₃, add_assoc] at hd₅
-        cases t <;> simp [Move.toPoint] at hd₅
-      · subst hd₂
-        nm hd₂ hd₃ hd₄
-        rw [←hd₂] at h₄
-        simp [h₄] at hd₁
-        subst hd₁
-        have h₈ : d₂.player = false := by
-          rcases h₁ with ⟨h₁, h₈, h₉⟩
-          specialize h₉ p
-          rw [Map.mem_iff_get?_eq_some, Map.get!_eq_get?_get!] at h₉
-          rw [eq_comm] at hd₄
-          simp [hd₄, h₄] at h₉
-          exact h₉
-        constructor <;> simp [h₇, h₈]
-        cases d₂.target <;> rfl
-      · nm hd₃ hd₄
-        simp at hd₂
-        subst hd₂
-        clear hd₃
-        subst hd₄
-        simp [h₂] at hd₁
-        subst hd₁
+      obtain ⟨d₃, H₁, H₂⟩ := hd
+      split_ifs at H₂
+      · nm H₃ H₄; simp [←H₃] at H₄
+      · nm H₃ H₄ H₅; simp [←H₃, add_assoc] at H₅
+      · subst H₂
+        nm H₂ H₃ H₄
+        rw [H₂] at h₄
+        replace H₁ := h₄.eq_of H₁; subst H₁
+        rw [h₄.player_eq] at H₄
+        constructor <;> simp [h₇, H₄]
+      · simp at H₂; subst H₂
+        nm H₂ H₃; subst H₃
+        replace H₁ := h₂.eq_of H₁; subst H₁
         constructor <;> simp [h₃]
-        cases d₁.target <;> rfl
-      · nm hd₃ hd₄ hd₅
-        clear hd₃ hd₄
-        subst hd₅
-        subst hd₂
-        rcases h₁ with ⟨h₁, h₈, h₉⟩
-        specialize h₉ s.player
-        simp [Map.mem_iff_get?_eq_some, Map.get!_eq_get?_get!, hd₁] at h₉
-        specialize h₈ d₃
-        simp at h₈
-        specialize h₈ _ hd₁
-        rcases h₈ with ⟨h₈, h₁₀⟩
-        constructor <;> simp [h₁₀]
-        simp [h₉] at h₈
-        simp [h₈]
-      · subst hd₂
-        replace h₁ := h₁.2
-        specialize h₁ d₃
-        simp at h₁
-        exact h₁ p hd₁
-    · simp
-      intro p hp
-      simp [Map.get!_eq_get?_get!]
+      · nm H₃ H₄ H₅
+        subst H₂ H₅
+        constructor <;> simp [H₁.not_box_and_not_wall_of_get_player]
+      · subst H₂; exact H₁.valid
+    · simp; intro p d hp
       split_ifs
-      · nm hd₁ hd₂
-        simp [hd₁] at hd₂
-        cases t <;> simp [Move.toPoint] at hd₂
-      · nm hd₁ hd₂ hd₃
-        subst hd₃
-        simp [add_assoc] at hd₁
-        cases t <;> simp [Move.toPoint] at hd₁
-      · nm hd₁ hd₂ hd₃
-        clear hd₂ hd₃
-        rw [←hd₁] at h₄
-        simp [h₄]
-        have hx : t.toPoint ≠ 0 :=
-          by
-            cases t <;> simp [Move.toPoint]
-        simp at hx
-        rw [imp_iff_not_or, ←not_and_iff_or] at hx
-        simp [hd₁, hx]
-        replace h₁ := h₁.3
-        specialize h₁ p
-        simp [Map.mem_iff_get?_eq_some, Map.get!_eq_get?_get!, h₄] at h₁
-        by_contra h₂
-        simp [h₁] at h₂
-        simp [h₂, add_assoc] at hd₁
-        cases t <;> simp [Move.toPoint] at hd₁
-      · nm hd₁ hd₂; clear hd₁
-        rw [←hd₂] at h₂
-        simp [h₂]
-        exact hd₂.symm
-      · nm hd₁ hd₂ hd₃; clear hd₁ hd₂
-        rw [Map.mem_iff_get?_eq_some] at hp
-        obtain ⟨d, hp⟩ := hp
-        simp [hp]
-        simp [hd₃]
-        cases t <;> simp [Move.toPoint]
-      · nm hd₁ hd₂ hd₃
-        rw [Map.mem_iff_get?_eq_some] at hp
-        obtain ⟨d, hp⟩ := hp
-        simp [hp]
-        replace h₁ := h₁.3 p
-        simp [Map.mem_iff_get?_eq_some, Map.get!_eq_get?_get!, hp] at h₁
-        rw [h₁, eq_comm]
-        simp [hd₃]
-        rintro rfl
-        simp at hd₂
+      · nm H₁ H₂; simp [←H₁] at H₂
+      · nm H₁ H₂ H₃; simp [H₃, add_assoc] at H₁
+      · nm H₁ H₂ H₃
+        rw [H₁] at h₄
+        replace hp := h₄.eq_of hp; subst hp
+        simp [←H₁]
+        simpa [h₄.player_iff]
+      · nm H₁ H₂; clear H₁; rw [H₂] at h₂; simpa
+      · nm H₁ H₂ H₃; clear H₁ H₂; simp [H₃]
+      · nm H₁ H₂ H₃; simpa [H₂, hp.player_iff]
   subst h₄
-  constructor <;> simp; exact h₁.1
-  · intro d₂ p d₃ h₆ h₇
-    split_ifs at h₇
-    · nm hd₁
-      rw[←hd₁] at h₂
-      simp [h₂] at h₆
-      subst h₆
-      subst h₇
+  constructor;
+  · simp; exact hs.h_bounds
+  · intro d₂ ⟨p, h₆⟩
+    simp at h₆
+    obtain ⟨d₃, hp, hp₁⟩ := h₆
+    split_ifs at hp₁ <;> subst hp₁
+    · nm H₁; subst H₁
+      replace hp := h₂.eq_of hp; subst hp
       constructor <;> simp [h₃, h₅]
-      cases d₁.target <;> rfl
-    · nm hd₁ hd₂; subst hd₂ h₇
-      have hx := h₁.2 d₃
-      simp at hx
-      specialize hx _ h₆
-      rcases hx with ⟨hd₂, hd₃⟩
-      constructor <;> simp
-      rotate_left; exact hd₃
-      replace h₁ := h₁.3 s.player
-      simp [Map.mem_iff_get?_eq_some, Map.get!_eq_get?_get!, h₆] at h₁
-      simp [h₁] at hd₂
-      simp [hd₂]
-    · nm hd₁ hd₂
-      subst h₇
-      apply h₁.2
-      simp
-      use p
-  · intro p hp
-    simp [Map.get!_eq_get?_get!]
-    rw [Map.mem_iff_get?_eq_some] at hp
-    obtain ⟨d, hp⟩ := hp
-    simp [hp]
-    split_ifs
-    · nm hd₁; simp [hd₁]
-    · nm hd₁ hd₂
-      simp
-      rwa [eq_comm]
-    · nm hd₁ hd₂
-      rw [eq_comm] at hd₁ hd₂
-      simp [hd₁]
-      replace h₁ := h₁.3 p
-      simp [Map.mem_iff_get?_eq_some, Map.get!_eq_get?_get!, hp, hd₂] at h₁
-      exact h₁
+    · nm H₁ H₂; subst H₂
+      constructor <;> simp [hp.not_box_and_not_wall_of_get_player]
+    · exact hp.valid
+  · intro p d hp
+    simp at hp
+    obtain ⟨d₂, hp, hp₁⟩ := hp
+    split_ifs at hp₁ <;> subst hp₁ <;> simp
+    any_goals assumption
+    nm H₁ H₂; simpa [H₁, hp.player_iff]

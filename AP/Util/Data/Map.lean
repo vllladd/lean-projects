@@ -303,10 +303,10 @@ theorem get!_eq_get?_get! [Inhabited β] {i} : mp.get! i = (mp.get? i).get! :=
 
 @[simp]
 theorem get?_modify {i} {f : β → β} {j} :
-(mp.modify i f).get? j = if i = j then
-((mp.get? j).map f) else mp.get? j := by
+(mp.modify i f).get? j = if j = i then
+(mp.get? j).map f else mp.get? j := by
   split_ifs with h₁; subst h₁; simp [modify, get?]
-  simp [modify, get?, Std.ExtDHashMap.get?_modify, h₁]
+  simp [modify, get?, Std.ExtDHashMap.get?_modify, ne_symm' h₁]
 
 @[simp]
 theorem mem_values {x} : x ∈ mp.values ↔ ∃ i, mp.get? i = some x := by

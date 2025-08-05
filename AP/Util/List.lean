@@ -567,9 +567,18 @@ theorem eq_nil_of_isEmpty {α : Type*} [ha : IsEmpty α]
 theorem atMostOne_nil : [].atMostOne = true := rfl
 
 @[simp]
+theorem atMostOne_singleton {b} : [b].atMostOne = true := by
+  cases b <;> rfl
+
+@[simp]
 theorem atMostOne_true_succ {bs} :
 (true :: bs).atMostOne = !bs.or := rfl
 
 @[simp]
 theorem atMostOne_false_succ {bs} :
 (false :: bs).atMostOne = bs.atMostOne := rfl
+
+@[simp]
+theorem atMostOne_pair {b₁ b₂} :
+[b₁, b₂].atMostOne = (!b₁ || !b₂) := by
+  simp [atMostOne]

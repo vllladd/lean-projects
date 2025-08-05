@@ -165,26 +165,6 @@ instance [Hashable α] : Hashable (Point α) :=
   ⟨λ p => hash p.toProd⟩
 
 end LinearOrder
-end Point
-
-abbrev PointN := Point ℕ
-abbrev PointZ := Point ℤ
-
-def PointN.dist (a b : PointN) : ℕ :=
-  max |(a.x : ℤ) - b.x| |(a.y : ℤ) - b.y| |>.toNat
-
-def PointZ.dist (a b : PointZ) : ℕ :=
-  max |a.x - b.x| |a.y - b.y| |>.toNat
-
-@[simp, symm]
-theorem PointN.dist.comm {a b : PointN} : a.dist b = b.dist a := by
-  simp [PointN.dist, abs_sub_comm]
-
-@[simp, symm]
-theorem PointZ.dist.comm {a b : PointZ} : a.dist b = b.dist a := by
-  simp [PointZ.dist, abs_sub_comm]
-
-namespace Point
 
 section Ring
 
@@ -333,10 +313,43 @@ instance [ha : Ring α] : Ring (Point α) where
 
 end Ring
 
-@[simp]
 theorem eq_zero_iff [Zero α] {p : Point α} : p = 0 ↔ p.1 = 0 ∧ p.2 = 0 := by
   cases p; simp [zero_def]
 
-@[simp]
 theorem zero_eq_iff [Zero α] {p : Point α} : 0 = p ↔ p.1 = 0 ∧ p.2 = 0 := by
-  rw [eq_comm]; simp
+  rw [eq_comm]; exact eq_zero_iff
+
+@[simp]
+theorem mk_eq_zero_iff [Zero α] {x y : α} : (⟨x, y⟩ : Point α) = 0 ↔ x = 0 ∧ y = 0 :=
+  eq_zero_iff
+
+@[simp]
+theorem zero_eq_mk_iff [Zero α] {x y : α} : 0 = (⟨x, y⟩ : Point α) ↔ x = 0 ∧ y = 0 :=
+  zero_eq_iff
+
+end Point
+
+abbrev PointN := Point ℕ
+abbrev PointZ := Point ℤ
+
+def PointN.dist (a b : PointN) : ℕ :=
+  max |(a.x : ℤ) - b.x| |(a.y : ℤ) - b.y| |>.toNat
+
+def PointZ.dist (a b : PointZ) : ℕ :=
+  max |a.x - b.x| |a.y - b.y| |>.toNat
+
+@[simp, symm]
+theorem PointN.dist.comm {a b : PointN} : a.dist b = b.dist a := by
+  simp [PointN.dist, abs_sub_comm]
+
+@[simp, symm]
+theorem PointZ.dist.comm {a b : PointZ} : a.dist b = b.dist a := by
+  simp [PointZ.dist, abs_sub_comm]
+
+@[simp]
+theorem PointN.add_self_eq_zero_iff {a : PointN} : a + a = 0 ↔ a = 0 := by
+  rcases a with ⟨x, y⟩; simp
+
+@[simp]
+theorem PointZ.add_self_eq_zero_iff {a : PointZ} : a + a = 0 ↔ a = 0 := by
+  rcases a with ⟨x, y⟩; simp
