@@ -6,6 +6,7 @@ variable {α : Type*}
 structure Point (α : Type*) where
   x : α
   y : α
+deriving Inhabited, DecidableEq, Fintype
 
 namespace Point
 
@@ -17,9 +18,6 @@ instance : DecidableEq (Point α) := λ a b =>
 match h : decide # a.x = b.x ∧ a.y = b.y with
 | true => isTrue # by ext <;> simp_all
 | false => isFalse # by rintro rfl; simp at h
-
-instance [Inhabited α] : Inhabited (Point α) :=
-  ⟨default, default⟩
 
 instance [ha : Repr α] : Repr (Point α) := by
   constructor

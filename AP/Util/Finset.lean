@@ -429,7 +429,7 @@ theorem nodup_of_nodup_and_subperm {α : Type*} {xs ys : List α}
   simp only [←Multiset.coe_nodup, ←hm₁, ←hm₂] at h₁ ⊢
   exact Multiset.nodup_of_le h₂ h₁
 
-theorem nodup_filterMap_of_nodup_map_aux {α β : Type*} {f : α → Option β} {xs : List α}
+example {α β : Type*} {f : α → Option β} {xs : List α}
 (h : (xs.map f).Nodup) : (xs.filterMap f).Nodup := by
   classical
   by_cases hb : IsEmpty β
@@ -451,50 +451,211 @@ theorem nodup_filterMap_of_nodup_map_aux {α β : Type*} {f : α → Option β} 
   simp at h₁
   simp [h₁]
 
--- theorem nodup_filterMap_iff {α β : Type*} [ha : DecidableEq α]
--- {f : α → Option β} {xs : List α} :
--- (xs.filterMap f).Nodup ↔ ∀ x ∈ xs, ∀ y, f x = some y → xs.count x ≤ 1 := by
---   classical
---   induction xs <;> simp
---   nm x xs ih
---   simp [filterMap, count_cons]
---   split <;> simp [ih] <;> clear ih
---   · nm o h₁; clear o
---     constructor
---     · intro h₂
---       simp [h₁]
---       intro a h₃ b h₄
---       split_ifs with hx <;> simp
---       · subst hx; simp [h₁] at h₄
---       · exact h₂ _ h₃ _ h₄
---     · intro ⟨h₂, h₃⟩ a h₄ b h₅
---       specialize h₃ _ h₄ _ h₅
---       split_ifs at h₃ with hx
---       · subst hx; simp [h₁] at h₅
---       · exact h₃
---   nm o y h₁; clear o
---   simp [h₁]
---   constructor
---   · intro ⟨h₂, h₃⟩
---     constructor
---     · intro hx
---       specialize h₂ _ hx
---       exact h₂ h₁
---     intro a h₄ b h₅
---     specialize h₃ _ h₄ _ h₅
---     split_ifs with hx
---     · subst hx
---       simp [h₁] at h₅
---       subst h₅
---       simp [h₂ _ h₄] at h₁
---     exact h₃
---   · intro ⟨h₂, h₃⟩
---     constructor
---     · intro a h₄ h₅
---       specialize h₃ _ h₄ _ h₅
---       rw [if_neg] at h₃
+theorem nodup_filterMap_iff {α β : Type*} [ha : DecidableEq α]
+{f : α → Option β} {xs : List α} :
+(xs.filterMap f).Nodup ↔ ∀ x ∈ xs, ∀ y, f x = some y → xs.count x ≤ 1 ∧
+∀ x' ∈ xs, f x' = some y → x = x' := by
+  classical
+  induction xs <;> simp
+  nm x xs ih
+  simp [filterMap, count_cons]
+  split <;> simp [ih] <;> clear ih
+  · nm o h₁; clear o
+    constructor
+    · intro h₂
+      simp [h₁]
+      intro a h₃ b h₄
+      split_ifs with hx <;> simp
+      · subst hx; simp [h₁] at h₄
+      · exact h₂ _ h₃ _ h₄
+    · intro ⟨h₂, h₃⟩ a h₄ b h₅
+      specialize h₃ _ h₄ _ h₅
+      rcases h₃ with ⟨h₃, h₆, h₇⟩
+      split_ifs at h₃ with hx
+      · subst hx; simp [h₁] at h₅
+      · use h₃
+  nm o y h₁; clear o
+  simp [h₁]
+  constructor
+  · intro ⟨h₂, h₃⟩
+    refine' ⟨⟨_, _⟩, _⟩
+    · intro hx
+      specialize h₂ _ hx
+      exact h₂ h₁
+    · intro a h₄ h₅
+      specialize h₂ _ h₄
+      contradiction
+    · intro a h₄ b h₅
+      specialize h₃ _ h₄ _ h₅
+      rcases h₃ with ⟨h₃, h₆⟩
+      split_ifs with hx
+      · subst hx
+        simp [h₁] at h₅
+        subst h₅
+        simp [h₂ _ h₄] at h₁
+      refine' ⟨h₃, _, h₆⟩
+      rintro rfl
+      specialize h₂ _ h₄
+      contradiction
+  · intro ⟨⟨h₂, h₃⟩, h₆⟩
+    constructor
+    · intro a h₄ h₅
+      specialize h₃ _ h₄ h₅
+      subst h₃
+      contradiction
+    · intro a h₇ b h₈
+      specialize h₆ _ h₇ _ h₈
+      rcases h₆ with ⟨h₆, h₉, H₁⟩
+      refine' ⟨_, H₁⟩
+      split_ifs at h₆ with H₂
+      · subst H₂; contradiction
+      · exact h₆
 
--- #check 0 #exit
+theorem filterMap_perm_filterMap_iff_filter_map_perm {α β : Type*} {f : α → Option β}
+{xs ys : List α} : xs.filterMap f ~ ys.filterMap f ↔ (xs.map f).filter Option.isSome ~
+(ys.map f).filter Option.isSome := by
+  classical
+  by_cases hb : IsEmpty β
+  · have h₁ : f = λ _ => none
+    · ext a b
+      cases hb.1 b
+    subst h₁
+    simp
+  simp at hb
+  replace hb := hb.Inhabited
+  simp only [filterMap_eq]
+  rw [map_perm_map_iff_loc]
+  intro b₁ b₂
+  simp [Option.isSome_iff_exists]
+  aesop
+
+theorem count_filter_pos {α : Type*} [ha : DecidableEq α] {f : α → Bool}
+{xs : List α} {x} (h : f x) : (xs.filter f).count x = xs.count x := count_filter h
+
+theorem count_filter_neg {α : Type*} [ha : DecidableEq α] {f : α → Bool}
+{xs : List α} {x} (h : f x = false) : (xs.filter f).count x = 0 := by
+  simp [h]
+
+theorem count_filter_neg' {α : Type*} [ha : DecidableEq α] {f : α → Bool}
+{xs : List α} {x} (h : ¬f x) : (xs.filter f).count x = 0 := by
+  simp [h]
+
+theorem count_filter_eq_ite {α : Type*} [ha : DecidableEq α] {f : α → Bool}
+{xs : List α} {x} : (xs.filter f).count x = if f x then xs.count x else 0 := by
+  split_ifs with h₁
+  · exact count_filter_pos h₁
+  · exact count_filter_neg' h₁
+
+theorem filter_perm_of_perm {α : Type*}
+{f : α → Bool} {xs ys : List α} (h : xs ~ ys) : xs.filter f ~ ys.filter f := by
+  classical
+  have h₁ := h
+  rw [perm_iff_count] at h₁ ⊢
+  intro x
+  specialize h₁ x
+  by_cases h₂ : x ∈ xs
+  simp only [count_filter_eq_ite, h₁]
+  convert rfl (a := 0); simp [h₂]; rw [h.mem_iff] at h₂; simp [h₂]
+
+theorem count_map_of_loc {α β : Type*} [ha : DecidableEq α] [hb : DecidableEq β]
+{f : α → β} {xs : List α} {x : α} (h : ∀ y ∈ xs, f x = f y → x = y) :
+(xs.map f).count (f x) = xs.count x := by
+  induction xs <;> simp
+  nm a xs ih
+  specialize ih _
+  · intro b h₁ h₂
+    specialize h b
+    simp [h₁, h₂] at h
+    exact h
+  simp [count_cons, ih]
+  rw [eq_comm]
+  nth_rw 2 [eq_comm]
+  constructor
+  · apply h
+    simp
+  rintro rfl; rfl
+
+theorem count_map_eq_sum {α β : Type*}
+[ha : DecidableEq α] [hb : DecidableEq β] {f : α → β} {xs : List α} {y : β} :
+(xs.map f).count y = ∑ x ∈ xs.toFinset, if f x = y then xs.count x else 0 := by
+  induction xs; rfl
+  nm x xs ih
+  simp
+  generalize hs : xs.toFinset = s at ih ⊢
+  simp [count_cons, ih]; clear ih
+  by_cases hx : x ∉ s
+  · have hx' : x ∉ xs := by simp [←hs] at hx; exact hx
+    rw [add_comm]
+    simp [Finset.sum_insert hx]
+    congr 1
+    · simp [count_eq_zero_of_not_mem hx']
+    apply Finset.sum_eq_sum_of_fn_congr
+    intro i h₁
+    congr
+    simp
+    rintro rfl
+    contradiction
+  simp at hx
+  have hx' : x ∈ xs := by simp [←hs] at hx; exact hx
+  simp [Finset.insert_eq_of_mem hx]
+  generalize hs' : s.erase x = s'
+  have h₁ : x ∉ s' := by subst hs'; simp
+  have h₂ : insert x s' = s
+  · subst s'; rwa [Finset.insert_erase]
+  simp [←h₂, Finset.sum_insert h₁]
+  rw [add_assoc]
+  nth_rw 2 [add_comm]
+  split_ifs with h₃
+  · simp only [add_assoc, Nat.add_left_cancel_iff]
+    apply Finset.sum_eq_sum_of_fn_congr
+    subst hs'
+    intro i h₄
+    simp at h₄
+    rcases h₄ with ⟨h₄, h₅⟩
+    subst h₃
+    simp [ne_symm' h₄]
+  simp
+  apply Finset.sum_eq_sum_of_fn_congr
+  subst hs'
+  intro i h₄
+  simp at h₄
+  rcases h₄ with ⟨h₄, h₅⟩
+  simp [ne_symm' h₄]
+
+theorem filterMap_perm_filterMap_of {α β : Type*} {f : α → Option β}
+{xs ys : List α} (hx : xs ~ ys) : xs.filterMap f ~ ys.filterMap f := by
+  classical
+  rw [filterMap_perm_filterMap_iff_filter_map_perm]
+  apply filter_perm_of_perm
+  rw [perm_iff_count]
+  intro y
+  by_cases h₁ : y ∉ xs.map f
+  · rw [count_eq_zero_of_not_mem h₁]
+    symm
+    rw [count_eq_zero]
+    simp at h₁ ⊢
+    rintro b hb rfl
+    have h₂ := hb; rw [←hx.mem_iff] at h₂
+    exact h₁ _ h₂ rfl
+  simp at h₁
+  obtain ⟨x, h₁, rfl⟩ := h₁
+  have h₂ := h₁; rw [hx.mem_iff] at h₂
+  have h₃ : (xs.map f).count (f x) = ∑ i ∈ xs.toFinset,
+    if f i = f x then xs.count i else 0 := by convert count_map_eq_sum
+  have h₄ : (ys.map f).count (f x) = ∑ i ∈ ys.toFinset,
+    if f i = f x then ys.count i else 0 := by convert count_map_eq_sum
+  rw [h₃, h₄]; clear h₃ h₄
+  have h₃ : xs.toFinset = ys.toFinset
+  · ext z
+    simp
+    exact hx.mem_iff
+  rw [h₃]; clear h₃
+  apply Finset.sum_eq_sum_of_fn_congr
+  intro i h₃
+  simp at h₃
+  split_ifs with h₄; rotate_left; rfl
+  rw [perm_iff_count] at hx
+  apply hx
 
 end List namespace Finset
 

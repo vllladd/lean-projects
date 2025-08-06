@@ -145,7 +145,7 @@ theorem inst_decidableRel_eq {α β : Type*} {r : α → β → Prop}
 theorem inst_decidableEq_eq {α : Type*} {H₁ H₂ : DecidableEq α} : H₁ = H₂ :=
   inst_decidableRel_eq
 
-theorem forall_iff_of {α : Type*} {p q : α → Prop}
+theorem forall_iff_of {α : Sort*} {p q : α → Prop}
 (h : ∀ x, p x ↔ q x) : (∀ x, p x) ↔ (∀ x, q x) := by
   simp [h]
 

@@ -122,6 +122,17 @@ ofList xs = ofList ys ↔ xs.Perm ys := by
   rw [h₃.mem_iff, h₄.mem_iff]
   simp
 
+omit hh₂ in private theorem range'_aux {ms xs : List α}
+{f : (i : α) → Option (β i)} (hm : ms.Nodup) (hx : ms.Perm xs) :
+xs.filterMap (λ i => f i |>.map # Sigma.mk i) |>.map (·.1) |>.Nodup := by
+  simp [List.map_filterMap]
+  unfold Function.comp
+  simp [List.nodup_filterMap_iff]
+  intro x h₁ y h₂
+  rw [hx.nodup_iff, List.nodup_iff_count] at hm
+  use hm _
+  intro z h₃ w h₄ h₅; exact h₅.symm
+
 def range' [ha : Fintype α] (f : (i : α) → Option (β i)) : Std.ExtDHashMap α β := by
   apply ha.1.1.liftWith # λ xs => ofList # xs.filterMap # λ i => (f i).map (⟨i, ·⟩)
   classical
@@ -130,32 +141,12 @@ def range' [ha : Fintype α] (f : (i : α) → Option (β i)) : Std.ExtDHashMap 
   intro xs ys (hx : m.toList.Perm xs) (hy : m.toList.Perm ys)
   rw [ofList_eq_ofList_iff]
   rotate_left
-  -- · simp [List.map_filterMap]
-  --   rw [List.filterMap_eq]
-  --   rw [List.nodup_map_iff_inj_on]
-  --   · intro x h₁ y h₂ h₃
-  --     rw [Option.ext_iff] at h₃
-  --     have h₄ := h₃ x
-  --     have h₅ := h₃ y
-  --     clear h₃
-  --     simp at h₄ h₅
-  --     by_contra h
-  --     simp [h, ne_symm' h] at h₄ h₅
-  --   exact hx.nodup hm
-  -- · simp; exact hy.nodup hm
-  -- rw [List.map_perm_map_iff]
-  -- · exact hx.symm.trans hy
-  -- intro x y h
-  -- simp at h
-  -- exact h.1
-  · simp [List.map_filterMap]
-    unfold Function.comp
-    dsimp
-    -- rw [List.nodup_iff_count]
-    -- intro x
-    -- rw [List.count_filterMap]
-
-#check 0 #exit
+  · exact range'_aux hm hx
+  · exact range'_aux hm hy
+  apply List.filterMap_perm_filterMap_of
+  trans m.toList
+  · exact hx.symm
+  · exact hy
 
 def range [ha : Fintype α] (f : (i : α) → β i) : Std.ExtDHashMap α β := by
   apply ha.1.1.liftWith # λ xs => ofList # xs.map # λ i => ⟨i, f i⟩
@@ -175,6 +166,11 @@ def range [ha : Fintype α] (f : (i : α) → β i) : Std.ExtDHashMap α β := b
 @[simp]
 theorem mem_range [ha : Fintype α] {f : (i : α) → β i} {i : α} : i ∈ range f := by
   simp [range]
+
+@[simp]
+theorem mem_range' [ha : Fintype α] {f : (i : α) → Option (β i)} {i : α} :
+i ∈ range' f ↔ ∃ x, f i = some x := by
+  simp [range']; aesop
 
 @[simp]
 theorem nonempty_insert {x} : Insert.insert x mp ≠ ⟨⟦∅⟧⟩ := by
@@ -332,6 +328,20 @@ theorem get?_range [ha : Fintype α] {f : (i : α) → β i} {i} :
   rw [get?_ofList_eq_some_iff # by simp]
   simp
 
+@[simp]
+theorem get?_range' [ha : Fintype α] {f : (i : α) → Option (β i)} {i} :
+(range' f).get? i = f i := by
+  simp [range']
+  ext x
+  rw [get?_ofList_eq_some_iff]
+  rotate_left
+  · clear i x
+    simp [List.map_filterMap]; unfold Function.comp; dsimp
+    rw [List.nodup_filterMap_iff]
+    simp
+    rintro x y h₁ x' y' h₂ rfl; rfl
+  simp; aesop
+
 theorem injective_range [ha : Fintype α] :
 Function.Injective (Std.ExtDHashMap.range (α := α) (β := β)) := by
   intro f g h
@@ -341,20 +351,26 @@ Function.Injective (Std.ExtDHashMap.range (α := α) (β := β)) := by
   simp at h
   exact h
 
--- #check 0 #exit
+theorem injective_range' [ha : Fintype α] :
+Function.Injective (Std.ExtDHashMap.range' (α := α) (β := β)) := by
+  intro f g h
+  ext i
+  rw [ext_iff] at h
+  specialize h i
+  simp at h
+  simp [h]
 
 instance [ha : Fintype α] [hb : ∀ i, Fintype (β i)] : Fintype (Std.ExtDHashMap α β) := by
-  have hf : Fintype # (i : α) → β i := inferInstance
-  replace hf := hf.1
-  refine' ⟨hf.map ⟨_, injective_range⟩, _⟩
+  have hf : Fintype # (i : α) → Option (β i) := inferInstance
+  refine' ⟨hf.1.map ⟨_, injective_range'⟩, _⟩
   intro m
   simp
-  use λ i => mp.get! i
-
-#check 0 #exit
+  use m.get?
+  ext x y
+  simp
 
 instance [ha : Finite α] [hb : ∀ i, Finite (β i)] : Finite (Std.ExtDHashMap α β) := by
   apply Fintype.finite
-  replace ha := @Fintype.ofFinite α ha
+  replace ha := @Fintype.ofFinite _ ha
   replace hb := λ i => @Fintype.ofFinite _ # hb i
   infer_instance

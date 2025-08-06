@@ -311,3 +311,13 @@ theorem get?_modify {i} {f : β → β} {j} :
 @[simp]
 theorem mem_values [LinearOrder α] {x} : x ∈ mp.values ↔ ∃ i, mp.get? i = some x := by
   simp [values]
+
+instance [ha : Fintype α] [hb : Fintype β] : Fintype (Map α β) :=
+  haveI h : Fintype # Std.ExtDHashMap α (λ _ => β) := inferInstance
+  ⟨h.1.map ⟨.mk, λ _ _ => by simp⟩, by simp⟩
+
+instance [ha : Finite α] [hb : Finite β] : Finite (Map α β) := by
+  apply Fintype.finite
+  replace ha := @Fintype.ofFinite _ ha
+  replace hb := @Fintype.ofFinite _ hb
+  infer_instance

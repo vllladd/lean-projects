@@ -266,3 +266,13 @@ theorem get?_modify {i} {f : β i → β i} {j} :
 h ▸ ((mp.get? j).map (λ x => f (h.symm ▸ x))) else mp.get? j := by
   convert Std.ExtDHashMap.get?_modify <;> simp
   generalize_proofs h₁; subst h₁; simp [get?]
+
+instance [ha : Fintype α] [hb : ∀ i, Fintype (β i)] : Fintype (DMap α β) :=
+  haveI h : Fintype # Std.ExtDHashMap α β := inferInstance
+  ⟨h.1.map ⟨.mk, λ _ _ => by simp⟩, by simp⟩
+
+instance [ha : Finite α] [hb : ∀ i, Finite (β i)] : Finite (DMap α β) := by
+  apply Fintype.finite
+  replace ha := @Fintype.ofFinite _ ha
+  replace hb := λ i => @Fintype.ofFinite _ # hb i
+  infer_instance

@@ -3,7 +3,7 @@ import AP.Util.Data.Map
 universe u v w
 
 structure Set' (α : Type u)
-[hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type (max u v) where
+[hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type u where
   inner : Std.ExtDHashMap α (λ _ => Unit)
 
 variable {α : Type u} {β : Type v} {γ : Type w}
@@ -132,7 +132,7 @@ ofList xs = ofList ys ↔ xs.Perm ys := by
 
 def univ [ha : Fintype α] : Set' α :=
   ⟨Std.ExtDHashMap.range # λ _ => ()⟩
-  
+
 @[simp]
 theorem mem_univ [ha : Fintype α] {i : α} : i ∈ univ :=
   Std.ExtDHashMap.mem_range
@@ -218,3 +218,12 @@ def all (s : Set' α) (p : α → Bool) : Bool :=
 @[simp]
 theorem all_def [LinearOrder α] {p} : s.all p = decide (∀ x ∈ s.values, p x) := by
   simp [all, values, Option.eq_iff_of_subsingleton]
+
+instance [ha : Fintype α] : Fintype (Set' α) :=
+  haveI h : Fintype # Std.ExtDHashMap α (λ _ => Unit) := inferInstance
+  ⟨h.1.map ⟨.mk, λ _ _ => by simp⟩, by simp⟩
+
+instance [ha : Finite α] : Finite (Set' α) := by
+  apply Fintype.finite
+  replace ha := @Fintype.ofFinite _ ha
+  infer_instance
