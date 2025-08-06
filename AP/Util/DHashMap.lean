@@ -452,3 +452,13 @@ theorem get?_ofList_eq_some_iff {xs : List ((i : α) × β i)} {i x}
   split_ifs with h₃
   · subst h₃; simp [h₁]; exact eq_comm
   · simp [ih, ne_symm' h₃]
+
+@[simp]
+theorem get?_eq_some_get!_iff {i} [hb : Inhabited (β i)] :
+mp.get? i = some (mp.get! i) ↔ i ∈ mp := by
+  simp [get?_eq_ite]
+
+@[simp]
+theorem get?_eq_some_get?_get! {i} [hb : Inhabited (β i)] :
+mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
+  simp [←get!_eq_get!_get?]

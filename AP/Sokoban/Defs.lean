@@ -46,7 +46,8 @@ structure State.Valid (s : State) : Prop where
   h_bounds : ∀ {p}, p ∈ s.grid ↔ 0 ≤ p.x ∧ 0 ≤ p.y ∧
     p.x < s.width ∧ p.y < s.height
   h_grid : ∀ {d}, s.Get' d → d.Valid
-  h_player : ∀ {p d}, s.Get p d → (d.player ↔ s.player = p)
+  h_player_mem : s.player ∈ s.grid
+  h_player_iff : ∀ {p d}, s.Get p d → (d.player ↔ s.player = p)
 
 @[class]
 structure State.ValidTargets (s : State) extends State.Valid s where

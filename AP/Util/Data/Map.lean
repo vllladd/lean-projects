@@ -321,3 +321,23 @@ instance [ha : Finite α] [hb : Finite β] : Finite (Map α β) := by
   replace ha := @Fintype.ofFinite _ ha
   replace hb := @Fintype.ofFinite _ hb
   infer_instance
+
+@[simp]
+theorem range_eq_range_iff [ha : Fintype α] {f g : α → β} :
+range f = range g ↔ ∀ x, f x = g x := by simp [range]
+
+theorem mem_of_get?_eq_some {i x} (h : mp.get? i = some x) : i ∈ mp := by
+  simp [mem_iff_get?_eq_some, h]
+
+theorem get!_eq_get!_get? {i} [hb : Inhabited β] :
+mp.get! i = (mp.get? i).get! := Std.ExtDHashMap.get!_eq_get!_get?
+
+@[simp]
+theorem get?_eq_some_get!_iff {i} [hb : Inhabited β] :
+mp.get? i = some (mp.get! i) ↔ i ∈ mp := by
+  simp [get?_eq_ite]
+
+@[simp]
+theorem get?_eq_some_get?_get! {i} [hb : Inhabited β] :
+mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
+  simp [←get!_eq_get!_get?]
