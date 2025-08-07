@@ -43,7 +43,7 @@ def State.a_move (s : State) (p : PointZ) : Option State := do
 def State.d_move (s : State) (p : PointZ) : Option State := do
   guard # s.a_pos ≠ p
   guard # p ∉ s.taken
-  return {s with taken := insert p s.taken, a_turn := false}
+  return {s with taken := insert p s.taken, a_turn := true}
 
 def State.move (s : State) (p : PointZ) : Option State :=
   if s.a_turn then s.a_move p else s.d_move p
