@@ -1,6 +1,6 @@
 import Mathlib.Tactic
 
-import AP.System.Main
+import AP.AP.Main
 import AP.Sokoban.Main
 
 def main : IO Unit := do
