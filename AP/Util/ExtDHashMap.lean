@@ -230,10 +230,9 @@ theorem inner_eq_iff_eq {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁.1 = m₂.1 ↔ m₁ = m₂ := by
   rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
 
-def fold {γ : Type*}
-(mp : Std.ExtDHashMap α β) (f : γ → (i : α) → β i → γ) (z : γ)
-(h : ∀ acc i x j y, f (f acc i x) j y = f (f acc j y) i x) : γ :=
-  mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv h
+def fold {γ : Type*} (mp : Std.ExtDHashMap α β) (z : γ) (f : γ → (i : α) → β i → γ)
+(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+  mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv @h_assoc
 
 def decideEq [hh : ∀ i, DecidableEq # β i]
 (m₁ m₂ : Std.ExtDHashMap α β) : Bool := by
@@ -397,3 +396,19 @@ mp.get? i = some (mp.get! i) ↔ i ∈ mp := by
 theorem get?_eq_some_get?_get! {i} [hb : Inhabited (β i)] :
 mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
+
+example {γ : Type*} (mp : Std.ExtDHashMap α β) (z : γ) (f : γ → (i : α) → β i → γ)
+(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+  mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv @h_assoc
+
+theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
+{z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold z f h_assoc =
+mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z := by
+  rcases mp with ⟨mp⟩
+  simp [fold, lift, toList]
+  apply mp.ind
+  intro m
+  simp only [Quotient.lift_mk]
+  rw [Std.DHashMap.fold_eq_foldl_toList]
+  apply List.foldl_eq_foldl_of_perm h_assoc
+  simp

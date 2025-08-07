@@ -5,6 +5,8 @@ import Init.Data.List.Sublist
 
 namespace List
 
+variable {α β : Type*} {xs ys : List α}
+
 @[simp]
 def init {α : Type*} : List α → List α
 | [] => []
@@ -16,7 +18,7 @@ theorem init_cons_of_ne_nil {α : Type*} {x : α} {xs : List α}
   cases xs; simp at h; rfl
 
 @[simp]
-theorem init_snoc {α : Type*} {xs : List α} {x : α} : (xs ++ [x]).init = xs := by
+theorem init_snoc {x : α} : (xs ++ [x]).init = xs := by
   induction xs; rfl
   nm y xs ih
   rw [List.cons_append, init_cons_of_ne_nil # by simp, ih]
@@ -108,7 +110,7 @@ theorem take_length_eq_of_prefix {α : Type*} {xs ys : List α}
   obtain ⟨xs, rfl⟩ := h₁; simp
 
 @[simp]
-theorem nodup_inits {α : Type*} {xs : List α} : xs.inits.Nodup := by
+theorem nodup_inits : xs.inits.Nodup := by
   induction xs
   · simp
   nm x xs ih
@@ -213,7 +215,7 @@ theorem suffix_cons_of_suffix {α : Type*} {xs ys : List α} {y}
   simp [List.suffix_cons_iff, h]
 
 @[simp]
-theorem not_cons_suffix {α : Type*} {xs : List α} {x} : ¬(x :: xs <:+ xs) := by
+theorem not_cons_suffix {x} : ¬(x :: xs <:+ xs) := by
   rintro ⟨ys, h⟩
   replace h := congrArg (·.length) h
   simp at h
@@ -261,7 +263,7 @@ count x ys.unattach = if h : x ∈ xs then count ⟨x, h⟩ ys else 0 := by
   · rw [count_eq_count_unattach]
   · simp [count_eq_zero, h₁]
 
-theorem mergeSort_attach_perm {α : Type*} {xs : List α} {r} :
+theorem mergeSort_attach_perm {r} :
 (xs.attach.mergeSort (r ·.1 ·.1)).unattach.Perm (xs.mergeSort r) := by
   classical
   rw [perm_iff_count]
@@ -283,7 +285,7 @@ ys.unattach.Sorted r ↔ ys.Sorted (r ·.1 ·.1) := by
   intro h
   exact ih
 
-theorem mergeSort_attach {α : Type*} {xs : List α} {r} :
+theorem mergeSort_attach {r} :
 (xs.attach.mergeSort (r ·.1 ·.1)).unattach = xs.mergeSort r := by
   rw [unattach, map_mergeSort (s := (r · ·))] <;> simp
 
@@ -324,7 +326,7 @@ theorem eq_of_perm_of_sorted_loc {α : Type*} {xs ys : List α} {r}
   · intro a b ha hb h₁ h₂
     apply h_ant <;> simp [ha, hb, h₁, h₂]
 
-theorem sorted_mergeSort_loc' {α : Type*} {xs : List α} {r : α → α → Bool}
+theorem sorted_mergeSort_loc' {r : α → α → Bool}
 (h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
 (h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a) :
 (xs.mergeSort r).Sorted (r · ·) := by
@@ -336,7 +338,7 @@ theorem sorted_mergeSort_loc' {α : Type*} {xs : List α} {r : α → α → Boo
   · rintro ⟨a, ha⟩ ⟨b, hb⟩; simp
     apply h_tot <;> assumption
 
-theorem sorted_mergeSort_loc {α : Type*} {xs : List α}
+theorem sorted_mergeSort_loc
 {r : α → α → Prop} [hr : DecidableRel r]
 (h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
 (h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a) :
@@ -390,16 +392,16 @@ xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
   · simp [hz] at h
     exact h
 
-theorem take_length_add {α : Type*} {xs : List α} {n} :
+theorem take_length_add {n} :
 xs.take (xs.length + n) = xs := by
   simp [take_add]
 
 @[simp]
-theorem mergeSort_perm' {α : Type*} {xs : List α} {r : α → α → Bool} :
+theorem mergeSort_perm' {r : α → α → Bool} :
 xs.mergeSort r ~ xs := by apply mergeSort_perm
 
 @[simp]
-theorem perm_mergeSort {α : Type*} {xs : List α} {r : α → α → Bool} :
+theorem perm_mergeSort {r : α → α → Bool} :
 xs ~ xs.mergeSort r := by symm; simp
 
 theorem perm_of_mergeSort_perm_mergeSort {α : Type*}
@@ -414,14 +416,14 @@ theorem perm_of_mergeSort_eq_mergeSort {α : Type*}
   trans xs.mergeSort r₁; simp; simp [h]
 
 @[simp]
-theorem mergeSort_eq_nil_iff {α : Type*} {xs : List α} {r : α → α → Bool} :
+theorem mergeSort_eq_nil_iff {r : α → α → Bool} :
 xs.mergeSort r = [] ↔ xs = [] := by
   cases xs <;> simp
   apply ne_of_congr List.length
   simp
 
 @[simp]
-theorem sorted_map {α β : Type*} {xs : List α} {f : α → β} {r : β → β → Prop} :
+theorem sorted_map {f : α → β} {r : β → β → Prop} :
 (xs.map f).Sorted r ↔ xs.Sorted (λ a b => r (f a) (f b)) := by
   induction xs; simp
   nm x xs ih
@@ -431,12 +433,12 @@ theorem sorted_map {α β : Type*} {xs : List α} {f : α → β} {r : β → β
 
 theorem foldl_eq_foldl_of_perm {α β : Type*}
 {f : β → α → β} {z : β} {xs ys : List α}
-(hf : ∀ acc x y, f (f acc x) y = f (f acc y) x)
+(h_assoc : ∀ {acc x y}, f (f acc x) y = f (f acc y) x)
 (h : xs ~ ys) : xs.foldl f z = ys.foldl f z := by
   induction h generalizing z <;> clear xs ys
   · rfl
   · nm x xs ys h ih; simp [ih]
-  · nm x y xs; simp [hf]
+  · nm x y xs; simp [h_assoc]
   · nm xs ys zs h₁ h₂ ih₁ ih₂; rw [ih₁, ih₂]
 
 open Classical in
@@ -468,7 +470,7 @@ theorem perm_cons_reverse_iff {α : Type*} {xs ys : List α} {y} :
 xs ~ y :: ys.reverse ↔ xs ~ y :: ys := by
   rw [perm_comm]; nth_rw 2 [perm_comm]; simp
 
-theorem foldl_and_eq_all {α : Type*} {xs : List α} {p : α → Bool} :
+theorem foldl_and_eq_all {p : α → Bool} :
 xs.foldl (λ a x => a && p x) true = xs.all p := by
   induction xs using List.reverseRecOn; simp
   nm xs x ih; simp [ih]
@@ -489,7 +491,7 @@ theorem perm_iff_subset_of_nodup {α : Type*} {xs ys : List α}
   exact mem_iff_mem_iff_subset
 
 @[simp]
-theorem nil_subset' {α : Type*} {xs : List α} : [] ⊆ xs := by
+theorem nil_subset' : [] ⊆ xs := by
   apply nil_subset
 
 theorem perm_of_nodup_and_subperm_and_length_eq {α : Type*} {xs ys : List α}
@@ -537,7 +539,7 @@ theorem exi_get_iff_subset {α  : Type*} {xs ys : List α} :
   subset_iff_exi_get.symm
 
 @[simp]
-theorem take_prefix' {α : Type*} {xs : List α} {n} :
+theorem take_prefix' {n} :
 xs.take n <+: xs := take_prefix _ _
 
 instance {α : Type*} : IsEquiv (List α) List.Perm where
@@ -584,13 +586,68 @@ theorem atMostOne_pair {b₁ b₂} :
   simp [atMostOne]
 
 @[simp]
-theorem nodup_snoc {α : Type*} {xs : List α} {x} :
-(xs ++ [x]).Nodup ↔ x ∉ xs ∧ xs.Nodup := by
+theorem nodup_snoc {x} : (xs ++ [x]).Nodup ↔ x ∉ xs ∧ xs.Nodup := by
   rw [←nodup_reverse]; simp
 
-theorem filterMap_eq {α β : Type*} [hb : Inhabited β] {xs : List α} {f : α → Option β} :
+@[simp]
+theorem pairwise_snoc {x p} : (xs ++ [x]).Pairwise p ↔
+xs.Pairwise p ∧ (∀ y ∈ xs, p y x) := by simp [pairwise_append]
+
+theorem filterMap_eq [hb : Inhabited β] {f : α → Option β} :
 xs.filterMap f = (xs.map f |>.filter Option.isSome |>.map Option.get!) := by
   induction xs; rfl
   nm x xs ih
   simp [filterMap, filter]
   split <;> nm b h <;> simpa [h]
+
+theorem foldl_some_some {f : α → α → α} {z} :
+xs.foldl (λ acc x => some # acc.elim x (f · x)) (some z) = some (xs.foldl f z) := by
+  induction xs using List.reverseRecOn; simp
+  nm xs x ih; simp [ih]
+
+theorem min?_eq_foldl [ha : LinearOrder α] :
+xs.min? = xs.foldl (λ acc x => some # acc.elim x (min · x)) none := by
+  cases xs; rfl; simp [foldl_some_some, min?]
+
+theorem max?_eq_foldl [ha : LinearOrder α] :
+xs.max? = xs.foldl (λ acc x => some # acc.elim x (max · x)) none := by
+  cases xs; rfl; simp [foldl_some_some, max?]
+
+theorem foldl_comm {f : β → α → β} {z x}
+(h_assoc : ∀ {x y z}, f (f x y) z = f (f x z) y) :
+xs.foldl f (f z x) = f (xs.foldl f z) x := by
+  induction xs generalizing z; rfl; clear! xs; nm y xs ih
+  simp [←ih, h_assoc]
+
+theorem foldl_append_comm {f : β → α → β} {z}
+(h_assoc : ∀ {x y z}, f (f x y) z = f (f x z) y) :
+(xs ++ ys).foldl f z = (ys ++ xs).foldl f z := by
+  simp; induction xs generalizing z ys; simp
+  nm x xs ih; simp [ih, foldl_comm h_assoc]
+
+theorem min?_append_comm [ha : LinearOrder α] {ys : List α} :
+(xs ++ ys).min? = (ys ++ xs).min? := by
+  simp only [min?_eq_foldl]; apply foldl_append_comm
+  rintro (_ | x) y z <;> simp; apply min_comm; apply inf_right_comm
+
+theorem max?_append_comm [ha : LinearOrder α] {ys : List α} :
+(xs ++ ys).max? = (ys ++ xs).max? := by
+  simp only [max?_eq_foldl]; apply foldl_append_comm
+  rintro (_ | x) y z <;> simp; apply max_comm; apply sup_right_comm
+
+@[simp]
+theorem min?_reverse [ha : LinearOrder α] : xs.reverse.min? = xs.min? := by
+  induction xs; rfl; clear! xs; nm x xs ih; simp [min?_append_comm, ih]
+
+@[simp]
+theorem max?_reverse [ha : LinearOrder α] : xs.reverse.max? = xs.max? := by
+  induction xs; rfl; clear! xs; nm x xs ih; simp [max?_append_comm, ih]
+
+theorem max?_eq_getLast? [ha : LinearOrder α]
+(h : xs.Sorted (· ≤ ·)) : xs.max? = xs.getLast? := by
+  have h₁ := @List.min?_eq_head?;
+  specialize @h₁ α ⟨max⟩ xs.reverse
+  simp [pairwise_reverse] at h₁
+  specialize h₁ h
+  convert h₁ using 1
+  symm; exact max?_reverse

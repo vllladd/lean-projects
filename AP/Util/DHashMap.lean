@@ -158,14 +158,13 @@ theorem toList_eq_nil_iff : mp.toList = [] ↔ mp ~m ∅ := by
 
 theorem fold_eq_fold_of_equiv {γ : Type*}
 {f : γ → (i : α) → β i → γ} {z : γ} {m₁ m₂ : Std.DHashMap α β}
-(hf : ∀ acc i x j y, f (f acc i x) j y = f (f acc j y) i x)
+(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x)
 (h : m₁ ~m m₂) : m₁.fold f z = m₂.fold f z := by
   simp [DHashMap.fold_eq_foldl_toList]
   replace h := Equiv.toList_perm h
   generalize m₁.toList = xs at h ⊢
   generalize m₂.toList = ys at h ⊢
-  refine' List.foldl_eq_foldl_of_perm (λ a x y => _) h
-  simp [hf]
+  exact List.foldl_eq_foldl_of_perm h_assoc h
 
 def decideEquiv [∀ i, DecidableEq # β i] (m₁ m₂ : DHashMap α β) : Bool :=
   m₁.size = m₂.size ∧ m₁.fold (λ acc i x => acc && m₂.get? i = some x) true

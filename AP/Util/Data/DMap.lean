@@ -5,6 +5,7 @@ universe u v w
 structure DMap (α : Type u) (β : α → Type v)
 [hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type (max u v) where
   inner : Std.ExtDHashMap α β
+deriving Inhabited
 
 namespace DMap
 
@@ -19,8 +20,6 @@ def empty : DMap α β := ⟨∅⟩
 instance : EmptyCollection (DMap α β) := ⟨empty⟩
 
 theorem empty_def : (∅ : DMap α β) = ⟨∅⟩ := rfl
-
-instance : Inhabited (DMap α β) := ⟨∅⟩
 
 def insertP (x : Σ i, β i) (mp : DMap α β) : DMap α β :=
   ⟨insert x mp.inner⟩

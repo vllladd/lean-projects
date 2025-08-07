@@ -5,6 +5,7 @@ universe u v w
 structure Map (α : Type u) (β : Type v)
 [hh₁ : DecidableEq α] [hh₂ : Hashable α] : Type (max u v) where
   inner : Std.ExtDHashMap α (λ _ => β)
+deriving Inhabited
 
 variable {α : Type u} {β : Type v} {γ : Type w}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
@@ -19,8 +20,6 @@ def empty : Map α β := ⟨∅⟩
 instance : EmptyCollection (Map α β) := ⟨empty⟩
 
 theorem empty_def : (∅ : Map α β) = ⟨∅⟩ := rfl
-
-instance : Inhabited (Map α β) := ⟨∅⟩
 
 def insertP (x : α × β) (mp : Map α β) : Map α β :=
   ⟨insert x.toSigma mp.inner⟩
