@@ -125,9 +125,7 @@ ofList xs = ofList ys ↔ xs.Perm ys := by
 omit hh₂ in private theorem range'_aux {ms xs : List α}
 {f : (i : α) → Option (β i)} (hm : ms.Nodup) (hx : ms.Perm xs) :
 xs.filterMap (λ i => f i |>.map # Sigma.mk i) |>.map (·.1) |>.Nodup := by
-  simp [List.map_filterMap]
-  unfold Function.comp
-  simp [List.nodup_filterMap_iff]
+  simp [List.map_filterMap, List.nodup_filterMap_iff]
   intro x h₁ y h₂
   rw [hx.nodup_iff, List.nodup_iff_count] at hm
   use hm _
@@ -335,7 +333,7 @@ theorem get?_range' [ha : Fintype α] {f : (i : α) → Option (β i)} {i} :
   rw [get?_ofList_eq_some_iff]
   rotate_left
   · clear i x
-    simp [List.map_filterMap]; unfold Function.comp; dsimp
+    simp [List.map_filterMap]
     rw [List.nodup_filterMap_iff]
     simp
     rintro x y h₁ x' y' h₂ rfl; rfl
@@ -397,10 +395,6 @@ theorem get?_eq_some_get?_get! {i} [hb : Inhabited (β i)] :
 mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
 
-example {γ : Type*} (mp : Std.ExtDHashMap α β) (z : γ) (f : γ → (i : α) → β i → γ)
-(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
-  mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv @h_assoc
-
 theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
 {z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold z f h_assoc =
 mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z := by
@@ -412,3 +406,62 @@ mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z := by
   rw [Std.DHashMap.fold_eq_foldl_toList]
   apply List.foldl_eq_foldl_of_perm h_assoc
   simp
+
+theorem eq_iff_toList_eq [ha : LinearOrder α] {m₁ m₂ : Std.ExtDHashMap α β} :
+m₁ = m₂ ↔ m₁.toList = m₂.toList := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+@[simp]
+theorem ofList_toList [ha : LinearOrder α] : ofList mp.toList = mp := by
+  rcases mp with ⟨mp⟩
+  rw [eq_iff_inner_eq]
+  apply mp.ind
+  intro m
+  simp
+  apply Quotient.eq_iff_equiv.mpr
+  exact DHashMap.ofList_toSortedList_equiv
+
+theorem toList_ofList_perm [ha : LinearOrder α] {xs : List ((i : α) × β i)}
+(h : xs.map (·.1) |>.Nodup) : (ofList xs).toList.Perm xs := by
+  trans (DHashMap.ofList xs).toList
+  rotate_left; exact DHashMap.toList_ofList_perm h
+  simp [ofList, toList, lift]
+
+@[simp]
+theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) := by
+  rcases mp with ⟨mp⟩; apply mp.ind; intro m; simp [keys, lift]
+
+theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) := by
+  unfold keys toList lift Std.DHashMap.toSortedKeys
+  symm; apply Quotient.apply_lift
+
+-----
+
+def minKey? [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : Option α :=
+  mp.fold none (λ acc i _ => some # acc.elim i # λ acc => min acc i) # by
+    rintro (_ | acc) i x j y <;> simp; apply min_comm; apply inf_right_comm
+
+def maxKey? [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : Option α :=
+  mp.fold none (λ acc i _ => some # acc.elim i # λ acc => max acc i) # by
+    rintro (_ | acc) i x j y <;> simp; apply max_comm; apply sup_right_comm
+
+def minKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : α :=
+  mp.minKey?.get!
+
+def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : α :=
+  mp.maxKey?.get!
+
+-- #check 0 #exit
+
+theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? := by
+  rw [minKey?, fold_eq_foldl_toList]
+  convert @mp.keys.min?_eq_head? α _ _
+  rotate_left; simp_rw [min_eq_left_iff]; exact sorted_keys
+  rw [keys_eq_map_toList]
+  generalize hx : mp.toList = xs
+  cases xs; rfl
+  nm x xs
+  trans xs.map (·.1) |>.foldl
+    (λ acc i => some # acc.elim i # λ acc => min acc i) (some x.1)
+  rotate_left; simp [List.min?_eq_foldl, List.foldl_map]
+  simp [List.foldl_map]

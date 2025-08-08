@@ -295,3 +295,37 @@ mp.get? i = some (mp.get! i) ↔ i ∈ mp := by
 theorem get?_eq_some_get?_get! {i} [hb : Inhabited (β i)] :
 mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
+
+def fold {γ : Type*} (mp : DMap α β) (z : γ) (f : γ → (i : α) → β i → γ)
+(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+  mp.inner.fold z f h_assoc
+
+theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
+{z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold z f h_assoc =
+mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z :=
+  Std.ExtDHashMap.fold_eq_foldl_toList
+
+theorem eq_iff_inner_eq {m₁ m₂ : DMap α β} : m₁ = m₂ ↔ m₁.inner = m₂.inner := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+theorem eq_iff_toList_eq [ha : LinearOrder α] {m₁ m₂ : DMap α β} :
+m₁ = m₂ ↔ m₁.toList = m₂.toList := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+@[simp]
+theorem ofList_toList [ha : LinearOrder α] : ofList mp.toList = mp := by
+  rw [eq_iff_inner_eq]; exact Std.ExtDHashMap.ofList_toList
+
+theorem toList_ofList_perm [ha : LinearOrder α] {xs : List ((i : α) × β i)}
+(h : xs.map (·.1) |>.Nodup) : (ofList xs).toList.Perm xs :=
+  Std.ExtDHashMap.toList_ofList_perm h
+
+def keys [ha : LinearOrder α] (mp : DMap α β) : List α :=
+  mp.inner.keys
+
+@[simp]
+theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) :=
+  Std.ExtDHashMap.sorted_keys
+
+theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) :=
+  Std.ExtDHashMap.keys_eq_map_toList

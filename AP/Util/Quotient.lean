@@ -215,8 +215,7 @@ q.liftWith f h = f q.out := by
   exact h₂
 
 theorem Quotient.lift_eq {α β : Type*} {s : Setoid α} {q : Quotient s}
-{f : α → β} {h : ∀ (x y : α), s x y → f x = f y} :
-q.lift f h = f q.out := by
+{f : α → β} {h : ∀ (x y : α), s x y → f x = f y} : q.lift f h = f q.out := by
   classical
   apply q.ind
   clear q
@@ -232,3 +231,8 @@ theorem Quotient.out_equiv {α : Type*} {s : Setoid α} {x : α} :
 @[simp]
 theorem Quotient.equiv_out {α : Type*} {s : Setoid α} {x : α} :
 x ≈ (⟦x⟧ : Quotient s).out := s.symm' out_equiv
+
+theorem Quotient.apply_lift {α β γ : Type*} {s : Setoid α} {q : Quotient s}
+{f : β → γ} {g : α → β} {h₁} (h₂ : ∀ a b, a ≈ b → f (g a) = f (g b)) :
+f (q.lift g h₁) = q.lift (f ∘ g) h₂ := by
+  apply q.ind; intros; rfl

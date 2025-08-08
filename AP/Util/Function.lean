@@ -105,3 +105,7 @@ theorem fn_set_ext {α β : Type*} [DecidableEq α] {f g : α → β} {a : α} {
     exact h
   · unfold fn_set; split_ifs with h₁; rfl
     exact h _ h₁
+
+@[simp]
+theorem Function.comp_def' {α β γ : Type*} {f : β → γ} {g : α → β} :
+f ∘ g = λ x => f (g x) := comp_def _ _

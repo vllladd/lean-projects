@@ -262,6 +262,10 @@ theorem valid_of_reachable {s s' : State} [hs : s.Valid]
   obtain ⟨s₀, h₁, h₂⟩ := hs
   use s₀, h₁, h₂.trans hr
 
+@[simp]
+theorem player_mem {s : State} [hs : s.Valid] : s.player ∈ s.grid :=
+  hs.h_player_mem
+
 theorem width_ne_zero {s : State} [hs : s.Valid] : s.width ≠ 0 := by
   intro h₁; have h₂ := hs.h_player_mem; rw [hs.h_bounds] at h₂; linarith
 
@@ -281,10 +285,6 @@ theorem width_and_height_eq_of_reachable {s₀ s : State}
   split_ifs at h₃ with h₄
   · obtain ⟨d₂, h₃, h₅, h₆, h₇⟩ := h₃; simp [←h₇]
   · simp [←h₃]
-
-@[simp]
-theorem player_mem {s : State} [hs : s.Valid] : s.player ∈ s.grid :=
-  hs.h_player_mem
 
 theorem width_eq_of_reachable {s₀ s : State}
 (h : sys.Reachable s₀ s) : s.width = s₀.width :=

@@ -238,29 +238,57 @@ def fold₁ (s : Set' α) (f : α → α → α)
     rintro (⟨⟩ | acc) x y <;> simp
     exact h_comm; exact h_assoc
 
+omit hb₁ hb₂ in theorem fold_eq_foldl_toList [ha : LinearOrder α]
+{z : β} {f : β → α → β} {h_assoc} : s.fold z f h_assoc = s.toList.foldl f z := by
+  convert Std.ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
+  simp [toList, Std.ExtDHashMap.toList, Std.ExtDHashMap.lift]
+  rcases s with ⟨⟨mp⟩⟩
+  simp
+  apply mp.ind
+  intro m
+  simp [toSortedKeys, List.foldl_map]
+
+theorem eq_iff_inner_eq {s₁ s₂ : Set' α} : s₁ = s₂ ↔ s₁.inner = s₂.inner := by
+  rcases s₁, s₂ with ⟨⟨s₁⟩, ⟨s₂⟩⟩; simp
+
+theorem eq_iff_toList_eq [ha : LinearOrder α] {s₁ s₂ : Set' α} :
+s₁ = s₂ ↔ s₁.toList = s₂.toList := by
+  rcases s₁, s₂ with ⟨⟨s₁⟩, ⟨s₂⟩⟩; simp
+
+@[simp]
+theorem ofList_toList [ha : LinearOrder α] : ofList s.toList = s := by
+  rcases s with ⟨⟨mp⟩⟩
+  simp [ofList, toList, Std.ExtDHashMap.lift, Std.ExtDHashMap.ofList]
+  apply mp.ind; intro m; simp
+  apply Quotient.eq_iff_equiv.mp
+  simp [toSortedKeys]
+  exact ofList_toSortedList_equiv
+
+theorem toList_ofList_perm [ha : LinearOrder α] {xs : List α}
+(h : xs.Nodup) : (ofList xs).toList.Perm xs := by
+  generalize hy : xs.map (λ x => (⟨x, ()⟩ : (i : α) × Unit)) = ys
+  have hx : ys.map (·.1) = xs; simp [←hy]
+  subst hx; clear hy; rename' ys => xs
+  trans (DMap.ofList xs).toList.map (·.1)
+  rotate_left
+  · rw [List.map_perm_map_iff]
+    exact DMap.toList_ofList_perm h
+    rintro ⟨x, _⟩ ⟨y, _⟩ h; simp at h; simp [h]
+  simp [ofList]; rfl
+
+#check 0 #exit
+
 def min? [ha : LinearOrder α] (s : Set' α) : Option α :=
   s.fold₁ min (min_comm _ _) (inf_right_comm _ _ _)
 
 def max? [ha : LinearOrder α] (s : Set' α) : Option α :=
   s.fold₁ max (max_comm _ _) (sup_right_comm _ _ _)
 
-def min! [ha : LinearOrder α] [Inhabited α] (s : Set' α) : α :=
+def min! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
   s.min?.get!
 
-def max! [ha : LinearOrder α] [Inhabited α] (s : Set' α) : α :=
+def max! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
   s.max?.get!
-
-theorem fold_eq_foldl_toList {β : Type*} [ha : LinearOrder α]
-{z : β} {f : β → α → β} {h_assoc} : s.fold z f h_assoc = s.toList.foldl f z := by
-  convert Std.ExtDHashMap.fold_eq_foldl_toList
-  rotate_left; infer_instance
-  rcases s with ⟨⟨mp⟩⟩
-  unfold Set'.toList Std.ExtDHashMap.toList Std.ExtDHashMap.lift
-    toSortedKeys toSortedList
-  apply mp.ind
-  intro m
-  simp
-  rw [List.foldl_map]
 
 theorem min?_eq_head?_toList [ha : LinearOrder α] : s.min? = s.toList.head? := by
   rw [min?, fold₁, fold_eq_foldl_toList]

@@ -340,3 +340,68 @@ mp.get? i = some (mp.get! i) ↔ i ∈ mp := by
 theorem get?_eq_some_get?_get! {i} [hb : Inhabited β] :
 mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
+
+def fold {γ : Type*} (mp : Map α β) (z : γ) (f : γ → α → β → γ)
+(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+  mp.inner.fold z f h_assoc
+
+theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
+{z : γ} {f : γ → α → β → γ} {h_assoc} : mp.fold z f h_assoc =
+mp.toList.foldl (λ acc (x : α × β) => f acc x.1 x.2) z := by
+  convert Std.ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
+  simp [toList, Std.ExtDHashMap.toList, Std.ExtDHashMap.lift]
+  rcases mp with ⟨⟨mp⟩⟩
+  simp
+  apply mp.ind
+  simp [List.foldl_map]
+
+theorem eq_iff_inner_eq {m₁ m₂ : Map α β} : m₁ = m₂ ↔ m₁.inner = m₂.inner := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+theorem eq_iff_toList_eq [ha : LinearOrder α] {m₁ m₂ : Map α β} :
+m₁ = m₂ ↔ m₁.toList = m₂.toList := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+@[simp]
+theorem ofList_toList [ha : LinearOrder α] : ofList mp.toList = mp := by
+  rw [eq_iff_inner_eq]
+  rw [←Std.ExtDHashMap.ofList_toList (mp := mp.inner)]
+  unfold ofList
+  dsimp
+  rcases mp with ⟨⟨mp⟩⟩
+  simp [toList, Std.ExtDHashMap.lift]
+  apply mp.ind
+  intro m
+  simp
+  rw [Std.ExtDHashMap.eq_iff_inner_eq]
+  simp
+  apply Quotient.eq_iff_equiv.mpr
+  apply Std.DHashMap.equiv_iff_toList_perm.mpr
+  trans m.toSortedList
+  rotate_left; simp
+  apply Std.DHashMap.toList_ofList_perm
+  simp
+
+theorem toList_ofList_perm [ha : LinearOrder α] {xs : List (α × β)}
+(h : xs.map (·.1) |>.Nodup) : (ofList xs).toList.Perm xs := by
+  generalize hy : xs.map Prod.toSigma = ys
+  have hx : ys.map Sigma.toProd = xs; simp [←hy]
+  subst hx; clear hy; rename' ys => xs
+  simp at h
+  trans (DMap.ofList xs).toList.map Sigma.toProd
+  rotate_left
+  · rw [List.map_perm_map_iff # by simp]
+    exact DMap.toList_ofList_perm h
+  simp [ofList]; rfl
+
+def keys [ha : LinearOrder α] (mp : Map α β) : List α :=
+  mp.inner.keys
+
+@[simp]
+theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) :=
+  Std.ExtDHashMap.sorted_keys
+
+theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) := by
+  rcases mp with ⟨mp⟩; simp [keys, toList, Std.ExtDHashMap.lift]; symm
+  refine' Quotient.apply_lift (f := List.map # λ (x : α × β) => x.1) _ |>.trans _
+  intro m₁ m₂ h₁; simp; exact Std.DHashMap.toSortedKeys_eq_of_equiv h₁; simp; rfl

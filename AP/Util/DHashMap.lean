@@ -41,8 +41,8 @@ m₁.Equiv m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
   rw [List.perm_ext_iff_of_nodup nodup_toList nodup_toList]
   rintro ⟨i, x⟩; simp [h]
 
-theorem toList_ofList_perm {xs : List (Σ i, β i)} (h : (xs.map (·.1)).Nodup) :
-(Std.DHashMap.ofList xs).toList.Perm xs := by
+theorem toList_ofList_perm {xs : List (Σ i, β i)}
+(h : (xs.map (·.1)).Nodup) : (Std.DHashMap.ofList xs).toList.Perm xs := by
   rw [List.perm_ext_iff_of_nodup nodup_toList # h.of_map _]
   rintro ⟨i, x⟩
   simp
@@ -77,6 +77,7 @@ theorem toList_ofList_perm {xs : List (Σ i, β i)} (h : (xs.map (·.1)).Nodup) 
   · exact h₁
   simp
 
+@[simp]
 theorem ofList_toList_equiv : ofList mp.toList ~m mp := by
   rw [equiv_iff_toList_perm]
   apply toList_ofList_perm
@@ -461,3 +462,20 @@ mp.get? i = some (mp.get! i) ↔ i ∈ mp := by
 theorem get?_eq_some_get?_get! {i} [hb : Inhabited (β i)] :
 mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
+
+theorem ofList_equiv_ofList_of_nodup_and_perm {xs ys : List ((i : α) × β i)}
+(hx : xs.map (·.1) |>.Nodup) (hy : ys.map (·.1) |>.Nodup) (h : xs.Perm ys) :
+ofList xs ~m ofList ys := by
+  rw [equiv_iff_toList_perm]
+  trans xs; exact toList_ofList_perm hx
+  trans ys; exact h; symm; exact toList_ofList_perm hy
+
+@[simp]
+theorem ofList_toSortedList_equiv [ha : LinearOrder α] :
+ofList mp.toSortedList ~m mp := by
+  rw [equiv_iff_toList_perm]
+  trans (ofList mp.toList).toList
+  rotate_left; apply toList_ofList_perm; simp
+  suffices h₁ : ofList mp.toList ~m ofList mp.toSortedList
+  · exact h₁.symm.toList_perm
+  apply ofList_equiv_ofList_of_nodup_and_perm <;> simp
