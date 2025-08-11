@@ -325,6 +325,64 @@ theorem mk_eq_zero_iff [Zero α] {x y : α} : (⟨x, y⟩ : Point α) = 0 ↔ x 
 theorem zero_eq_mk_iff [Zero α] {x y : α} : 0 = (⟨x, y⟩ : Point α) ↔ x = 0 ∧ y = 0 :=
   zero_eq_iff
 
+section StrictMono
+
+variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
+
+instance [ha : AddLeftStrictMono α] : AddLeftStrictMono (Point α) := by
+  constructor
+  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
+  simp only [mk_lt, lt, mk_add_mk]
+  intro h
+  split_ifs at h with h₁
+  · subst h₁
+    simp only [↓reduceIte]
+    apply add_lt_add_left h
+  rw [if_neg]; apply add_lt_add_left h
+  apply ne_of_lt
+  apply add_lt_add_left h
+
+instance [ha : AddRightStrictMono α] : AddRightStrictMono (Point α) := by
+  constructor
+  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
+  simp only [mk_lt, lt, mk_add_mk, Function.swap]
+  intro h
+  split_ifs at h with h₁
+  · subst h₁
+    simp only [↓reduceIte]
+    apply add_lt_add_right h
+  rw [if_neg]; apply add_lt_add_right h
+  apply ne_of_lt
+  apply add_lt_add_right h
+
+instance [ha : MulLeftStrictMono α] : MulLeftStrictMono (Point α) := by
+  constructor
+  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
+  simp only [mk_lt, lt, mk_mul_mk]
+  intro h
+  split_ifs at h with h₁
+  · subst h₁
+    simp only [↓reduceIte]
+    apply mul_lt_mul_left' h
+  rw [if_neg]; apply mul_lt_mul_left' h
+  apply ne_of_lt
+  apply mul_lt_mul_left' h
+
+instance [ha : MulRightStrictMono α] : MulRightStrictMono (Point α) := by
+  constructor
+  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
+  simp only [mk_lt, lt, mk_mul_mk, Function.swap]
+  intro h
+  split_ifs at h with h₁
+  · subst h₁
+    simp only [↓reduceIte]
+    apply mul_lt_mul_right' h
+  rw [if_neg]; apply mul_lt_mul_right' h
+  apply ne_of_lt
+  apply mul_lt_mul_right' h
+
+end StrictMono
+
 end Point
 
 abbrev PointN := Point ℕ

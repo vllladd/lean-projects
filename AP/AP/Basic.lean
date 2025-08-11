@@ -55,13 +55,42 @@ theorem aState_def {s : State} : s.AState ↔ s.Valid ∧ s.a_turn :=
 theorem dState_def {s : State} : s.DState ↔ s.Valid ∧ s.a_turn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-#check 0 #exit
+def State.dChooseMove (s : State) : PointZ :=
+  (insert s.a_pos s.taken).max! + ⟨1, 0⟩
 
 @[simp]
-theorem State.DState.hasTr_iff {s : State} [hs : s.DState] : sys.hasTr s := by
+theorem a_valid_tr_iff {s : State} [hs : s.AState] {p} :
+sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken ∧ p.dist s.a_pos ≤ s.pw := by
   rcases hs with ⟨hs, ht⟩
-  use s.taken.max + 1
+  constructor
+  · rintro ⟨s', h₁⟩
+    simp [sys, State.move, State.a_move, ht] at h₁
+    rcases h₁ with ⟨h₁, _, rfl⟩
+    exact h₁
+  · rintro h
+    use (s.move p).get!
+    simp [sys, State.move, State.a_move, ht, h]
 
-#check 0 #exit
+@[simp]
+theorem d_valid_tr_iff {s : State} [hs : s.DState] {p} :
+sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken := by
+  rcases hs with ⟨hs, ht⟩
+  constructor
+  · rintro ⟨s', h₁⟩
+    simp [sys, State.move, State.d_move, ht] at h₁
+    rcases h₁ with ⟨h₁, _, rfl⟩
+    exact h₁
+  · rintro h
+    use (s.move p).get!
+    simp [sys, State.move, State.d_move, ht, h]
 
-theorem d_has_move {s : State} [hs : s.DState] : sys.hasTr s := by
+@[simp]
+theorem State.DState.hasTr {s : State} [hs : s.DState] : sys.hasTr s := by
+  use s.dChooseMove; simp
+  suffices h₁ : s.dChooseMove ∉  insert s.a_pos s.taken
+  · simp at h₁; rw [eq_comm]; exact h₁
+  apply Set'.not_mem_of_max!_lt
+  simp [State.dChooseMove, Point.zero_def]
+
+theorem d_has_move {s : State} [hs : s.DState] : sys.hasTr s :=
+  hs.hasTr

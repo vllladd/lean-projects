@@ -1,6 +1,6 @@
 import Std
 
-import AP.Util.List
+import AP.Util.Array
 import AP.Util.Sigma
 import AP.Util.Finset
 import AP.Util.Option
@@ -479,3 +479,101 @@ ofList mp.toSortedList ~m mp := by
   suffices h₁ : ofList mp.toList ~m ofList mp.toSortedList
   · exact h₁.symm.toList_perm
   apply ofList_equiv_ofList_of_nodup_and_perm <;> simp
+
+section foldWith
+
+namespace Internal
+
+open Raw
+
+omit hh₂ in
+theorem distinctKeys_def {xs : List ((i : α) × β i)} :
+Internal.List.DistinctKeys xs ↔
+(Internal.List.keys xs).Pairwise (λ a b => (a == b) = false) :=
+  ⟨λ ⟨h⟩ => h, λ h =>  ⟨h⟩⟩
+
+omit hh₂ in
+theorem distinctKeys_iff {xs : List ((i : α) × β i)} :
+Internal.List.DistinctKeys xs ↔ (xs.map (·.1)).Nodup := by
+  rw [distinctKeys_def, Internal.List.keys_eq_map]
+  simp [List.pairwise_map, List.nodup_iff_pairwise_ne]
+
+omit hh₂ in
+private theorem AssocList.foldlWith_getCast?_cons_aux
+{xs : AssocList α β} {i j : α} {x : β i} {y : β j}
+(h₁ : (cons i x xs).toList.map (·.1) |>.Nodup)
+(h₂ : xs.getCast? j = some y) : (cons i x xs).getCast? j = some y := by
+  simp at h₁
+  rcases h₁ with ⟨h₁, h₃⟩
+  simp at h₂ ⊢
+  rwa [Internal.List.getValueCast?_cons_of_false]
+  simp
+  rintro rfl
+  rw [←Internal.List.mem_iff_getValueCast?_eq_some] at h₂
+  rotate_left
+  · rwa [distinctKeys_iff]
+  simp [h₁] at h₂
+
+@[simp]
+def AssocList.foldlWith {γ : Type*} (xs : AssocList α β)
+(f : γ → (i : α) → (x : β i) → xs.getCast? i = some x → γ) (z : γ)
+(h : xs.toList.map (·.1) |>.Nodup) : γ :=
+  match h₁ : xs with
+  | .nil => z
+  | .cons i x ys => ys.foldlWith
+    (λ acc j y h₂ => f acc j y # foldlWith_getCast?_cons_aux h h₂)
+    (f z i x # by simp) (by simp at h; exact h.2)
+
+open Classical in omit hh₂ in
+theorem foldlWith_eq_foldl {γ : Type*} {xs : AssocList α β}
+{f : γ → (i : α) → (x : β i) → xs.getCast? i = some x → γ} {z : γ}
+(h : xs.toList.map (·.1) |>.Nodup) :
+xs.foldlWith f z h = xs.foldl (λ acc i x =>
+if h : xs.getCast? i = some x then f acc i x h else z) z := by
+  simp
+  induction xs generalizing z <;> simp
+  nm i x xs ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  rw [ih]
+  apply List.foldl_eq_foldl_of_fn_congr
+  rintro acc ⟨j, y⟩ hj
+  split_ifs with h₃ h₄ h₄; rfl
+  any_goals
+    rw [Internal.List.getValueCast?_cons_of_false] at h₄; contradiction
+    simp
+    rintro rfl
+    simp [h₁] at hj
+  simp at h₃
+  rw [Internal.List.mem_iff_getValueCast?_eq_some] at hj; contradiction
+  rwa [distinctKeys_iff]
+
+-- #check DHashMap.distinct_keys
+
+theorem bucket_nodup_keys {mp : Raw α β} {b} (wf : mp.WF)
+(h : b ∈ mp.buckets) : b.toList.map (·.1) |>.Nodup := by
+  sorry
+
+-- #check 0 #exit
+
+theorem mem_toList_of_mem_bucket {mp : Raw α β} {x b} (wf : mp.WF)
+(h₁ : b ∈ mp.buckets) (h₂ : x ∈ b.toList) : x ∈ mp.toList := by
+  sorry
+
+def Raw.foldWith {γ : Type*} (mp : Raw α β) (wf : mp.WF)
+(f : γ → (i : α) → (x : β i) → Raw₀.get? ⟨mp, wf.size_buckets_pos⟩ i = some x → γ)
+(z : γ) : γ :=
+  (mp.buckets.foldlWith · z) # λ acc xs h₁ => xs.foldlWith (γ := γ)
+  (λ acc' i' x h₂ => f acc i' x # by
+    simp at h₂
+    rw [←Internal.List.mem_iff_getValueCast?_eq_some] at h₂
+    rotate_left; simp [distinctKeys_iff]; exact bucket_nodup_keys wf h₁
+    rw [←Raw₀.mem_toList_iff_get?_eq_some]
+    rotate_left; simpa
+    simp
+    exact mem_toList_of_mem_bucket wf h₁ h₂
+  ) z (bucket_nodup_keys wf h₁)
+
+end Internal
+
+end foldWith

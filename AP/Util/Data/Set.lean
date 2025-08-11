@@ -227,19 +227,20 @@ instance [ha : Finite α] : Finite (Set' α) := by
   replace ha := @Fintype.ofFinite _ ha
   infer_instance
 
-def fold (s : Set' α) (z : β) (f : β → α → β)
+def fold (s : Set' α) (f : β → α → β) (z : β)
 (h_assoc : ∀ {acc x y}, f (f acc x) y = f (f acc y) x) : β :=
-  s.inner.fold z (λ acc x _ => f acc x) # by simpa
+  s.inner.fold (λ acc x _ => f acc x) z # by simpa
 
 def fold₁ (s : Set' α) (f : α → α → α)
 (h_comm : ∀ {x y}, f x y = f y x)
 (h_assoc : ∀ {acc x y}, f (f acc x) y = f (f acc y) x) : Option α :=
-  s.fold none (λ acc x => some # acc.elim x (f · x)) # by
+  s.fold (λ acc x => some # acc.elim x (f · x)) none # by
     rintro (⟨⟩ | acc) x y <;> simp
     exact h_comm; exact h_assoc
 
-omit hb₁ hb₂ in theorem fold_eq_foldl_toList [ha : LinearOrder α]
-{z : β} {f : β → α → β} {h_assoc} : s.fold z f h_assoc = s.toList.foldl f z := by
+omit hb₁ hb₂ in
+theorem fold_eq_foldl_toList [ha : LinearOrder α]
+{z : β} {f : β → α → β} {h_assoc} : s.fold f z h_assoc = s.toList.foldl f z := by
   convert Std.ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
   simp [toList, Std.ExtDHashMap.toList, Std.ExtDHashMap.lift]
   rcases s with ⟨⟨mp⟩⟩
@@ -276,13 +277,16 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List α}
     rintro ⟨x, _⟩ ⟨y, _⟩ h; simp at h; simp [h]
   simp [ofList]; rfl
 
-#check 0 #exit
+theorem ind_ofList [ha : LinearOrder α] {p : Set' α → Prop}
+(h : ∀ (xs : List α), xs.Nodup → xs.Sorted (· ≤ ·) → p (ofList xs))
+(s : Set' α) : p s := by
+  rw [←ofList_toList (s := s)]; apply h <;> simp
 
 def min? [ha : LinearOrder α] (s : Set' α) : Option α :=
-  s.fold₁ min (min_comm _ _) (inf_right_comm _ _ _)
+  s.inner.minKey?
 
 def max? [ha : LinearOrder α] (s : Set' α) : Option α :=
-  s.fold₁ max (max_comm _ _) (sup_right_comm _ _ _)
+  s.inner.maxKey?
 
 def min! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
   s.min?.get!
@@ -290,60 +294,30 @@ def min! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
 def max! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
   s.max?.get!
 
-theorem min?_eq_head?_toList [ha : LinearOrder α] : s.min? = s.toList.head? := by
-  rw [min?, fold₁, fold_eq_foldl_toList]
-  convert @s.toList.min?_eq_head? α _ _
-  rotate_left; simp_rw [min_eq_left_iff]; exact sorted_toList
-  ext:1; nm xs; cases xs <;> simp; nm x xs
-  apply List.foldl_some_some.trans
-  simp; rw [List.foldl_min]; cases xs.min? <;> simp
+theorem min?_eq_head?_toList [ha : LinearOrder α] : s.min? = s.toList.head? :=
+  Std.ExtDHashMap.minKey?_eq_head?_keys
 
-theorem max?_eq_last?_toList [ha : LinearOrder α] : s.max? = s.toList.getLast? := by
-  rw [max?, fold₁, fold_eq_foldl_toList]
-  convert @s.toList.max?_eq_getLast? α _ _
-  rotate_left; exact sorted_toList
-  ext:1; nm xs; cases xs <;> simp; nm x xs
-  apply List.foldl_some_some.trans
-  simp; rw [List.foldl_max]; cases xs.max? <;> simp
+theorem maxKey?_eq_getLast?_toList [ha : LinearOrder α] : s.max? = s.toList.getLast? :=
+  Std.ExtDHashMap.maxKey?_eq_getLast?_keys
 
 @[simp]
-theorem ofList_toList [ha : LinearOrder α] : ofList s.toList = s := by
-  ext; simp
-
-theorem ind_ofList [ha : LinearOrder α] {p : Set' α → Prop}
-(h : ∀ (xs : List α), xs.Nodup → xs.Sorted (· ≤ ·) → p (ofList xs))
-(s : Set' α) : p s := by rw [←ofList_toList (s := s)]; apply h <;> simp
-
-#check 0 #exit
+theorem min?_eq_none_iff [ha : LinearOrder α] : s.min? = none ↔ s = ∅ := by
+  rw [eq_iff_inner_eq]; exact Std.ExtDHashMap.minKey?_eq_none_iff
 
 @[simp]
-theorem toList_ofList_perm [ha : LinearOrder α] {xs : List α}
-(h : xs.Nodup) : (ofList xs).toList.Perm xs := by
-  have h₁ := @Std.DHashMap.toList_ofList_perm
-  specialize @h₁ α (λ _ => Unit) _ _ (xs.map (⟨·, ()⟩)) (by simpa)
-  -- simp [ofList, toList, Std.ExtDHashMap.lift]
-  convert_to (((ofList xs).toList.map λ x =>
-    (⟨x, ()⟩ : (_ : α) × Unit)).map (·.1)).Perm ((xs.map # λ x =>
-    (⟨x, ()⟩ : (_ : α) × Unit)).map (·.1)); iterate 2 simp
-  rw [List.map_perm_map_iff_loc]
-  · convert h₁
-    symm
-    apply List.eq_of_perm_of_sorted_loc
-    · simp
-
-#check 0 #exit
-
-theorem toList_ofList [ha : LinearOrder α] {xs : List α}
-(h₁ : xs.Nodup) (h₂ : xs.Sorted (· ≤ ·)) : (ofList xs).toList = xs := by
-  apply List.eq_of_perm_of_sorted_loc
-  · exact?
-
-#check 0 #exit
+theorem max?_eq_none_iff [ha : LinearOrder α] : s.max? = none ↔ s = ∅ := by
+  rw [eq_iff_inner_eq]; exact Std.ExtDHashMap.maxKey?_eq_none_iff
 
 theorem not_mem_of_lt_min? [ha : LinearOrder α] {m x}
-(h₁ : s.min? = some m) (h₂ : x < m) : x ∉ s := by
-  induction s using ind_ofList; clear! s
-  nm xs h₃ h₄
-  simp [min?_eq_head?_toList] at h₁
-  convert_to xs.Pairwise (λ a b => min a b = a) at h₄; simp
-  have := List.min?_eq_head? h₄
+(h₁ : s.min? = some m) (h₂ : x < m) : x ∉ s :=
+  Std.ExtDHashMap.not_mem_of_lt_minKey? h₁ h₂
+
+theorem not_mem_of_max?_lt [ha : LinearOrder α] {m x}
+(h₁ : s.max? = some m) (h₂ : m < x) : x ∉ s :=
+  Std.ExtDHashMap.not_mem_of_maxKey?_lt h₁ h₂
+
+theorem not_mem_of_lt_min! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x < s.min!) : x ∉ s := Std.ExtDHashMap.not_mem_of_lt_minKey! h
+
+theorem not_mem_of_max!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : s.max! < x) : x ∉ s := Std.ExtDHashMap.not_mem_of_maxKey!_lt h

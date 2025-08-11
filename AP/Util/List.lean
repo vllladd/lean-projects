@@ -589,9 +589,17 @@ theorem atMostOne_pair {b₁ b₂} :
 theorem nodup_snoc {x} : (xs ++ [x]).Nodup ↔ x ∉ xs ∧ xs.Nodup := by
   rw [←nodup_reverse]; simp
 
+theorem sorted_append {p} : (xs ++ ys).Sorted p ↔
+xs.Sorted p ∧ ys.Sorted p ∧ ∀ a ∈ xs, ∀ b ∈ ys, p a b :=
+  pairwise_append
+
 @[simp]
 theorem pairwise_snoc {x p} : (xs ++ [x]).Pairwise p ↔
 xs.Pairwise p ∧ (∀ y ∈ xs, p y x) := by simp [pairwise_append]
+
+@[simp]
+theorem sorted_snoc {x p} : (xs ++ [x]).Sorted p ↔
+xs.Sorted p ∧ (∀ y ∈ xs, p y x) := pairwise_snoc
 
 theorem filterMap_eq [hb : Inhabited β] {f : α → Option β} :
 xs.filterMap f = (xs.map f |>.filter Option.isSome |>.map Option.get!) := by
@@ -651,3 +659,38 @@ theorem max?_eq_getLast? [ha : LinearOrder α]
   specialize h₁ h
   convert h₁ using 1
   symm; exact max?_reverse
+
+@[simp]
+def foldlWith (xs : List α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
+  match h : xs with
+  | [] => z
+  | x :: ys => ys.foldlWith (λ acc y h₁ => f acc y (by simp [h₁])) # f z x (by simp)
+
+@[simp]
+theorem foldlWith_snoc {x : α} {f : β → (y : α) → y ∈ xs ++ [x] → β} {z : β} :
+(xs ++ [x]).foldlWith f z = f (xs.foldlWith (λ acc y h => f acc y (by simp [h])) z)
+x (by simp) := by induction xs generalizing z; rfl; nm y xs ih; simp [ih]
+
+theorem foldl_eq_foldl_of_fn_congr {f g : β → α → β} {z : β}
+(h : ∀ acc, ∀ x ∈ xs, f acc x = g acc x) : xs.foldl f z = xs.foldl g z := by
+  induction xs using List.reverseRecOn; rfl
+  clear! xs; nm xs x ih
+  simp
+  specialize ih _
+  · intro acc y hy
+    specialize h acc y
+    simp  [hy] at h
+    exact h
+  rw [ih]
+  apply h
+  simp
+
+theorem foldlWith_eq_foldl [ha : DecidableEq α] {f : β → (x : α) → x ∈ xs → β} {z : β} :
+xs.foldlWith f z = xs.foldl (λ acc x => if h : x ∈ xs then f acc x h else z) z := by
+  induction xs using List.reverseRecOn; rfl
+  clear! xs; nm xs x ih
+  simp [ih]
+  congr 1
+  apply foldl_eq_foldl_of_fn_congr
+  intro acc y hy
+  simp [hy]

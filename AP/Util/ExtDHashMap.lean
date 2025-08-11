@@ -228,7 +228,7 @@ theorem inner_eq_iff_eq {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁.1 = m₂.1 ↔ m₁ = m₂ := by
   rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
 
-def fold {γ : Type*} (mp : Std.ExtDHashMap α β) (z : γ) (f : γ → (i : α) → β i → γ)
+def fold {γ : Type*} (mp : Std.ExtDHashMap α β) (f : γ → (i : α) → β i → γ) (z : γ)
 (h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
   mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv @h_assoc
 
@@ -396,7 +396,7 @@ mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
 
 theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
-{z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold z f h_assoc =
+{z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold f z h_assoc =
 mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z := by
   rcases mp with ⟨mp⟩
   simp [fold, lift, toList]
@@ -438,11 +438,11 @@ theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1
 -----
 
 def minKey? [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : Option α :=
-  mp.fold none (λ acc i _ => some # acc.elim i # λ acc => min acc i) # by
+  mp.fold (λ acc i _ => some # acc.elim i # λ acc => min acc i) none # by
     rintro (_ | acc) i x j y <;> simp; apply min_comm; apply inf_right_comm
 
 def maxKey? [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : Option α :=
-  mp.fold none (λ acc i _ => some # acc.elim i # λ acc => max acc i) # by
+  mp.fold (λ acc i _ => some # acc.elim i # λ acc => max acc i) none # by
     rintro (_ | acc) i x j y <;> simp; apply max_comm; apply sup_right_comm
 
 def minKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : α :=
@@ -450,8 +450,6 @@ def minKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : 
 
 def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : α :=
   mp.maxKey?.get!
-
--- #check 0 #exit
 
 theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? := by
   rw [minKey?, fold_eq_foldl_toList]
@@ -465,3 +463,85 @@ theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head?
     (λ acc i => some # acc.elim i # λ acc => min acc i) (some x.1)
   rotate_left; simp [List.min?_eq_foldl, List.foldl_map]
   simp [List.foldl_map]
+
+theorem maxKey?_eq_getLast?_keys [ha : LinearOrder α] : mp.maxKey? = mp.keys.getLast? := by
+  rw [maxKey?, fold_eq_foldl_toList]
+  convert @mp.keys.max?_eq_getLast? α _ _
+  rotate_left; exact sorted_keys
+  rw [keys_eq_map_toList]
+  generalize hx : mp.toList = xs
+  cases xs; rfl
+  nm x xs
+  trans xs.map (·.1) |>.foldl
+    (λ acc i => some # acc.elim i # λ acc => max acc i) (some x.1)
+  rotate_left; simp [List.max?_eq_foldl, List.foldl_map]
+  simp [List.foldl_map]
+
+@[simp]
+theorem minKey?_eq_none_iff [ha : LinearOrder α] : mp.minKey? = none ↔ mp = ∅ := by
+  rw [ext_iff]; simp
+  simp_rw [minKey?_eq_head?_keys, ←mem_keys]
+  cases h₁ : mp.keys <;> simp
+  nm i ks; use i; simp
+
+@[simp]
+theorem maxKey?_eq_none_iff [ha : LinearOrder α] : mp.maxKey? = none ↔ mp = ∅ := by
+  rw [ext_iff]; simp
+  simp_rw [maxKey?_eq_getLast?_keys, ←mem_keys]
+  cases h₁ : mp.keys <;> simp
+  nm i ks; use i; simp
+
+theorem not_mem_of_lt_minKey? [ha : LinearOrder α] {m x}
+(h₁ : mp.minKey? = some m) (h₂ : x < m) : x ∉ mp := by
+  rw [minKey?_eq_head?_keys] at h₁
+  rw [←mem_keys]
+  have h₃ := mp.sorted_keys
+  intro h₄
+  generalize mp.keys = ks at h₁ h₃ h₄
+  cases ks
+  · simp at h₁
+  nm i ks
+  simp at h₁ h₃ h₄
+  subst h₁
+  rcases h₃ with ⟨h₃, h₅⟩
+  rcases h₄ with rfl | h₄
+  · simp at h₂
+  specialize h₃ x h₄
+  contrapose! h₂
+  exact h₃
+
+theorem not_mem_of_maxKey?_lt [ha : LinearOrder α] {m x}
+(h₁ : mp.maxKey? = some m) (h₂ : m < x) : x ∉ mp := by
+  rw [maxKey?_eq_getLast?_keys] at h₁
+  rw [←mem_keys]
+  have h₃ := mp.sorted_keys
+  intro h₄
+  generalize mp.keys = ks at h₁ h₃ h₄
+  induction ks using List.reverseRecOn
+  · simp at h₁
+  nm ks i ih; clear ih
+  simp at h₁ h₃ h₄
+  symm at h₄
+  subst h₁
+  rcases h₃ with ⟨h₃, h₅⟩
+  rcases h₄ with rfl | h₄
+  · simp at h₂
+  specialize h₅ x h₄
+  contrapose! h₂
+  exact h₅
+
+theorem not_mem_of_lt_minKey! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x < mp.minKey!) : x ∉ mp := by
+  unfold minKey! at h
+  cases h₁ : mp.minKey?
+  · simp at h₁; simp [h₁]
+  nm i; simp [h₁] at h
+  exact not_mem_of_lt_minKey? h₁ h
+
+theorem not_mem_of_maxKey!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : mp.maxKey! < x) : x ∉ mp := by
+  unfold maxKey! at h
+  cases h₁ : mp.maxKey?
+  · simp at h₁; simp [h₁]
+  nm i; simp [h₁] at h
+  exact not_mem_of_maxKey?_lt h₁ h

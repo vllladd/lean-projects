@@ -38,15 +38,16 @@ def State.a_move (s : State) (p : PointZ) : Option State := do
   guard # s.a_pos ≠ p
   guard # p ∉ s.taken
   guard # p.dist s.a_pos ≤ s.pw
-  return {s with a_pos := p, a_turn := false}
+  return {s with a_pos := p}
 
 def State.d_move (s : State) (p : PointZ) : Option State := do
   guard # s.a_pos ≠ p
   guard # p ∉ s.taken
-  return {s with taken := insert p s.taken, a_turn := true}
+  return {s with taken := insert p s.taken}
 
-def State.move (s : State) (p : PointZ) : Option State :=
-  if s.a_turn then s.a_move p else s.d_move p
+def State.move (s : State) (p : PointZ) : Option State := do
+  let s' ← if s.a_turn then s.a_move p else s.d_move p
+  return { s' with a_turn := ¬s.a_turn, hist := p :: s.hist}
 
 def sys : System State PointZ :=
   { initial := {s | ∃ pw, state₀ pw = s}

@@ -296,12 +296,12 @@ theorem get?_eq_some_get?_get! {i} [hb : Inhabited (β i)] :
 mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
 
-def fold {γ : Type*} (mp : DMap α β) (z : γ) (f : γ → (i : α) → β i → γ)
+def fold {γ : Type*} (mp : DMap α β) (f : γ → (i : α) → β i → γ) (z : γ)
 (h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
-  mp.inner.fold z f h_assoc
+  mp.inner.fold f z h_assoc
 
 theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
-{z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold z f h_assoc =
+{z : γ} {f : γ → (i : α) → β i → γ} {h_assoc} : mp.fold f z h_assoc =
 mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z :=
   Std.ExtDHashMap.fold_eq_foldl_toList
 
@@ -329,3 +329,43 @@ theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) :=
 
 theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) :=
   Std.ExtDHashMap.keys_eq_map_toList
+
+def minKey? [ha : LinearOrder α] (mp : DMap α β) : Option α :=
+  mp.inner.minKey?
+
+def maxKey? [ha : LinearOrder α] (mp : DMap α β) : Option α :=
+  mp.inner.maxKey?
+
+def minKey! [Inhabited α] [ha : LinearOrder α] (mp : DMap α β) : α :=
+  mp.minKey?.get!
+
+def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : DMap α β) : α :=
+  mp.maxKey?.get!
+
+theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? :=
+  Std.ExtDHashMap.minKey?_eq_head?_keys
+
+theorem maxKey?_eq_getLast?_keys [ha : LinearOrder α] : mp.maxKey? = mp.keys.getLast? :=
+  Std.ExtDHashMap.maxKey?_eq_getLast?_keys
+
+@[simp]
+theorem minKey?_eq_none_iff [ha : LinearOrder α] : mp.minKey? = none ↔ mp = ∅ := by
+  rw [eq_iff_inner_eq]; exact Std.ExtDHashMap.minKey?_eq_none_iff
+
+@[simp]
+theorem maxKey?_eq_none_iff [ha : LinearOrder α] : mp.maxKey? = none ↔ mp = ∅ := by
+  rw [eq_iff_inner_eq]; exact Std.ExtDHashMap.maxKey?_eq_none_iff
+
+theorem not_mem_of_lt_minKey? [ha : LinearOrder α] {m x}
+(h₁ : mp.minKey? = some m) (h₂ : x < m) : x ∉ mp :=
+  Std.ExtDHashMap.not_mem_of_lt_minKey? h₁ h₂
+
+theorem not_mem_of_maxKey?_lt [ha : LinearOrder α] {m x}
+(h₁ : mp.maxKey? = some m) (h₂ : m < x) : x ∉ mp :=
+  Std.ExtDHashMap.not_mem_of_maxKey?_lt h₁ h₂
+
+theorem not_mem_of_lt_minKey! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x < mp.minKey!) : x ∉ mp := Std.ExtDHashMap.not_mem_of_lt_minKey! h
+
+theorem not_mem_of_maxKey!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : mp.maxKey! < x) : x ∉ mp := Std.ExtDHashMap.not_mem_of_maxKey!_lt h

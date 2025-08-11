@@ -1,8 +1,8 @@
 import AP.Util.Bit
 import AP.Util.Set
 import AP.Util.Fin
-import AP.Util.List
 import AP.Util.Real
+import AP.Util.Array
 import AP.Util.Sigma
 import AP.Util.Order
 import AP.Util.Option
