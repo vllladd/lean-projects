@@ -480,7 +480,7 @@ ofList mp.toSortedList ~m mp := by
   · exact h₁.symm.toList_perm
   apply ofList_equiv_ofList_of_nodup_and_perm <;> simp
 
-section foldWith
+section foldlWith
 
 namespace Internal
 
@@ -576,6 +576,6 @@ def Raw.foldlWith {γ : Sort*} (mp : Raw α β) (wf : mp.WF)
     rotate_left; simpa
     simp
     exact mem_toList_of_mem_bucket wf h₁ h₂
-  ) z (bucket_nodup_keys wf h₁)
+  ) acc (bucket_nodup_keys wf h₁)
 
-end foldWith
+end foldlWith
