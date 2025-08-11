@@ -515,7 +515,7 @@ private theorem AssocList.foldlWith_getCast?_cons_aux
   simp [h₁] at h₂
 
 @[simp]
-def AssocList.foldlWith {γ : Type*} (xs : AssocList α β)
+def AssocList.foldlWith {γ : Sort*} (xs : AssocList α β)
 (f : γ → (i : α) → (x : β i) → xs.getCast? i = some x → γ) (z : γ)
 (h : xs.toList.map (·.1) |>.Nodup) : γ :=
   match h₁ : xs with
@@ -560,7 +560,11 @@ theorem mem_toList_of_mem_bucket {mp : Raw α β} {x b} (wf : mp.WF)
 (h₁ : b ∈ mp.buckets) (h₂ : x ∈ b.toList) : x ∈ mp.toList := by
   sorry
 
-def Raw.foldWith {γ : Type*} (mp : Raw α β) (wf : mp.WF)
+end Internal
+
+open Internal
+
+def Raw.foldlWith {γ : Sort*} (mp : Raw α β) (wf : mp.WF)
 (f : γ → (i : α) → (x : β i) → Raw₀.get? ⟨mp, wf.size_buckets_pos⟩ i = some x → γ)
 (z : γ) : γ :=
   (mp.buckets.foldlWith · z) # λ acc xs h₁ => xs.foldlWith (γ := γ)
@@ -573,7 +577,5 @@ def Raw.foldWith {γ : Type*} (mp : Raw α β) (wf : mp.WF)
     simp
     exact mem_toList_of_mem_bucket wf h₁ h₂
   ) z (bucket_nodup_keys wf h₁)
-
-end Internal
 
 end foldWith

@@ -4,13 +4,14 @@ namespace Array
 
 variable {α β : Type*} {xs ys : Array α}
 
-def foldlWith' (xs : Array α) (f : β → (x : α) → x ∈ xs → β) (z : β) (i : ℕ) : β :=
+def foldlWith' {β : Sort*} (xs : Array α)
+(f : β → (x : α) → x ∈ xs → β) (z : β) (i : ℕ) : β :=
   if h : i < xs.size then xs.foldlWith' f (f z (xs[i]) (by simp)) (i + 1) else z
 
-def foldlWith (xs : Array α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
+def foldlWith {β : Sort*} (xs : Array α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
   xs.foldlWith' f z 0
 
-theorem foldlWith'_cons' {xs : List α} {x : α}
+theorem foldlWith'_cons' {β : Sort*} {xs : List α} {x : α}
 {f : β → (y : α) → y ∈ (⟨x :: xs⟩ : Array α) → β} {z : β} {i} (h : i ≠ 0) :
 (⟨x :: xs⟩ : Array α).foldlWith' f z i = (⟨xs⟩ : Array α).foldlWith'
 (λ acc x h₁ => f acc x # by simp at h₁; simp [h₁]) z (i - 1) := by
@@ -33,13 +34,13 @@ theorem foldlWith'_cons' {xs : List α} {x : α}
     linarith
 
 @[simp]
-theorem foldlWith'_cons {xs : List α} {x : α}
+theorem foldlWith'_cons {β : Sort*} {xs : List α} {x : α}
 {f : β → (y : α) → y ∈ (⟨x :: xs⟩ : Array α) → β} {z : β} {i} :
 (⟨x :: xs⟩ : Array α).foldlWith' f z (i + 1) = (⟨xs⟩ : Array α).foldlWith'
 (λ acc x h₁ => f acc x # by simp at h₁; simp [h₁]) z i :=
   foldlWith'_cons' # by simp
 
-theorem foldlWith_eq_foldlWith_toList {f : β → (x : α) → x ∈ xs → β} {z : β} :
+theorem foldlWith_eq_foldlWith_toList {β : Sort*} {f : β → (x : α) → x ∈ xs → β} {z : β} :
 xs.foldlWith f z = xs.toList.foldlWith (λ acc x h => f acc x # by simp at h; exact h) z := by
   classical
   unfold foldlWith

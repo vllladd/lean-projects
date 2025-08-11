@@ -661,13 +661,13 @@ theorem max?_eq_getLast? [ha : LinearOrder α]
   symm; exact max?_reverse
 
 @[simp]
-def foldlWith (xs : List α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
+def foldlWith {β : Sort*} (xs : List α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
   match h : xs with
   | [] => z
   | x :: ys => ys.foldlWith (λ acc y h₁ => f acc y (by simp [h₁])) # f z x (by simp)
 
 @[simp]
-theorem foldlWith_snoc {x : α} {f : β → (y : α) → y ∈ xs ++ [x] → β} {z : β} :
+theorem foldlWith_snoc {β : Sort*} {x : α} {f : β → (y : α) → y ∈ xs ++ [x] → β} {z : β} :
 (xs ++ [x]).foldlWith f z = f (xs.foldlWith (λ acc y h => f acc y (by simp [h])) z)
 x (by simp) := by induction xs generalizing z; rfl; nm y xs ih; simp [ih]
 
