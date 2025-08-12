@@ -548,17 +548,38 @@ if h : xs.getCast? i = some x then f acc i x h else z) z := by
   rw [Internal.List.mem_iff_getValueCast?_eq_some] at hj; contradiction
   rwa [distinctKeys_iff]
 
--- #check DHashMap.distinct_keys
+omit hh₁ hh₂ in
+theorem toList_eq_flat_buckets {mp : Raw α β} :
+mp.toList = mp.buckets.toList.flatMap (·.toList) := by
+  classical
+  unfold Raw.toList Raw.Internal.foldRev Raw.Internal.foldRevM
+  rw [Array.foldrM_eq_reverse_foldlM_toList]
+  generalize mp.buckets.toList = bs
+  simp only [List.foldlM_reverse, List.foldrM_eq_foldr, Id.run, Id.instMonad,
+    Function.comp_def', Function.const_apply]
+  induction bs; rfl
+  nm b bs ih
+  simp only [List.foldr_cons, List.flatMap_cons, ←ih]
+  clear ih
+  induction b; rfl
+  nm j y b ih
+  simp only [AssocList.foldrM, ih, AssocList.toList_cons, List.cons_append]
 
-theorem bucket_nodup_keys {mp : Raw α β} {b} (wf : mp.WF)
+theorem bucket_nodup_keys {mp : Raw α β} (wf : mp.WF) {b}
 (h : b ∈ mp.buckets) : b.toList.map (·.1) |>.Nodup := by
-  sorry
+  have h₁ := DHashMap.nodup_keys (mp := ⟨mp, wf⟩)
+  rw [←DHashMap.map_fst_toList_eq_keys, DHashMap.toList, toList_eq_flat_buckets] at h₁
+  simp only [List.flatMap, List.map_flatten, List.map_map, Function.comp_def'] at h₁
+  rw [List.nodup_flatten] at h₁
+  rcases h₁ with ⟨h₁, h₂⟩
+  apply h₁ (b.toList.map (·.1))
+  simp only [List.mem_map, Array.mem_toList_iff]
+  use b
 
--- #check 0 #exit
-
-theorem mem_toList_of_mem_bucket {mp : Raw α β} {x b} (wf : mp.WF)
+omit hh₁ hh₂ in
+theorem mem_toList_of_mem_bucket {mp : Raw α β} {x b}
 (h₁ : b ∈ mp.buckets) (h₂ : x ∈ b.toList) : x ∈ mp.toList := by
-  sorry
+  simp only [toList_eq_flat_buckets, List.mem_flatMap, Array.mem_toList_iff]; use b
 
 end Internal
 
@@ -574,8 +595,7 @@ def Raw.foldlWith {γ : Sort*} (mp : Raw α β) (wf : mp.WF)
     rotate_left; simp [distinctKeys_iff]; exact bucket_nodup_keys wf h₁
     rw [←Raw₀.mem_toList_iff_get?_eq_some]
     rotate_left; simpa
-    simp
-    exact mem_toList_of_mem_bucket wf h₁ h₂
+    exact mem_toList_of_mem_bucket h₁ h₂
   ) acc (bucket_nodup_keys wf h₁)
 
 end foldlWith
