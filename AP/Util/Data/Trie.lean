@@ -35,6 +35,27 @@ theorem WF.mp {t : Raw₀ α β} (wf : t.WF) : t.mp.WF := by
 theorem WF.get? {t : Raw₀ α β} (wf : t.WF) {k t'} (h : t.mp.get? k = some t') : t'.WF := by
   cases wf; nm val mp h₁ h₂; exact h₂ h
 
+theorem rec_2_eq {arr : Array (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
+{M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
+@rec_2 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ arr =
+(H₃ arr.toList # @rec_3 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ arr.toList) := rfl
+
+theorem rec_3_eq {xs : List (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
+{M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
+@rec_3 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ xs =
+@List.rec _ _ H₄ (λ x xs acc => H₅ x xs
+(@rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ x) acc) xs := by
+  induction xs; rfl; nm x xs ih; dsimp; rw [ih]
+
+theorem rec_4_eq {xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)}
+{M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
+@rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ xs =
+@List.rec _ _ H₆ (λ (x : (_ : α) × Raw₀ α β) xs acc => H₇ x.1 x.2 (.ofList xs)
+(@rec α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ x.2) acc) xs.toList := by
+  induction xs; rfl; nm i x xs ih; simp [ih]; rw [DHashMap.Internal.AssocList.ofList_toList]
+
+-- #check 0 #exit
+
 noncomputable
 def depthAux (t : Raw₀ α β) : ℕ :=
   let f := @t.recOn
@@ -49,26 +70,12 @@ def depthAux (t : Raw₀ α β) : ℕ :=
 
 theorem depthAux_le {t : Raw₀ α β} (wf : t.WF) {k t'}
 (h : t.mp.get? k = some t') : t'.depthAux < t.depthAux := by
-  have h₁ : ⟨k, t'⟩ ∈ t.mp.toList
-  · change ⟨k, t'⟩ ∈ (DHashMap.mk t.mp wf.mp).toList
-    simp [DHashMap.get?]
-    rw [DHashMap.Raw.get?] at h
-    split_ifs at h
-    exact h
-  rw [DHashMap.Internal.toList_eq_flat_buckets] at h₁
-  simp at h₁
-  obtain ⟨b, h₁, h₂⟩ := h₁
   rcases t with ⟨val, mp⟩
   nth_rw 2 [depthAux]
-  dsimp at h₁ h ⊢
-  replace h₁ : b ∈ mp.buckets.toList := by simpa
-  generalize hb : mp.buckets.toList = bs at h₁ ⊢
-  clear wf
-  induction bs generalizing mp
-  · simp at h₁
-  nm b₁ bs ih
-  specialize ih ⟨mp.size, ⟨b :: bs⟩⟩
+  simp only [rec_3_eq, rec_4_eq, List.rec_eq_foldr]
   sorry
+
+-- #check 0 #exit
 
 theorem depthAux_le_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)}
 (wf : (mk val mp).WF) {k : α} {t : Raw₀ α β} (h : mp.get? k = some t) :

@@ -694,3 +694,7 @@ xs.foldlWith f z = xs.foldl (λ acc x => if h : x ∈ xs then f acc x h else z) 
   apply foldl_eq_foldl_of_fn_congr
   intro acc y hy
   simp [hy]
+
+theorem rec_eq_foldr {α β : Type*} {xs : List α} {z : β} {f : α → β → β} :
+@List.rec α (λ _ => β) z (λ x _ acc => f x acc) xs = xs.foldr f z := by
+  induction xs <;> simp_all

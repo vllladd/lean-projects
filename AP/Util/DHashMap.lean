@@ -581,6 +581,45 @@ theorem mem_toList_of_mem_bucket {mp : Raw α β} {x b}
 (h₁ : b ∈ mp.buckets) (h₂ : x ∈ b.toList) : x ∈ mp.toList := by
   simp only [toList_eq_flat_buckets, List.mem_flatMap, Array.mem_toList_iff]; use b
 
+theorem _root_.Std.DHashMap.Raw.WF.get?_eq {mp : Raw α β} (wf : mp.WF) :
+mp.get? = (mk mp wf).get? := by
+  ext i x
+  dsimp [get?, Raw.get?]
+  split_ifs; rfl
+  nm h₁
+  cases h₁ # wf.size_buckets_pos mp
+
+theorem _root_.Std.DHashMap.Raw.WF.get?_eq_some_iff_mem_bucket
+{mp : Raw α β} (wf : mp.WF) {i x} :
+mp.get? i = some x ↔ ∃ b ∈ mp.buckets, ⟨i, x⟩ ∈ b.toList := by
+  rw [wf.get?_eq, ←mem_toList_iff_get?_eq_some, toList, toList_eq_flat_buckets]
+  simp only [List.mem_flatMap, Array.mem_toList_iff]
+
+theorem _root_.Std.DHashMap.Raw.WF.get?_eq_some_of_mem_bucket
+{mp : Raw α β} (wf : mp.WF) {b i x} (h₁ : b ∈ mp.buckets)
+(h₂ : ⟨i, x⟩ ∈ b.toList) : mp.get? i = some x := by
+  rw [wf.get?_eq_some_iff_mem_bucket]; use b
+
+theorem _root_.Std.DHashMap.Raw.WF.mem_bucket_of_get?_eq_some
+{mp : Raw α β} (wf : mp.WF) {i x} (h : mp.get? i = some x) :
+∃ b ∈ mp.buckets, ⟨i, x⟩ ∈ b.toList := by
+  rwa [←wf.get?_eq_some_iff_mem_bucket]
+
+@[simp]
+def AssocList.ofList : List ((i : α) × β i) → AssocList α β
+| [] => .nil
+| x :: xs => .cons x.1 x.2 # ofList xs
+
+omit hh₁ hh₂ in @[simp]
+theorem AssocList.ofList_toList {xs : AssocList α β} : ofList xs.toList = xs := by
+  induction xs; rfl; simp; assumption
+
+omit hh₁ hh₂ in @[simp]
+theorem AssocList.toList_ofList {xs : List ((i : α) × β i)} : (ofList xs).toList = xs := by
+  induction xs; rfl; simp; assumption
+
+-- #check 0 #exit
+
 end Internal
 
 open Internal
