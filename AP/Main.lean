@@ -1,5 +1,5 @@
-import AP.AP.Main
-import AP.Sokoban.Main
+import AP.AP
+import AP.Sokoban
 
 namespace AP
 

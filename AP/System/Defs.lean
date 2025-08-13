@@ -1,4 +1,4 @@
-import AP.Util.Main
+import AP.Util
 
 @[ext]
 structure System.{u} (S T : Type u) where

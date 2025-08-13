@@ -1,4 +1,4 @@
-import AP.System.Main
+import AP.System
 
 open Util.Data
 

@@ -1,4 +1,4 @@
-import AP.Game.Main
+import AP.Game
 
 open Util.Data
 

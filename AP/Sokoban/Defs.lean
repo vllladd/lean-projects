@@ -1,5 +1,5 @@
 import AP.Point
-import AP.System.Main
+import AP.System
 
 namespace Sokoban
 
