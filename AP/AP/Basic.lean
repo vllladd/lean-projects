@@ -3,10 +3,10 @@ import AP.AP.Defs
 namespace AP
 
 theorem aStrat_valid_def {a : AStrat} : a.Valid ↔ ∀ {s} [sys.Valid s],
-sys.hasTr s → s.a_turn → sys.validTr s (a.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+sys.hasTr s → s.aTurn → sys.validTr s (a.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
 theorem dStrat_valid_def {d : DStrat} : d.Valid ↔ ∀ {s} [sys.Valid s],
-sys.hasTr s → s.a_turn = false → sys.validTr s (d.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
 theorem strat_valid_def {st : Strat} : st.Valid ↔ ∀ {s} [sys.Valid s],
 sys.hasTr s → sys.validTr s (st.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
@@ -42,17 +42,17 @@ abbrev State.Valid (s : State) : Prop := sys.Valid s
 @[class]
 structure State.AState (s : State) : Prop where
   h_valid : s.Valid
-  h : s.a_turn
+  h : s.aTurn
 
 @[class]
 structure State.DState (s : State) : Prop where
   h_valid : s.Valid
-  h : s.a_turn = false
+  h : s.aTurn = false
 
-theorem aState_def {s : State} : s.AState ↔ s.Valid ∧ s.a_turn :=
+theorem aState_def {s : State} : s.AState ↔ s.Valid ∧ s.aTurn :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-theorem dState_def {s : State} : s.DState ↔ s.Valid ∧ s.a_turn = false :=
+theorem dState_def {s : State} : s.DState ↔ s.Valid ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
 def State.dChooseMove (s : State) : PointZ :=
@@ -64,12 +64,12 @@ sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken ∧ p.dist s.a_pos ≤ s.pw 
   rcases hs with ⟨hs, ht⟩
   constructor
   · rintro ⟨s', h₁⟩
-    simp [sys, State.move, State.a_move, ht] at h₁
+    simp [sys, State.move, State.aMove, ht] at h₁
     rcases h₁ with ⟨h₁, _, rfl⟩
     exact h₁
   · rintro h
     use (s.move p).get!
-    simp [sys, State.move, State.a_move, ht, h]
+    simp [sys, State.move, State.aMove, ht, h]
 
 @[simp]
 theorem d_valid_tr_iff {s : State} [hs : s.DState] {p} :
@@ -77,12 +77,12 @@ sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken := by
   rcases hs with ⟨hs, ht⟩
   constructor
   · rintro ⟨s', h₁⟩
-    simp [sys, State.move, State.d_move, ht] at h₁
+    simp [sys, State.move, State.dMove, ht] at h₁
     rcases h₁ with ⟨h₁, _, rfl⟩
     exact h₁
   · rintro h
     use (s.move p).get!
-    simp [sys, State.move, State.d_move, ht, h]
+    simp [sys, State.move, State.dMove, ht, h]
 
 @[simp]
 theorem State.DState.hasTr {s : State} [hs : s.DState] : sys.hasTr s := by

@@ -1,60 +1,52 @@
--- import AP.Basic
--- import AP.Games.Main
--- 
--- namespace AP
--- 
--- def get_ps (r : ℕ) : List Point := do
---   let d : ℕ := r * 2 + 1
---   let cs := (List.range d).map # λ i => (i : ℤ) - (r : ℤ)
---   let y ← cs
---   let x ← cs
---   return ⟨x, y⟩
--- 
--- def fa (s : State) : Point :=
---   let ⟨x, y⟩ := s.a_pos
---   ⟨1 - x, y⟩
--- 
--- def fd (s : State) : Point :=
---   let xs := do
---     let p ← get_ps 3
---     guard # s.d_valid_move p
---     return p
---   match xs with
---   | [] => s.choose_d_move
---   | (p :: _) => p
--- 
--- def f (s : State) : Point :=
---   match s.turn with
---   | .A => fa s
---   | .D => fd s
--- 
--- instance : ToString Point := by
---   constructor
---   rintro ⟨x, y⟩
---   exact toString (x, y)
--- 
--- def State.to_str (s : State) : String := String.mk # do
---   let d := 5
---   let p ← get_ps 5
---   let ⟨x, y⟩ := p
---   let sp := do
---     guard # x + d = 0 ∧ y + d ≠ 0
---     return '\n'
---   let c := if p = s.a_pos then '@'
---     else if p ∈ s.taken then '#'
---     else '.'
---   sp ++ [c]
--- 
--- instance : ToString State := ⟨State.to_str⟩
--- 
--- def logb : IO Unit := do
---   IO.println ""
---   IO.println # String.mk # List.replicate 100 '='
---   IO.println ""
--- 
--- def _root_.main : IO Unit := do
---   let n := 100
---   let (res, k) := Rules.simulate f (init_state 1) n
---   IO.println # toString n ++ " ---> " ++ toString k
---   logb
---   IO.println # res
+import AP.AP.Main
+import AP.Sokoban.Main
+
+namespace AP
+
+def getPs (r : ℕ) : List PointZ := do
+  let d : ℕ := r * 2 + 1
+  let cs := (List.range d).map # λ i => (i : ℤ) - (r : ℤ)
+  let y ← cs
+  let x ← cs
+  return ⟨x, y⟩
+
+def aStrat : AStrat := .mk # λ s =>
+  let ⟨x, y⟩ := s.a_pos
+  ⟨1 - x, y⟩
+
+def dStrat : DStrat := .mk # λ s =>
+  let xs := do
+    let p ← getPs 3
+    guard # s.dMove p |>.isSome
+    return p
+  match xs with
+  | [] => s.dChooseMove
+  | (p :: _) => p
+
+def strat : Strat := ⟨aStrat, dStrat⟩
+
+def State.toStr (s : State) : String := String.mk # do
+  let d := 5
+  let p ← getPs 5
+  let ⟨x, y⟩ := p
+  let sp := do
+    guard # x + d = 0 ∧ y + d ≠ 0
+    return '\n'
+  let c := if p = s.a_pos then '@'
+    else if p ∈ s.taken then '#'
+    else '.'
+  sp ++ [c]
+
+instance : ToString State := ⟨State.toStr⟩
+
+def logb : IO Unit := do
+  IO.println ""
+  IO.println # String.mk # List.replicate 100 '='
+  IO.println ""
+
+def _root_.main : IO Unit := do
+  let n := 100
+  let (res, k) := sys.simulate strat.f (initState 1) n
+  IO.println # toString n ++ " ---> " ++ toString k
+  logb
+  IO.println # res

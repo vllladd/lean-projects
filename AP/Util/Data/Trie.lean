@@ -93,10 +93,7 @@ theorem depthAux_le {t : Raw₀ α β} (wf : t.WF) {k t'}
   clear k
   cases h₃ : xs.max?
   · simp at h₃; simp [h₃] at h₂
-  nm r
-  simp
-  apply Nat.lt_of_succ_le
-  exact List.le_max? h₂ h₃
+  simp; linarith [List.le_max? h₂ h₃]
 
 theorem depthAux_le_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)}
 (wf : (mk val mp).WF) {k : α} {t : Raw₀ α β} (h : mp.get? k = some t) :

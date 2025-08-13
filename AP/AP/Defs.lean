@@ -7,7 +7,7 @@ structure State : Type where
   pw : ℕ
   taken : Set' PointZ
   a_pos : PointZ
-  a_turn : Bool
+  aTurn : Bool
   hist : List PointZ
 deriving Inhabited, DecidableEq
 
@@ -26,44 +26,44 @@ deriving Inhabited
 
 -----
 
-def state₀ (pw : ℕ) : State :=
+def initState (pw : ℕ) : State :=
   { pw := pw
   , taken := ∅
   , a_pos := 0
-  , a_turn := false
+  , aTurn := false
   , hist := []
   }
 
-def State.a_move (s : State) (p : PointZ) : Option State := do
+def State.aMove (s : State) (p : PointZ) : Option State := do
   guard # s.a_pos ≠ p
   guard # p ∉ s.taken
   guard # p.dist s.a_pos ≤ s.pw
   return {s with a_pos := p}
 
-def State.d_move (s : State) (p : PointZ) : Option State := do
+def State.dMove (s : State) (p : PointZ) : Option State := do
   guard # s.a_pos ≠ p
   guard # p ∉ s.taken
   return {s with taken := insert p s.taken}
 
 def State.move (s : State) (p : PointZ) : Option State := do
-  let s' ← if s.a_turn then s.a_move p else s.d_move p
-  return { s' with a_turn := ¬s.a_turn, hist := p :: s.hist}
+  let s' ← if s.aTurn then s.aMove p else s.dMove p
+  return { s' with aTurn := ¬s.aTurn, hist := p :: s.hist}
 
 def sys : System State PointZ :=
-  { initial := {s | ∃ pw, state₀ pw = s}
+  { initial := {s | ∃ pw, initState pw = s}
   , tr := State.move
   }
 
 @[class]
 structure AStrat.Valid (a : AStrat) : Prop where
-  h : ∀ {s} [sys.Valid s], sys.hasTr s → s.a_turn → sys.validTr s (a.f s)
+  h : ∀ {s} [sys.Valid s], sys.hasTr s → s.aTurn → sys.validTr s (a.f s)
 
 @[class]
 structure DStrat.Valid (d : DStrat) : Prop where
-  h : ∀ {s} [sys.Valid s], sys.hasTr s → s.a_turn = false → sys.validTr s (d.f s)
+  h : ∀ {s} [sys.Valid s], sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s)
 
 def Strat.f (st : Strat) (s : State) : PointZ :=
-  if s.a_turn then st.a.f s else st.d.f s
+  if s.aTurn then st.a.f s else st.d.f s
 
 @[class]
 structure Strat.Valid (st : Strat) : Prop where
@@ -82,7 +82,7 @@ def State.d_hws (s : State) : Prop :=
   ∃ (d : DStrat), d.Valid ∧ ∀ (a : AStrat), a.Valid → s.d_wins ⟨a, d⟩
 
 def a_hws_pw (pw : ℕ) : Prop :=
-  (state₀ pw).a_hws
+  (initState pw).a_hws
 
 def d_hws_pw (pw : ℕ) : Prop :=
-  (state₀ pw).d_hws
+  (initState pw).d_hws
