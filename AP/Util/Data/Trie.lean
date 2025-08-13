@@ -54,8 +54,6 @@ theorem rec_4_eq {xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)}
 (@rec α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ x.2) acc) xs.toList := by
   induction xs; rfl; nm i x xs ih; simp [ih]; rw [DHashMap.Internal.AssocList.ofList_toList]
 
--- #check 0 #exit
-
 noncomputable
 def depthAux (t : Raw₀ α β) : ℕ :=
   let f := @t.recOn
@@ -66,16 +64,88 @@ def depthAux (t : Raw₀ α β) : ℕ :=
     0 (λ _ _ n m => max n m)
     0 (λ _ _ _ n m => max (n + 1) m)
 
--- #check 0 #exit
+theorem _root_.List.foldr_max_eq_max!_map {α β : Type*} [hb : LinearOrder β] {xs : List α}
+{f : α → β} {z : β} : xs.foldr (λ x => max (f x)) z = (z :: xs.map f).max?.getD z := by
+  induction xs; rfl
+  nm x xs ih
+  simp [ih]
+  generalize (xs.map f).max? = r
+  rcases r with _ | r <;> simp
+  apply max_comm; apply max_left_comm
+
+theorem _root_.List.max?_eq_max?_of_perm {α : Type*} [ha : LinearOrder α] {xs ys : List α}
+(h : xs.Perm ys) : xs.max? = ys.max? := by
+  simp only [List.max?_eq_foldl]
+  apply List.foldl_eq_foldl_of_perm; rotate_left; exact h
+  rintro (_ | acc) x y <;> simp
+  apply max_comm; apply sup_right_comm
+
+@[simp]
+theorem _root_.List.cons_erase_perm_iff_mem {α : Type*} [ha : DecidableEq α] {xs : List α} {x} :
+(x :: xs.erase x).Perm xs ↔ x ∈ xs := by
+  rw [List.perm_iff_count, List.mem_iff_count_ne_zero]
+  constructor
+  · intro h
+    specialize h x
+    simp at h
+    linarith
+  intro h y
+  simp [List.count_cons]
+  split_ifs with h₁
+  · subst h₁
+    simp
+    generalize xs.count x = n at h ⊢
+    cases n; simp at h; rfl
+  rw [List.count_erase_of_ne # ne_symm' h₁]; rfl
+
+@[simp]
+theorem _root_.List.perm_cons_erase_iff_mem {α : Type*} [ha : DecidableEq α] {xs : List α} {x} :
+xs.Perm (x :: xs.erase x) ↔ x ∈ xs := by rw [List.perm_comm]; simp
+
+theorem _root_.List.le_max? {α : Type*} [ha : LinearOrder α] {xs : List α} {x m : α}
+(h₁ : x ∈ xs) (h₂ : xs.max? = some m) : x ≤ m := by
+  generalize hy : x :: xs.erase x = ys
+  have h₃ : ys.max? = some m
+  · rw [←hy, ←h₂]
+    apply List.max?_eq_max?_of_perm
+    simpa
+  subst hy
+  simp at h₃
+  cases h₄ : (xs.erase x).max? <;> simp [h₄] at h₃ <;> simp [←h₃]
 
 theorem depthAux_le {t : Raw₀ α β} (wf : t.WF) {k t'}
 (h : t.mp.get? k = some t') : t'.depthAux < t.depthAux := by
+  classical
   rcases t with ⟨val, mp⟩
   nth_rw 2 [depthAux]
-  simp only [rec_3_eq, rec_4_eq, List.rec_eq_foldr]
-  sorry
-
--- #check 0 #exit
+  simp only [rec_3_eq, rec_4_eq, List.rec_eq_foldr, List.foldr_max_eq_max!_map]
+  generalize hb : mp.2.toList = bs
+  change _ < (0 :: bs.map (λ x => (0 :: x.toList.map
+    (λ x => x.snd.depthAux + 1)).max?.getD 0)).max?.getD 0
+  simp
+  generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) =>
+    (x.toList.map (λ x => x.snd.depthAux + 1)).max?.elim 0 (max 0)) = f
+  obtain ⟨b, h₁, h₂⟩ := wf.mp.mem_bucket_of_get?_eq_some h
+  replace h₁ : b ∈ bs; simpa [←hb]
+  generalize hb' : b :: bs.erase b = bs'
+  have h₃ : bs.Perm bs'; simpa [←hb']
+  rw [List.max?_eq_max?_of_perm (ys := bs'.map f) # h₃.map f]
+  simp [←hb']
+  suffices h₄ : t'.depthAux < f b
+  · cases ((bs.erase b).map f).max? <;> simp [h₄]
+  subst hf
+  dsimp
+  clear! val h wf bs bs'
+  generalize hx : b.toList.map (λ x => x.2.depthAux + 1) = xs
+  replace h₂ : (t'.depthAux + 1) ∈ xs
+  · rw [←hx, List.mem_map]; use ⟨k, t'⟩
+  clear k
+  cases h₃ : xs.max?
+  · simp at h₃; simp [h₃] at h₂
+  nm r
+  simp
+  apply Nat.lt_of_succ_le
+  exact List.le_max? h₂ h₃
 
 theorem depthAux_le_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)}
 (wf : (mk val mp).WF) {k : α} {t : Raw₀ α β} (h : mp.get? k = some t) :
