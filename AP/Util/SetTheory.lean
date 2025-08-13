@@ -464,3 +464,83 @@ theorem Equiv.bijective_invFun {α β : Type*} (e : α ≃ β) : e.invFun.Biject
 theorem Set.finite_of_subset_finset {α : Type*} {set : Set α}
 (s : Finset α) (h : ∀ x ∈ set, x ∈ s) : set.Finite := by
   classical apply Finite.ofFinset (s := s.filter (· ∈ set)); simpa
+
+theorem Set.nonempty_infinite_diff_finite {α : Type*} {s s' : Set α}
+(h₁ : s.Infinite) (h₂ : s'.Finite) : (s \ s').Nonempty := by
+  contrapose h₁; simp at h₁ ⊢; exact h₂.subset h₁
+
+theorem Set.nat_exists_le_of_infinite {s : Set ℕ} {n : ℕ}
+(h : s.Infinite) : ∃ k, n ≤ k ∧ k ∈ s := by
+  suffices h₁ : (s \ {k | k < n}).Nonempty
+  · rcases h₁ with ⟨k, h₁⟩; use k; simp at h₁; simp [h₁]
+  apply nonempty_infinite_diff_finite h
+  exact finite_lt_nat n
+
+theorem Set.exists_infinite_preimage_of {α β : Type*} [ha : Infinite α] [hb : Finite β]
+{f : α → β} : ∃ b, (f ⁻¹' b).Infinite := by
+  by_contra h
+  simp at h
+  replace h := finite_iUnion h
+  rw [iUnion_preimage, finite_univ_iff] at h
+  exact not_finite α
+
+theorem Set.infinite_of_subset {α : Type*} {s₁ s₂ : Set α}
+(h₁ : s₂ ⊆ s₁) (h₂ : s₂.Infinite) : s₁.Infinite := h₂.mono h₁
+
+theorem Set.exists_infinite_of_forall_exists {α β : Type*}
+[ha : Infinite α] [hb : Finite β] {R : α → β → Prop}
+(h : ∀ (a : α), ∃ (b : β), R a b) : ∃ (b : β), {a : α | R a b}.Infinite := by
+  by_contra h₃
+  simp at h₃
+  replace h₃ := finite_iUnion h₃
+  replace h₃ : ¬Set.Infinite (⋃ b, {a | R a b}); simpa
+  contrapose! h₃; clear h₃
+  convert (by rwa [infinite_univ_iff] : (Set.univ : Set α).Infinite)
+  ext x
+  simp
+  apply h
+
+theorem finite_iff_finite_of_bijective {α β : Type*}
+(h : ∃ (f : α → β), f.Bijective) : Finite α ↔ Finite β := by
+  rw [←nonempty_equiv_iff_bijective] at h
+  rcases h with ⟨e⟩; exact e.finite_iff
+
+theorem Set.finite_filter_equiv_toFun_iff {α β : Type*} {p : β → Prop} {e : α ≃ β} :
+{x : α | p (e x)}.Finite ↔ {y : β | p y}.Finite := by
+  unfold Set.Finite
+  simp
+  apply finite_iff_finite_of_bijective
+  use λ x => ⟨e x.1, x.2⟩
+  constructor
+  · rintro ⟨a, ha⟩ ⟨b, hb⟩ h
+    simp at h
+    simp [h]
+  · rintro ⟨b, hb⟩
+    use ⟨e.invFun b, by simpa⟩
+    simp
+
+theorem Set.finite_filter_equiv_invFun_iff {α β : Type*} {p : β → Prop} {e : β ≃ α} :
+{x : α | p (e.invFun x)}.Finite ↔ {y : β | p y}.Finite := by
+  simp [finite_filter_equiv_toFun_iff]
+
+theorem Set.finite_filter_equiv_toFun_of {α β : Type*} {p : β → Prop} {e : α ≃ β}
+(h : {y : β | p y}.Finite) : {x : α | p (e x)}.Finite := by
+  rwa [finite_filter_equiv_toFun_iff]
+
+theorem Set.finite_filter_equiv_invFun_of {α β : Type*} {p : β → Prop} {e : β ≃ α}
+(h : {y : β | p y}.Finite) : {x : α | p (e.invFun x)}.Finite := by
+  rwa [finite_filter_equiv_invFun_iff]
+
+theorem Set.finite_filter_of_bijective {α β : Type*} {p : β → Prop} {f : α → β}
+(hf : f.Bijective) (h : {x : α | p (f x)}.Finite) : {y : β | p y}.Finite := by
+  let e := Equiv.ofBijective f hf; rw [show f = e.toFun from rfl] at h
+  rwa [←finite_filter_equiv_toFun_iff]
+
+@[simp]
+theorem Set.finite_int_abs_le {n : ℤ} : {k | |k| ≤ n}.Finite := by
+  simp_rw [abs_le]; apply Set.finite_Icc
+
+@[simp]
+theorem Set.finite_int_abs_sub_le {c d : ℤ} : {a | |a - c| ≤ d}.Finite := by
+  apply finite_filter_of_bijective (p := (|· - c| ≤ d)) (f := (· + c))
+  exact AddGroup.addRight_bijective c; simp

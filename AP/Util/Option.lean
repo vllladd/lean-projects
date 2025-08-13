@@ -39,3 +39,6 @@ theorem bind_ite {α β : Type*} {P} [hp : Decidable P]
 {x y : Option α} {f : α → Option β} :
 (if P then x else y).bind f = if P then x.bind f else y.bind f := by
   split_ifs <;> simp
+
+theorem ne_none_of_eq_some {α : Type*} {m : Option α} {x : α}
+(h : m = some x) : m ≠ none := by simp [h]

@@ -35,13 +35,17 @@ theorem prop_bcs (P : Prop) {R : Prop} (h₁ : P → R)
 
 theorem eq_true_of {P : Prop} (h : P) : P = True := by simpa
 
-theorem skolemize {α β : Type*} [Nonempty β] {p : α → Prop} {q : α → β → Prop} :
+theorem skolemize {α β : Type*} [hb : Nonempty β] {p : α → Prop} {q : α → β → Prop} :
 (∀ x, p x → ∃ y, q x y) ↔ ∃ (f : α → β), ∀ x, p x → q x (f x) := by
   constructor
   · intro h; use λ x => Classical.epsilon λ y => p x → q x y
     intro x hx; specialize h x hx;
     convert Classical.epsilon_spec h; simp [hx]
   rintro ⟨f, h⟩ x hx; specialize h x hx; use f x
+
+theorem skolemize' {α β : Type*} [hb : Nonempty β] {p : α → β → Prop} :
+(∀ x, ∃ y, p x y) ↔ ∃ (f : α → β), ∀ x, p x (f x) := by
+  have h := skolemize (p := λ _ => True) (q := p); simp at h; exact h
 
 theorem and_intro (P : Prop) {Q : Prop} : P ∧ Q → Q := (·.2)
 
@@ -168,5 +172,5 @@ theorem ne_symm' {α : Type*} {a b : α} (h : ¬(a = b)) : ¬(b = a) := by tauto
 theorem ne_comm' {α : Type*} {a b : α} : ¬(a = b) ↔ ¬(b = a) := by tauto
 
 noncomputable
-def Nonempty.Inhabited {α : Type*} [h : Nonempty α] : Inhabited α :=
+def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
   Classical.inhabited_of_nonempty h

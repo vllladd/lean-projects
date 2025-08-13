@@ -496,7 +496,7 @@ xs.filterMap f ~ ys.filterMap f ↔ (xs.map f).filter Option.isSome ~
     subst h₁
     simp
   simp at hb
-  replace hb := hb.Inhabited
+  replace hb := hb.inhabited
   simp only [filterMap_eq]
   rw [map_perm_map_iff_loc]
   intro b₁ b₂
@@ -663,16 +663,24 @@ theorem le_max? [ha : LinearOrder α] {x m : α}
 
 end List namespace Finset
 
-variable {α : Type*}
+variable {α : Type*} {s : Finset α}
 
 @[simp]
-theorem nodup_out_val {s : Finset α} : s.val.out.Nodup := by
+theorem nodup_out_val : s.val.out.Nodup := by
   rcases s with ⟨m, h⟩; simpa
 
 @[simp]
-theorem nodup_val {s : Finset α} : s.val.Nodup := by
+theorem nodup_val : s.val.Nodup := by
   rcases s with ⟨m, h⟩; simpa
 
 @[simp]
-theorem mem_out_val {s : Finset α} {x} : x ∈ s.val.out ↔ x ∈ s :=
+theorem mem_out_val {x} : x ∈ s.val.out ↔ x ∈ s :=
   mem_toList
+
+theorem card_insert_erase_eq {x y : α} [ha : DecidableEq α]
+(h₁ : x ∈ s) (h₂ : y ∉ s) : (insert y (s.erase x)).card = s.card := by
+  rw [card_insert_of_notMem # by simp [h₂]]
+  rw [card_erase_of_mem h₁]
+  cases h₃ : s.card
+  · simp at h₃; simp [h₃] at h₁
+  simp
