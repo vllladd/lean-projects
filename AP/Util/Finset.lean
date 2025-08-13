@@ -348,7 +348,9 @@ theorem nodup_out_iff {α : Type*} {m : Multiset α} : m.out.Nodup ↔ m.Nodup :
 
 end Multiset namespace List
 
-theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
+variable {α β : Type*} {xs ys : List α}
+
+theorem subperm_of_subperm_and_length_eq
 (h₁ : xs <+~ ys) (h₂ : xs.length = ys.length) : ys <+~ xs := by
   generalize hm₁ : Multiset.ofList xs = m₁
   generalize hm₂ : Multiset.ofList ys = m₂
@@ -359,9 +361,8 @@ theorem subperm_of_subperm_and_length_eq {α : Type*} {xs ys : List α}
   apply le_of_eq; symm
   exact Multiset.eq_of_le_and_card_eq h₁ h₂
 
-theorem perm_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
-(hx : xs.Nodup) (h₁ : xs ⊆ ys)
-(h₂ : xs.length = ys.length) : ys ~ xs := by
+theorem perm_of_nodup_and_subset_and_length_eq
+(hx : xs.Nodup) (h₁ : xs ⊆ ys) (h₂ : xs.length = ys.length) : ys ~ xs := by
   generalize hm₁ : Multiset.ofList xs = m₁
   generalize hm₂ : Multiset.ofList ys = m₂
   replace h₁ : m₁ ⊆ m₂ := by subst m₁ m₂; simpa
@@ -373,22 +374,18 @@ theorem perm_of_nodup_and_subset_and_length_eq {α : Type*} {xs ys : List α}
   rwa [Multiset.le_iff_subset hx]
 
 theorem subset_of_nodup_and_subset_and_length_eq
-{α : Type*} {xs ys : List α} (h₁ : xs.Nodup) (h₂ : xs ⊆ ys)
-(h₃ : xs.length = ys.length) : ys ⊆ xs := by
-  apply Perm.subset
-  exact perm_of_nodup_and_subset_and_length_eq h₁ h₂ h₃
+(h₁ : xs.Nodup) (h₂ : xs ⊆ ys) (h₃ : xs.length = ys.length) : ys ⊆ xs := by
+  apply Perm.subset; exact perm_of_nodup_and_subset_and_length_eq h₁ h₂ h₃
 
 @[simp]
-theorem count_eq_zero' {α : Type*} [ha : DecidableEq α]
+theorem count_eq_zero' [ha : DecidableEq α]
 {xs : List α} {x} : xs.count x = 0 ↔ x ∉ xs := count_eq_zero
 
-theorem mem_iff_count_ne_zero {α : Type*} [ha : DecidableEq α]
-{xs : List α} {x} : x ∈ xs ↔ xs.count x ≠ 0 := by
+theorem mem_iff_count_ne_zero [ha : DecidableEq α] {x} : x ∈ xs ↔ xs.count x ≠ 0 := by
   rw [←not_iff_comm']; simp
 
-theorem perm_of_subset_and_nodup {α : Type*} {xs ys : List α}
-(h₁ : xs.Nodup) (h₂ : ys.Nodup) (h₃ : xs ⊆ ys) (h₄ : ys ⊆ xs) :
-xs ~ ys := by
+theorem perm_of_subset_and_nodup
+(h₁ : xs.Nodup) (h₂ : ys.Nodup) (h₃ : xs ⊆ ys) (h₄ : ys ⊆ xs) : xs ~ ys := by
   classical
   generalize hm₁ : Multiset.ofList xs = m₁
   generalize hm₂ : Multiset.ofList ys = m₂
@@ -401,13 +398,13 @@ xs ~ ys := by
     exact Multiset.coe_eq_coe.mp this
   exact Multiset.eq_of_nodup_and_subset_and_subset h₁ h₂ h₃ h₄
 
-theorem length_eq_of_subset_and_nodup {α : Type*} {xs ys : List α}
+theorem length_eq_of_subset_and_nodup
 (h₁ : xs.Nodup) (h₂ : ys.Nodup) (h₃ : xs ⊆ ys) (h₄ : ys ⊆ xs) :
 xs.length = ys.length := by
   apply Perm.length_eq
   exact perm_of_subset_and_nodup h₁ h₂ h₃ h₄
 
-theorem map_perm_map_iff_loc {α β : Type*} {xs ys : List α} {f : α → β}
+theorem map_perm_map_iff_loc {f : α → β}
 (hf : ∀ x y, x ∈ xs ∨ x ∈ ys → y ∈ xs ∨ y ∈ ys → f x = f y → x = y) :
 xs.map f ~ ys.map f ↔ xs ~ ys := by
   classical
@@ -420,7 +417,7 @@ xs.map f ~ ys.map f ↔ xs ~ ys := by
     by simpa [hm₁, hm₂]
   exact Multiset.map_eq_map_iff_loc hf
 
-theorem nodup_of_nodup_and_subperm {α : Type*} {xs ys : List α}
+theorem nodup_of_nodup_and_subperm
 (h₁ : ys.Nodup) (h₂ : xs <+~ ys) : xs.Nodup := by
   classical
   obtain ⟨m₁, hm₁⟩ := hv # Multiset.ofList xs
@@ -429,30 +426,7 @@ theorem nodup_of_nodup_and_subperm {α : Type*} {xs ys : List α}
   simp only [←Multiset.coe_nodup, ←hm₁, ←hm₂] at h₁ ⊢
   exact Multiset.nodup_of_le h₂ h₁
 
-example {α β : Type*} {f : α → Option β} {xs : List α}
-(h : (xs.map f).Nodup) : (xs.filterMap f).Nodup := by
-  classical
-  by_cases hb : IsEmpty β
-  · cases h₁ : xs.filterMap f; simp
-    nm y ys
-    cases hb.1 y
-  simp at hb
-  replace hb := hb.Inhabited
-  rw [filterMap_eq]
-  rw [List.nodup_map_iff_inj_on]
-  rotate_left; apply h.filter
-  intro x hx y hy h₁
-  simp at hx hy
-  replace hx := hx.2
-  replace hy := hy.2
-  rw [Option.isSome_iff_exists] at hx hy
-  obtain ⟨x, rfl⟩ := hx
-  obtain ⟨y, rfl⟩ := hy
-  simp at h₁
-  simp [h₁]
-
-theorem nodup_filterMap_iff {α β : Type*} [ha : DecidableEq α]
-{f : α → Option β} {xs : List α} :
+theorem nodup_filterMap_iff [ha : DecidableEq α] {f : α → Option β} :
 (xs.filterMap f).Nodup ↔ ∀ x ∈ xs, ∀ y, f x = some y → xs.count x ≤ 1 ∧
 ∀ x' ∈ xs, f x' = some y → x = x' := by
   classical
@@ -511,8 +485,8 @@ theorem nodup_filterMap_iff {α β : Type*} [ha : DecidableEq α]
       · subst H₂; contradiction
       · exact h₆
 
-theorem filterMap_perm_filterMap_iff_filter_map_perm {α β : Type*} {f : α → Option β}
-{xs ys : List α} : xs.filterMap f ~ ys.filterMap f ↔ (xs.map f).filter Option.isSome ~
+theorem filterMap_perm_filterMap_iff_filter_map_perm {f : α → Option β} :
+xs.filterMap f ~ ys.filterMap f ↔ (xs.map f).filter Option.isSome ~
 (ys.map f).filter Option.isSome := by
   classical
   by_cases hb : IsEmpty β
@@ -529,25 +503,23 @@ theorem filterMap_perm_filterMap_iff_filter_map_perm {α β : Type*} {f : α →
   simp [Option.isSome_iff_exists]
   aesop
 
-theorem count_filter_pos {α : Type*} [ha : DecidableEq α] {f : α → Bool}
-{xs : List α} {x} (h : f x) : (xs.filter f).count x = xs.count x := count_filter h
+theorem count_filter_pos [ha : DecidableEq α] {f : α → Bool} {x} (h : f x) :
+(xs.filter f).count x = xs.count x := count_filter h
 
-theorem count_filter_neg {α : Type*} [ha : DecidableEq α] {f : α → Bool}
-{xs : List α} {x} (h : f x = false) : (xs.filter f).count x = 0 := by
-  simp [h]
+theorem count_filter_neg [ha : DecidableEq α] {f : α → Bool} {x} (h : f x = false) :
+(xs.filter f).count x = 0 := by simp [h]
 
-theorem count_filter_neg' {α : Type*} [ha : DecidableEq α] {f : α → Bool}
-{xs : List α} {x} (h : ¬f x) : (xs.filter f).count x = 0 := by
-  simp [h]
+theorem count_filter_neg' [ha : DecidableEq α] {f : α → Bool}
+{x} (h : ¬f x) : (xs.filter f).count x = 0 := by simp [h]
 
-theorem count_filter_eq_ite {α : Type*} [ha : DecidableEq α] {f : α → Bool}
-{xs : List α} {x} : (xs.filter f).count x = if f x then xs.count x else 0 := by
+theorem count_filter_eq_ite [ha : DecidableEq α] {f : α → Bool} {x} :
+(xs.filter f).count x = if f x then xs.count x else 0 := by
   split_ifs with h₁
   · exact count_filter_pos h₁
   · exact count_filter_neg' h₁
 
-theorem filter_perm_of_perm {α : Type*}
-{f : α → Bool} {xs ys : List α} (h : xs ~ ys) : xs.filter f ~ ys.filter f := by
+theorem filter_perm_of_perm {f : α → Bool} (h : xs ~ ys) :
+xs.filter f ~ ys.filter f := by
   classical
   have h₁ := h
   rw [perm_iff_count] at h₁ ⊢
@@ -557,8 +529,8 @@ theorem filter_perm_of_perm {α : Type*}
   simp only [count_filter_eq_ite, h₁]
   convert rfl (a := 0); simp [h₂]; rw [h.mem_iff] at h₂; simp [h₂]
 
-theorem count_map_of_loc {α β : Type*} [ha : DecidableEq α] [hb : DecidableEq β]
-{f : α → β} {xs : List α} {x : α} (h : ∀ y ∈ xs, f x = f y → x = y) :
+theorem count_map_of_loc [ha : DecidableEq α] [hb : DecidableEq β]
+{f : α → β} {x : α} (h : ∀ y ∈ xs, f x = f y → x = y) :
 (xs.map f).count (f x) = xs.count x := by
   induction xs <;> simp
   nm a xs ih
@@ -575,8 +547,7 @@ theorem count_map_of_loc {α β : Type*} [ha : DecidableEq α] [hb : DecidableEq
     simp
   rintro rfl; rfl
 
-theorem count_map_eq_sum {α β : Type*}
-[ha : DecidableEq α] [hb : DecidableEq β] {f : α → β} {xs : List α} {y : β} :
+theorem count_map_eq_sum [ha : DecidableEq α] [hb : DecidableEq β] {f : α → β} {y : β} :
 (xs.map f).count y = ∑ x ∈ xs.toFinset, if f x = y then xs.count x else 0 := by
   induction xs; rfl
   nm x xs ih
@@ -622,8 +593,8 @@ theorem count_map_eq_sum {α β : Type*}
   rcases h₄ with ⟨h₄, h₅⟩
   simp [ne_symm' h₄]
 
-theorem filterMap_perm_filterMap_of {α β : Type*} {f : α → Option β}
-{xs ys : List α} (hx : xs ~ ys) : xs.filterMap f ~ ys.filterMap f := by
+theorem filterMap_perm_filterMap_of {f : α → Option β} (hx : xs ~ ys) :
+xs.filterMap f ~ ys.filterMap f := by
   classical
   rw [filterMap_perm_filterMap_iff_filter_map_perm]
   apply filter_perm_of_perm
@@ -656,6 +627,39 @@ theorem filterMap_perm_filterMap_of {α β : Type*} {f : α → Option β}
   split_ifs with h₄; rotate_left; rfl
   rw [perm_iff_count] at hx
   apply hx
+
+@[simp]
+theorem cons_erase_perm_iff_mem [ha : DecidableEq α] {x} :
+(x :: xs.erase x).Perm xs ↔ x ∈ xs := by
+  rw [perm_iff_count, mem_iff_count_ne_zero]
+  constructor
+  · intro h
+    specialize h x
+    simp at h
+    linarith
+  intro h y
+  simp [count_cons]
+  split_ifs with h₁
+  · subst h₁
+    simp
+    generalize xs.count x = n at h ⊢
+    cases n; simp at h; rfl
+  rw [count_erase_of_ne # ne_symm' h₁]; rfl
+
+@[simp]
+theorem perm_cons_erase_iff_mem [ha : DecidableEq α] {x} :
+xs.Perm (x :: xs.erase x) ↔ x ∈ xs := by rw [perm_comm]; simp
+
+theorem le_max? [ha : LinearOrder α] {x m : α}
+(h₁ : x ∈ xs) (h₂ : xs.max? = some m) : x ≤ m := by
+  generalize hy : x :: xs.erase x = ys
+  have h₃ : ys.max? = some m
+  · rw [←hy, ←h₂]
+    apply max?_eq_max?_of_perm
+    simpa
+  subst hy
+  simp at h₃
+  cases h₄ : (xs.erase x).max? <;> simp [h₄] at h₃ <;> simp [←h₃]
 
 end List namespace Finset
 

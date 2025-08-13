@@ -695,6 +695,22 @@ xs.foldlWith f z = xs.foldl (λ acc x => if h : x ∈ xs then f acc x h else z) 
   intro acc y hy
   simp [hy]
 
-theorem rec_eq_foldr {α β : Type*} {xs : List α} {z : β} {f : α → β → β} :
+theorem rec_eq_foldr {z : β} {f : α → β → β} :
 @List.rec α (λ _ => β) z (λ x _ acc => f x acc) xs = xs.foldr f z := by
   induction xs <;> simp_all
+
+theorem foldr_max_eq_max!_map [hb : LinearOrder β]
+{f : α → β} {z : β} : xs.foldr (λ x => max (f x)) z = (z :: xs.map f).max?.getD z := by
+  induction xs; rfl
+  nm x xs ih
+  simp [ih]
+  generalize (xs.map f).max? = r
+  rcases r with _ | r <;> simp
+  apply max_comm; apply max_left_comm
+
+theorem max?_eq_max?_of_perm [ha : LinearOrder α]
+(h : xs.Perm ys) : xs.max? = ys.max? := by
+  simp only [max?_eq_foldl]
+  apply foldl_eq_foldl_of_perm; rotate_left; exact h
+  rintro (_ | acc) x y <;> simp
+  apply max_comm; apply sup_right_comm
