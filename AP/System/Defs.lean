@@ -10,12 +10,8 @@ namespace System
 universe u
 variable {S T : Type u} (sys : System S T)
 
-@[simp]
-def trTo (s : S) (t : T) (s₁ : S) : Prop :=
-  sys.tr s t = some s₁
-
 def validTr (s : S) (t : T) : Prop :=
-  ∃ s₁, sys.trTo s t s₁
+  ∃ s', sys.tr s t = some s'
 
 def hasTr (s : S) : Prop :=
   ∃ t, sys.validTr s t
@@ -55,11 +51,11 @@ def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
 @[class]
 inductive Reachable {S T : Type u} (sys : System S T) : S → S → Prop where
 | refl : ∀ {a}, sys.Reachable a a
-| step : ∀ {a b c t}, sys.trTo a t b → sys.Reachable b c → sys.Reachable a c
+| step : ∀ {a b c t}, sys.tr a t = some b → sys.Reachable b c → sys.Reachable a c
 
 @[class]
 structure Acyclic (s : S) : Prop where
-  h : ∀ {a b t}, sys.Reachable s a → sys.trTo a t b → ¬sys.Reachable b a
+  h : ∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a
 
 @[class]
 structure Tree (s : S) : Prop where

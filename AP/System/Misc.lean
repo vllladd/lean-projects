@@ -9,7 +9,6 @@ theorem aux₁ {s t s'}
 (h₁ : sys.validTr s t) (h₂ : sys.tr! s t = s') : sys.tr s t = some s' := by
   unfold tr! at h₂
   obtain ⟨a, ha⟩ := h₁
-  unfold trTo at ha
   rw [ha] at h₂ ⊢
   simp at h₂
   rw [h₂]
@@ -17,7 +16,7 @@ theorem aux₁ {s t s'}
 theorem aux₂ {s t} (h₁ : ¬sys.validTr s t) :
 sys.tr! s t = s := by
   unfold tr!
-  unfold validTr trTo at h₁
+  unfold validTr at h₁
   simp at h₁
   rw [←Option.eq_none_iff_forall_ne_some] at h₁
   simp [h₁]
@@ -159,7 +158,6 @@ sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
       · use a; rfl
       nm t ts ih
       obtain ⟨t₁, h₂⟩ := h₁ a t # by simp
-      unfold trTo at h₂
       simp [h₂]
       apply ih
       intro c t₂ h₃

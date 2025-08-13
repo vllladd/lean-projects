@@ -251,8 +251,8 @@ theorem exi_simp_path_of_reachable {a b} (h : sys.Reachable a b) :
   obtain ⟨ts, h₁⟩ := h
   exact exi_simp_path_of_trs_full_eq h₁
 
-theorem simp_path'_of_cons_and_trTo {a b t ts}
-(h₁ : sys.simp_path' a (t :: ts)) (h₂ : sys.trTo a t b) :
+theorem simp_path'_of_cons_and_tr_eq_some {a b t ts}
+(h₁ : sys.simp_path' a (t :: ts)) (h₂ : sys.tr a t = some b) :
 sys.simp_path' b ts := by
   reduce at h₁ h₂
   intro xs ys h₃ h₄ h₅
@@ -467,7 +467,7 @@ theorem simp_path_nil_iff {a b} : sys.simp_path a [] b ↔ a = b := by
 
 @[simp]
 theorem simp_path_singleton_iff {a b t} :
-sys.simp_path a [t] b ↔ a ≠ b ∧ sys.trTo a t b := by
+sys.simp_path a [t] b ↔ a ≠ b ∧ sys.tr a t = some b := by
   simp [simp_path, simp_path']
   split
   · nm x h₁; clear x
@@ -499,11 +499,10 @@ sys.simp_path a [t] b ↔ a ≠ b ∧ sys.trTo a t b := by
   simp [hy]
 
 theorem simp_path'_snoc_of (b c : S) {a ts t}
-(h₁ : sys.simp_path a ts b) (h₂ : sys.trTo b t c)
+(h₁ : sys.simp_path a ts b) (h₂ : sys.tr b t = some c)
 (h₃ : ∀ xs, xs <+: ts → (sys.trs a xs).1 ≠ c) :
 sys.simp_path' a (ts ++ [t]) := by
   classical
-  unfold trTo at h₂
   rcases h₁ with ⟨ha₁, ha₂⟩
   intro xs ys hx hy h₄
   by_cases h₅ : xs = ts ++ [t]
@@ -524,11 +523,10 @@ sys.simp_path' a (ts ++ [t]) := by
   exact ha₁ xs ys hx hy h₄
 
 theorem simp_path_snoc_of {a b c ts t}
-(h₁ : sys.simp_path a ts b) (h₂ : sys.trTo b t c)
+(h₁ : sys.simp_path a ts b) (h₂ : sys.tr b t = some c)
 (h₃ : ∀ xs, xs <+: ts → (sys.trs a xs).1 ≠ c) :
 sys.simp_path a (ts ++ [t]) c := by
   classical
-  unfold trTo at h₂
   rcases h₁ with ⟨ha₁, ha₂⟩
   use simp_path'_snoc_of b c (by use ha₁) h₂ h₃
   simp [trs_append, ha₂, h₂]
@@ -1057,16 +1055,15 @@ sys.Acyclic a ↔ ∀ xs ys, xs <+: ys → sys.trs a xs = sys.trs a ys → xs = 
   ⟨by apply trs_inj_of_acyclic, acyclic_of_trs_inj⟩
 
 theorem acyclic_of_tr {a} [ha : sys.Acyclic a] {t b}
-(h₁ : sys.trTo a t b) : sys.Acyclic b :=
+(h₁ : sys.tr a t = some b) : sys.Acyclic b :=
   acyclic_of_reachable # reachable_of_tr h₁
 
 theorem simulate_succ_snd_eq_zero_of_tr_and_eq_zero {f a b n}
-(h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.trTo a (f a) b) :
-(sys.simulate f a # n + 1).2 = 0 := by
-  unfold trTo at h₂; simpa [h₂]
+(h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.tr a (f a) = some b) :
+(sys.simulate f a # n + 1).2 = 0 := by simpa [h₂]
 
 theorem simulate_snd_eq_zero_of_tr_and_eq_zero {f a b n}
-(h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.trTo a (f a) b) :
+(h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.tr a (f a) = some b) :
 (sys.simulate f a n).2 = 0 := by
   have h₃ := simulate_succ_snd_eq_zero_of_tr_and_eq_zero h₁ h₂
   exact simulate_snd_eq_zero_of_le_and_eq_zero h₃ # by linarith

@@ -6,7 +6,7 @@ namespace AP
 structure State : Type where
   pw : ℕ
   taken : Set' PointZ
-  a_pos : PointZ
+  aPos : PointZ
   aTurn : Bool
   hist : List PointZ
 deriving Inhabited, DecidableEq
@@ -29,19 +29,19 @@ deriving Inhabited
 def initState (pw : ℕ) : State :=
   { pw := pw
   , taken := ∅
-  , a_pos := 0
+  , aPos := 0
   , aTurn := false
   , hist := []
   }
 
 def State.aMove (s : State) (p : PointZ) : Option State := do
-  guard # s.a_pos ≠ p
+  guard # s.aPos ≠ p
   guard # p ∉ s.taken
-  guard # p.dist s.a_pos ≤ s.pw
-  return {s with a_pos := p}
+  guard # p.dist s.aPos ≤ s.pw
+  return {s with aPos := p}
 
 def State.dMove (s : State) (p : PointZ) : Option State := do
-  guard # s.a_pos ≠ p
+  guard # s.aPos ≠ p
   guard # p ∉ s.taken
   return {s with taken := insert p s.taken}
 

@@ -304,3 +304,13 @@ theorem wf_of_reachable {a b}
 
 theorem initial_iff {a} : sys.Initial a ↔ a ∈ sys.initial :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+theorem validTr_iff_isSome {s t} : sys.validTr s t ↔ (sys.tr s t).isSome := by
+  simp_rw [validTr, Option.isSome_iff_exists]
+
+theorem hasTr_iff {s} : sys.hasTr s ↔ ∃ t s', sys.tr s t = some s' := by rfl
+
+instance {s t} : Decidable (sys.validTr s t) :=
+  match h : sys.tr s t with
+  | none => .isFalse # by simp [validTr_iff_isSome, h]
+  | some _ => .isTrue # by simp [validTr_iff_isSome, h]
