@@ -82,7 +82,7 @@ theorem mem_hist_of_reachable' {a b p} (hv : game.sys.Reachable a b)
 (h : p ∈ b.hist) : p ∈ a.hist := by
   rw [game.mem_hist_iff_of_reachable hv] at h; exact h
 
-theorem hist_suffix_of_reachable {a} [hv : game.sys.Valid a] {b p}
+theorem hist_suffix_of_reachable {a} [hv : game.sys.WF a] {b p}
 (h : game.sys.Reachable a b) (hp : p ∈ b.hist) :
 a.hist.get! p <:+ b.hist.get! p := by
   revert hv
@@ -105,7 +105,7 @@ a.hist.get! p <:+ b.hist.get! p := by
   rotate_left; exact hb₁
   exact List.suffix_cons_of_suffix ih
 
-theorem exi_mem_hist_of_valid {a} [ha : game.sys.Valid a] : ∃ p, p ∈ a.hist := by
+theorem exi_mem_hist_of_valid {a} [ha : game.sys.WF a] : ∃ p, p ∈ a.hist := by
   rw [System.valid_iff] at ha
   obtain ⟨z, h₁, h₂⟩ := ha
   obtain ⟨ps, p', s', rfl, h₄⟩ := game.h_sys_init_valid z
@@ -116,11 +116,11 @@ theorem exi_mem_hist_of_valid {a} [ha : game.sys.Valid a] : ∃ p, p ∈ a.hist 
   apply mem_hist_of_reachable h₂
   simpa
 
-theorem acyclic_gstate {a} [ha : game.sys.Valid a] : game.sys.Acyclic a := by
+theorem acyclic_gstate {a} [ha : game.sys.WF a] : game.sys.Acyclic a := by
   rw [System.acyclic_iff]
   intro b c t h₁ h₂ h₃
   have hb := System.valid_of_reachable h₁
-  have hc : game.sys.Valid c :=
+  have hc : game.sys.WF c :=
     by
       apply System.valid_of_reachable (a := a)
       exact System.reachable_right h₁ h₂

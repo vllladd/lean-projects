@@ -2,7 +2,7 @@ import AP.Sokoban.Basic
 
 namespace Sokoban
 
-theorem point_eq_of_fin {s : State} [hs : s.Valid] {p : PointZ}
+theorem point_eq_of_fin {s : State} [hs : s.WF] {p : PointZ}
 (h : p ∈ s.grid) : p = ⟨(p.x.toFin : Fin s.width), (p.y.toFin : Fin s.height)⟩ := by
   rcases p with ⟨x, y⟩
   simp
@@ -13,25 +13,25 @@ theorem point_eq_of_fin {s : State} [hs : s.Valid] {p : PointZ}
   rw [max_eq_left h₁, max_eq_left h₂]
   exact ⟨Int.emod_eq_of_lt h₁ h₃, Int.emod_eq_of_lt h₂ h₄⟩
 
-theorem x_toFin_width_eq_iff' {s : State} [hs : s.Valid] {p₁ p₂ : PointZ}
+theorem x_toFin_width_eq_iff' {s : State} [hs : s.WF] {p₁ p₂ : PointZ}
 (h₁ : p₁ ∈ s.grid) (h₂ : p₂ ∈ s.grid) :
 (p₁.x.toFin : Fin s.width) = p₂.x.toFin ↔ p₁.x = p₂.x := by
   nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
 
-theorem y_toFin_width_eq_iff' {s : State} [hs : s.Valid] {p₁ p₂ : PointZ}
+theorem y_toFin_width_eq_iff' {s : State} [hs : s.WF] {p₁ p₂ : PointZ}
 (h₁ : p₁ ∈ s.grid) (h₂ : p₂ ∈ s.grid) :
 (p₁.y.toFin : Fin s.height) = p₂.y.toFin ↔ p₁.y = p₂.y := by
   nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
 
 theorem x_toFin_width_eq_iff {n} [hn : NeZero n] {s₁ s₂ : State}
-[hs₁ : s₁.Valid] [hs₂ : s₂.Valid] {p₁ p₂}
+[hs₁ : s₁.WF] [hs₂ : s₂.WF] {p₁ p₂}
 (hw₁ : s₁.width = n) (hw₂ : s₂.width = n) (h₁ : p₁ ∈ s₁.grid) (h₂ : p₂ ∈ s₂.grid) :
 (p₁.x.toFin : Fin n) = p₂.x.toFin ↔ p₁.x = p₂.x := by
   nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
   congr!; exact hw₁.symm; exact hw₂.symm
 
 theorem y_toFin_width_eq_iff {n} [hn : NeZero n] {s₁ s₂ : State}
-[hs₁ : s₁.Valid] [hs₂ : s₂.Valid] {p₁ p₂}
+[hs₁ : s₁.WF] [hs₂ : s₂.WF] {p₁ p₂}
 (hw₁ : s₁.height = n) (hw₂ : s₂.height = n) (h₁ : p₁ ∈ s₁.grid) (h₂ : p₂ ∈ s₂.grid) :
 (p₁.y.toFin : Fin n) = p₂.y.toFin ↔ p₁.y = p₂.y := by
   nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
@@ -42,13 +42,13 @@ private structure FinState (w h : ℕ) [NeZero w] [NeZero h] where
   player : Fin w × Fin h
 deriving Fintype
 
-private def fn (s₀ : State) [hs : s₀.Valid] (s : State) :
+private def fn (s₀ : State) [hs : s₀.WF] (s : State) :
 FinState s₀.width s₀.height :=
   { grid := Map.range # λ p => s.grid.get! ⟨p.1, p.2⟩
     player := (s.player.x.toFin, s.player.y.toFin)
   }
 
-theorem finite_reachable {s : State} [hs : s.Valid] :
+theorem finite_reachable {s : State} [hs : s.WF] :
 {s' | sys.Reachable s s'}.Finite := by
   rename' s => s₀
   unfold Set.Finite
@@ -58,8 +58,8 @@ theorem finite_reachable {s : State} [hs : s.Valid] :
   simp [fn] at h
   rcases h with ⟨h₁, h₂, h₃⟩
   simp
-  have h₄ : s₁.Valid := valid_of_reachable hs₁
-  have h₅ : s₂.Valid := valid_of_reachable hs₂
+  have h₄ : s₁.WF := wf_of_reachable hs₁
+  have h₅ : s₂.WF := wf_of_reachable hs₂
   ext:1
   · rw [width_eq_of_reachable hs₁, width_eq_of_reachable hs₂]
   · rw [height_eq_of_reachable hs₁, height_eq_of_reachable hs₂]

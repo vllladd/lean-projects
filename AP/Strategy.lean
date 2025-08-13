@@ -311,7 +311,7 @@ theorem game₀_play_d_turn_iff_even {pw a d n}
   simp [game_play_a_turn_iff_of_not_ended h]
 
 theorem exi_valid_state_with_size_of_pw_ne_0 pw n
-(h : pw ≠ 0) : ∃ (s : ValidState), s.pw = pw ∧ s.size = n := by
+(h : pw ≠ 0) : ∃ (s : WFState), s.pw = pw ∧ s.size = n := by
   obtain ⟨fa, hfa⟩ := hv # λ (s : State) => (⟨s.size / 2 + 1, 0⟩ : Point)
   obtain ⟨fd, hfd⟩ := hv # λ (s : State) => (⟨s.size / 2, 1⟩ : Point)
   obtain ⟨a, ha⟩ := hv # mk_a_strat fa
@@ -652,7 +652,7 @@ theorem game₀_0_play_size_le_1 {a d n} :
 ((game₀ 0 a d).play n).size ≤ 1 := by simp
 
 theorem exi_valid_state_with_size_iff_pw_ne_0 {pw} :
-(∀ n, ∃ (s : ValidState), s.pw = pw ∧ s.size = n) ↔ pw ≠ 0 := by
+(∀ n, ∃ (s : WFState), s.pw = pw ∧ s.size = n) ↔ pw ≠ 0 := by
   constructor <;> intro h
   · rintro rfl
     specialize h 2
@@ -667,7 +667,7 @@ theorem exi_valid_state_with_size_iff_pw_ne_0 {pw} :
   apply exi_valid_state_with_size_of_pw_ne_0
   exact h
 
-theorem exi_valid_state_with_size n : ∃ (s : ValidState), s.size = n := by
+theorem exi_valid_state_with_size n : ∃ (s : WFState), s.size = n := by
   obtain ⟨s, h₁, h₂⟩ := exi_valid_state_with_size_of_pw_ne_0 1 n (by simp)
   exact ⟨_, h₂⟩
 
@@ -675,7 +675,7 @@ theorem exi_valid_state_with_size n : ∃ (s : ValidState), s.size = n := by
 theorem state₀_valid {pw} : (state₀ pw).valid := by
   use game₀ pw default default; simp
 
-instance : Inhabited ValidState := by
+instance : Inhabited WFState := by
   use state₀ 0; simp
 
 instance : Inhabited AState := by
@@ -1994,7 +1994,7 @@ theorem game_play_not_ended_of_le {g : Game} {n m}
   exact game_play_ended_of_le h₁ h₂
 
 @[ext]
-theorem valid_state_ext {s₁ s₂ : ValidState}
+theorem valid_state_ext {s₁ s₂ : WFState}
 (h : s₁.toState = s₂.toState) : s₁ = s₂ := by
   cases s₁; cases s₂; simp at h ⊢; exact h
 
@@ -2115,7 +2115,7 @@ theorem grid_diff_subsingleton_of_state'₀_0 {g : Game} {n}
   exact grid_diff_subsingleton_of_state'₀_0_a_turn h h₁
   exact grid_diff_subsingleton_of_state'₀_0_not_a_turn h h₁
 
-def ValidState.mk_game (s : ValidState)
+def WFState.mk_game (s : WFState)
 (a : State → Point) (d : State → Point) : Game :=
   { a := mk_a_strat a
   , d := mk_d_strat d

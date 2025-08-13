@@ -297,7 +297,7 @@ g₁.toState = g₂.toState := by
 #check 0 #exit
 
 theorem exiu_valid_state_of_state_valid {s : State}
-(h : s.valid) : ∃! (sv : ValidState), sv.toState' = s.toState' := by
+(h : s.valid) : ∃! (sv : WFState), sv.toState' = s.toState' := by
   obtain ⟨g, ⟨pw, a, d, n, hg⟩, rfl⟩ := h
   refine' ⟨⟨g.toState, _⟩, _⟩
   · apply state_valid_of_game_valid
@@ -312,7 +312,7 @@ theorem exiu_valid_state_of_state_valid {s : State}
 #check 0 #exit
 
 theorem exiu_valid_state_of_state'_valid {s' : State'}
-(h : s'.valid) : ∃! (sv : ValidState), sv.toState' = s' := by
+(h : s'.valid) : ∃! (sv : WFState), sv.toState' = s' := by
 
 theorem a_state_move_of_move' {sa : AState} {sd : DState}
 (h : sa.move' sd) : sa.move sd := by

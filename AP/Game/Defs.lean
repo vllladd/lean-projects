@@ -108,16 +108,16 @@ structure Game (T : GameParams) : Type u where
   h_sys_init_nemp : sys.initial ≠ ∅
   h_sys_init_valid : ∀ s [sys.Initial s], ∃ ps p s',
     T.initState ps p s' = s ∧ s.hist ≠ ∅
-  h_rules_player_mem : ∀ {s : T.GState} [sys.Valid s] {t : T.Trans} {r},
+  h_rules_player_mem : ∀ {s : T.GState} [sys.WF s] {t : T.Trans} {r},
     rules t.1 s.state t.2 = some r → r.1 ∈ s.hist
   h_sys_tr : sys.tr = T.sys_tr rules pmove
   h_choose_move : ∀ (s : T.GState),
     let p := s.player
     let t := choose_move p (pstate p s.state)
     (∃ t, (rules p s.state t).isSome) → (rules p s.state t).isSome
-  h_mem_outcome : ∀ {s : T.GState} [sys.Valid s],
+  h_mem_outcome : ∀ {s : T.GState} [sys.WF s],
     ¬sys.hasTr s → ∀ p, p ∈ outcome s ↔ p ∈ s.hist
-  h_outcome_no_hist : ∀ {s₁ s₂ : T.GState} [sys.Valid s₁] [sys.Valid s₂],
+  h_outcome_no_hist : ∀ {s₁ s₂ : T.GState} [sys.WF s₁] [sys.WF s₂],
     ¬sys.hasTr s₁ → ¬sys.hasTr s₂ → s₁.player = s₂.player → s₁.state = s₂.state →
     ∀ p x y, (outcome s₁).get? p = some x → (outcome s₂).get? p = some y → x = y
 

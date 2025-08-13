@@ -70,5 +70,5 @@ structure Initial (s : S) : Prop where
   h : s ∈ sys.initial
 
 @[class]
-inductive Valid (s' : S) : Prop where
-| mk : ∀ {s} [sys.Initial s], sys.Reachable s s' → Valid s'
+inductive WF (s' : S) : Prop where
+| mk : ∀ {s} [sys.Initial s], sys.Reachable s s' → WF s'

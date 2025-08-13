@@ -409,20 +409,20 @@ match h : s.a_has_move_comp with
 -- 
 -- def State.size (s : State) := s.hist.length
 -- 
--- structure ValidState extends State where
+-- structure WFState extends State where
 --   h_valid : toState.valid
 -- 
--- structure AState extends ValidState where
+-- structure AState extends WFState where
 --   h_size : Odd toState.size
 -- 
--- structure DState extends ValidState where
+-- structure DState extends WFState where
 --   h_size : Even toState.size
 -- 
 -- theorem a_state_ne_d_state {sa : AState} {sd : DState} :
 -- sa.toState ≠ sd.toState := by
 --   apply ne_of_congr # λ s => Odd s.size; simp [sa.h_size, sd.h_size]
 -- 
--- theorem a_state_or_d_state {s : ValidState} :
+-- theorem a_state_or_d_state {s : WFState} :
 -- (∃ (sa : AState), sa.toState = s.toState) ∨
 -- (∃ (sd : DState), sd.toState = s.toState) := by
 --   by_cases h : Odd s.size

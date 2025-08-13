@@ -55,19 +55,19 @@ def sys : System State PointZ :=
   }
 
 @[class]
-structure AStrat.Valid (a : AStrat) : Prop where
-  h : ∀ {s} [sys.Valid s], sys.hasTr s → s.aTurn → sys.validTr s (a.f s)
+structure AStrat.WF (a : AStrat) : Prop where
+  h : ∀ {s} [sys.WF s], sys.hasTr s → s.aTurn → sys.validTr s (a.f s)
 
 @[class]
-structure DStrat.Valid (d : DStrat) : Prop where
-  h : ∀ {s} [sys.Valid s], sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s)
+structure DStrat.WF (d : DStrat) : Prop where
+  h : ∀ {s} [sys.WF s], sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s)
 
 def Strat.f (st : Strat) (s : State) : PointZ :=
   if s.aTurn then st.a.f s else st.d.f s
 
 @[class]
-structure Strat.Valid (st : Strat) : Prop where
-  h : ∀ {s} [sys.Valid s], sys.hasTr s → sys.validTr s (st.f s)
+structure Strat.WF (st : Strat) : Prop where
+  h : ∀ {s} [sys.WF s], sys.hasTr s → sys.validTr s (st.f s)
 
 def State.a_wins (s : State) (st : Strat) : Prop :=
   ∀ n, (sys.simulate st.f s n).2 = 0
@@ -76,10 +76,10 @@ def State.d_wins (s : State) (st : Strat) : Prop :=
   ¬s.a_wins st
 
 def State.a_hws (s : State) : Prop :=
-  ∃ (a : AStrat), a.Valid ∧ ∀ (d : DStrat), d.Valid → s.a_wins ⟨a, d⟩
+  ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩
 
 def State.d_hws (s : State) : Prop :=
-  ∃ (d : DStrat), d.Valid ∧ ∀ (a : AStrat), a.Valid → s.d_wins ⟨a, d⟩
+  ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩
 
 def a_hws_pw (pw : ℕ) : Prop :=
   (initState pw).a_hws

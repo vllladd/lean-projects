@@ -37,20 +37,20 @@ structure State.Get' (s : State) (d : Tile) : Prop where
   h : ∃ p, s.Get p d
 
 @[class]
-structure Tile.Valid (d : Tile) : Prop where
+structure Tile.WF (d : Tile) : Prop where
   h_tw : [d.target, d.wall].atMostOne
   h_pbw : [d.player, d.box, d.wall].atMostOne
 
 @[class]
-structure State.Valid (s : State) : Prop where
+structure State.WF (s : State) : Prop where
   h_bounds : ∀ {p}, p ∈ s.grid ↔ 0 ≤ p.x ∧ 0 ≤ p.y ∧
     p.x < s.width ∧ p.y < s.height
-  h_grid : ∀ {d}, s.Get' d → d.Valid
+  h_grid : ∀ {d}, s.Get' d → d.WF
   h_player_mem : s.player ∈ s.grid
   h_player_iff : ∀ {p d}, s.Get p d → (d.player ↔ s.player = p)
 
 @[class]
-structure State.ValidTargets (s : State) extends State.Valid s where
+structure State.WFTargets (s : State) extends State.WF s where
   h₄ : s.grid.values.countP (·.box) = s.grid.values.countP (·.target)
 
 -----
@@ -95,6 +95,6 @@ def State.solved (s : State) : Bool :=
 -----
 
 def sys : System State Move :=
-  { initial := {s | s.Valid}
+  { initial := {s | s.WF}
   , tr := State.move
   }

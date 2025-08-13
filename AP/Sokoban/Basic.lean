@@ -19,10 +19,10 @@ theorem State.Get.eq_of {s : State} {p d₁ d₂}
 
 theorem State.Get.get' {s : State} {p d} (hd : s.Get p d) : s.Get' d := ⟨⟨_, hd⟩⟩
 
-theorem State.Get.valid {s : State} {p d} [hs : s.Valid] (hd : s.Get p d) : d.Valid :=
+theorem State.Get.wf {s : State} {p d} [hs : s.WF] (hd : s.Get p d) : d.WF :=
   hs.h_grid hd.get'
 
-theorem State.Get'.valid {s : State} {d} [hs : s.Valid] (hd : s.Get' d) : d.Valid :=
+theorem State.Get'.wf {s : State} {d} [hs : s.WF] (hd : s.Get' d) : d.WF :=
   hs.h_grid hd
 
 theorem State.Get.mem {s : State} {p d} (hd : s.Get p d) : p ∈ s.grid := by
@@ -31,7 +31,7 @@ theorem State.Get.mem {s : State} {p d} (hd : s.Get p d) : p ∈ s.grid := by
   simp [hd]
 
 @[simp]
-theorem sys_initial_iff {s} : sys.Initial s ↔ s.Valid := by
+theorem sys_initial_iff {s} : sys.Initial s ↔ s.WF := by
   rw [System.initial_iff]; rfl
 
 @[simp]
@@ -175,24 +175,24 @@ d₂.wall = false ∧ s₁.moveBox p₁ p₂ = s' := by
 theorem Move.toPoint_ne_zero {t : Move} : t.toPoint ≠ 0 := by
   cases t <;> decide
 
-theorem State.Get.player_eq {s : State} {p d} [hs : s.Valid] (hd : s.Get p d) :
+theorem State.Get.player_eq {s : State} {p d} [hs : s.WF] (hd : s.Get p d) :
 s.player = p ↔ d.player := hs.h_player_iff hd |>.symm
 
-theorem State.Get.player_iff {s : State} {p d} [hs : s.Valid] (hd : s.Get p d) :
+theorem State.Get.player_iff {s : State} {p d} [hs : s.WF] (hd : s.Get p d) :
 d.player = decide (s.player = p) := by simp [hd.player_eq]
 
-theorem State.Get.player_of_get_player {s : State} {d} [hs : s.Valid]
+theorem State.Get.player_of_get_player {s : State} {d} [hs : s.WF]
 (hd : s.Get s.player d) : d.player := by simp [hd.player_iff]
 
-theorem State.Get.not_box_and_not_wall_of_get_player {s : State} {d} [hs : s.Valid]
+theorem State.Get.not_box_and_not_wall_of_get_player {s : State} {d} [hs : s.WF]
 (hd : s.Get s.player d) : d.box = false ∧ d.wall = false := by
-  have h₁ := hd.valid.h_pbw
+  have h₁ := hd.wf.h_pbw
   simp [hd.player_of_get_player] at h₁
   exact h₁
 
-theorem sys_valid_iff {s} : sys.Valid s ↔ s.Valid := by
+theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   symm; constructor
-  · simp [System.valid_iff]; intro h; use s
+  · simp [System.wf_iff]; intro h; use s
   intro h
   apply sys.invariant_init h; simp
   clear! s; intro s s' t hs h₂
@@ -221,7 +221,7 @@ theorem sys_valid_iff {s} : sys.Valid s ↔ s.Valid := by
       · nm H₃ H₄ H₅
         subst H₂ H₅
         constructor <;> simp [H₁.not_box_and_not_wall_of_get_player]
-      · subst H₂; exact H₁.valid
+      · subst H₂; exact H₁.wf
     · simp; exact h₂.mem
     · simp; intro p d hp
       split_ifs
@@ -247,7 +247,7 @@ theorem sys_valid_iff {s} : sys.Valid s ↔ s.Valid := by
       constructor <;> simp [h₃, h₅]
     · nm H₁ H₂; subst H₂
       constructor <;> simp [hp.not_box_and_not_wall_of_get_player]
-    · exact hp.valid
+    · exact hp.wf
   · simp; exact h₂.mem
   · intro p d hp
     simp at hp
@@ -256,24 +256,24 @@ theorem sys_valid_iff {s} : sys.Valid s ↔ s.Valid := by
     any_goals assumption
     nm H₁ H₂; simpa [H₁, hp.player_iff]
 
-theorem valid_of_reachable {s s' : State} [hs : s.Valid]
-(hr : sys.Reachable s s') : s'.Valid := by
-  rw [←sys_valid_iff, sys.valid_iff] at hs ⊢
+theorem wf_of_reachable {s s' : State} [hs : s.WF]
+(hr : sys.Reachable s s') : s'.WF := by
+  rw [←sys_wf_iff, sys.wf_iff] at hs ⊢
   obtain ⟨s₀, h₁, h₂⟩ := hs
   use s₀, h₁, h₂.trans hr
 
 @[simp]
-theorem player_mem {s : State} [hs : s.Valid] : s.player ∈ s.grid :=
+theorem player_mem {s : State} [hs : s.WF] : s.player ∈ s.grid :=
   hs.h_player_mem
 
-theorem width_ne_zero {s : State} [hs : s.Valid] : s.width ≠ 0 := by
+theorem width_ne_zero {s : State} [hs : s.WF] : s.width ≠ 0 := by
   intro h₁; have h₂ := hs.h_player_mem; rw [hs.h_bounds] at h₂; linarith
 
-theorem height_ne_zero {s : State} [hs : s.Valid] : s.height ≠ 0 := by
+theorem height_ne_zero {s : State} [hs : s.WF] : s.height ≠ 0 := by
   intro h₁; have h₂ := hs.h_player_mem; rw [hs.h_bounds] at h₂; linarith
 
-instance {s : State} [hs : s.Valid] : NeZero s.width := ⟨width_ne_zero⟩
-instance {s : State} [hs : s.Valid] : NeZero s.height := ⟨height_ne_zero⟩
+instance {s : State} [hs : s.WF] : NeZero s.width := ⟨width_ne_zero⟩
+instance {s : State} [hs : s.WF] : NeZero s.height := ⟨height_ne_zero⟩
 
 theorem width_and_height_eq_of_reachable {s₀ s : State}
 (h : sys.Reachable s₀ s) : s.width = s₀.width ∧ s.height = s₀.height := by
@@ -294,7 +294,7 @@ theorem height_eq_of_reachable {s₀ s : State}
 (h : sys.Reachable s₀ s) : s.height = s₀.height :=
   width_and_height_eq_of_reachable h |>.2
 
-theorem mem_grid_iff_of_reachable {s₀ s : State} [hs₀ : s₀.Valid] {p}
+theorem mem_grid_iff_of_reachable {s₀ s : State} [hs₀ : s₀.WF] {p}
 (h : sys.Reachable s₀ s) : p ∈ s.grid ↔ p ∈ s₀.grid := by
-  have hs := valid_of_reachable h
+  have hs := wf_of_reachable h
   rw [hs₀.h_bounds, hs.h_bounds, width_eq_of_reachable h, height_eq_of_reachable h]

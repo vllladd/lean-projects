@@ -2,17 +2,17 @@ import AP.AP.Defs
 
 namespace AP
 
-theorem aStrat_valid_def {a : AStrat} : a.Valid ↔ ∀ {s} [sys.Valid s],
+theorem aStrat_wf_def {a : AStrat} : a.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → s.aTurn → sys.validTr s (a.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem dStrat_valid_def {d : DStrat} : d.Valid ↔ ∀ {s} [sys.Valid s],
+theorem dStrat_wf_def {d : DStrat} : d.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem strat_valid_def {st : Strat} : st.Valid ↔ ∀ {s} [sys.Valid s],
+theorem strat_wf_def {st : Strat} : st.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → sys.validTr s (st.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem strat_valid_iff {st : Strat} : st.Valid ↔ st.a.Valid ∧ st.d.Valid := by
-  rw [strat_valid_def, aStrat_valid_def, dStrat_valid_def]
+theorem strat_wf_iff {st : Strat} : st.WF ↔ st.a.WF ∧ st.d.WF := by
+  rw [strat_wf_def, aStrat_wf_def, dStrat_wf_def]
   simp [System.hasTr, System.validTr, Strat.f]
   constructor
   · intro h
@@ -28,38 +28,38 @@ theorem strat_valid_iff {st : Strat} : st.Valid ↔ st.a.Valid ∧ st.d.Valid :=
     · exact h₁ _ _ h₃ h₄
     · simp at h₄; exact h₂ _ _ h₃ h₄
 
-theorem Strat.Valid.a_valid {st : Strat} [hst : st.Valid] : st.a.Valid := by
-  rw [strat_valid_iff] at hst; exact hst.1
+theorem Strat.WF.a_valid {st : Strat} [hst : st.WF] : st.a.WF := by
+  rw [strat_wf_iff] at hst; exact hst.1
 
-theorem Strat.Valid.d_valid {st : Strat} [hst : st.Valid] : st.d.Valid := by
-  rw [strat_valid_iff] at hst; exact hst.2
+theorem Strat.WF.d_valid {st : Strat} [hst : st.WF] : st.d.WF := by
+  rw [strat_wf_iff] at hst; exact hst.2
 
-instance {st : Strat} [hst : st.Valid] : st.a.Valid := hst.a_valid
-instance {st : Strat} [hst : st.Valid] : st.d.Valid := hst.d_valid
+instance {st : Strat} [hst : st.WF] : st.a.WF := hst.a_valid
+instance {st : Strat} [hst : st.WF] : st.d.WF := hst.d_valid
 
-abbrev State.Valid (s : State) : Prop := sys.Valid s
+abbrev State.WF (s : State) : Prop := sys.WF s
 
 @[class]
 structure State.AState (s : State) : Prop where
-  h_valid : s.Valid
+  h_valid : s.WF
   h : s.aTurn
 
 @[class]
 structure State.DState (s : State) : Prop where
-  h_valid : s.Valid
+  h_valid : s.WF
   h : s.aTurn = false
 
-theorem aState_def {s : State} : s.AState ↔ s.Valid ∧ s.aTurn :=
+theorem aState_def {s : State} : s.AState ↔ s.WF ∧ s.aTurn :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-theorem dState_def {s : State} : s.DState ↔ s.Valid ∧ s.aTurn = false :=
+theorem dState_def {s : State} : s.DState ↔ s.WF ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
 def State.dChooseMove (s : State) : PointZ :=
   (insert s.a_pos s.taken).max! + ⟨1, 0⟩
 
 @[simp]
-theorem a_valid_tr_iff {s : State} [hs : s.AState] {p} :
+theorem a_wf_tr_iff {s : State} [hs : s.AState] {p} :
 sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken ∧ p.dist s.a_pos ≤ s.pw := by
   rcases hs with ⟨hs, ht⟩
   constructor
@@ -72,7 +72,7 @@ sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken ∧ p.dist s.a_pos ≤ s.pw 
     simp [sys, State.move, State.aMove, ht, h]
 
 @[simp]
-theorem d_valid_tr_iff {s : State} [hs : s.DState] {p} :
+theorem d_wf_tr_iff {s : State} [hs : s.DState] {p} :
 sys.validTr s p ↔ s.a_pos ≠ p ∧ p ∉ s.taken := by
   rcases hs with ⟨hs, ht⟩
   constructor

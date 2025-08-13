@@ -283,24 +283,24 @@ theorem tree_iff {s} : sys.Tree s ↔
 ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂ :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem valid_iff {b} : sys.Valid b ↔ ∃ a, sys.Initial a ∧ sys.Reachable a b := by
+theorem wf_iff {b} : sys.WF b ↔ ∃ a, sys.Initial a ∧ sys.Reachable a b := by
   constructor
   · rintro ⟨h⟩
     nm a ha
     use a
   · rintro ⟨a, ha, hb⟩
-    exact Valid.mk hb
+    exact WF.mk hb
 
-theorem valid_of_initial {s} [sys.Initial s] : sys.Valid s := by
-  apply Valid.mk (s := s); rfl
+theorem wf_of_initial {s} [sys.Initial s] : sys.WF s := by
+  apply WF.mk (s := s); rfl
 
-instance {s} [sys.Initial s] : sys.Valid s := valid_of_initial
+instance {s} [sys.Initial s] : sys.WF s := wf_of_initial
 
-theorem valid_of_reachable {a b}
-[ha : sys.Valid a] (hb : sys.Reachable a b) : sys.Valid b := by
-  rw [valid_iff] at ha
+theorem wf_of_reachable {a b}
+[ha : sys.WF a] (hb : sys.Reachable a b) : sys.WF b := by
+  rw [wf_iff] at ha
   obtain ⟨c, h₁, h₂⟩ := ha
-  exact Valid.mk # h₂.trans hb
+  exact WF.mk # h₂.trans hb
 
 theorem initial_iff {a} : sys.Initial a ↔ a ∈ sys.initial :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
