@@ -59,15 +59,9 @@ def State.dChooseMove (s : State) : PointZ :=
   (insert s.aPos s.taken).max! + ⟨1, 0⟩
 
 @[simp]
-theorem State.AState.turn {s : State} [hs : s.AState] : s.aTurn := by
-  cases hs; assumption
-
-@[simp]
-theorem State.DState.turn {s : State} [hs : s.DState] : s.aTurn = false := by
-  cases hs; assumption
-
-theorem State.validTr_iff_of_aTurn {s : State} {p} (ht : s.aTurn) :
+theorem a_wf_tr_iff {s : State} [hs : s.AState] {p} :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
+  rcases hs with ⟨hs, ht⟩
   constructor
   · rintro ⟨s', h₁⟩
     simp [sys, State.move, State.aMove, ht] at h₁
@@ -77,8 +71,10 @@ sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw :=
     use (s.move p).get!
     simp [sys, State.move, State.aMove, ht, h]
 
-theorem State.validTr_iff_of_not_aTurn {s : State} {p} (ht : s.aTurn = false) :
+@[simp]
+theorem d_wf_tr_iff {s : State} [hs : s.DState] {p} :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
+  rcases hs with ⟨hs, ht⟩
   constructor
   · rintro ⟨s', h₁⟩
     simp [sys, State.move, State.dMove, ht] at h₁
@@ -89,29 +85,20 @@ sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
     simp [sys, State.move, State.dMove, ht, h]
 
 @[simp]
-theorem State.AState.validTr_iff {s : State} [hs : s.AState] {p} :
-sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
-  apply s.validTr_iff_of_aTurn; simp
-
-@[simp]
-theorem State.DState.validTr_iff {s : State} [hs : s.DState] {p} :
-sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
-  apply s.validTr_iff_of_not_aTurn; simp
-
-theorem State.validTr_dChooseMove {s : State} (ht : s.aTurn = false) :
-sys.validTr s s.dChooseMove := by
-  rw [s.validTr_iff_of_not_aTurn ht]
-  suffices h₁ : s.dChooseMove ∉ insert s.aPos s.taken
-  · simp at h₁; rw [ne_comm]; exact h₁
+theorem State.DState.hasTr {s : State} [hs : s.DState] : sys.hasTr s := by
+  use s.dChooseMove; simp
+  suffices h₁ : s.dChooseMove ∉  insert s.aPos s.taken
+  · simp at h₁; rw [eq_comm]; exact h₁
   apply Set'.not_mem_of_max!_lt
   simp [State.dChooseMove, Point.zero_def]
 
-theorem State.hasTr_of_not_aTurn {s : State} (ht : s.aTurn = false) : sys.hasTr s := by
-  use s.dChooseMove; exact s.validTr_dChooseMove ht
+@[simp]
+theorem State.AState.turn {s : State} [hs : s.AState] : s.aTurn := by
+  cases hs; assumption
 
 @[simp]
-theorem State.DState.hasTr {s : State} [hs : s.DState] : sys.hasTr s := by
-  apply s.hasTr_of_not_aTurn; simp
+theorem State.DState.turn {s : State} [hs : s.DState] : s.aTurn = false := by
+  cases hs; assumption
 
 def State.aMoves (s : State) : List PointZ := do
   let ⟨ax, ay⟩ := s.aPos
@@ -126,19 +113,14 @@ def State.aMoves (s : State) : List PointZ := do
 def State.aHasMove (s : State) : Bool :=
   s.aMoves ≠ []
 
-theorem State.hasTr_iff_of_aTurn {s : State} (ht : s.aTurn) :
-sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
-  simp [sys, System.hasTr_iff, move, aMove, ht]
-
 @[simp]
 theorem State.AState.hasTr_iff {s : State} [hs : s.AState] :
 sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
-  simp [s.hasTr_iff_of_aTurn]
+  simp [sys, System.hasTr_iff, move, aMove]
 
-theorem State.aHasMove_of_hasTr {s : State}
-(ht : s.aTurn) (h : sys.hasTr s) : s.aHasMove := by
-  simp [aHasMove, aMoves, s.hasTr_iff_of_aTurn ht] at h ⊢
-  simp [sys, move, aMove, ht]; clear ht
+theorem State.AState.aHasMove_of_hasTr {s : State} [hs : s.AState]
+(h : sys.hasTr s) : s.aHasMove := by
+  simp [aHasMove, aMoves] at h ⊢
   rcases h with ⟨p, h₁, h₂, h₃⟩
   use Int.toNat # s.pw + p.x - s.aPos.x
   constructor
@@ -157,9 +139,9 @@ theorem State.aHasMove_of_hasTr {s : State}
     replace h₂ := le_of_max_le_left h₂
     linarith
   simp
-  cases s; nm pw taken aPos aTurn hist
   constructor
-  · simp [PointZ.dist] at h₁ h₃ ⊢; clear h₂
+  · cases s; nm pw taken aPos aTurn hist
+    simp [PointZ.dist] at h₁ h₃ ⊢; clear h₂
     convert h₁ <;> rcases h₃ with ⟨h₁, h₂⟩
     · have h₃ : max (pw + p.x - aPos.x) 0 = pw + p.x - aPos.x := by
         apply max_eq_left
@@ -174,7 +156,9 @@ theorem State.aHasMove_of_hasTr {s : State}
       rw [h₃]
       ring
   constructor
-  · simp [PointZ.dist] at h₃ ⊢
+  · cases s; nm pw taken aPos hist turn
+    clear hs
+    simp [PointZ.dist] at h₃ ⊢
     dsimp at h₁ h₂
     rcases h₃ with ⟨h₅, h₆⟩
     replace h₅ : max (pw + p.x - aPos.x) 0 = pw + p.x - aPos.x := by
@@ -188,6 +172,7 @@ theorem State.aHasMove_of_hasTr {s : State}
     simp [h₅, h₆]
     ring_nf
     exact h₂
+  clear hs; cases s; nm pw taken aPos aTurn hist
   dsimp at h₁ h₂ h₃ ⊢
   rw [PointZ.dist.comm]
   convert h₃
@@ -208,10 +193,9 @@ theorem State.aHasMove_of_hasTr {s : State}
     rw [h₄]
     linarith
 
-theorem State.hasTr_of_aHasMove {s : State} (ht : s.aTurn)
+theorem State.AState.hasTr_of_aHasMove {s : State} [hs : s.AState]
 (h : s.aHasMove) : sys.hasTr s := by
-  simp [aHasMove, aMoves, s.hasTr_iff_of_aTurn ht] at h ⊢
-  simp [sys, move, aMove, ht] at h
+  simp [aHasMove, aMoves] at h ⊢
   rcases h with ⟨x, hx, y, hy, h₁⟩
   rcases h₁ with ⟨h₁, h₂, h₃⟩
   use ⟨s.aPos.x + (x - s.pw), s.aPos.y + (y - s.pw)⟩
@@ -219,8 +203,8 @@ theorem State.hasTr_of_aHasMove {s : State} (ht : s.aTurn)
   rw [PointZ.dist.comm]
   exact h₃
 
-theorem State.hasTr_iff_aHasMove {s : State} (ht : s.aTurn) :
-sys.hasTr s ↔ s.aHasMove := ⟨s.aHasMove_of_hasTr ht, s.hasTr_of_aHasMove ht⟩
+theorem State.AState.hasTr_iff_aHasMove {s : State} [hs : s.AState] :
+sys.hasTr s ↔ s.aHasMove := ⟨hs.aHasMove_of_hasTr, hs.hasTr_of_aHasMove⟩
 
 theorem State.WF.ind_turn {P : State → Prop}
 (h₁ : ∀ (s : State), s.AState → P s) (h₂ : ∀ (s : State), s.DState → P s)
@@ -233,12 +217,11 @@ theorem State.WF.ind_turn {P : State → Prop}
 def State.hasMove (s : State) : Bool :=
   if s.aTurn then s.aHasMove else true
 
-theorem State.hasTr_iff_hasMove {s : State} : sys.hasTr s ↔ s.hasMove := by
-  simp; cases ht : s.aTurn <;> simp
-  · exact hasTr_of_not_aTurn ht
-  · exact hasTr_iff_aHasMove ht
+theorem State.hasTr_iff_hasMove {s : State} [hs : s.WF] : sys.hasTr s ↔ s.hasMove := by
+  apply hs.ind_turn <;> clear! s <;> intro s hs
+  simp [hs.hasTr_iff_aHasMove]; simp [hs.hasTr]
 
-instance {s : State} : Decidable (sys.hasTr s) :=
+instance {s : State} [hs : s.WF] : Decidable (sys.hasTr s) :=
   match h : s.hasMove with
   | true => .isTrue # by rwa [s.hasTr_iff_hasMove]
   | false => .isFalse # by rw [s.hasTr_iff_hasMove, h]; simp
