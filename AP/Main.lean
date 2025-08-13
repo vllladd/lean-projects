@@ -11,7 +11,7 @@ def getPs (r : ℕ) : List PointZ := do
   return ⟨x, y⟩
 
 def aStrat : AStrat := .mk # λ s =>
-  let ⟨x, y⟩ := s.a_pos
+  let ⟨x, y⟩ := s.aPos
   ⟨1 - x, y⟩
 
 def dStrat : DStrat := .mk # λ s =>
@@ -32,7 +32,7 @@ def State.toStr (s : State) : String := String.mk # do
   let sp := do
     guard # x + d = 0 ∧ y + d ≠ 0
     return '\n'
-  let c := if p = s.a_pos then '@'
+  let c := if p = s.aPos then '@'
     else if p ∈ s.taken then '#'
     else '.'
   sp ++ [c]
