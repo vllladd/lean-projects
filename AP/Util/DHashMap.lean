@@ -480,7 +480,7 @@ ofList mp.toSortedList ~m mp := by
   · exact h₁.symm.toList_perm
   apply ofList_equiv_ofList_of_nodup_and_perm <;> simp
 
-section foldlWith
+section foldWith
 
 namespace Internal
 
@@ -524,8 +524,9 @@ def AssocList.foldlWith {γ : Sort*} (xs : AssocList α β)
     (λ acc j y h₂ => f acc j y # foldlWith_getCast?_cons_aux h h₂)
     (f z i x # by simp) (by simp at h; exact h.2)
 
-open Classical in omit hh₂ in
-theorem foldlWith_eq_foldl {γ : Type*} {xs : AssocList α β}
+omit hh₂ in
+theorem foldlWith_eq_foldl {γ : Type*}
+[hb : ∀ i, DecidableEq (β i)] {xs : AssocList α β}
 {f : γ → (i : α) → (x : β i) → xs.getCast? i = some x → γ} {z : γ}
 (h : xs.toList.map (·.1) |>.Nodup) :
 xs.foldlWith f z h = xs.foldl (λ acc i x =>
@@ -618,23 +619,119 @@ omit hh₁ hh₂ in @[simp]
 theorem AssocList.toList_ofList {xs : List ((i : α) × β i)} : (ofList xs).toList = xs := by
   induction xs; rfl; simp; assumption
 
--- #check 0 #exit
-
 end Internal
 
 open Internal
 
-def Raw.foldlWith {γ : Sort*} (mp : Raw α β) (wf : mp.WF)
-(f : γ → (i : α) → (x : β i) → Raw₀.get? ⟨mp, wf.size_buckets_pos⟩ i = some x → γ)
-(z : γ) : γ :=
+namespace Raw
+
+variable {γ : Type*} {mp : Raw α β} {wf : mp.WF}
+  {f : γ → (i : α) → (x : β i) → mp.get? i = some x → γ} {z : γ}
+
+def foldWith (mp : Raw α β) (wf : mp.WF)
+(f : γ → (i : α) → (x : β i) → mp.get? i = some x → γ) (z : γ) : γ :=
   (mp.buckets.foldlWith · z) # λ acc xs h₁ => xs.foldlWith (γ := γ)
-  (λ acc' i' x h₂ => f acc i' x # by
+  (λ acc' i' x h₂ => f acc' i' x # by
     simp at h₂
     rw [←Internal.List.mem_iff_getValueCast?_eq_some] at h₂
     rotate_left; simp [distinctKeys_iff]; exact bucket_nodup_keys wf h₁
-    rw [←Raw₀.mem_toList_iff_get?_eq_some]
-    rotate_left; simpa
-    exact mem_toList_of_mem_bucket h₁ h₂
+    rw [←mem_toList_iff_get?_eq_some]
+    apply mem_toList_of_mem_bucket h₁ h₂
+    exact wf
   ) acc (bucket_nodup_keys wf h₁)
 
-end foldlWith
+theorem WF.distinctKeys_bucket (wf : mp.WF) {b}
+(hb : b ∈ mp.buckets) : Internal.List.DistinctKeys b.toList := by
+  rw [distinctKeys_iff]; exact bucket_nodup_keys wf hb
+
+theorem WF.distinctKeys_getElem_buckets (wf : mp.WF) {i} {h : i < mp.buckets.size} :
+Internal.List.DistinctKeys mp.buckets[i].toList :=
+  wf.distinctKeys_bucket # Array.getElem_mem _
+
+theorem WF.nodup_toList (wf : mp.WF) : mp.toList.Nodup := by
+  change (DHashMap.mk mp wf).toList.Nodup; simp
+
+theorem WF.index_eq_of_mem_bucket (wf : mp.WF) {i j x}
+{hh₃ : i < mp.buckets.size} {hh₄ : j < mp.buckets.size}
+(h₁ : x ∈ mp.buckets[i].toList) (h₂ : x ∈ mp.buckets[j].toList) : i = j := by
+  have h₃ : mp.buckets[i] ∈ mp.buckets; simp
+  have h₄ : mp.buckets[j] ∈ mp.buckets; simp
+  have h₆ := mem_toList_of_mem_bucket h₃ h₁
+  have h₇ := wf.nodup_toList
+  rw [toList_eq_flat_buckets] at h₆ h₇
+  rw [List.nodup_flatMap] at h₇
+  replace h₇ := h₇.2
+  by_contra! h₈
+  rw [ne_iff_lt_or_gt] at h₈
+  generalize mp.buckets = xs at hh₃ hh₄ h₁ h₂ h₃ h₄ h₆ h₇
+  cases xs; nm xs; simp at hh₃ hh₄ h₁ h₂ h₃ h₄ h₆ h₇
+  nm a b; revert a b; simp
+  intro hh₃ hh₄ h₁ h₂; nm a b; clear a b
+  rcases h₈ with h₈ | h₈
+  · have h₉ := List.apply_of_pairwise_and_lt (hh₁ := hh₃) (hh₂ := hh₄) h₇ h₈
+    simp [Function.onFun] at h₉
+    exact h₉ h₁ h₂
+  · have h₉ := List.apply_of_pairwise_and_lt (hh₁ := hh₄) (hh₂ := hh₃) h₇ h₈
+    simp [Function.onFun] at h₉
+    exact h₉ h₂ h₁
+
+theorem foldWith_eq_foldl_toList [hh₃ : ∀ i, DecidableEq (β i)] :
+mp.foldWith wf f z = mp.toList.foldl (λ acc x =>
+if h : mp.get? x.1 = some x.2 then f acc x.1 x.2 h else z) z := by
+  classical
+  simp only [foldWith, foldlWith_eq_foldl, AssocList.getCast?_eq, AssocList.foldl_eq,
+    Array.foldlWith_eq_foldl, ← Array.foldl_toList, toList_eq_flat_buckets,
+    List.flatMap_eq_foldl, List.foldl_append_eq_append, List.nil_append,
+    List.foldl_flatten, List.foldl_map]
+  apply List.foldl_eq_foldl_of_fn_congr
+  intro acc b hb
+  simp at hb
+  simp [hb]
+  apply List.foldl_eq_foldl_of_fn_congr
+  rintro acc₁ ⟨i, x⟩ hx
+  dsimp
+  have h₁ := wf.size_buckets_pos
+  simp only [get?, ↓reduceDIte, Raw₀.get?, Array.ugetElem_eq_getElem,
+    AssocList.getCast?_eq, h₁]
+  have h₂ := wf.get?_eq_some_of_mem_bucket hb hx
+  simp [get?, h₁, Raw₀.get?] at h₂
+  apply dite_eq_dite_of_pos; rfl
+  rotate_left; exact h₂
+  convert h₂; symm
+  rw [Array.mem_iff_getElem] at hb
+  obtain ⟨j, hb, rfl⟩ := hb
+  congr
+  generalize hk : ((mkIdx mp.buckets.size h₁ (hash i)).1).toNat = k
+  simp [hk] at h₂
+  have h₃ : k < mp.buckets.size
+  · rw [Array.getElem_eq_getElem?_get] at h₂
+    generalize_proofs h₃ h₄ at h₂
+    simp at h₄; exact h₄
+  have h₄ : ⟨i, x⟩ ∈ mp.buckets[k].toList
+  · rwa [Internal.List.mem_iff_getValueCast?_eq_some]
+    exact wf.distinctKeys_getElem_buckets
+  exact wf.index_eq_of_mem_bucket h₄ hx
+
+theorem foldWith_eq_fold [hb : ∀ i, DecidableEq (β i)] :
+mp.foldWith wf f z = mp.fold (λ acc i x =>
+if h : mp.get? i = some x then f acc i x h else z) z := by
+  rw [foldWith_eq_foldl_toList, fold_eq_foldl_toList wf]
+
+@[simp]
+theorem toList_empty : (∅ : Raw α β).toList = [] := by
+  change (DHashMap.mk ∅ # by simp).toList = _
+  exact Std.DHashMap.toList_empty
+
+@[simp]
+theorem fold_empty {f : γ → (i : α) → (x : β i) → γ} : (∅ : Raw α β).fold f z = z := by
+  simp [fold_eq_foldl_toList]
+
+@[simp]
+theorem foldWith_empty {wf : (∅ : Raw α β).WF}
+{f : γ → (i : α) → (x : β i) → (∅ : Raw α β).get? i = some x → γ} :
+(∅ : Raw α β).foldWith wf f z = z := by
+  classical simp [foldWith_eq_fold]
+
+end Raw
+
+end foldWith

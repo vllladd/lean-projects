@@ -174,3 +174,7 @@ theorem ne_comm' {α : Type*} {a b : α} : ¬(a = b) ↔ ¬(b = a) := by tauto
 noncomputable
 def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
   Classical.inhabited_of_nonempty h
+
+theorem dite_eq_dite_of_pos {α : Type*} {P Q : Prop} [hp : Decidable P] [hq : Decidable Q]
+{f : P → α} {g : Q → α} {x y : α} (h₁ : P) (h₂ : Q) (h₃ : f h₁ = g h₂) :
+(if h : P then f h else x) = if h : Q then g h else y := by simp [h₁, h₂, h₃]

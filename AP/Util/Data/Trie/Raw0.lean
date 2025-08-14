@@ -4,12 +4,13 @@ namespace Trie
 
 open Std
 
-variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-
 inductive Raw₀ (α β : Type*) [DecidableEq α] [Hashable α] where
 | mk : Option β → (mp : DHashMap.Raw α (λ _ => Raw₀ α β)) → Raw₀ α β
 
 namespace Raw₀
+
+variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+  {t t₁ t₂ : Raw₀ α β}
 
 def val : Raw₀ α β → Option β
 | .mk val _ => val
@@ -25,9 +26,10 @@ theorem val_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)} :
 theorem mp_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)} :
 (mk val mp).mp = mp := rfl
 
+@[class]
 inductive WF : Raw₀ α β → Prop where
-| mk : ∀ {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)}, mp.WF →
-  (∀ {k t}, mp.get? k = some t → t.WF) → (mk val mp).WF
+| mk : ∀ {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)},
+  mp.WF → (∀ {k t}, mp.get? k = some t → t.WF) → (mk val mp).WF
 
 theorem WF.mp {t : Raw₀ α β} (wf : t.WF) : t.mp.WF := by
   cases wf; assumption
@@ -100,11 +102,47 @@ theorem depthAux_le_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ �
 t.depthAux < (mk val mp).depthAux := depthAux_le wf h
 
 set_option linter.unusedVariables false in
-def rec' {γ : Raw₀ α β → Sort*}
+def recAux {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) (wf : t.WF)
 (motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
-(∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : (t : Raw₀ α β) → t.WF → γ t
-| .mk val mp, wf => motive val mp # λ i t h => t.rec' motive # wf.get? h
-termination_by t => t.depthAux
+mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : γ t :=
+  match t with
+  | .mk val mp => motive val mp wf.mp #
+    λ i t h => t.recAux (wf.get? h) motive
+termination_by t.depthAux
 decreasing_by exact depthAux_le wf h
 
-end Raw₀
+def rec' {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) [wf : t.WF]
+(motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
+mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : γ t :=
+  t.recAux wf motive
+
+def depth (t : Raw₀ α β) [wf : t.WF] : ℕ :=
+  t.rec' # λ _ mp h₁ f => (mp.foldWith h₁ · 0) # λ acc i x h₂ =>
+  max acc # 1 + f i x h₂
+
+def empty : Raw₀ α β := ⟨none, ∅⟩
+
+instance : EmptyCollection (Raw₀ α β) := ⟨empty⟩
+
+theorem empty_def : (∅ : Raw₀ α β) = ⟨none, ∅⟩ := rfl
+
+instance : (∅ : Raw₀ α β).WF := by
+  constructor <;> simp
+
+@[simp]
+theorem rec'_mk {γ : Raw₀ α β → Sort*} {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF]
+{motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
+mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)} :
+(⟨val, mp⟩ : Raw₀ α β).rec' motive =
+motive val mp wf.mp (λ _ t h => t.rec' (wf := wf.get? h) motive) := by
+  simp_rw [rec', recAux]
+
+@[simp]
+theorem depth_mk {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF] :
+(⟨val, mp⟩ : Raw₀ α β).depth = mp.foldWith wf.mp
+(λ acc _ (t' : Raw₀ α β) h => max acc # 1 + t'.depth (wf := wf.get? h)) 0 := by
+  unfold depth; simp
+
+@[simp]
+theorem depth_empty : (∅ : Raw₀ α β).depth = 0 := by
+  simp [empty_def]

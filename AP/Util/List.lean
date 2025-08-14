@@ -714,3 +714,10 @@ theorem max?_eq_max?_of_perm [ha : LinearOrder α]
   apply foldl_eq_foldl_of_perm; rotate_left; exact h
   rintro (_ | acc) x y <;> simp
   apply max_comm; apply sup_right_comm
+
+theorem apply_of_pairwise_and_lt {p : α → α → Prop} {i j}
+{hh₁ : i < xs.length} {hh₂ : j < xs.length}
+(h₁ : xs.Pairwise p) (h₂ : i < j) : p xs[i] xs[j] := by
+  rw [List.pairwise_iff_get] at h₁
+  specialize h₁ ⟨i, hh₁⟩ ⟨j, hh₂⟩ h₂
+  simp at h₁; exact h₁
