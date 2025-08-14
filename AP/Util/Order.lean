@@ -222,3 +222,13 @@ example : @equiv_toLinearOrder_aux = @Equiv.toLinearOrder := by
   · contrapose! h₂
     simp at h₁
     exact le_antisymm h₂ h₁
+
+theorem false_of_lt_and_lt {α : Type*} [ha : LinearOrder α] {a b : α}
+(h₁ : a < b) (h₂ : b < a) : False := by
+  have h₃ := h₁.trans h₂
+  rw [lt_self_iff_false] at h₃
+  exact h₃
+
+@[simp]
+theorem not_lt_and_lt {α : Type*} [ha : LinearOrder α] {a b : α} : ¬(a < b ∧ b < a) := by
+  rintro ⟨h₁, h₂⟩; exact false_of_lt_and_lt h₁ h₂

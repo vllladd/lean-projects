@@ -59,9 +59,6 @@ theorem univ_ne_erase {α : Type*} {x : α} : univ ≠ univ.erase x := by
 theorem diff_erase_self_eq_of_mem {x : α} (h : x ∈ s) : s \ s.erase x = {x} := by
   simpa [erase]
 
-theorem eq_empty_iff : s = ∅ ↔ ∀ x, x ∉ s :=
-  eq_empty_iff_forall_notMem
-
 @[simp]
 theorem subsingleton_pair_iff {x y : α} : ({x, y} : Set _).Subsingleton ↔ x = y := by
   simp [Set.Subsingleton]; simp [eq_comm]
@@ -88,7 +85,7 @@ theorem exists_mem {x} : ∃ (s : Set α), x ∈ s := by
 theorem iUnion_preimage {f : α → β} : ⋃ b, f ⁻¹' b = univ := by
   ext x; simp
 
-theorem minimal_le_minimal_of_subset {α : Type*} [ha : LinearOrder α] {s s' : Set α} {x y : α}
+theorem minimal_le_minimal_of_subset [ha : LinearOrder α] {x y : α}
 (h₁ : s' ⊆ s) (h₂ : Minimal (· ∈ s') y) (h₃ : Minimal (· ∈ s) x) : x ≤ y := by
   dsimp [Minimal] at h₂ h₃
   rcases h₂ with ⟨h₂, h₄⟩
@@ -98,3 +95,12 @@ theorem minimal_le_minimal_of_subset {α : Type*} [ha : LinearOrder α] {s s' : 
   specialize h₅ h₆ (le_of_lt h₇)
   contrapose! h₇
   exact h₅
+
+theorem eq_empty_iff : s = ∅ ↔ ∀ x, x ∉ s :=
+  eq_empty_iff_forall_notMem
+
+theorem ne_empty_iff : s ≠ ∅ ↔ ∃ x, x ∈ s := by
+  simp [eq_empty_iff]
+
+theorem ne_empty_of (x : α) (h : x ∈ s) : s ≠ ∅ := by
+  simp [ne_empty_iff]; use x

@@ -156,8 +156,8 @@ instance : LinearOrder (Point α) := by
   · infer_instance
   · infer_instance
 
-def toProd (p : Point α) : α × α :=
-  (p.1, p.2)
+@[simp] def ofProd (p : α × α) : Point α := ⟨p.1, p.2⟩
+@[simp] def toProd (p : Point α) : α × α := ⟨p.1, p.2⟩
 
 instance [Hashable α] : Hashable (Point α) :=
   ⟨λ p => hash p.toProd⟩
@@ -195,6 +195,16 @@ theorem mul_def [Mul α] {a b : Point α} : a * b = ⟨a.1 * b.1, a.2 * b.2⟩ :
 
 @[simp] theorem mk_mul_mk [Mul α] {x₁ y₁ x₂ y₂ : α} :
 (⟨x₁, y₁⟩ : Point α) * ⟨x₂, y₂⟩ = ⟨x₁ * x₂, y₁ * y₂⟩ := rfl
+
+def div [Div α] (a b : Point α) : Point α :=
+  ⟨a.x / b.x, a.y / b.y⟩
+
+instance [Div α] : Div (Point α) := ⟨div⟩
+
+theorem div_def [Div α] {a b : Point α} : a / b = ⟨a.1 / b.1, a.2 / b.2⟩ := rfl
+
+@[simp] theorem mk_div_mk [Div α] {x₁ y₁ x₂ y₂ : α} :
+(⟨x₁, y₁⟩ : Point α) / ⟨x₂, y₂⟩ = ⟨x₁ / x₂, y₁ / y₂⟩ := rfl
 
 instance [ha : Zero α] : Zero (Point α) where
   zero := ⟨0, 0⟩
@@ -383,10 +393,20 @@ instance [ha : MulRightStrictMono α] : MulRightStrictMono (Point α) := by
 
 end StrictMono
 
+theorem ofNat_def [ha : Ring α] {n} :
+(OfNat.ofNat n : Point α) = ⟨OfNat.ofNat n, OfNat.ofNat n⟩ := by
+  induction n; simp
+  nm n ih
+  rw [Lean.Grind.Semiring.ofNat_succ, ih]
+  nth_rw 2 [Lean.Grind.Semiring.ofNat_succ]
+  nth_rw 3 [Lean.Grind.Semiring.ofNat_succ]
+  rfl
+
 end Point
 
 abbrev PointN := Point ℕ
 abbrev PointZ := Point ℤ
+abbrev PointR := Point ℝ
 
 def PointN.dist (a b : PointN) : ℕ :=
   max |(a.x : ℤ) - b.x| |(a.y : ℤ) - b.y| |>.toNat
