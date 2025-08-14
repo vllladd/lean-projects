@@ -16,18 +16,16 @@ def aStrat : AStrat := .mk # λ s =>
 
 def dStrat : DStrat := .mk # λ s =>
   let xs := do
-    let p ← getPs 3
+    let p ← getPs 7
     guard # s.dMove p |>.isSome
     return p
-  match xs with
-  | [] => s.dChooseMove
-  | (p :: _) => p
+  xs.head?.getD s.dChooseMove
 
 def strat : Strat := ⟨aStrat, dStrat⟩
 
 def State.toStr (s : State) : String := String.mk # do
-  let d := 5
-  let p ← getPs 5
+  let d := 10
+  let p ← getPs d
   let ⟨x, y⟩ := p
   let sp := do
     guard # x + d = 0 ∧ y + d ≠ 0
@@ -45,7 +43,7 @@ def logb : IO Unit := do
   IO.println ""
 
 def _root_.main : IO Unit := do
-  let n := 100
+  let n := 1000
   let (res, k) := sys.simulate strat.f (initState 1) n
   IO.println # toString n ++ " ---> " ++ toString k
   logb
