@@ -416,11 +416,31 @@ def PointZ.dist (a b : PointZ) : ℕ :=
 
 @[simp, symm]
 theorem PointN.dist.comm {a b : PointN} : a.dist b = b.dist a := by
-  simp [PointN.dist, abs_sub_comm]
+  simp [dist, abs_sub_comm]
+
+@[simp]
+theorem PointZ.dist_self {a : PointZ} : a.dist a = 0 := by
+  simp [dist]
+
+@[simp]
+theorem PointZ.dist_eq_zero_iff {a b : PointZ} : a.dist b = 0 ↔ a = b := by
+  simp [dist, Point.ext_iff]; omega
+
+@[simp]
+theorem PointZ.ofNat_dist {a b : PointZ} :
+Int.ofNat (a.dist b) = max |a.x - b.x| |a.y - b.y| := by
+  simp [dist]
+
+-- @[simp]
+-- theorem PointZ.triangle {a b c : PointZ} : dist a c ≤ dist a b + dist b c := by
+--   simp [dist]
+--   constructor
+--   · have h := @triangle_aux (a.x - b.x) (b.x - c.x) (|a.y - b.y|) (|b.y - c.y|),
+--     have h := @triangle_aux (a.y - b.y) (b.y - c.y) (|a.x - b.x|) (|b.x - c.x|),
 
 @[simp, symm]
 theorem PointZ.dist.comm {a b : PointZ} : a.dist b = b.dist a := by
-  simp [PointZ.dist, abs_sub_comm]
+  simp [dist, abs_sub_comm]
 
 @[simp]
 theorem PointN.add_self_eq_zero_iff {a : PointN} : a + a = 0 ↔ a = 0 := by

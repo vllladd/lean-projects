@@ -232,3 +232,11 @@ theorem false_of_lt_and_lt {α : Type*} [ha : LinearOrder α] {a b : α}
 @[simp]
 theorem not_lt_and_lt {α : Type*} [ha : LinearOrder α] {a b : α} : ¬(a < b ∧ b < a) := by
   rintro ⟨h₁, h₂⟩; exact false_of_lt_and_lt h₁ h₂
+
+theorem max_eq_ite {α : Type*} [ha : LinearOrder α] {a b : α} :
+max a b = if b ≤ a then a else b := max_def' _ _
+
+theorem abs_add_le_max_add_max {α : Type*}
+[ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
+{a b : α} : |a + b| ≤ max |a| b + max a |b| := by
+  apply (abs_add _ _).trans; apply add_le_add <;> simp

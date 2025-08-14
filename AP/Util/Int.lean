@@ -96,3 +96,7 @@ theorem mul_2_succ_div_2_eq {n : ℤ}
 (hp : 0 ≤ n) : (n * 2 + 1) / 2 = n := by
   suffices (n * 2 + 1) / 2 = n * 2 / 2 by simp at this; assumption
   rw [succ_div_2_eq_div_iff # by linarith]; simp
+
+@[simp]
+theorem max_abs_eq_zero_iff {n m : ℤ} : max |n| |m| = 0 ↔ n = 0 ∧ m = 0 := by
+  rw [max_def']; aesop

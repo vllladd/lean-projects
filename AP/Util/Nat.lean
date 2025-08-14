@@ -330,8 +330,6 @@ theorem le_exp_right {a b : ℕ} (h : b ≠ 0) : a ≤ a ^ b := by
   simp; rename_i a; cases b; simp; rename_i b
   simp [pow_add]; by_contra h₁; simp at h₁
 
--- #check 0 #exit
-
 theorem find_le_find_of_imp {P Q : ℕ → Prop}
 [hp : DecidablePred P] [hq : DecidablePred Q]
 {h₁ : ∃ n, P n} {h₂ : ∃ n, Q n} (h₃ : ∀ n, Q n → P n) :
