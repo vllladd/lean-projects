@@ -1,3 +1,4 @@
+import AP.Util.Real
 import AP.Util.SetTheory
 
 theorem max_right_eq_of_max_eq_and_ne {α : Type*} [LinearOrder α] {a b c : α}
@@ -238,5 +239,85 @@ max a b = if b ≤ a then a else b := max_def' _ _
 
 theorem abs_add_le_max_add_max {α : Type*}
 [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
-{a b : α} : |a + b| ≤ max |a| b + max a |b| := by
+(a b x y : α) : |a + b| ≤ max |a| x + max y |b| := by
   apply (abs_add _ _).trans; apply add_le_add <;> simp
+
+class InjectiveOfNat (α : Type*) [ha : Semiring α] : Prop where
+  h : Function.Injective (λ (n : ℕ) => (OfNat.ofNat n : α))
+
+instance : InjectiveOfNat ℕ := by
+  constructor; intro n m h; dsimp at h
+  by_contra! h₁
+  wlog hm : m < n with ih
+  · simp at hm; apply ih h.symm (ne_symm' h₁) # Nat.lt_of_le_of_ne hm h₁
+  clear h₁
+  cases n; simp at hm; nm n
+  cases n
+  · simp at hm
+    subst hm
+    cases h
+  nm n
+  change n + 2 = _ at h
+  iterate 2 cases m; cases h; nm m
+  change _ = m + 2 at h
+  simp at h
+  simp [h] at hm
+
+instance : InjectiveOfNat ℤ := by
+  constructor; intro n m h; dsimp at h
+  by_contra! h₁
+  wlog hm : m < n with ih
+  · simp at hm; apply ih h.symm (ne_symm' h₁) # Nat.lt_of_le_of_ne hm h₁
+  clear h₁
+  cases n; simp at hm; nm n
+  cases n
+  · simp at hm
+    subst hm
+    cases h
+  nm n
+  change (n : ℤ) + 2 = _ at h
+  iterate 2 cases m; cases h; nm m
+  change _ = (m : ℤ) + 2 at h
+  simp at h
+  simp [h] at hm
+
+instance : InjectiveOfNat ℝ := by
+  constructor; intro n m h; simp [Real.ofNat_eq] at h; exact h
+
+@[simp]
+theorem add_self_eq_zero_iff {α : Type*}
+[ha₂ : Ring α] [ha₄ : NoZeroDivisors α] [ha₅ : InjectiveOfNat α]
+{a : α} : a + a = 0 ↔ a = 0 := by
+  rw [←mul_two, mul_eq_zero]; simp; intro h
+  change OfNat.ofNat 2 = OfNat.ofNat 0 at h
+  replace h := ha₅.h h; simp at h
+
+class LocallyFiniteOrderList (α : Type*) extends LinearOrder α where
+  listIcc : α → α → List α
+  sorted_listIcc : ∀ {a b}, (listIcc a b).Sorted (· < ·)
+  mem_listIcc : ∀ {a b x}, x ∈ listIcc a b ↔ a ≤ x ∧ x ≤ b
+
+instance : LocallyFiniteOrderList ℕ := by
+  use λ a b => List.range (b + 1 - a) |>.map (a + ·)
+  · intro a b; simp; apply List.sorted_lt_range
+  · intro a b x; simp; exact ⟨by omega, λ _ => ⟨x - a, by omega⟩⟩
+
+instance : LocallyFiniteOrderList ℤ := by
+  use λ a b => List.range (b + 1 - a).toNat |>.map (a + ·)
+  · intro a b; simp; apply List.sorted_lt_range
+  · intro a b x; simp; exact ⟨by omega, λ _ => ⟨x - a |>.toNat, by omega⟩⟩
+
+def List.icc {α : Type*} [ha : LocallyFiniteOrderList α] : α → α → List α :=
+  ha.listIcc
+
+@[simp]
+theorem List.sorted_lt_icc {α : Type*} [ha : LocallyFiniteOrderList α] {a b : α} :
+(icc a b).Sorted (· < ·) := ha.sorted_listIcc
+
+@[simp]
+theorem List.sorted_le_icc {α : Type*} [ha : LocallyFiniteOrderList α] {a b : α} :
+(icc a b).Sorted (· ≤ ·) := sorted_le_of_sorted_lt ha.sorted_listIcc
+
+@[simp]
+theorem List.mem_icc {α : Type*} [ha : LocallyFiniteOrderList α] {a b x : α} :
+x ∈ icc a b ↔ a ≤ x ∧ x ≤ b := ha.mem_listIcc

@@ -816,3 +816,21 @@ y ∈ xs.mapWith f ↔ ∃ (x : α) (h : x ∈ xs), f x h = y := by
     use by rintro rfl; simp at hx
     use x, hx
     simp [hx]
+
+theorem sorted_of_sorted_and_imp {r₁ r₂ : α → α → Prop}
+(h₁ : xs.Sorted r₁) (h₂ : ∀ {a b}, r₁ a b → r₂ a b) : xs.Sorted r₂ := by
+  induction xs; simp
+  clear! xs; nm x xs ih
+  simp at h₁ ⊢
+  rcases h₁ with ⟨h₁, h₃⟩
+  refine' ⟨_, ih h₃⟩
+  intro y ys
+  exact h₂ # h₁ _ ys
+
+theorem sorted_le_of_sorted_lt [ha : LinearOrder α]
+(h : xs.Sorted (· < ·)) : xs.Sorted (· ≤ ·) :=
+  sorted_of_sorted_and_imp h le_of_lt
+
+@[simp]
+theorem flatMap_fn_singletonc {f : α → β} : xs.flatMap ([f ·]) = xs.map f := by
+  induction xs; rfl; simpa

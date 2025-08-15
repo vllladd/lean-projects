@@ -113,15 +113,8 @@ theorem State.hasTr_of_not_aTurn {s : State} (ht : s.aTurn = false) : sys.hasTr 
 theorem State.DState.hasTr {s : State} [hs : s.DState] : sys.hasTr s := by
   apply s.hasTr_of_not_aTurn; simp
 
-def State.aMoves (s : State) : List PointZ := do
-  let ⟨ax, ay⟩ := s.aPos
-  let ds := List.map (Int.ofNat · - s.pw) #
-    List.range # s.pw * 2 + 1
-  let x ← ds
-  let y ← ds
-  let p := ⟨ax + x, ay + y⟩
-  guard # sys.validTr s p
-  return p
+def State.aMoves (s : State) : List PointZ :=
+  s.aPos.nbhd s.pw |>.filter (sys.validTr s)
 
 def State.aHasMove (s : State) : Bool :=
   s.aMoves ≠ []
@@ -137,87 +130,15 @@ sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw
 
 theorem State.aHasMove_of_hasTr {s : State}
 (ht : s.aTurn) (h : sys.hasTr s) : s.aHasMove := by
-  simp [aHasMove, aMoves, s.hasTr_iff_of_aTurn ht] at h ⊢
-  simp [sys, move, aMove, ht]; clear ht
-  rcases h with ⟨p, h₁, h₂, h₃⟩
-  use Int.toNat # s.pw + p.x - s.aPos.x
-  constructor
-  rotate_left
-  use Int.toNat # s.pw + p.y - s.aPos.y
-  constructor
-  any_goals
-    clear h₁ h₂
-    cases s; nm pw taken aPos aTurn hist
-    simp [PointZ.dist] at h₃ ⊢
-    rw [←Int.le_iff_lt_add_one]
-    rcases h₃ with ⟨h₁, h₂⟩
-    rw [Int.add_sub_assoc, mul_two]
-    simp
-    replace h₁ := le_of_max_le_left h₁
-    replace h₂ := le_of_max_le_left h₂
-    linarith
-  simp
-  cases s; nm pw taken aPos aTurn hist
-  constructor
-  · simp [PointZ.dist] at h₁ h₃ ⊢; clear h₂
-    convert h₁ <;> rcases h₃ with ⟨h₁, h₂⟩
-    · have h₃ : max (pw + p.x - aPos.x) 0 = pw + p.x - aPos.x := by
-        apply max_eq_left
-        replace h₁ := le_of_max_le_right h₁
-        linarith
-      rw [h₃]
-      ring
-    · have h₃ : max (pw + p.y - aPos.y) 0 = pw + p.y - aPos.y := by
-        apply max_eq_left
-        replace h₂ := le_of_max_le_right h₂
-        linarith
-      rw [h₃]
-      ring
-  constructor
-  · simp [PointZ.dist] at h₃ ⊢
-    dsimp at h₁ h₂
-    rcases h₃ with ⟨h₅, h₆⟩
-    replace h₅ : max (pw + p.x - aPos.x) 0 = pw + p.x - aPos.x := by
-      apply max_eq_left
-      replace h₅ := le_of_max_le_right h₅
-      linarith
-    replace h₆ : max (pw + p.y - aPos.y) 0 = pw + p.y - aPos.y := by
-      apply max_eq_left
-      replace h₆ := le_of_max_le_right h₆
-      linarith
-    simp [h₅, h₆]
-    ring_nf
-    exact h₂
-  dsimp at h₁ h₂ h₃ ⊢
-  rw [PointZ.dist.comm]
-  convert h₃
-  · simp [PointZ.dist] at h₃
-    rcases h₃ with ⟨h₃, h₄⟩
-    replace h₃ : max (pw + p.x - aPos.x) 0 = pw + p.x - aPos.x := by
-      apply max_eq_left
-      replace h₃ := le_of_max_le_right h₃
-      linarith
-    rw [h₃]
-    linarith
-  · simp [PointZ.dist] at h₃
-    rcases h₃ with ⟨h₃, h₄⟩
-    replace h₄ : max (pw + p.y - aPos.y) 0 = pw + p.y - aPos.y := by
-      apply max_eq_left
-      replace h₄ := le_of_max_le_right h₄
-      linarith
-    rw [h₄]
-    linarith
+  simp [aHasMove, aMoves]; simp [sys.hasTr_iff] at h
+  obtain ⟨p, s', h⟩ := h; use p; simp [h]
+  simp [sys, move, aMove, ht] at h; exact h.1.2.2
 
 theorem State.hasTr_of_aHasMove {s : State} (ht : s.aTurn)
 (h : s.aHasMove) : sys.hasTr s := by
   simp [aHasMove, aMoves, s.hasTr_iff_of_aTurn ht] at h ⊢
   simp [sys, move, aMove, ht] at h
-  rcases h with ⟨x, hx, y, hy, h₁⟩
-  rcases h₁ with ⟨h₁, h₂, h₃⟩
-  use ⟨s.aPos.x + (x - s.pw), s.aPos.y + (y - s.pw)⟩
-  use h₁, h₂
-  rw [PointZ.dist.comm]
-  exact h₃
+  rcases h with ⟨p, h⟩; use p; tauto
 
 theorem State.hasTr_iff_aHasMove {s : State} (ht : s.aTurn) :
 sys.hasTr s ↔ s.aHasMove := ⟨s.aHasMove_of_hasTr ht, s.hasTr_of_aHasMove ht⟩

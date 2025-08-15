@@ -22,3 +22,6 @@ theorem add_inv_pow_lt_exp_one_of {a : ℝ} (h : 0 ≤ a) :
     mul_inv_lt_iff₀' # by positivity, add_comm]; simp
   nth_rw 2 [(by simp : a⁻¹ = a⁻¹ + 1 - 1)]; apply Real.log_lt_sub_one_of_pos
   positivity; apply ne_of_congr (· - 1); simp; linarith
+
+theorem ofNat_eq {n} : (OfNat.ofNat n : ℝ) = n := by
+  rw [ext_cauchy_iff]; (iterate 2 cases n; simp; nm n); rfl

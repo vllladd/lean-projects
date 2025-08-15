@@ -4,12 +4,8 @@ import AP.Sokoban
 
 namespace AP
 
-def getPs (r : ℕ) : List PointZ := do
-  let d : ℕ := r * 2 + 1
-  let cs := (List.range d).map # λ i => (i : ℤ) - (r : ℤ)
-  let y ← cs
-  let x ← cs
-  return ⟨x, y⟩
+def getPs (d : ℕ) : List PointZ :=
+  (⟨0, 0⟩ : PointZ).nbhd d
 
 def aStrat : AStrat := .mk # λ s =>
   let ⟨x, y⟩ := s.aPos

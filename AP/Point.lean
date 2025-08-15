@@ -8,6 +8,10 @@ structure Point (α : Type*) where
   y : α
 deriving Inhabited, DecidableEq, Fintype
 
+abbrev PointN := Point ℕ
+abbrev PointZ := Point ℤ
+abbrev PointR := Point ℝ
+
 namespace Point
 
 section LinearOrder
@@ -402,50 +406,82 @@ theorem ofNat_def [ha : Ring α] {n} :
   nth_rw 3 [Lean.Grind.Semiring.ofNat_succ]
   rfl
 
-end Point
+@[simp]
+theorem add_self_eq_zero_iff
+[ha₁ : Ring α] [ha₂ : NoZeroDivisors α] [ha₃ : InjectiveOfNat α]
+{a : Point α} : a + a = 0 ↔ a = 0 := by rcases a with ⟨x, y⟩; simp
 
-abbrev PointN := Point ℕ
-abbrev PointZ := Point ℤ
-abbrev PointR := Point ℝ
+section dist
 
-def PointN.dist (a b : PointN) : ℕ :=
-  max |(a.x : ℤ) - b.x| |(a.y : ℤ) - b.y| |>.toNat
+variable [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
+  {a b c d e : Point α}
 
-def PointZ.dist (a b : PointZ) : ℕ :=
-  max |a.x - b.x| |a.y - b.y| |>.toNat
+def dist [LinearOrder α] [Ring α] (a b : Point α) : α :=
+  max |(a.x : α) - b.x| |(a.y : α) - b.y|
 
+omit ha₃ in
 @[simp, symm]
-theorem PointN.dist.comm {a b : PointN} : a.dist b = b.dist a := by
+theorem dist_comm : a.dist b = b.dist a := by
   simp [dist, abs_sub_comm]
 
 @[simp]
-theorem PointZ.dist_self {a : PointZ} : a.dist a = 0 := by
+theorem dist_self : a.dist a = 0 := by
   simp [dist]
 
 @[simp]
-theorem PointZ.dist_eq_zero_iff {a b : PointZ} : a.dist b = 0 ↔ a = b := by
-  simp [dist, Point.ext_iff]; omega
+theorem dist_eq_zero_iff : a.dist b = 0 ↔ a = b := by
+  refine' ⟨λ h => _, λ h => by simp [h]⟩
+  rcases a, b with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩
+  simp [dist, max_eq_iff] at h; simp
+  rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> simp [h₁] at h₂ <;>
+    constructor <;> apply eq_of_sub_eq_zero <;> assumption
 
 @[simp]
-theorem PointZ.ofNat_dist {a b : PointZ} :
-Int.ofNat (a.dist b) = max |a.x - b.x| |a.y - b.y| := by
+theorem triangle : dist a c ≤ dist a b + dist b c := by
+  simp [dist]; constructor
+  · have h := abs_add_le_max_add_max (a.x - b.x) (b.x - c.x) (|a.y - b.y|) (|b.y - c.y|)
+    simp at h; nth_rw 2 [max_comm]; exact h
+  · have h := abs_add_le_max_add_max (a.y - b.y) (b.y - c.y) (|a.x - b.x|) (|b.x - c.x|)
+    simp at h; nth_rw 1 [max_comm]; exact h
+
+omit ha₃ in
+theorem dist_le_iff {a b : Point α} {d : ℕ} :
+a.dist b ≤ d ↔ max (|a.x - b.x|) (|a.y - b.y|) ≤ d := by
   simp [dist]
 
--- @[simp]
--- theorem PointZ.triangle {a b c : PointZ} : dist a c ≤ dist a b + dist b c := by
---   simp [dist]
---   constructor
---   · have h := @triangle_aux (a.x - b.x) (b.x - c.x) (|a.y - b.y|) (|b.y - c.y|),
---     have h := @triangle_aux (a.y - b.y) (b.y - c.y) (|a.x - b.x|) (|b.x - c.x|),
+end dist
 
-@[simp, symm]
-theorem PointZ.dist.comm {a b : PointZ} : a.dist b = b.dist a := by
-  simp [dist, abs_sub_comm]
+section rect
+
+variable [ha₁ : LocallyFiniteOrderList α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
+  {a b c d e : Point α}
+
+def rect (x₁ y₁ x₂ y₂ : α) : List (Point α) := do
+  let y ← List.icc y₁ y₂
+  let x ← List.icc x₁ x₂
+  return ⟨x, y⟩
+
+def rectRel (p : Point α) (dx₁ dy₁ dx₂ dy₂ : α) : List (Point α) :=
+  rect (p.x - dx₁) (p.y - dy₁) (p.x + dx₂) (p.y + dy₂)
+
+def nbhd (a : Point α) (d : α) : List (Point α) :=
+  a.rectRel d d d d
+
+omit ha₂ ha₃ in @[simp]
+theorem mem_rect {x₁ x₂ y₁ y₂} {a : Point α} : a ∈ rect x₁ y₁ x₂ y₂ ↔
+x₁ ≤ a.x ∧ a.x ≤ x₂ ∧ y₁ ≤ a.y ∧ a.y ≤ y₂ := by
+  rcases a with ⟨x, y⟩; simp [rect]; aesop
+
+omit ha₃ in @[simp]
+theorem mem_rectRel {dx₁ dx₂ dy₁ dy₂} {a b : Point α} : b ∈ a.rectRel dx₁ dy₁ dx₂ dy₂ ↔
+a.x - dx₁ ≤ b.x ∧ b.x ≤ a.x + dx₂ ∧ a.y - dy₁ ≤ b.y ∧ b.y ≤ a.y + dy₂ := mem_rect
 
 @[simp]
-theorem PointN.add_self_eq_zero_iff {a : PointN} : a + a = 0 ↔ a = 0 := by
-  rcases a with ⟨x, y⟩; simp
+theorem mem_nbhd {d} {a b : Point α} : b ∈ a.nbhd d ↔ a.dist b ≤ d := by
+  simp [nbhd, dist, abs_le, add_comm d]; tauto
 
-@[simp]
-theorem PointZ.add_self_eq_zero_iff {a : PointZ} : a + a = 0 ↔ a = 0 := by
-  rcases a with ⟨x, y⟩; simp
+theorem finite_setOf_dist_le {c : PointZ} {d : ℕ} :
+{p : PointZ | p.dist c ≤ d}.Finite := by
+  apply Set.finite_of_subset_finset # List.toFinset # c.nbhd d; simp
+
+end rect
