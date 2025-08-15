@@ -163,3 +163,12 @@ instance {s : State} : Decidable (sys.hasTr s) :=
   match h : s.hasMove with
   | true => .isTrue # by rwa [s.hasTr_iff_hasMove]
   | false => .isFalse # by rw [s.hasTr_iff_hasMove, h]; simp
+
+theorem State.AState.validTr_of_le {s : State} [hs : s.AState] {pw' p}
+(h₁ : s.pw ≤ pw') (h₂ : sys.validTr s p) : sys.validTr {s with pw := pw'} p := by
+  simp at h₂; rcases h₂ with ⟨h₂, h₃, h₄⟩
+  simp [System.validTr, sys, move, aMove]; use h₂, h₃; linarith
+
+theorem State.AState.hasTr_of_le {s : State} [hs : s.AState] {pw'}
+(h₁ : s.pw ≤ pw') (h₂ : sys.hasTr s) : sys.hasTr {s with pw := pw'} := by
+  obtain ⟨p, h₃⟩ := h₂; use p; exact hs.validTr_of_le h₁ h₃
