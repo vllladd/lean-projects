@@ -420,7 +420,7 @@ def dist [LinearOrder α] [Ring α] (a b : Point α) : α :=
   max |(a.x : α) - b.x| |(a.y : α) - b.y|
 
 omit ha₃ in
-@[simp, symm]
+@[symm]
 theorem dist_comm : a.dist b = b.dist a := by
   simp [dist, abs_sub_comm]
 
@@ -482,6 +482,6 @@ theorem mem_nbhd {d} {a b : Point α} : b ∈ a.nbhd d ↔ a.dist b ≤ d := by
 
 theorem finite_setOf_dist_le {c : PointZ} {d : ℕ} :
 {p : PointZ | p.dist c ≤ d}.Finite := by
-  apply Set.finite_of_subset_finset # List.toFinset # c.nbhd d; simp
+  apply Set.finite_of_subset_finset # List.toFinset # c.nbhd d; simp [dist_comm]
 
 end rect

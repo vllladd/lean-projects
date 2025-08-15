@@ -28,42 +28,40 @@ theorem strat_wf_iff {st : Strat} : st.WF ↔ st.a.WF ∧ st.d.WF := by
     · exact h₁ _ _ h₃ h₄
     · simp at h₄; exact h₂ _ _ h₃ h₄
 
-theorem Strat.WF.a_valid {st : Strat} [hst : st.WF] : st.a.WF := by
+theorem Strat.WF.a_wf {st : Strat} [hst : st.WF] : st.a.WF := by
   rw [strat_wf_iff] at hst; exact hst.1
 
-theorem Strat.WF.d_valid {st : Strat} [hst : st.WF] : st.d.WF := by
+theorem Strat.WF.d_wf {st : Strat} [hst : st.WF] : st.d.WF := by
   rw [strat_wf_iff] at hst; exact hst.2
 
-instance {st : Strat} [hst : st.WF] : st.a.WF := hst.a_valid
-instance {st : Strat} [hst : st.WF] : st.d.WF := hst.d_valid
+instance {st : Strat} [hst : st.WF] : st.a.WF := hst.a_wf
+instance {st : Strat} [hst : st.WF] : st.d.WF := hst.d_wf
 
 abbrev State.WF (s : State) : Prop := sys.WF s
 
-@[class]
-structure State.AState (s : State) : Prop where
+class AState (s : State) : Prop where
   h_valid : s.WF
   h : s.aTurn
 
-@[class]
-structure State.DState (s : State) : Prop where
+class DState (s : State) : Prop where
   h_valid : s.WF
   h : s.aTurn = false
 
-theorem aState_def {s : State} : s.AState ↔ s.WF ∧ s.aTurn :=
+theorem aState_def {s : State} : AState s ↔ s.WF ∧ s.aTurn :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-theorem dState_def {s : State} : s.DState ↔ s.WF ∧ s.aTurn = false :=
+theorem dState_def {s : State} : DState s ↔ s.WF ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
 def State.dChooseMove (s : State) : PointZ :=
   (insert s.aPos s.taken).max! + ⟨1, 0⟩
 
 @[simp]
-theorem State.AState.turn {s : State} [hs : s.AState] : s.aTurn := by
+theorem AState.turn {s : State} [hs : AState s] : s.aTurn := by
   cases hs; assumption
 
 @[simp]
-theorem State.DState.turn {s : State} [hs : s.DState] : s.aTurn = false := by
+theorem DState.turn {s : State} [hs : DState s] : s.aTurn = false := by
   cases hs; assumption
 
 theorem State.validTr_iff_of_aTurn {s : State} {p} (ht : s.aTurn) :
@@ -89,12 +87,12 @@ sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
     simp [sys, State.move, State.dMove, ht, h]
 
 @[simp]
-theorem State.AState.validTr_iff {s : State} [hs : s.AState] {p} :
+theorem AState.validTr_iff {s : State} [hs : AState s] {p} :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   apply s.validTr_iff_of_aTurn; simp
 
 @[simp]
-theorem State.DState.validTr_iff {s : State} [hs : s.DState] {p} :
+theorem DState.validTr_iff {s : State} [hs : DState s] {p} :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
   apply s.validTr_iff_of_not_aTurn; simp
 
@@ -110,7 +108,7 @@ theorem State.hasTr_of_not_aTurn {s : State} (ht : s.aTurn = false) : sys.hasTr 
   use s.dChooseMove; exact s.validTr_dChooseMove ht
 
 @[simp]
-theorem State.DState.hasTr {s : State} [hs : s.DState] : sys.hasTr s := by
+theorem DState.hasTr {s : State} [hs : DState s] : sys.hasTr s := by
   apply s.hasTr_of_not_aTurn; simp
 
 def State.aMoves (s : State) : List PointZ :=
@@ -124,14 +122,14 @@ sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw
   simp [sys, System.hasTr_iff, move, aMove, ht]
 
 @[simp]
-theorem State.AState.hasTr_iff {s : State} [hs : s.AState] :
+theorem AState.hasTr_iff {s : State} [hs : AState s] :
 sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   simp [s.hasTr_iff_of_aTurn]
 
 theorem State.aHasMove_of_hasTr {s : State}
 (ht : s.aTurn) (h : sys.hasTr s) : s.aHasMove := by
   simp [aHasMove, aMoves]; simp [sys.hasTr_iff] at h
-  obtain ⟨p, s', h⟩ := h; use p; simp [h]
+  obtain ⟨p, s', h⟩ := h; use p; simp [h, Point.dist_comm]
   simp [sys, move, aMove, ht] at h; exact h.1.2.2
 
 theorem State.hasTr_of_aHasMove {s : State} (ht : s.aTurn)
@@ -144,7 +142,7 @@ theorem State.hasTr_iff_aHasMove {s : State} (ht : s.aTurn) :
 sys.hasTr s ↔ s.aHasMove := ⟨s.aHasMove_of_hasTr ht, s.hasTr_of_aHasMove ht⟩
 
 theorem State.WF.ind_turn {P : State → Prop}
-(h₁ : ∀ (s : State), s.AState → P s) (h₂ : ∀ (s : State), s.DState → P s)
+(h₁ : ∀ (s : State), AState s → P s) (h₂ : ∀ (s : State), DState s → P s)
 {s : State} (hs : s.WF) : P s := by
   cases ht : s.aTurn
   · apply h₂; constructor <;> assumption
@@ -164,11 +162,48 @@ instance {s : State} : Decidable (sys.hasTr s) :=
   | true => .isTrue # by rwa [s.hasTr_iff_hasMove]
   | false => .isFalse # by rw [s.hasTr_iff_hasMove, h]; simp
 
-theorem State.AState.validTr_of_le {s : State} [hs : s.AState] {pw' p}
+theorem AState.validTr_of_le {s : State} [hs : AState s] {pw' p}
 (h₁ : s.pw ≤ pw') (h₂ : sys.validTr s p) : sys.validTr {s with pw := pw'} p := by
   simp at h₂; rcases h₂ with ⟨h₂, h₃, h₄⟩
-  simp [System.validTr, sys, move, aMove]; use h₂, h₃; linarith
+  simp [System.validTr, sys, State.move, State.aMove]
+  use h₂, h₃; linarith
 
-theorem State.AState.hasTr_of_le {s : State} [hs : s.AState] {pw'}
+theorem AState.hasTr_of_le {s : State} [hs : AState s] {pw'}
 (h₁ : s.pw ≤ pw') (h₂ : sys.hasTr s) : sys.hasTr {s with pw := pw'} := by
   obtain ⟨p, h₃⟩ := h₂; use p; exact hs.validTr_of_le h₁ h₃
+
+@[simp]
+theorem State.not_a_wins_iff {s : State} {st : Strat} : ¬s.a_wins st ↔ s.d_wins st := by
+  simp [a_wins, d_wins]
+
+@[simp]
+theorem State.not_d_wins_iff {s : State} {st : Strat} : ¬s.d_wins st ↔ s.a_wins st := by
+  simp [a_wins, d_wins]
+
+theorem aStrat_wf_iff {a : AStrat} : a.WF ↔ ∀ {s} [AState s],
+sys.hasTr s → sys.validTr s (a.f s) := by
+  simp [aState_def, aStrat_wf_def]; tauto
+
+theorem dStrat_wf_iff {d : DStrat} : d.WF ↔ ∀ {s} [DState s],
+sys.hasTr s → sys.validTr s (d.f s) := by
+  simp [dState_def, dStrat_wf_def]; tauto
+
+@[simp]
+theorem AState.sys_tr_eq_some_iff {s s' p} [hs : AState s] :
+sys.tr s p = some s' ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw ∧
+{s with aPos := p, aTurn := false, hist := p :: s.hist} = s' := by
+  simp [sys, State.move, State.aMove]; tauto
+
+@[simp]
+theorem DState.sys_tr_eq_some_iff {s s' p} [hs : DState s] :
+sys.tr s p = some s' ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧
+{s with taken := insert p s.taken, aTurn := true, hist := p :: s.hist} = s' := by
+  simp [sys, State.move, State.dMove]; tauto
+
+@[simp]
+theorem AState.start_f_eq {sa} {st : Strat} [ha : AState sa] :
+st.f sa = st.a.f sa := by simp [Strat.f]
+
+@[simp]
+theorem DState.start_f_eq {sd} {st : Strat} [hd : DState sd] :
+st.f sd = st.d.f sd := by simp [Strat.f]

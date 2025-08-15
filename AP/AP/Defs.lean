@@ -47,26 +47,23 @@ def State.dMove (s : State) (p : PointZ) : Option State := do
 
 def State.move (s : State) (p : PointZ) : Option State := do
   let s' ← if s.aTurn then s.aMove p else s.dMove p
-  return { s' with aTurn := ¬s.aTurn, hist := p :: s.hist}
+  return {s' with aTurn := ¬s.aTurn, hist := p :: s.hist}
 
 def sys : System State PointZ :=
   { initial := {s | ∃ pw, initState pw = s}
   , tr := State.move
   }
 
-@[class]
-structure AStrat.WF (a : AStrat) : Prop where
+class AStrat.WF (a : AStrat) : Prop where
   h : ∀ {s} [sys.WF s], sys.hasTr s → s.aTurn → sys.validTr s (a.f s)
 
-@[class]
-structure DStrat.WF (d : DStrat) : Prop where
+class DStrat.WF (d : DStrat) : Prop where
   h : ∀ {s} [sys.WF s], sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s)
 
 def Strat.f (st : Strat) (s : State) : PointZ :=
   if s.aTurn then st.a.f s else st.d.f s
 
-@[class]
-structure Strat.WF (st : Strat) : Prop where
+class Strat.WF (st : Strat) : Prop where
   h : ∀ {s} [sys.WF s], sys.hasTr s → sys.validTr s (st.f s)
 
 def State.a_wins (s : State) (st : Strat) : Prop :=
