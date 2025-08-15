@@ -26,16 +26,30 @@ theorem val_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)} :
 theorem mp_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)} :
 (mk val mp).mp = mp := rfl
 
+def isEmpty (t : Raw₀ α β) : Prop :=
+  t.val = none ∧ t.mp.isEmpty
+
+instance : Decidable t.isEmpty :=
+  match h : t.val.isNone && t.mp.isEmpty with
+  | true => .isTrue # by simp at h; simpa [isEmpty]
+  | false => .isFalse # by simp at h; simpa [isEmpty]
+
 @[class]
 inductive WF : Raw₀ α β → Prop where
 | mk : ∀ {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)},
-  mp.WF → (∀ {k t}, mp.get? k = some t → t.WF) → (mk val mp).WF
+  mp.WF → (∀ {k t}, mp.get? k = some t → ¬t.isEmpty) →
+  (∀ {k t}, mp.get? k = some t → t.WF) → (mk val mp).WF
 
 theorem WF.mp {t : Raw₀ α β} (wf : t.WF) : t.mp.WF := by
   cases wf; assumption
 
-theorem WF.get? {t : Raw₀ α β} (wf : t.WF) {k t'} (h : t.mp.get? k = some t') : t'.WF := by
-  cases wf; nm val mp h₁ h₂; exact h₂ h
+theorem WF.wf_get? {t : Raw₀ α β} (wf : t.WF)
+{k t'} (h : t.mp.get? k = some t') : t'.WF := by
+  cases wf; nm val mp h₁ h₂ h₃; exact h₃ h
+
+theorem WF.not_empty_get? {t : Raw₀ α β} (wf : t.WF)
+{k t'} (h : t.mp.get? k = some t') : ¬t'.isEmpty := by
+  cases wf; nm val mp h₁ h₂ h₃; exact h₂ h
 
 theorem rec_2_eq {arr : Array (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
 {M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
@@ -71,7 +85,7 @@ theorem depthAux_le {t : Raw₀ α β} (wf : t.WF) {k t'}
   classical
   rcases t with ⟨val, mp⟩
   nth_rw 2 [depthAux]
-  simp only [rec_3_eq, rec_4_eq, List.rec_eq_foldr, List.foldr_max_eq_max!_map]
+  simp only [rec_3_eq, rec_4_eq, List.rec_eq_foldr, List.foldr_max_eq_max?_map']
   generalize hb : mp.2.toList = bs
   change _ < (0 :: bs.map (λ x => (0 :: x.toList.map
     (λ x => x.snd.depthAux + 1)).max?.getD 0)).max?.getD 0
@@ -107,7 +121,7 @@ def recAux {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) (wf : t.WF)
 mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : γ t :=
   match t with
   | .mk val mp => motive val mp wf.mp #
-    λ i t h => t.recAux (wf.get? h) motive
+    λ i t h => t.recAux (wf.wf_get? h) motive
 termination_by t.depthAux
 decreasing_by exact depthAux_le wf h
 
@@ -134,15 +148,31 @@ theorem rec'_mk {γ : Raw₀ α β → Sort*} {val mp} [wf : (⟨val, mp⟩ : Ra
 {motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
 mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)} :
 (⟨val, mp⟩ : Raw₀ α β).rec' motive =
-motive val mp wf.mp (λ _ t h => t.rec' (wf := wf.get? h) motive) := by
+motive val mp wf.mp (λ _ t h => t.rec' (wf := wf.wf_get? h) motive) := by
   simp_rw [rec', recAux]
 
 @[simp]
 theorem depth_mk {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF] :
 (⟨val, mp⟩ : Raw₀ α β).depth = mp.foldWith wf.mp
-(λ acc _ (t' : Raw₀ α β) h => max acc # 1 + t'.depth (wf := wf.get? h)) 0 := by
+(λ acc _ (t' : Raw₀ α β) h => max acc # 1 + t'.depth (wf := wf.wf_get? h)) 0 := by
   unfold depth; simp
 
 @[simp]
 theorem depth_empty : (∅ : Raw₀ α β).depth = 0 := by
   simp [empty_def]
+
+theorem depth_le {t : Raw₀ α β} (wf : t.WF) {k t'}
+(h : t.mp.get? k = some t') : t'.depth (wf := wf.wf_get? h) < t.depth := by
+  classical
+  rcases t with ⟨val, mp⟩
+  simp at h ⊢
+  have h₁ := DHashMap.Raw.mem_toList_iff_get?_eq_some wf.mp |>.mpr h
+  dsimp at h₁
+  have h₂ := wf.wf_get? h
+  rw [DHashMap.Raw.foldWith_eq_foldlWith_toList, List.foldlWith_max_eq_max?_mapWith]
+  apply Nat.lt_of_succ_le
+  change (⟨k, t'⟩ : Σ _, _).snd.depth + 1 ≤ _
+  apply List.le_elim_max_max?_of_mem
+  simp
+  use k, t', h₁
+  rw [add_comm]

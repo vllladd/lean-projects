@@ -699,14 +699,18 @@ theorem rec_eq_foldr {z : β} {f : α → β → β} :
 @List.rec α (λ _ => β) z (λ x _ acc => f x acc) xs = xs.foldr f z := by
   induction xs <;> simp_all
 
-theorem foldr_max_eq_max!_map [hb : LinearOrder β]
-{f : α → β} {z : β} : xs.foldr (λ x => max (f x)) z = (z :: xs.map f).max?.getD z := by
+theorem foldr_max_eq_max?_map [hb : LinearOrder β] {f : α → β} {z : β} :
+xs.foldr (λ x => max (f x)) z = (xs.map f).max?.elim z (max z) := by
   induction xs; rfl
   nm x xs ih
   simp [ih]
   generalize (xs.map f).max? = r
   rcases r with _ | r <;> simp
   apply max_comm; apply max_left_comm
+
+theorem foldr_max_eq_max?_map' [hb : LinearOrder β] {f : α → β} {z : β} :
+xs.foldr (λ x => max (f x)) z = (z :: xs.map f).max?.getD z := by
+  simp; exact foldr_max_eq_max?_map
 
 theorem max?_eq_max?_of_perm [ha : LinearOrder α]
 (h : xs.Perm ys) : xs.max? = ys.max? := by
@@ -721,3 +725,94 @@ theorem apply_of_pairwise_and_lt {p : α → α → Prop} {i j}
   rw [List.pairwise_iff_get] at h₁
   specialize h₁ ⟨i, hh₁⟩ ⟨j, hh₂⟩ h₂
   simp at h₁; exact h₁
+
+@[simp]
+def mapWith (xs : List α) (f : (x : α) → x ∈ xs → β) : List β :=
+  match h : xs with
+  | [] => []
+  | x :: ys => f x (by simp) :: ys.mapWith (λ y h₁ => f y # by simp [h₁])
+
+def inhabited_of_ne_nil (h : xs ≠ []) : Inhabited α :=
+  match h₁ : xs with
+  | [] => by simp at h
+  | x :: _ => ⟨x⟩
+
+def inhabited_mapWith_of_ne_nil (f : (x : α) → x ∈ xs → β) (h : xs ≠ []) : Inhabited β :=
+  match h₁ : xs with
+  | [] => by simp at h
+  | x :: _ => ⟨f x # by simp⟩
+
+theorem mapWith_eq_map [ha : DecidableEq α] {f : (x : α) → x ∈ xs → β} :
+xs.mapWith f = if h : xs = [] then [] else
+xs.map (λ x => if h₁ : x ∈ xs then f x h₁ else
+inhabited_mapWith_of_ne_nil f h |>.default) := by
+  induction xs; rfl
+  clear! xs; nm x xs ih
+  simp [ih]; clear ih
+  split_ifs with h₁; simp [h₁]
+  simp
+  intro y hy
+  simp [hy]
+
+theorem foldl_max_eq_max?_map [hb : LinearOrder β] {f : α → β} {z : β} :
+xs.foldl (λ acc x => max acc (f x)) z = (xs.map f).max?.elim z (max z) := by
+  classical
+  rw [foldl_eq_foldr_reverse]
+  have h₁ : (λ x y => max y (f x)) = (λ x => max (f x))
+  · ext x y; rw [max_comm]
+  rw [h₁]; clear h₁
+  rw [foldr_max_eq_max?_map]
+  simp
+
+theorem foldlWith_max_eq_max?_mapWith [hb : LinearOrder β]
+{f : (x : α) → x ∈ xs → β} {z : β} :
+xs.foldlWith (λ acc x h => max acc (f x h)) z =
+(xs.mapWith f).max?.elim z (max z) := by
+  classical
+  generalize hn : xs.length = n
+  induction n generalizing xs f z
+  · simp at hn; subst hn; rfl
+  nm n ih
+  cases xs; simp at hn; nm x xs
+  simp at hn ⊢
+  rw [ih hn]; clear! n
+  suffices h₁ : ∀ (m : Option β) x, m.elim (max z x) (max (max z x)) =
+    max z (m.elim x (max x)); apply h₁
+  rintro (_ | m) x; rfl
+  apply max_assoc
+
+theorem max?_eq_some_iff₁ [ha : LinearOrder α] {m} :
+xs.max? = some m ↔ m ∈ xs ∧ ∀ b ∈ xs, b ≤ m := by
+  refine @max?_eq_some_iff α m _ _ ?_ ?_ ?_ ?_ xs
+  any_goals simp
+  · constructor; intro a b; exact le_antisymm
+  · intro a b; apply le_total
+
+theorem le_of_max?_eq_some [ha : LinearOrder α] {x m}
+(h₁ : x ∈ xs) (h₂ : xs.max? = some m) : x ≤ m := by
+  rw [max?_eq_some_iff₁] at h₂
+  exact h₂.2 x h₁
+
+theorem le_getD_max?_of_mem [ha : LinearOrder α] {x y}
+(h : x ∈ xs) : x ≤ xs.max?.getD y := by
+  cases h₁ : xs.max?; simp at h₁; simp [h₁] at h
+  exact le_of_max?_eq_some h h₁
+
+theorem le_elim_max_max?_of_mem [ha : LinearOrder α] {x y z}
+(h : x ∈ xs) : x ≤ xs.max?.elim y (max z) := by
+  cases h₁ : xs.max?; simp at h₁; simp [h₁] at h
+  simp; right; exact le_of_max?_eq_some h h₁
+
+@[simp]
+theorem mem_mapWith [ha : DecidableEq α] {f : (x : α) → x ∈ xs → β} {y} :
+y ∈ xs.mapWith f ↔ ∃ (x : α) (h : x ∈ xs), f x h = y := by
+  simp only [mapWith_eq_map, mem_dite_nil_left, mem_map]
+  constructor
+  · rintro ⟨h₁, x, hx, h₂⟩
+    simp [hx] at h₂
+    use x, hx
+  · rintro ⟨x, hx, h₂⟩
+    subst h₂
+    use by rintro rfl; simp at hx
+    use x, hx
+    simp [hx]

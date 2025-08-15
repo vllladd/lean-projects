@@ -675,7 +675,7 @@ theorem WF.index_eq_of_mem_bucket (wf : mp.WF) {i j x}
     simp [Function.onFun] at h₉
     exact h₉ h₂ h₁
 
-theorem foldWith_eq_foldl_toList [hh₃ : ∀ i, DecidableEq (β i)] :
+theorem foldWith_eq_foldl_toList' [hh₃ : ∀ i, DecidableEq (β i)] :
 mp.foldWith wf f z = mp.toList.foldl (λ acc x =>
 if h : mp.get? x.1 = some x.2 then f acc x.1 x.2 h else z) z := by
   classical
@@ -715,7 +715,7 @@ if h : mp.get? x.1 = some x.2 then f acc x.1 x.2 h else z) z := by
 theorem foldWith_eq_fold [hb : ∀ i, DecidableEq (β i)] :
 mp.foldWith wf f z = mp.fold (λ acc i x =>
 if h : mp.get? i = some x then f acc i x h else z) z := by
-  rw [foldWith_eq_foldl_toList, fold_eq_foldl_toList wf]
+  rw [foldWith_eq_foldl_toList', fold_eq_foldl_toList wf]
 
 @[simp]
 theorem toList_empty : (∅ : Raw α β).toList = [] := by
@@ -731,6 +731,19 @@ theorem foldWith_empty {wf : (∅ : Raw α β).WF}
 {f : γ → (i : α) → (x : β i) → (∅ : Raw α β).get? i = some x → γ} :
 (∅ : Raw α β).foldWith wf f z = z := by
   classical simp [foldWith_eq_fold]
+
+theorem foldWith_eq_foldl_toList [hh₃ : ∀ i, DecidableEq (β i)] :
+mp.foldWith wf f z = mp.toList.foldl (λ acc x =>
+if h : x ∈ mp.toList then f acc x.1 x.2 #
+mem_toList_iff_get?_eq_some wf |>.mp h else z) z := by
+  simp [mem_toList_iff_get?_eq_some wf]
+  exact foldWith_eq_foldl_toList'
+
+theorem foldWith_eq_foldlWith_toList [hh₃ : ∀ i, DecidableEq (β i)] :
+mp.foldWith wf f z = mp.toList.foldlWith (λ acc x h =>
+f acc x.1 x.2 # mem_toList_iff_get?_eq_some wf |>.mp h) z := by
+  rw [List.foldlWith_eq_foldl]
+  exact foldWith_eq_foldl_toList
 
 end Raw
 
