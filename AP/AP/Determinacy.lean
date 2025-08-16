@@ -220,8 +220,6 @@ theorem pw_eq_of_reachable {s s'} [hs : sys.WF s]
   rw [System.reachable_iff_exi_trs] at h; obtain ⟨ts, h⟩ := h
   replace h := congrArg (·.1.pw) h; simp at h; rw [h]
 
--- #check 0 #exit
-
 theorem State.wf_iff {s} : sys.WF s ↔ ∃ ps, sys.trs (initState s.pw) ps = (s, []) := by
   simp [System.wf_def, System.reachable_iff_exi_trs]
   constructor
@@ -361,8 +359,6 @@ sys.trs (initState s.pw) ps' = (s₀, []) := by
   refine' ⟨_, _, h₁, h₂⟩
   apply System.wf_of_trs h₂
 
--- #check 0 #exit
-
 set_option linter.dupNamespace false in
 open Classical in private noncomputable
 def dAux₁ (sa : State) : DStrat := .mk' # λ sd => do
@@ -485,7 +481,35 @@ def aAux₂ (sd : State) : AStrat := .mk' # λ sa => do
 
 instance {s} : (aAux₂ s).WF := by unfold aAux₂; infer_instance
 
--- #check 0 #exit
+theorem AState.d_hws_of_tr {sd sa pd} [hd : DState sd] [ha : AState sa]
+(h₁ : sys.tr sd pd = some sa) (h₂ : sa.d_hws) : sd.d_hws := by
+  obtain ⟨d, h₂, h₃⟩ := h₂
+  generalize hd₁ : d.set sd pd = d₁
+  have H₁ : d₁.WF; subst hd₁; exact DStrat.wf_set_of_tr h₁
+  use d₁, H₁
+  subst hd₁
+  intro a h₄
+  specialize h₃ a h₄
+  contrapose h₃
+  simp at h₃ ⊢
+  intro n
+  specialize h₃ # n + 1
+  simp [h₁] at h₃
+  rw [←h₃]
+  congr 1
+  apply System.simulate_eq_simulate_of_fn_congr
+  intro k b H₂ H₃ H₄
+  have H₅ := System.wf_of_simulate_eq H₂
+  replace H₅ := b.aState_or_dState
+  rcases H₅ with H₅ | H₅ <;> simp
+  symm
+  unfold fn_set
+  split_ifs with H₆; rotate_left; rfl
+  subst H₆
+  have H₆ : sys.Acyclic b := inferInstance
+  replace H₆ := H₆.2 (by rfl) h₁
+  exfalso; apply H₆
+  exact System.reachable_of_simulate_full H₂
 
 theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
 (h : ¬s.d_hws) : s.a_hws := by
@@ -499,9 +523,28 @@ theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
   obtain ⟨sa, h₁⟩ := d.validTr (sd := sd)
   simp [h₁]
   have ha := AState.of_tr h₁
-  sorry
-
-#check 0 #exit
+  replace h : ¬sa.d_hws
+  · contrapose! h; exact AState.d_hws_of_tr h₁ h
+  replace h := ha.a_hws_of_not_d_hws h
+  unfold State.a_hws at h
+  generalize h₂ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
+    ∀ (d : DStrat), d.WF → sa.a_wins { a := a, d := d }) = a
+  have h₃ := Classical.epsilon_spec h; rw [h₂] at h₃
+  rcases h₃ with ⟨h₃, h₄⟩
+  specialize h₄ d hd n
+  rw [←h₄]
+  congr 1
+  apply System.simulate_eq_simulate_of_fn_congr
+  intro k b H₂ H₃ H₄
+  have H₅ := System.wf_of_simulate_eq H₂
+  replace H₅ := b.aState_or_dState
+  rcases H₅ with H₅ | H₅ <;> simp
+  have H₆ : b.getMoveAt sd = some (d.f sd)
+  · apply getMoveAt_eq_some_of_tr_and_reachable h₁
+    exact System.reachable_of_simulate_full H₂
+  simp [aAux₂, mk_strat_fn, H₆, h₁]
+  rw [choose?_eq_of_exi, h₂]; rotate_left; exact h
+  simp [a.validTr H₄]
 
 @[simp]
 theorem State.not_a_hws_iff {s : State} [hs : s.WF] : ¬s.a_hws ↔ s.d_hws := by
