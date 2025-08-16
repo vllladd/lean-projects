@@ -84,12 +84,10 @@ sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
     use (s.move p).get!
     simp [sys, State.move, State.dMove, ht, h]
 
-@[simp]
 theorem AState.validTr_iff {s : State} [hs : AState s] {p} :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   apply s.validTr_iff_of_aTurn; simp
 
-@[simp]
 theorem DState.validTr_iff {s : State} [hs : DState s] {p} :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken := by
   apply s.validTr_iff_of_not_aTurn; simp
@@ -162,7 +160,7 @@ instance {s : State} : Decidable (sys.hasTr s) :=
 
 theorem AState.validTr_of_le {s : State} [hs : AState s] {pw' p}
 (h₁ : s.pw ≤ pw') (h₂ : sys.validTr s p) : sys.validTr {s with pw := pw'} p := by
-  simp at h₂; rcases h₂ with ⟨h₂, h₃, h₄⟩
+  simp [hs.validTr_iff] at h₂; rcases h₂ with ⟨h₂, h₃, h₄⟩
   simp [System.validTr, sys, State.move, State.aMove]
   use h₂, h₃; linarith
 

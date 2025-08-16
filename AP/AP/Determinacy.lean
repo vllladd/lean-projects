@@ -127,7 +127,7 @@ theorem AState.a_hws_of_ind {sa : State} [ha : AState sa] {p : State → Prop}
   generalize h₁ : Classical.epsilon (aAuxCnd p sa) = pa at h₃ ⊢
   unfold aAuxCnd at h₃
   obtain ⟨sd, h₃, h₄⟩ := h₃; use sd
-  simp [-sys_tr_eq_some_iff, -validTr_iff, mk_strat_fn, h₂, h₁,
+  simp [-sys_tr_eq_some_iff, mk_strat_fn, h₂, h₁,
     System.validTr_iff_isSome, h₃]; apply h₄
 
 theorem hist_eq_of_tr {s s' p}
@@ -170,21 +170,6 @@ def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
 
 def State.getMoveAt (s s_target : State) : Option PointZ :=
   getMoveFromHist s_target (initState s.pw) s.hist.reverse
-
-set_option linter.dupNamespace false in
-open Classical in private noncomputable
-def dAux₁ (sa : State) : DStrat := .mk' # λ sd => do
-  let pa ← sd.getMoveAt sa
-  let sd' ← sys.tr sa pa
-  let pd ← choose? # λ pd => ∃ sa', sys.tr sd pd = some sa' ∧
-    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat) [a.WF], sa'.d_wins ⟨a, d⟩
-  if sd' = sd then some pd else do
-    let sa' ← sys.tr sa pd
-    let d ← choose? # λ (d : DStrat) => d.WF ∧
-      ∀ (a : AStrat) [a.WF], sa'.d_wins ⟨a, d⟩
-    return d.f sd
-
-instance {sa} : (dAux₁ sa).WF := by unfold dAux₁; infer_instance
 
 theorem pw_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.pw = s.pw := by
   simp [sys, State.move, State.aMove, State.dMove] at h
@@ -261,30 +246,88 @@ theorem hist_eq_nil_iff {s} [hs : sys.WF s] : s.hist = [] ↔ initState s.pw = s
   simp [h₂.1] at h₁
   exact h₁
 
--- #check 0 #exit
+@[simp]
+theorem hist_initState {pw} : (initState pw).hist = [] := rfl
 
+theorem exi_prev_of_hist_eq_cons {s p ps} [hs : sys.WF s]
+(h : s.hist = p :: ps) : ∃ s₀, sys.WF s₀ ∧ sys.tr s₀ p = s := by
+  obtain ⟨ps', h₁⟩ := State.wf_iff.mp hs
+  induction ps' using List.reverseRecOn
+  · simp at h₁
+    rw [←h₁] at h
+    simp at h
+  nm ps' p' ih; clear ih
+  simp [System.trs_append] at h₁
+  split_ifs at h₁ with h₂ <;> simp at h₁
+  split at h₁ <;> simp at h₁
+  nm x s₁ h₃; clear x
+  rcases h₁ with ⟨rfl, h₁⟩
+  clear h₂
+  generalize hr : sys.trs (initState s₁.pw) ps' = r at h₁ h₃
+  rcases r with ⟨b, ps₁⟩
+  subst h₁
+  dsimp at h₃
+  use b, System.wf_of_trs hr
+  have h₄ := hist_eq_of_tr h₃
+  simp [h] at h₄
+  simpa [h₄.1]
+
+@[simp]
 theorem trs_reverse_hist_eq {s} [hs : sys.WF s] :
 sys.trs (initState s.pw) s.hist.reverse = (s, []) := by
   generalize hp : s.hist = ps
   induction ps generalizing s
   · simp at hp; simpa
   nm p ps ih
-  sorry
-
-#check 0 #exit
+  simp
+  obtain ⟨s₀, hs₁, h₂⟩ := exi_prev_of_hist_eq_cons hp
+  have h₃ := hist_eq_of_tr h₂
+  simp [hp] at h₃
+  symm at h₃
+  specialize ih h₃
+  simp [System.trs_append, pw_eq_of_tr h₂, ih, h₂]
 
 theorem state_eq_trs_reverse_hist {s} [hs : sys.WF s] :
 s = (sys.trs (initState s.pw) s.hist.reverse).1 := by
   rw [trs_reverse_hist_eq]
 
-#check 0 #exit
+theorem getMoveFromHist_eq_some_iff_exi_trs {s acc p ps} [hs : sys.WF acc] :
+getMoveFromHist s acc ps = some p ↔ sys.WF s ∧
+∃ ps', ps' ++ [p] <+: ps ∧ sys.trs acc ps' = (s, []) := by
+  induction ps generalizing acc; simp
+  nm p₁ ps ih
+  simp
+  generalize hb : sys.tr acc p₁ = r
+  split_ifs with h₁
+  · subst h₁; simp [hs]; rw [eq_comm]
+  rcases r with _ | b <;> simp
+  · intro h₂ ps' h₃
+    cases ps'; simpa
+    nm p₂ ps'
+    simp at h₃
+    rcases h₃ with ⟨rfl, h₃⟩
+    simp [hb]
+  have h₂ := System.wf_of_tr hb
+  rw [ih]; clear ih
+  constructor
+  · rintro ⟨h₃, ps', h₄, h₅⟩
+    use h₃, p₁ :: ps'
+    simpa [h₄, hb]
+  rintro ⟨h₃, ps', h₄, h₅⟩
+  use h₃
+  cases ps'
+  · simp at h₅; contradiction
+  nm p₂ ps'
+  simp at h₄
+  rcases h₄ with ⟨rfl, h₄⟩
+  simp [hb] at h₅
+  use ps'
 
 theorem getMoveAt_eq_some_of_tr {s s' p} [hs : sys.WF s]
 (h₁ : sys.tr s p = some s') : s'.getMoveAt s = some p := by
-  simp [State.getMoveAt, hist_eq_of_tr h₁]
-  sorry
-
-#check 0 #exit
+  simp [State.getMoveAt, pw_eq_of_tr h₁, hist_eq_of_tr h₁]
+  rw [getMoveFromHist_eq_some_iff_exi_trs]
+  use hs, s.hist.reverse; simp
 
 theorem getMoveAt_eq_some_of_tr_and_reachable {s s₁ s₂ p} [hs : sys.WF s]
 (h₁ : sys.tr s p = some s₁) (h₂ : sys.Reachable s₁ s₂) : s₂.getMoveAt s = some p := by
@@ -307,11 +350,33 @@ theorem getMoveAt_eq_some_of_tr_and_reachable {s s₁ s₂ p} [hs : sys.WF s]
   simp [h₄] at h₂
   subst h₂
   specialize ih hr
-  unfold State.getMoveAt at ih ⊢
-  simp [hist_eq_of_tr h₄]
-  simp [sys, State.move] at h₄
+  exact getMoveAt_eq_getMoveAt_eq_some_and_tr ih h₄
 
-#check 0 #exit
+theorem getMoveAt_eq_some_iff_exi_trs {s₀ s p} [sys.WF s] :
+s.getMoveAt s₀ = some p ↔ ∃ ps', ps' ++ [p] <+: s.hist.reverse ∧
+sys.trs (initState s.pw) ps' = (s₀, []) := by
+  rw [State.getMoveAt, getMoveFromHist_eq_some_iff_exi_trs]
+  use λ h => h.2
+  rintro ⟨ps', h₁, h₂⟩
+  refine' ⟨_, _, h₁, h₂⟩
+  apply System.wf_of_trs h₂
+
+-- #check 0 #exit
+
+set_option linter.dupNamespace false in
+open Classical in private noncomputable
+def dAux₁ (sa : State) : DStrat := .mk' # λ sd => do
+  let pa ← sd.getMoveAt sa
+  let sd' ← sys.tr sa pa
+  let pd ← choose? # λ pd => ∃ sa', sys.tr sd' pd = some sa' ∧
+    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩
+  if sd' = sd then some pd else do
+    let sa' ← sys.tr sd' pd
+    let d ← choose? # λ (d : DStrat) => d.WF ∧
+      ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩
+    return d.f sd
+
+instance {sa} : (dAux₁ sa).WF := by unfold dAux₁; infer_instance
 
 theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_hws := by
   apply ha.a_hws_of_ind (p := (¬·.d_hws)) h; clear! sa
@@ -322,7 +387,7 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   use dAux₁ sa, inferInstance
   intro a hsa
   by_cases h₁ : ¬sys.hasTr sa
-  · simp [System.hasTr, -validTr_iff] at h₁; use 1; simp [h₁]
+  · simp [System.hasTr] at h₁; use 1; simp [h₁]
   push_neg at h₁
   replace h₁ := a.validTr h₁
   generalize hpa : a.f sa = pa at h₁
@@ -343,6 +408,8 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   simp [hpa, h₁]
   have h₆ : sys.tr sd ((dAux₁ sa).f sd) = some sa'
   · sorry
+  -- have h₇ : (dAux₁ sa).f sd = pd
+  -- · sorry
   have ha' := AState.of_tr h₆
   dsimp at h₅
   simp [h₆]
@@ -354,8 +421,20 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   replace hb := b.aState_or_dState
   rcases hb with hb | hb <;> simp
   replace H₃ : b.getMoveAt sa = some pa
-  · 
-  simp [dAux₁]
+  · apply getMoveAt_eq_some_of_tr_and_reachable h₁
+    trans sa'
+    · exact System.reachable_of_tr h₂
+    · exact System.reachable_of_simulate_full H₁
+  simp [dAux₁, mk_strat_fn, H₃, h₁]; clear H₃
+  rw [choose?_eq_of_exi, Hpd]; rotate_left; exact h
+  simp
+  split_ifs with H₃
+  · subst H₃
+    simp [System.validTr_of_eq_some h₂]
+    symm
+    sorry -- use H₁ and H₂
+  rw [h₂]; dsimp
+  rw [choose?_eq_of_exi, Hd]; simp; exact h₃
 
 #check 0 #exit
 
