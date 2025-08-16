@@ -1275,3 +1275,7 @@ instance {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
 theorem trs_eq_self_nil_iff_of_tree {s ts} [hs : sys.Tree s] :
 sys.trs s ts = (s, []) ↔ ts = [] := by
   use @hs.2 ts []; rintro rfl; rfl
+
+theorem wf_of_simulate_eq {s f n r} [hs : sys.WF s]
+(h : sys.simulate f s n = r) : sys.WF r.1 := by
+  subst r; simp

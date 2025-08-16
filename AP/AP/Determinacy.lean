@@ -378,6 +378,25 @@ def dAux₁ (sa : State) : DStrat := .mk' # λ sd => do
 
 instance {sa} : (dAux₁ sa).WF := by unfold dAux₁; infer_instance
 
+def AStrat.set (a : AStrat) (s : State) (p : PointZ) : AStrat := ⟨fn_set s p a.f⟩
+def DStrat.set (d : DStrat) (s : State) (p : PointZ) : DStrat := ⟨fn_set s p d.f⟩
+
+@[simp]
+theorem AStrat.f_set {a : AStrat} {s p} : (a.set s p).f = fn_set s p a.f := rfl
+
+@[simp]
+theorem DStrat.f_set {d : DStrat} {s p} : (d.set s p).f = fn_set s p d.f := rfl
+
+theorem AStrat.wf_set_of_tr {a : AStrat} {s s' p} [ha : a.WF]
+(h : sys.tr s p = some s') : (a.set s p).WF := by
+  simp [set, wf_iff]; intro s₁ hs₁ h₁; unfold fn_set; split_ifs with h₂
+  subst h₂; exact System.validTr_of_eq_some h; exact validTr h₁
+
+theorem DStrat.wf_set_of_tr {d : DStrat} {s s' p} [hd : d.WF]
+(h : sys.tr s p = some s') : (d.set s p).WF := by
+  simp [set, wf_iff]; intro s₁ hs₁ h₁; unfold fn_set; split_ifs with h₂
+  subst h₂; exact System.validTr_of_eq_some h; simp
+
 theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_hws := by
   apply ha.a_hws_of_ind (p := (¬·.d_hws)) h; clear! sa
   intro sa ha h
@@ -407,13 +426,32 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   use n + 2
   simp [hpa, h₁]
   have h₆ : sys.tr sd ((dAux₁ sa).f sd) = some sa'
-  · sorry
-  -- have h₇ : (dAux₁ sa).f sd = pd
-  -- · sorry
+  · have h₆ : sd.getMoveAt sa = some pa
+    · apply getMoveAt_eq_some_of_tr_and_reachable h₁; rfl
+    simp [-DState.sys_tr_eq_some_iff, dAux₁, mk_strat_fn, h₆, h₁]
+    rw [choose?_eq_of_exi, Hpd]; rotate_left; exact h
+    simpa [-DState.sys_tr_eq_some_iff, System.validTr_of_eq_some h₂]
   have ha' := AState.of_tr h₆
   dsimp at h₅
   simp [h₆]
   convert h₅ using 3
+  generalize hd₁ : d.set sd pd = d₁
+  have hd₂ := d.wf_set_of_tr h₂; rw [hd₁] at hd₂
+  trans sys.simulate (Strat.mk a d₁).f sa' n
+  rotate_left
+  · apply System.simulate_eq_simulate_of_fn_congr
+    intro k b H₁ H₂ H₃
+    subst hd₁
+    have hb : sys.WF b
+    · replace H₁ := congrArg (·.1) H₁; subst H₁; infer_instance
+    replace hb := b.aState_or_dState
+    rcases hb with hb | hb <;> simp
+    apply fn_set_eq_of_ne; symm
+    have H₄ : sys.Acyclic sd := inferInstance
+    replace H₄ := H₄.2 (by rfl) h₂
+    rintro rfl
+    apply H₄
+    exact System.reachable_of_simulate_full H₂
   apply System.simulate_eq_simulate_of_fn_congr
   intro k b H₁ H₂ H₃
   have hb : sys.WF b
@@ -429,19 +467,38 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   rw [choose?_eq_of_exi, Hpd]; rotate_left; exact h
   simp
   split_ifs with H₃
-  · subst H₃
-    simp [System.validTr_of_eq_some h₂]
-    symm
-    sorry -- use H₁ and H₂
+  · subst H₃ hd₁; simp [System.validTr_of_eq_some h₂]
   rw [h₂]; dsimp
-  rw [choose?_eq_of_exi, Hd]; simp; exact h₃
+  rw [choose?_eq_of_exi, Hd]
+  rotate_left; exact h₃
+  subst hd₁; simp; symm
+  exact fn_set_eq_of_ne # ne_symm' H₃
 
-#check 0 #exit
+set_option linter.dupNamespace false in
+open Classical in private noncomputable
+def aAux₂ (sd : State) : AStrat := .mk' # λ sa => do
+  let pd ← sa.getMoveAt sd
+  let sa' ← sys.tr sd pd
+  let a ← choose? # λ (a : AStrat) => a.WF ∧
+    ∀ (d : DStrat), d.WF → sa'.a_wins ⟨a, d⟩
+  return a.f sa
+
+instance {s} : (aAux₂ s).WF := by unfold aAux₂; infer_instance
+
+-- #check 0 #exit
 
 theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
 (h : ¬s.d_hws) : s.a_hws := by
+  classical
   replace hs := s.aState_or_dState
   rcases hs with  hs | hs; exact hs.a_hws_of_not_d_hws h
+  rename' s => sd
+  use aAux₂ sd, inferInstance
+  intro d hd n
+  cases n; rfl; nm n
+  obtain ⟨sa, h₁⟩ := d.validTr (sd := sd)
+  simp [h₁]
+  have ha := AState.of_tr h₁
   sorry
 
 #check 0 #exit
