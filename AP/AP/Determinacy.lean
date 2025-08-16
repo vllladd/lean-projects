@@ -97,38 +97,40 @@ instance {f} : (DStrat.mk' f).WF := by simp; infer_instance
 @[simp] theorem AStrat.f_mk {f} : (AStrat.mk f).f = f := rfl
 @[simp] theorem DStrat.f_mk {f} : (DStrat.mk f).f = f := rfl
 
-def aOptimalCnd (p : State → Prop) (sa : State) (pa : PointZ) : Prop :=
+set_option linter.dupNamespace false in
+private def aAuxCnd (p : State → Prop) (sa : State) (pa : PointZ) : Prop :=
   ∃ sd, sys.tr sa pa = some sd ∧ ∀ pd sa', sys.tr sd pd = some sa' → p sa'
 
-open Classical in noncomputable
-def aOptimal (p : State → Prop) : AStrat :=
-  .mk' # λ sa => choose? # aOptimalCnd p sa
+set_option linter.dupNamespace false in
+open Classical in private noncomputable
+def aAux₁ (p : State → Prop) : AStrat :=
+  .mk' # λ sa => choose? # aAuxCnd p sa
 
-theorem wf_aOptimal {p} : (aOptimal p).WF := by
-  unfold aOptimal; infer_instance
+theorem wf_aAux₁ {p} : (aAux₁ p).WF := by
+  unfold aAux₁; infer_instance
 
-instance {p} : (aOptimal p).WF := wf_aOptimal
+instance {p} : (aAux₁ p).WF := wf_aAux₁
 
 theorem AState.a_hws_of_ind {sa : State} [ha : AState sa] {p : State → Prop}
 (h₁ : p sa) (h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧
 ∀ pd sa', sys.tr sd pd = some sa' → p sa') : sa.a_hws := by
   classical
-  use aOptimal p, inferInstance
+  use aAux₁ p, inferInstance
   intro d hd
   apply ha.a_wins_of_ind h₁
   clear! sa
   intro sa ha hp
   specialize h₂ sa hp
-  simp only [aOptimal, choose?_eq_ite]
-  replace h₂ : ∃ pa, aOptimalCnd p sa pa := h₂
+  simp only [aAux₁, choose?_eq_ite]
+  replace h₂ : ∃ pa, aAuxCnd p sa pa := h₂
   have h₃ := Classical.epsilon_spec h₂
-  generalize h₁ : Classical.epsilon (aOptimalCnd p sa) = pa at h₃ ⊢
-  unfold aOptimalCnd at h₃
+  generalize h₁ : Classical.epsilon (aAuxCnd p sa) = pa at h₃ ⊢
+  unfold aAuxCnd at h₃
   obtain ⟨sd, h₃, h₄⟩ := h₃; use sd
   simp [-sys_tr_eq_some_iff, -validTr_iff, mk_strat_fn, h₂, h₁,
     System.validTr_iff_isSome, h₃]; apply h₄
 
-theorem hist_eq_of_tr_eq_some {s s' p}
+theorem hist_eq_of_tr {s s' p}
 (h : sys.tr s p = some s') : s'.hist = p :: s.hist := by
   simp [sys, State.move] at h
   split_ifs at h with h₁ <;> simp at h <;> obtain ⟨s', h, rfl⟩ := h <;> rfl
@@ -143,7 +145,7 @@ theorem hist_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.hist =
   nm x s' h₁; clear x
   have hs' := System.wf_of_tr h₁
   rw [ih]; clear ih
-  replace h₁ := hist_eq_of_tr_eq_some h₁
+  replace h₁ := hist_eq_of_tr h₁
   rw [h₁, List.append_cons, ←List.reverse_cons]; clear h₁
   generalize hn : (sys.trs s' ps).2.length = n
   have h₁ : n ≤ ps.length; subst hn; exact System.trs_snd_length_le
@@ -159,6 +161,7 @@ instance {s} [hs : sys.WF s] : sys.Tree s := by
   simp [h₁, ←h₄] at h₃
   exact h₃
 
+@[simp]
 def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
 | [] => none
 | p :: ps => if s = s_target then some p else do
@@ -166,13 +169,147 @@ def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
   getMoveFromHist s_target s' ps
 
 def State.getMoveAt (s s_target : State) : Option PointZ :=
-  getMoveFromHist s_target (initState s.pw) s.hist
+  getMoveFromHist s_target (initState s.pw) s.hist.reverse
 
-noncomputable
-def dOptimal (sa : State) : DStrat := .mk' # λ sd => do
+set_option linter.dupNamespace false in
+open Classical in private noncomputable
+def dAux₁ (sa : State) : DStrat := .mk' # λ sd => do
   let pa ← sd.getMoveAt sa
   let sd' ← sys.tr sa pa
-  none
+  let pd ← choose? # λ pd => ∃ sa', sys.tr sd pd = some sa' ∧
+    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat) [a.WF], sa'.d_wins ⟨a, d⟩
+  if sd' = sd then some pd else do
+    let sa' ← sys.tr sa pd
+    let d ← choose? # λ (d : DStrat) => d.WF ∧
+      ∀ (a : AStrat) [a.WF], sa'.d_wins ⟨a, d⟩
+    return d.f sd
+
+instance {sa} : (dAux₁ sa).WF := by unfold dAux₁; infer_instance
+
+theorem pw_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.pw = s.pw := by
+  simp [sys, State.move, State.aMove, State.dMove] at h
+  split_ifs at h with h₁ <;> simp at h <;> rcases h with ⟨s', h, rfl⟩ <;> rfl
+
+theorem getMoveFromHist_append_eq_some_of {s acc ps ps₁ p}
+(h : getMoveFromHist s acc ps = some p) :
+getMoveFromHist s acc (ps ++ ps₁) = some p := by
+  induction ps generalizing acc; simp at h
+  nm p₁ ps ih
+  simp at h ⊢
+  split_ifs at h ⊢ with h₁; exact h
+  simp at h ⊢
+  obtain ⟨s', h₂, h₃⟩ := h
+  use s', h₂
+  exact ih h₃
+
+theorem getMoveAt_eq_getMoveAt_eq_some_and_tr {s₁ s₂ p₁ s p}
+(h₁ : s₁.getMoveAt s = some p) (h₂ : sys.tr s₁ p₁  = some s₂) :
+s₂.getMoveAt s = some p := by
+  unfold State.getMoveAt at h₁ ⊢
+  simp [pw_eq_of_tr h₂, hist_eq_of_tr h₂]
+  generalize initState s₁.pw = acc at h₁ ⊢
+  generalize s₁.hist.reverse = ps at h₁ ⊢
+  generalize [p₁] = ps₁
+  exact getMoveFromHist_append_eq_some_of h₁
+
+@[simp]
+theorem pw_initState {pw} : (initState pw).pw = pw := rfl
+
+@[simp]
+theorem initial_iff {s} : sys.Initial s ↔ initState s.pw = s := by
+  simp [System.initial_def, sys]
+  symm; constructor; intro h; use s.pw
+  rintro ⟨pw, h⟩; subst h; rfl
+
+@[simp]
+theorem pw_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.pw = s.pw := by
+  induction ps generalizing s; rfl
+  nm p ps ih
+  simp; split; rfl
+  nm x s' h₁; clear x
+  have h₂ := System.wf_of_tr h₁
+  rw [ih, pw_eq_of_tr h₁]
+
+theorem pw_eq_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : s'.pw = s.pw := by
+  rw [System.reachable_iff_exi_trs] at h; obtain ⟨ts, h⟩ := h
+  replace h := congrArg (·.1.pw) h; simp at h; rw [h]
+
+-- #check 0 #exit
+
+theorem State.wf_iff {s} : sys.WF s ↔ ∃ ps, sys.trs (initState s.pw) ps = (s, []) := by
+  simp [System.wf_def, System.reachable_iff_exi_trs]
+  constructor
+  · rintro ⟨s₁, h₁, ps, h₂⟩
+    have hs : sys.WF s₁
+    · have hs : sys.Initial s₁; simpa; infer_instance
+    use ps
+    have h₃ := congrArg (·.1.pw) h₂
+    simp at h₃
+    simpa [←h₃, h₁]
+  · rintro ⟨ps, h₁⟩; use initState s.pw, rfl; use ps
+
+instance {pw} : sys.Initial (initState pw) := by simp
+
+@[simp]
+theorem hist_eq_nil_iff {s} [hs : sys.WF s] : s.hist = [] ↔ initState s.pw = s := by
+  refine' ⟨λ h => _, λ h => by rw [←h]; rfl⟩
+  obtain ⟨ps, h₁⟩ := s.wf_iff.mp hs
+  have h₂ := congrArg (·.1.hist) h₁
+  simp at h₂
+  simp [h₁, h] at h₂
+  simp [h₂.1] at h₁
+  exact h₁
+
+-- #check 0 #exit
+
+theorem trs_reverse_hist_eq {s} [hs : sys.WF s] :
+sys.trs (initState s.pw) s.hist.reverse = (s, []) := by
+  generalize hp : s.hist = ps
+  induction ps generalizing s
+  · simp at hp; simpa
+  nm p ps ih
+  sorry
+
+#check 0 #exit
+
+theorem state_eq_trs_reverse_hist {s} [hs : sys.WF s] :
+s = (sys.trs (initState s.pw) s.hist.reverse).1 := by
+  rw [trs_reverse_hist_eq]
+
+#check 0 #exit
+
+theorem getMoveAt_eq_some_of_tr {s s' p} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s') : s'.getMoveAt s = some p := by
+  simp [State.getMoveAt, hist_eq_of_tr h₁]
+  sorry
+
+#check 0 #exit
+
+theorem getMoveAt_eq_some_of_tr_and_reachable {s s₁ s₂ p} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s₁) (h₂ : sys.Reachable s₁ s₂) : s₂.getMoveAt s = some p := by
+  rw [System.reachable_iff_exi_trs] at h₂
+  obtain ⟨ps, h₂⟩ := h₂
+  induction ps using List.reverseRecOn generalizing s₂
+  · simp at h₂; subst h₂
+    exact getMoveAt_eq_some_of_tr h₁
+  nm ps p₁ ih
+  simp [System.trs_append] at h₂
+  generalize hr : sys.trs s₁ ps = r at h₂
+  rcases r with ⟨s₃, ps'⟩
+  dsimp at h₂
+  split_ifs at h₂ with h₃ <;> simp at h₂
+  subst h₃
+  simp at h₂
+  rcases h₂ with ⟨h₂, h₃⟩
+  split at h₃ <;> simp at h₃
+  nm x s₄ h₄; clear x h₃
+  simp [h₄] at h₂
+  subst h₂
+  specialize ih hr
+  unfold State.getMoveAt at ih ⊢
+  simp [hist_eq_of_tr h₄]
+  simp [sys, State.move] at h₄
 
 #check 0 #exit
 
@@ -182,11 +319,51 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   unfold State.d_hws at h ⊢
   contrapose h
   push_neg at h ⊢
+  use dAux₁ sa, inferInstance
+  intro a hsa
+  by_cases h₁ : ¬sys.hasTr sa
+  · simp [System.hasTr, -validTr_iff] at h₁; use 1; simp [h₁]
+  push_neg at h₁
+  replace h₁ := a.validTr h₁
+  generalize hpa : a.f sa = pa at h₁
+  obtain ⟨sd, h₁⟩ := h₁
+  have hd := DState.of_tr h₁
+  specialize h pa sd h₁
+  generalize Hpd : Classical.epsilon (λ pd => ∃ sa', sys.tr sd pd = some sa' ∧
+    ∃ d, d.WF ∧ ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩) = pd
+  have h₂ := Classical.epsilon_spec h; rw [Hpd] at h₂
+  obtain ⟨sa', h₂, h₃⟩ := h₂
+  generalize Hd : Classical.epsilon (λ (d : DStrat) => d.WF ∧
+    ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩) = d
+  have h₄ := Classical.epsilon_spec h₃; rw [Hd] at h₄
+  obtain ⟨h₄, h₅⟩ := h₄
+  specialize h₅ a hsa
+  obtain ⟨n, h₅⟩ := h₅
+  use n + 2
+  simp [hpa, h₁]
+  have h₆ : sys.tr sd ((dAux₁ sa).f sd) = some sa'
+  · sorry
+  have ha' := AState.of_tr h₆
+  dsimp at h₅
+  simp [h₆]
+  convert h₅ using 3
+  apply System.simulate_eq_simulate_of_fn_congr
+  intro k b H₁ H₂ H₃
+  have hb : sys.WF b
+  · replace H₁ := congrArg (·.1) H₁; subst H₁; infer_instance
+  replace hb := b.aState_or_dState
+  rcases hb with hb | hb <;> simp
+  replace H₃ : b.getMoveAt sa = some pa
+  · 
+  simp [dAux₁]
 
 #check 0 #exit
 
-theorem State.a_hws_of_not_d_hws {s : State} [hs : s.WF] (h : ¬s.d_hws) : s.a_hws := by
-  unfold d_hws at h; push_neg at h
+theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
+(h : ¬s.d_hws) : s.a_hws := by
+  replace hs := s.aState_or_dState
+  rcases hs with  hs | hs; exact hs.a_hws_of_not_d_hws h
+  sorry
 
 #check 0 #exit
 

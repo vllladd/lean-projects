@@ -1263,3 +1263,10 @@ sys.trs s ts₁ = (s', []) → sys.trs s ts₂ = (s', []) → ts₁ = ts₂ := b
   rw [List.append_take_eq_of_suffix # by simp [h₃],
     List.append_take_eq_of_suffix # by simp [h₄]] at h
   exact h
+
+@[simp]
+theorem wf_of_simulate {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
+  wf_of_reachable reachable_simulate
+
+instance {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
+  wf_of_simulate

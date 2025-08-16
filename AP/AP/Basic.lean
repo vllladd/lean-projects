@@ -47,10 +47,10 @@ class DState (s : State) : Prop where
   wf_s : s.WF
   turn : s.aTurn = false
 
-theorem aState_def {s : State} : AState s ↔ s.WF ∧ s.aTurn :=
+theorem AState.iff {s : State} : AState s ↔ s.WF ∧ s.aTurn :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-theorem dState_def {s : State} : DState s ↔ s.WF ∧ s.aTurn = false :=
+theorem DState.iff {s : State} : DState s ↔ s.WF ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
 instance {sa} [ha : AState sa] : sa.WF := ha.wf_s
@@ -180,11 +180,11 @@ theorem State.not_d_wins_iff {s : State} {st : Strat} : ¬s.d_wins st ↔ s.a_wi
 
 theorem AStrat.wf_iff {a : AStrat} : a.WF ↔ ∀ {s} [AState s],
 sys.hasTr s → sys.validTr s (a.f s) := by
-  simp [aState_def, AStrat.wf_def]; tauto
+  simp [AState.iff, AStrat.wf_def]; tauto
 
 theorem DStrat.wf_iff {d : DStrat} : d.WF ↔ ∀ {s} [DState s],
 sys.hasTr s → sys.validTr s (d.f s) := by
-  simp [dState_def, DStrat.wf_def]; tauto
+  simp [DState.iff, DStrat.wf_def]; tauto
 
 @[simp]
 theorem AState.sys_tr_eq_some_iff {s s' p} [hs : AState s] :
@@ -264,3 +264,19 @@ instance {f} [hf : sys.SimFn f] : AStrat.WF ⟨f⟩ := by
 instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
   rw [DStrat.wf_iff]; rw [System.simFn_def] at hf
   rintro s ⟨hs, ht⟩; apply hf
+
+theorem State.aState_or_dState {s} [hs : sys.WF s] : AState s ∨ DState s := by
+  simp [AState.iff, DState.iff, hs]
+
+theorem AStrat.validTr {sa} [hs : AState sa] {st : AStrat} [hst : st.WF]
+(h : sys.hasTr sa) : sys.validTr sa (st.f sa) := by
+  rw [AStrat.wf_iff] at hst; exact hst h
+
+@[simp]
+theorem DStrat.validTr {sd} [hs : DState sd] {st : DStrat} [hst : st.WF] :
+sys.validTr sd (st.f sd) := by
+  rw [DStrat.wf_iff] at hst; apply hst; simp
+
+theorem Strat.validTr {s} [hs : sys.WF s] {st : Strat} [hst : st.WF]
+(h : sys.hasTr s) : sys.validTr s (st.f s) := by
+  rw [Strat.wf_def] at hst; exact hst h

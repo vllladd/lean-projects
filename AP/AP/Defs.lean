@@ -3,6 +3,7 @@ import AP.System
 
 namespace AP
 
+@[ext]
 structure State : Type where
   pw : ℕ
   taken : Set' PointZ
@@ -11,14 +12,17 @@ structure State : Type where
   hist : List PointZ
 deriving Inhabited, DecidableEq
 
+@[ext]
 structure AStrat : Type where
   f : State → PointZ
 deriving Inhabited
 
+@[ext]
 structure DStrat : Type where
   f : State → PointZ
 deriving Inhabited
 
+@[ext]
 structure Strat : Type where
   a : AStrat
   d : DStrat
@@ -70,7 +74,7 @@ def State.a_wins (s : State) (st : Strat) : Prop :=
   ∀ n, (sys.simulate st.f s n).2 = 0
 
 def State.d_wins (s : State) (st : Strat) : Prop :=
-  ¬s.a_wins st
+  ∃ n, (sys.simulate st.f s n).2 ≠ 0
 
 def State.a_hws (s : State) : Prop :=
   ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩
