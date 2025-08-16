@@ -8,36 +8,36 @@ variable {S T : Type u} {sys : System S T}
 instance : Inhabited # System S T := ⟨⟨∅, default⟩⟩
 
 noncomputable
-def dflt_sim_fn [Inhabited # S → T] : S → T :=
+def dflt_simFn [Inhabited # S → T] : S → T :=
   by classical exact
   λ s => if h : sys.hasTr s then h.choose else (default : S → T) s
 
-instance [Inhabited # S → T] : sys.SimFn sys.dflt_sim_fn := by
+instance [Inhabited # S → T] : sys.SimFn sys.dflt_simFn := by
   constructor
   intro s hs h₁
-  unfold dflt_sim_fn
+  unfold dflt_simFn
   split_ifs
   exact h₁.choose_spec
 
 noncomputable
-def mk_sim_fn (f : S → T) : S → T := by
+def mk_simFn (f : S → T) : S → T := by
   classical
   intro s
   by_cases h : sys.validTr s # f s
   · exact f s
   haveI : Inhabited # S → T := ⟨λ _ => f s⟩
-  use sys.dflt_sim_fn s
+  use sys.dflt_simFn s
 
-theorem validTr_of_sim_fn_and_hasTr {f} [hf : sys.SimFn f] {s} [hs : sys.WF s]
+theorem validTr_of_simFn_and_hasTr {f} [hf : sys.SimFn f] {s} [hs : sys.WF s]
 (h : sys.hasTr s) : sys.validTr s (f s) := hf.h h
 
-instance {f} : sys.SimFn # sys.mk_sim_fn f := by
+instance {f} : sys.SimFn # sys.mk_simFn f := by
   constructor
   intro s hs h₁
-  unfold mk_sim_fn
+  unfold mk_simFn
   split_ifs with h₂
   · exact h₂
-  exact validTr_of_sim_fn_and_hasTr h₁
+  exact validTr_of_simFn_and_hasTr h₁
 
 @[simp, refl]
 theorem Reachable.refl' {a} : sys.Reachable a a :=
@@ -132,7 +132,7 @@ theorem reachable_ind_left {P : ∀ a b, sys.Reachable a b → Prop}
 {a b} (h : sys.Reachable a b) : P a b h := by
   induction h; exact h₁; apply h₂ <;> assumption
 
-theorem reachable_of_trs_eq' {a ts r} (h : sys.trs a ts = r) :
+theorem reachable_of_trs {a ts r} (h : sys.trs a ts = r) :
 sys.Reachable a r.1 := by
   rcases r with ⟨b, rs⟩
   replace h := congrArg (·.1) h
@@ -165,7 +165,7 @@ theorem reachable_iff_exi_trs {a b} :
 sys.Reachable a b ↔ ∃ ts, sys.trs a ts = (b, []) := by
   use exi_trs_of_reachable
   rintro ⟨ts, h⟩
-  exact reachable_of_trs_eq' h
+  exact reachable_of_trs h
 
 theorem trs_append {s xs ys} [hi : DecidableEq T] :
 sys.trs s (xs ++ ys) =
@@ -215,7 +215,7 @@ theorem reachable_ind_right {P : ∀ a b, sys.Reachable a b → Prop}
   · simp at h₃
   simp at h₄
   simp only [h₄, List.nil_append, Prod.mk.eta] at h₃
-  have h₅ := reachable_of_trs_eq' h₃
+  have h₅ := reachable_of_trs h₃
   apply @h₂ a (sys.trs a ts).1 b t
   · simp at h₃
     split at h₃ <;> simp at h₃
@@ -270,20 +270,18 @@ sys.simulate f s (n - (sys.simulate f s n).2) = ((sys.simulate f s n).1, 0) := b
   simp [h₁]
   exact ih
 
-theorem sim_fn_iff {f} : sys.SimFn f ↔ ∀ {s} [sys.WF s],
+theorem simFn_def {f} : sys.SimFn f ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → sys.validTr s (f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-@[simp]
-theorem acyclic_iff {s} : sys.Acyclic s ↔ sys.WF s ∧
+theorem acyclic_def {s} : sys.Acyclic s ↔ sys.WF s ∧
 ∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a :=
-  ⟨λ h => ⟨h.1, h.2⟩, λ ⟨_, h₂⟩ => ⟨h₂⟩⟩
+  ⟨λ h => ⟨h.1, h.2⟩, λ h => ⟨h.1, h.2⟩⟩
 
-@[simp]
-theorem tree_iff {s} : sys.Tree s ↔ sys.WF s ∧
+theorem tree_def {s} : sys.Tree s ↔ sys.WF s ∧
 ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂ :=
-  ⟨λ h => ⟨h.1, h.2⟩, λ ⟨_, h₂⟩ => ⟨h₂⟩⟩
+  ⟨λ h => ⟨h.1, h.2⟩, λ h => ⟨h.1, h.2⟩⟩
 
-theorem wf_iff {b} : sys.WF b ↔ ∃ a, sys.Initial a ∧ sys.Reachable a b := by
+theorem wf_def {b} : sys.WF b ↔ ∃ a, sys.Initial a ∧ sys.Reachable a b := by
   constructor
   · rintro ⟨h⟩; exact h
   · rintro ⟨a, ha, hb⟩; constructor; use a
@@ -295,11 +293,11 @@ instance {s} [sys.Initial s] : sys.WF s := wf_of_initial
 
 theorem wf_of_reachable {a b}
 [ha : sys.WF a] (hb : sys.Reachable a b) : sys.WF b := by
-  rw [wf_iff] at ha
+  rw [wf_def] at ha
   obtain ⟨c, h₁, h₂⟩ := ha
   constructor; use c, h₁, h₂.trans hb
 
-theorem initial_iff {a} : sys.Initial a ↔ a ∈ sys.initial :=
+theorem initial_def {a} : sys.Initial a ↔ a ∈ sys.initial :=
   ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
 theorem validTr_iff_isSome {s t} : sys.validTr s t ↔ (sys.tr s t).isSome := by
@@ -312,14 +310,20 @@ instance {s t} : Decidable (sys.validTr s t) :=
   | none => .isFalse # by simp [validTr_iff_isSome, h]
   | some _ => .isTrue # by simp [validTr_iff_isSome, h]
 
+theorem reachable_of_fst_trs {a ts b} (h : (sys.trs a ts).1 = b) :
+sys.Reachable a b := by subst h; exact reachable_of_trs rfl
+
 theorem wf_of_tr {a b t} [ha : sys.WF a] (h : sys.tr a t = some b) : sys.WF b :=
   wf_of_reachable # reachable_of_tr h
 
+theorem wf_of_trs {a b ts r} [ha : sys.WF a] (h : sys.trs a ts = (b, r)) : sys.WF b :=
+  wf_of_reachable # reachable_of_trs h
+
 theorem wf_of_acyclic {a} [ha : sys.Acyclic a] : sys.WF a := by
-  rw [acyclic_iff] at ha; exact ha.1
+  rw [acyclic_def] at ha; exact ha.1
 
 theorem wf_of_tree {a} [ha : sys.Tree a] : sys.WF a := by
-  rw [tree_iff] at ha; exact ha.1
+  rw [tree_def] at ha; exact ha.1
 
 instance {a} [ha : sys.Acyclic a] : sys.WF a := wf_of_acyclic
 instance {a} [ha : sys.Tree a] : sys.WF a := wf_of_tree

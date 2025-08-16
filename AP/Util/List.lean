@@ -834,3 +834,10 @@ theorem sorted_le_of_sorted_lt [ha : LinearOrder α]
 @[simp]
 theorem flatMap_fn_singletonc {f : α → β} : xs.flatMap ([f ·]) = xs.map f := by
   induction xs; rfl; simpa
+
+theorem reverse_snoc {x} : (xs ++ [x]).reverse = x :: xs.reverse := by
+  simp
+
+theorem append_take_eq_of_suffix (h : ys <:+ xs) :
+xs.take (xs.length - ys.length) ++ ys = xs := by
+  rwa [←suffix_iff_eq_append]

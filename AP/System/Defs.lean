@@ -57,8 +57,10 @@ def simp_path' (sys : System S T) (a : S) (ts : List T) : Prop :=
 def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
   sys.simp_path' a ts ∧ sys.trs a ts = (b, [])
 
-class Acyclic (s : S) : Prop extends sys.WF s where
-  h₁ : ∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a
+class Acyclic (s : S) : Prop where
+  wf_s : sys.WF s
+  h : ∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a
 
-class Tree (s : S) : Prop extends sys.WF s where
-  h₁ : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂
+class Tree (s : S) : Prop where
+  wf_s : sys.WF s
+  h : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂

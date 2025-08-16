@@ -178,3 +178,18 @@ def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
 theorem dite_eq_dite_of_pos {α : Type*} {P Q : Prop} [hp : Decidable P] [hq : Decidable Q]
 {f : P → α} {g : Q → α} {x y : α} (h₁ : P) (h₂ : Q) (h₃ : f h₁ = g h₂) :
 (if h : P then f h else x) = if h : Q then g h else y := by simp [h₁, h₂, h₃]
+
+noncomputable
+def choose? {α : Type*} (p : α → Prop) [Decidable # ∃ x, p x] : Option α :=
+  if h : ∃ x, p x then some h.choose else none
+
+theorem choose?_eq_ite {α : Type*} [ha : Nonempty α]
+{p : α → Prop} [hd : Decidable # ∃ x, p x] :
+choose? p = if ∃ x, p x then some # Classical.epsilon p else none := by
+  unfold choose?; split_ifs with h₁
+  simp; exact choose_eq_epsilon h₁; rfl
+
+theorem choose?_eq_of_exi {α : Type*} (p : α → Prop)
+[hh : Decidable # ∃ x, p x] (h : ∃ x, p x) : haveI : Nonempty α := ⟨h.choose⟩
+choose? p = some (Classical.epsilon p) := by
+  simp [choose?, h]; generalize_proofs h₁; exact choose_eq_epsilon h

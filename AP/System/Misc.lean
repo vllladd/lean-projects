@@ -25,9 +25,8 @@ theorem aux₃ {s ts} :
 ∃ s' rs, sys.trs s ts = (s', rs) ∧ rs.length ≤ ts.length := by
   simp [Prod.ext_iff]
 
-theorem aux₄ {s ts s'}
-(h₁ : sys.trs s ts = (s', [])) : sys.Reachable s s' :=
-  reachable_of_trs_eq' h₁
+theorem aux₄ {s ts s'} (h₁ : sys.trs s ts = (s', [])) : sys.Reachable s s' :=
+  reachable_of_trs h₁
 
 theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
   simp [Prod.ext_iff]
@@ -74,9 +73,9 @@ theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (_ : sys.Acyclic s
 sn ≠ sm := by
   push_neg
   use Unit, Unit, ⟨{()}, λ _ _ => none⟩, ()
-  simp [sim_fn_iff, hasTr]
+  simp [simFn_def, acyclic_def, hasTr]
   refine' ⟨_, default, 0, 1, by simp⟩
-  constructor; simp [initial_iff]
+  constructor; simp [initial_def]
 
 theorem aux₉ {s} [h₁ : sys.Acyclic s] {f} [h₂ : SimFn sys f]
 {n m sn sm} (h₃ : n < m) : ∃ x y, ∀
@@ -118,10 +117,10 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
   push_neg
   use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
-  simp
-  constructor; simp [wf_iff, initial_iff]
+  simp [acyclic_def]
+  constructor; simp [wf_def, initial_def]
   use λ _ => ()
-  simp [sim_fn_iff, hasTr]
+  simp [simFn_def, hasTr]
   intro N
   use N + 1
   simp
@@ -132,10 +131,10 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
   push_neg
   use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
-  simp [acyclic_iff]
-  constructor; simp [wf_iff, initial_iff]
+  simp [acyclic_def]
+  constructor; simp [wf_def, initial_def]
   use default
-  simp [sim_fn_iff, hasTr]
+  simp [simFn_def, hasTr]
   left
   intro N
   use N, by rfl

@@ -2,17 +2,17 @@ import AP.AP.Defs
 
 namespace AP
 
-theorem aStrat_wf_def {a : AStrat} : a.WF ↔ ∀ {s} [sys.WF s],
+theorem AStrat.wf_def {a : AStrat} : a.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → s.aTurn → sys.validTr s (a.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem dStrat_wf_def {d : DStrat} : d.WF ↔ ∀ {s} [sys.WF s],
+theorem DStrat.wf_def {d : DStrat} : d.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → s.aTurn = false → sys.validTr s (d.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem strat_wf_def {st : Strat} : st.WF ↔ ∀ {s} [sys.WF s],
+theorem Strat.wf_def {st : Strat} : st.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → sys.validTr s (st.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
-theorem strat_wf_iff {st : Strat} : st.WF ↔ st.a.WF ∧ st.d.WF := by
-  rw [strat_wf_def, aStrat_wf_def, dStrat_wf_def]
+theorem Strat.wf_iff {st : Strat} : st.WF ↔ st.a.WF ∧ st.d.WF := by
+  rw [Strat.wf_def, AStrat.wf_def, DStrat.wf_def]
   simp [System.hasTr, System.validTr, Strat.f]
   constructor
   · intro h
@@ -29,10 +29,10 @@ theorem strat_wf_iff {st : Strat} : st.WF ↔ st.a.WF ∧ st.d.WF := by
     · simp at h₄; exact h₂ _ _ h₃ h₄
 
 theorem Strat.WF.wf_a {st : Strat} [hst : st.WF] : st.a.WF := by
-  rw [strat_wf_iff] at hst; exact hst.1
+  rw [Strat.wf_iff] at hst; exact hst.1
 
 theorem Strat.WF.wf_d {st : Strat} [hst : st.WF] : st.d.WF := by
-  rw [strat_wf_iff] at hst; exact hst.2
+  rw [Strat.wf_iff] at hst; exact hst.2
 
 instance {st : Strat} [hst : st.WF] : st.a.WF := hst.wf_a
 instance {st : Strat} [hst : st.WF] : st.d.WF := hst.wf_d
@@ -178,13 +178,13 @@ theorem State.not_a_wins_iff {s : State} {st : Strat} : ¬s.a_wins st ↔ s.d_wi
 theorem State.not_d_wins_iff {s : State} {st : Strat} : ¬s.d_wins st ↔ s.a_wins st := by
   simp [a_wins, d_wins]
 
-theorem aStrat_wf_iff {a : AStrat} : a.WF ↔ ∀ {s} [AState s],
+theorem AStrat.wf_iff {a : AStrat} : a.WF ↔ ∀ {s} [AState s],
 sys.hasTr s → sys.validTr s (a.f s) := by
-  simp [aState_def, aStrat_wf_def]; tauto
+  simp [aState_def, AStrat.wf_def]; tauto
 
-theorem dStrat_wf_iff {d : DStrat} : d.WF ↔ ∀ {s} [DState s],
+theorem DStrat.wf_iff {d : DStrat} : d.WF ↔ ∀ {s} [DState s],
 sys.hasTr s → sys.validTr s (d.f s) := by
-  simp [dState_def, dStrat_wf_def]; tauto
+  simp [dState_def, DStrat.wf_def]; tauto
 
 @[simp]
 theorem AState.sys_tr_eq_some_iff {s s' p} [hs : AState s] :
@@ -211,21 +211,56 @@ s.a_wins st ↔ ∀ n, (sys.simulate st.f s # n * 2).2 = 0 := by
   constructor <;> intro h n; apply h
   apply System.simulate_snd_eq_zero_of_le_and_eq_zero # h n; simp
 
-theorem AState.of_tr {sd} [hd : DState sd] {p sa}
-(h : sys.tr sd p = some sa) : AState sa := by
-  use System.wf_of_tr h; simp at h; simp [←h.2]
-
-theorem DState.of_tr {sa} [ha : AState sa] {p sd}
-(h : sys.tr sa p = some sd) : DState sd := by
-  use System.wf_of_tr h; simp at h; simp [←h.2]
-
 @[simp]
 theorem DState.tr_ne_none {sd} [hd : DState sd] {st : DStrat} [hst : st.WF] :
 sys.tr sd (st.f sd) ≠ none := by
   have h₁ := hd.hasTr
-  rw [dStrat_wf_iff] at hst
+  rw [DStrat.wf_iff] at hst
   obtain ⟨sa, h₂⟩ := hst h₁
   simp [h₂]
 
 instance {st : Strat} [hst : st.WF] : sys.SimFn st.f := by
-  rw [strat_wf_def] at hst; exact ⟨hst⟩
+  rw [Strat.wf_def] at hst; exact ⟨hst⟩
+
+theorem AState.of_tr {sa sd p} [hd : DState sd]
+(h : sys.tr sd p = some sa) : AState sa := by
+  use System.wf_of_tr h; simp at h; simp [←h.2]
+
+theorem DState.of_tr {sa sd p} [ha : AState sa]
+(h : sys.tr sa p = some sd) : DState sd := by
+  use System.wf_of_tr h; simp at h; simp [←h.2]
+
+theorem AState.of_tr' {sa sd p} [ha : sys.WF sa] [hd : DState sd]
+(h : sys.tr sa p = some sd) : AState sa := by
+  by_cases ht : sa.aTurn; exact ⟨ha, ht⟩
+  simp at ht; simp [sys, State.move, ht] at h
+  obtain ⟨s, h₁, rfl⟩ := h
+  have h₂ := hd.turn
+  simp at h₂
+
+theorem DState.of_tr' {sa sd p} [hd : sys.WF sd] [ha : AState sa]
+(h : sys.tr sd p = some sa) : DState sd := by
+  by_cases ht : sd.aTurn = false; exact ⟨hd, ht⟩
+  simp at ht; simp [sys, State.move, ht] at h
+  obtain ⟨s, h₁, rfl⟩ := h
+  have h₂ := ha.turn
+  simp at h₂
+
+@[simp]
+theorem AState.not_dState {sa} [ha : AState sa] : ¬DState sa := by
+  intro hd; have h := ha.turn; rw [hd.turn] at h; simp at h
+
+@[simp]
+theorem DState.not_aState {sd} [hd : DState sd] : ¬AState sd := by
+  intro ha; simp at hd
+
+instance {a : AStrat} {d : DStrat} [ha : a.WF] [hd : d.WF] : Strat.WF ⟨a, d⟩ := by
+  rw [Strat.wf_iff]; exact ⟨ha, hd⟩
+
+instance {f} [hf : sys.SimFn f] : AStrat.WF ⟨f⟩ := by
+  rw [AStrat.wf_iff]; rw [System.simFn_def] at hf
+  rintro s ⟨hs, ht⟩; apply hf
+
+instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
+  rw [DStrat.wf_iff]; rw [System.simFn_def] at hf
+  rintro s ⟨hs, ht⟩; apply hf

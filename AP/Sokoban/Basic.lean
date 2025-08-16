@@ -32,7 +32,7 @@ theorem State.Get.mem {s : State} {p d} (hd : s.Get p d) : p ∈ s.grid := by
 
 @[simp]
 theorem sys_initial_iff {s} : sys.Initial s ↔ s.WF := by
-  rw [System.initial_iff]; rfl
+  rw [System.initial_def]; rfl
 
 @[simp]
 theorem sys_tr_eq {s} : sys.tr s = s.move := rfl
@@ -192,7 +192,7 @@ theorem State.Get.not_box_and_not_wall_of_get_player {s : State} {d} [hs : s.WF]
 
 theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   symm; constructor
-  · simp [System.wf_iff]; intro h; use s
+  · simp [System.wf_def]; intro h; use s
   intro h
   apply sys.invariant_init h; simp
   clear! s; intro s s' t hs h₂
@@ -258,7 +258,7 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
 
 theorem wf_of_reachable {s s' : State} [hs : s.WF]
 (hr : sys.Reachable s s') : s'.WF := by
-  rw [←sys_wf_iff, sys.wf_iff] at hs ⊢
+  rw [←sys_wf_iff, sys.wf_def] at hs ⊢
   obtain ⟨s₀, h₁, h₂⟩ := hs
   use s₀, h₁, h₂.trans hr
 
