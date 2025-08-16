@@ -335,3 +335,13 @@ theorem find_le_find_of_imp {P Q : ℕ → Prop}
 {h₁ : ∃ n, P n} {h₂ : ∃ n, Q n} (h₃ : ∀ n, Q n → P n) :
 Nat.find h₁ ≤ Nat.find h₂ := by
   apply Nat.find_le; apply h₃; exact Nat.find_spec h₂
+
+@[simp]
+theorem le_self_mul_iff {a b : ℕ} :
+a ≤ a * b ↔ a = 0 ∨ b ≠ 0 := by
+  constructor
+  · intro h; rw [or_iff_not_imp_left]
+    rintro h₁ rfl; simp at h; contradiction
+  rintro (rfl | h); simp
+  cases b; simp at h; nm b
+  simp [mul_succ]

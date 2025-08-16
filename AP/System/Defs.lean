@@ -16,13 +16,22 @@ def validTr (s : S) (t : T) : Prop :=
 def hasTr (s : S) : Prop :=
   ∃ t, sys.validTr s t
 
-@[class]
-structure DecidableHasTr where
+class DecidableHasTr where
   h : Π s, Decidable # sys.hasTr s
 
+class Initial (s : S) : Prop where
+  h : s ∈ sys.initial
+
 @[class]
-structure SimFn (f : S → T) : Prop where
-  h : ∀ {s}, sys.hasTr s → sys.validTr s (f s)
+inductive Reachable {S T : Type u} (sys : System S T) : S → S → Prop where
+| refl : ∀ {a}, sys.Reachable a a
+| step : ∀ {a b c t}, sys.tr a t = some b → sys.Reachable b c → sys.Reachable a c
+
+class WF (s' : S) : Prop where
+  h : ∃ s, sys.Initial s ∧ sys.Reachable s s'
+
+class SimFn (f : S → T) : Prop where
+  h : ∀ {s} [sys.WF s], sys.hasTr s → sys.validTr s (f s)
 
 def tr! (s : S) (t : T) : S :=
   (sys.tr s t).getD s
@@ -48,23 +57,8 @@ def simp_path' (sys : System S T) (a : S) (ts : List T) : Prop :=
 def simp_path (sys : System S T) (a : S) (ts : List T) (b : S) : Prop :=
   sys.simp_path' a ts ∧ sys.trs a ts = (b, [])
 
-@[class]
-inductive Reachable {S T : Type u} (sys : System S T) : S → S → Prop where
-| refl : ∀ {a}, sys.Reachable a a
-| step : ∀ {a b c t}, sys.tr a t = some b → sys.Reachable b c → sys.Reachable a c
+class Acyclic (s : S) : Prop extends sys.WF s where
+  h₁ : ∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a
 
-@[class]
-structure Acyclic (s : S) : Prop where
-  h : ∀ {a b t}, sys.Reachable s a → sys.tr a t = some b → ¬sys.Reachable b a
-
-@[class]
-structure Tree (s : S) : Prop where
-  h : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂
-
-@[class]
-structure Initial (s : S) : Prop where
-  h : s ∈ sys.initial
-
-@[class]
-inductive WF (s' : S) : Prop where
-| mk : ∀ {s} [sys.Initial s], sys.Reachable s s' → WF s'
+class Tree (s : S) : Prop extends sys.WF s where
+  h₁ : ∀ {ts₁ ts₂}, sys.trs s ts₁ = sys.trs s ts₂ → ts₁ = ts₂

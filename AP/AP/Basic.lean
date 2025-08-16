@@ -28,24 +28,24 @@ theorem strat_wf_iff {st : Strat} : st.WF ↔ st.a.WF ∧ st.d.WF := by
     · exact h₁ _ _ h₃ h₄
     · simp at h₄; exact h₂ _ _ h₃ h₄
 
-theorem Strat.WF.a_wf {st : Strat} [hst : st.WF] : st.a.WF := by
+theorem Strat.WF.wf_a {st : Strat} [hst : st.WF] : st.a.WF := by
   rw [strat_wf_iff] at hst; exact hst.1
 
-theorem Strat.WF.d_wf {st : Strat} [hst : st.WF] : st.d.WF := by
+theorem Strat.WF.wf_d {st : Strat} [hst : st.WF] : st.d.WF := by
   rw [strat_wf_iff] at hst; exact hst.2
 
-instance {st : Strat} [hst : st.WF] : st.a.WF := hst.a_wf
-instance {st : Strat} [hst : st.WF] : st.d.WF := hst.d_wf
+instance {st : Strat} [hst : st.WF] : st.a.WF := hst.wf_a
+instance {st : Strat} [hst : st.WF] : st.d.WF := hst.wf_d
 
 abbrev State.WF (s : State) : Prop := sys.WF s
 
 class AState (s : State) : Prop where
-  h_valid : s.WF
-  h : s.aTurn
+  wf_s : s.WF
+  turn : s.aTurn
 
 class DState (s : State) : Prop where
-  h_valid : s.WF
-  h : s.aTurn = false
+  wf_s : s.WF
+  turn : s.aTurn = false
 
 theorem aState_def {s : State} : AState s ↔ s.WF ∧ s.aTurn :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
@@ -53,16 +53,14 @@ theorem aState_def {s : State} : AState s ↔ s.WF ∧ s.aTurn :=
 theorem dState_def {s : State} : DState s ↔ s.WF ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
+instance {sa} [ha : AState sa] : sa.WF := ha.wf_s
+instance {sd} [hd : DState sd] : sd.WF := hd.wf_s
+
+@[simp] theorem AState.turn' {s : State} [hs : AState s] : s.aTurn := hs.turn
+@[simp] theorem DState.turn' {s : State} [hs : DState s] : s.aTurn = false := hs.turn
+
 def State.dChooseMove (s : State) : PointZ :=
   (insert s.aPos s.taken).max! + ⟨1, 0⟩
-
-@[simp]
-theorem AState.turn {s : State} [hs : AState s] : s.aTurn := by
-  cases hs; assumption
-
-@[simp]
-theorem DState.turn {s : State} [hs : DState s] : s.aTurn = false := by
-  cases hs; assumption
 
 theorem State.validTr_iff_of_aTurn {s : State} {p} (ht : s.aTurn) :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
@@ -190,15 +188,15 @@ sys.hasTr s → sys.validTr s (d.f s) := by
 
 @[simp]
 theorem AState.sys_tr_eq_some_iff {s s' p} [hs : AState s] :
-sys.tr s p = some s' ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw ∧
+sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw) ∧
 {s with aPos := p, aTurn := false, hist := p :: s.hist} = s' := by
-  simp [sys, State.move, State.aMove]; tauto
+  simp [sys, State.move, State.aMove]
 
 @[simp]
 theorem DState.sys_tr_eq_some_iff {s s' p} [hs : DState s] :
-sys.tr s p = some s' ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧
+sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken) ∧
 {s with taken := insert p s.taken, aTurn := true, hist := p :: s.hist} = s' := by
-  simp [sys, State.move, State.dMove]; tauto
+  simp [sys, State.move, State.dMove]
 
 @[simp]
 theorem AState.start_f_eq {sa} {st : Strat} [ha : AState sa] :
@@ -207,3 +205,27 @@ st.f sa = st.a.f sa := by simp [Strat.f]
 @[simp]
 theorem DState.start_f_eq {sd} {st : Strat} [hd : DState sd] :
 st.f sd = st.d.f sd := by simp [Strat.f]
+
+theorem State.a_wins_iff_mul_two {s : State} {st : Strat} :
+s.a_wins st ↔ ∀ n, (sys.simulate st.f s # n * 2).2 = 0 := by
+  constructor <;> intro h n; apply h
+  apply System.simulate_snd_eq_zero_of_le_and_eq_zero # h n; simp
+
+theorem AState.of_tr {sd} [hd : DState sd] {p sa}
+(h : sys.tr sd p = some sa) : AState sa := by
+  use System.wf_of_tr h; simp at h; simp [←h.2]
+
+theorem DState.of_tr {sa} [ha : AState sa] {p sd}
+(h : sys.tr sa p = some sd) : DState sd := by
+  use System.wf_of_tr h; simp at h; simp [←h.2]
+
+@[simp]
+theorem DState.tr_ne_none {sd} [hd : DState sd] {st : DStrat} [hst : st.WF] :
+sys.tr sd (st.f sd) ≠ none := by
+  have h₁ := hd.hasTr
+  rw [dStrat_wf_iff] at hst
+  obtain ⟨sa, h₂⟩ := hst h₁
+  simp [h₂]
+
+instance {st : Strat} [hst : st.WF] : sys.SimFn st.f := by
+  rw [strat_wf_def] at hst; exact ⟨hst⟩

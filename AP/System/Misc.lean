@@ -1,6 +1,6 @@
 import AP.System.Invariant
 
-namespace System
+namespace System.Misc
 
 universe u
 variable {S T : Type u} {sys : System S T}
@@ -73,10 +73,10 @@ theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (_ : sys.Acyclic s
 (_ : sys.simulate f s m = (sm, y)),
 sn ≠ sm := by
   push_neg
-  use Unit, Unit, ⟨∅, λ _ _ => none⟩, ()
+  use Unit, Unit, ⟨{()}, λ _ _ => none⟩, ()
   simp [sim_fn_iff, hasTr]
-  use default, 0, 1
-  simp
+  refine' ⟨_, default, 0, 1, by simp⟩
+  constructor; simp [initial_iff]
 
 theorem aux₉ {s} [h₁ : sys.Acyclic s] {f} [h₂ : SimFn sys f]
 {n m sn sm} (h₃ : n < m) : ∃ x y, ∀
@@ -116,10 +116,11 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 {s} [Acyclic sys s] {f} [SimFn sys f],
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∀ x, sys.simulate f s n = (x, k) := by
   push_neg
-  use Bool, Unit, ⟨∅, λ _ _ => none⟩
+  use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
   simp
-  use (λ _ => ())
+  constructor; simp [wf_iff, initial_iff]
+  use λ _ => ()
   simp [sim_fn_iff, hasTr]
   intro N
   use N + 1
@@ -129,9 +130,10 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 {s} [Acyclic sys s] {f} [SimFn sys f] {x},
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
   push_neg
-  use Bool, Unit, ⟨∅, λ _ _ => none⟩
+  use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
   simp [acyclic_iff]
+  constructor; simp [wf_iff, initial_iff]
   use default
   simp [sim_fn_iff, hasTr]
   left

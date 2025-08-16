@@ -9,6 +9,49 @@ theorem State.not_a_hws_of_d_hws {s : State} (h : s.d_hws) : ¬s.a_hws := by
   use d, hd
   exact h a ha
 
+theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
+{st : Strat} [hst : st.WF] {n} : AState (sys.simulate st.f sa # n * 2).1 := by
+  induction n generalizing sa; exact ha
+  nm n ih
+  simp [Nat.succ_mul]
+  split; exact ha
+  nm x sd h₁; clear x
+  have hd := DState.of_tr h₁
+  split; nm x h₂; simp at h₂
+  nm x sa' h₂; clear x
+  have ha' := AState.of_tr h₂
+  exact ih
+
+instance {sa} [ha : AState sa] {st : Strat} [hst : st.WF] {n} :
+AState (sys.simulate st.f sa # n * 2).1 := ha.of_simulate_mul_two
+
+theorem AState.a_wins_of_ind {sa} [ha : AState sa]
+{st : Strat} [hst : st.WF] {p : State → Prop}
+(h : ∀ {sa} [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧
+∀ sa', sys.tr sd (st.d.f sd) = some sa' → p sa') (hp : p sa) :
+sa.a_wins st := by
+  rw [sa.a_wins_iff_mul_two]
+  intro n
+  suffices h₁ : ∃ b, sys.simulate st.f sa (n * 2) = (b, 0) ∧ p b
+  · obtain ⟨b, h₁, h₂⟩ := h₁; simp [h₁]
+  induction n
+  · use sa; simpa
+  nm n ih
+  clear hp
+  rename' sa => sa₀, ha => ha₀
+  obtain ⟨sa, ih, hp⟩ := ih
+  simp only [Nat.succ_mul, System.simulate_add]
+  have ha : AState sa
+  · replace ih := congrArg (·.1) ih; subst ih; infer_instance
+  simp [ih]
+  specialize h hp
+  obtain ⟨sd, h₁, h₂⟩ := h
+  simp [h₁]
+  have hd := DState.of_tr h₁
+  obtain ⟨sa', h₃⟩ := hst.wf_d.1 hd.hasTr hd.turn
+  simp [h₃]
+  exact h₂ _ h₃
+
 def aOptimalCnd (sa : State) (pa : PointZ) : Prop :=
   ∃ sd, sys.tr sa pa = some sd ∧ ∀ pd sa', sys.tr sd pd = some sa' → sa'.a_hws
 
