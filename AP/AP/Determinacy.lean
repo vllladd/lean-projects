@@ -511,6 +511,35 @@ theorem AState.d_hws_of_tr {sd sa pd} [hd : DState sd] [ha : AState sa]
   exfalso; apply H₆
   exact System.reachable_of_simulate_full H₂
 
+theorem DState.a_hws_of_tr {sa sd pa} [ha : AState sa] [hd : DState sd]
+(h₁ : sys.tr sa pa = some sd) (h₂ : sd.a_hws) : sa.a_hws := by
+  obtain ⟨a, h₂, h₃⟩ := h₂
+  generalize ha₁ : a.set sa pa = a₁
+  have H₁ : a₁.WF; subst ha₁; apply AStrat.wf_set_of_tr h₁
+  use a₁, H₁
+  subst ha₁
+  intro d h₄
+  specialize h₃ d h₄
+  intro n
+  cases n; simp; nm n
+  specialize h₃ n
+  simp [h₁]
+  rw [←h₃]
+  congr 1
+  apply System.simulate_eq_simulate_of_fn_congr
+  intro k b H₂ H₃ H₄
+  have H₅ := System.wf_of_simulate_eq H₂
+  replace H₅ := b.aState_or_dState
+  rcases H₅ with H₅ | H₅ <;> simp
+  symm
+  unfold fn_set
+  split_ifs with H₆; rotate_left; rfl
+  subst H₆
+  have H₆ : sys.Acyclic b := inferInstance
+  replace H₆ := H₆.2 (by rfl) h₁
+  exfalso; apply H₆
+  exact System.reachable_of_simulate_full H₂
+
 theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
 (h : ¬s.d_hws) : s.a_hws := by
   classical
@@ -552,5 +581,60 @@ theorem State.not_a_hws_iff {s : State} [hs : s.WF] : ¬s.a_hws ↔ s.d_hws := b
   contrapose! h; exact s.a_hws_of_not_d_hws h
 
 @[simp]
-theorem State.not_d_hws_iff_a_hws {s : State} [hs : s.WF] : ¬s.d_hws ↔ s.a_hws := by
+theorem State.not_d_hws_iff {s : State} [hs : s.WF] : ¬s.d_hws ↔ s.a_hws := by
   simp [not_iff_comm']
+
+theorem AState.hasTr_of_a_hws {sa} [hs : AState sa]
+(h : sa.a_hws) : sys.hasTr sa := by
+  obtain ⟨a, h₁, h₂⟩ := h
+  specialize h₂ (.mk' # λ _ => none) inferInstance 1
+  simp at h₂
+  split at h₂; simp at h₂
+  nm x sd h₃; clear x h₂
+  exact System.hasTr_of_eq_some h₃
+
+theorem AState.a_hws_iff_tr {sa} [hs : AState sa] :
+sa.a_hws ↔ ∃ p sd, sys.tr sa p = some sd ∧ sd.a_hws := by
+  constructor
+  · intro h
+    obtain h₁ := hs.hasTr_of_a_hws h
+    obtain ⟨a, ha, h⟩ := h
+    obtain ⟨sd, h₂⟩ := a.validTr h₁
+    use a.f sa, sd, h₂, a, ha
+    intro d hd n
+    specialize h d hd (n + 1)
+    simp [h₂] at h
+    exact h
+  · rintro ⟨p, sd, h₁, h₂⟩
+    have h₃ := DState.of_tr h₁
+    exact DState.a_hws_of_tr h₁ h₂
+
+theorem AState.d_hws_iff_tr {sa} [hs : AState sa] :
+sa.d_hws ↔ ∀ p sd, sys.tr sa p = some sd → sd.d_hws := by
+  rw [←State.not_a_hws_iff, not_iff_comm']; push_neg
+  convert hs.a_hws_iff_tr using 5; nm p sd
+  rw [and_congr_right_iff]; intro h
+  have h₁ := DState.of_tr h; simp
+
+theorem DState.d_hws_iff_tr {sd} [hs : DState sd] :
+sd.d_hws ↔ ∃ p sa, sys.tr sd p = some sa ∧ sa.d_hws := by
+  constructor
+  · intro h
+    obtain ⟨d, hd, h⟩ := h
+    obtain ⟨sa, h₂⟩ := d.validTr (sd := sd)
+    use d.f sd, sa, h₂, d, hd
+    intro a ha
+    specialize h a ha
+    obtain ⟨n, h⟩ := h
+    cases n; simp at h; nm n
+    use n; simp [h₂] at h; exact h
+  · rintro ⟨p, sa, h₁, h₂⟩
+    have h₃ := AState.of_tr h₁
+    exact AState.d_hws_of_tr h₁ h₂
+
+theorem DState.a_hws_iff_tr {sd} [hs : DState sd] :
+sd.a_hws ↔ ∀ p sa, sys.tr sd p = some sa → sa.a_hws := by
+  rw [←State.not_d_hws_iff, not_iff_comm']; push_neg
+  convert hs.d_hws_iff_tr using 5; nm p sa
+  rw [and_congr_right_iff]; intro h
+  have h₁ := AState.of_tr h; simp
