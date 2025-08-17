@@ -1206,7 +1206,7 @@ theorem false_of_tr_eq_none_and_some_of_simFn
 
 theorem simulate_eq_simulate_of_fn_congr {f g}
 [hf : sys.SimFn f] [hg : sys.SimFn g] {a n} [ha : sys.WF a]
-(h : ∀ k b, sys.simulate f a k = (b, 0) →
+(h : ∀ k < n, ∀ b, sys.simulate f a k = (b, 0) →
 sys.simulate g a k = (b, 0) → sys.hasTr b → f b = g b) :
 sys.simulate f a n = sys.simulate g a n := by
   induction n generalizing a; rfl
@@ -1222,7 +1222,7 @@ sys.simulate f a n = sys.simulate g a n := by
   nm x h₂; clear x
   · cases false_of_tr_eq_none_and_some_of_simFn h₂ h₁
   nm x s₂ h₂; clear x
-  have h₃ := h 0 a
+  have h₃ := h 0 (by simp) a
   simp at h₃
   specialize h₃ # hasTr_of_eq_some h₁
   rw [h₃] at h₁
@@ -1230,8 +1230,8 @@ sys.simulate f a n = sys.simulate g a n := by
   subst h₂
   have hs := wf_of_tr h₁
   apply ih
-  intro k b
-  specialize h (k + 1) b
+  intro k hk b
+  specialize h (k + 1) (by simpa) b
   simp [h₃, h₁] at h
   exact h
 

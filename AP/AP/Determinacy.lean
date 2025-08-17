@@ -393,6 +393,21 @@ theorem DStrat.wf_set_of_tr {d : DStrat} {s s' p} [hd : d.WF]
   simp [set, wf_iff]; intro s₁ hs₁ h₁; unfold fn_set; split_ifs with h₂
   subst h₂; exact System.validTr_of_eq_some h; simp
 
+theorem simulate_congr {s} [hs : sys.WF s]
+{st₁ st₂ : Strat} [hst₁ : st₁.WF] [hst₂ : st₂.WF] {n}
+(h₁ : ∀ k < n, ∀ sa [AState sa], sys.simulate st₁.f s k = (sa, 0) →
+sys.simulate st₂.f s k = (sa, 0) → sys.hasTr sa → st₁.a.f sa = st₂.a.f sa)
+(h₂ : ∀ k < n, ∀ sd [DState sd], sys.simulate st₁.f s k = (sd, 0) →
+sys.simulate st₂.f s k = (sd, 0) → sys.hasTr sd → st₁.d.f sd = st₂.d.f sd) :
+sys.simulate st₁.f s n = sys.simulate st₂.f s n := by
+  apply System.simulate_eq_simulate_of_fn_congr
+  intro k hk s₁ h₄ h₅ h₆
+  have h₇ := System.wf_of_reachable # System.reachable_of_simulate_full h₄
+  replace h₇ := s₁.aState_or_dState
+  rcases h₇ with ha | hd <;> simp
+  · apply h₁ <;> assumption
+  · apply h₂ <;> assumption
+
 theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_hws := by
   apply ha.a_hws_of_ind_two (p := (¬·.d_hws)) h; clear! sa
   intro sa ha h
@@ -435,25 +450,17 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   have hd₂ := d.wf_set_of_tr h₂; rw [hd₁] at hd₂
   trans sys.simulate (Strat.mk a d₁).f sa' n
   rotate_left
-  · apply System.simulate_eq_simulate_of_fn_congr
-    intro k b H₁ H₂ H₃
-    subst hd₁
-    have hb : sys.WF b
-    · replace H₁ := congrArg (·.1) H₁; subst H₁; infer_instance
-    replace hb := b.aState_or_dState
-    rcases hb with hb | hb <;> simp
+  · subst hd₁
+    apply simulate_congr <;> simp only [implies_true]
+    intro k hk b hb H₁ H₂ H₃
     apply fn_set_eq_of_ne; symm
     have H₄ : sys.Acyclic sd := inferInstance
     replace H₄ := H₄.2 (by rfl) h₂
     rintro rfl
     apply H₄
     exact System.reachable_of_simulate_full H₂
-  apply System.simulate_eq_simulate_of_fn_congr
-  intro k b H₁ H₂ H₃
-  have hb : sys.WF b
-  · replace H₁ := congrArg (·.1) H₁; subst H₁; infer_instance
-  replace hb := b.aState_or_dState
-  rcases hb with hb | hb <;> simp
+  apply simulate_congr <;> simp only [implies_true]
+  intro k hk b hb H₁ H₂ H₃
   replace H₃ : b.getMoveAt sa = some pa
   · apply getMoveAt_eq_some_of_tr_and_reachable h₁
     trans sa'
@@ -497,13 +504,9 @@ theorem AState.d_hws_of_tr {sd sa pd} [hd : DState sd] [ha : AState sa]
   simp [h₁] at h₃
   rw [←h₃]
   congr 1
-  apply System.simulate_eq_simulate_of_fn_congr
-  intro k b H₂ H₃ H₄
-  have H₅ := System.wf_of_simulate_eq H₂
-  replace H₅ := b.aState_or_dState
-  rcases H₅ with H₅ | H₅ <;> simp
-  symm
-  unfold fn_set
+  apply simulate_congr <;> simp
+  intro k hk b H₅ H₂ H₃ H₄
+  symm; unfold fn_set
   split_ifs with H₆; rotate_left; rfl
   subst H₆
   have H₆ : sys.Acyclic b := inferInstance
@@ -526,13 +529,9 @@ theorem DState.a_hws_of_tr {sa sd pa} [ha : AState sa] [hd : DState sd]
   simp [h₁]
   rw [←h₃]
   congr 1
-  apply System.simulate_eq_simulate_of_fn_congr
-  intro k b H₂ H₃ H₄
-  have H₅ := System.wf_of_simulate_eq H₂
-  replace H₅ := b.aState_or_dState
-  rcases H₅ with H₅ | H₅ <;> simp
-  symm
-  unfold fn_set
+  apply simulate_congr <;> simp
+  intro k hk b H₅ H₂ H₃ H₄
+  symm; unfold fn_set
   split_ifs with H₆; rotate_left; rfl
   subst H₆
   have H₆ : sys.Acyclic b := inferInstance
@@ -563,11 +562,8 @@ theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
   specialize h₄ d hd n
   rw [←h₄]
   congr 1
-  apply System.simulate_eq_simulate_of_fn_congr
-  intro k b H₂ H₃ H₄
-  have H₅ := System.wf_of_simulate_eq H₂
-  replace H₅ := b.aState_or_dState
-  rcases H₅ with H₅ | H₅ <;> simp
+  apply simulate_congr <;> simp
+  intro k hk b H₅ H₂ H₃ H₄
   have H₆ : b.getMoveAt sd = some (d.f sd)
   · apply getMoveAt_eq_some_of_tr_and_reachable h₁
     exact System.reachable_of_simulate_full H₂
