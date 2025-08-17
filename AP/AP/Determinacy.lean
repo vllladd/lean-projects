@@ -25,7 +25,7 @@ theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
 instance {sa} [ha : AState sa] {st : Strat} [hst : st.WF] {n} :
 AState (sys.simulate st.f sa # n * 2).1 := ha.of_simulate_mul_two
 
-theorem AState.a_wins_of_ind {sa} [ha : AState sa]
+theorem AState.a_wins_of_ind_two {sa} [ha : AState sa]
 {st : Strat} [hst : st.WF] {p : State → Prop} (hp : p sa)
 (h : ∀ {sa} [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧
 ∀ sa', sys.tr sd (st.d.f sd) = some sa' → p sa') :
@@ -52,8 +52,8 @@ sa.a_wins st := by
   simp [h₃]
   exact h₂ _ h₃
 
-theorem AState.ind {sa sa'} [ha : AState sa] [ha' : AState sa'] {p : State → Prop}
-(h₁ : p sa) (h₂ : ∀ sa [AState sa] pa sd pd sa',
+theorem AState.ind_two {sa sa'} [ha : AState sa] [ha' : AState sa']
+{p : State → Prop} (h₁ : p sa) (h₂ : ∀ sa [AState sa] pa sd pd sa',
 sys.tr sa pa = some sd → sys.tr sd pd = some sa' → p sa')
 (h₃ : sys.Reachable sa sa') : p sa' := by
   replace h₃ := System.exi_trs_of_reachable h₃
@@ -111,13 +111,13 @@ theorem wf_aAux₁ {p} : (aAux₁ p).WF := by
 
 instance {p} : (aAux₁ p).WF := wf_aAux₁
 
-theorem AState.a_hws_of_ind {sa : State} [ha : AState sa] {p : State → Prop}
+theorem AState.a_hws_of_ind_two {sa : State} [ha : AState sa] {p : State → Prop}
 (h₁ : p sa) (h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧
 ∀ pd sa', sys.tr sd pd = some sa' → p sa') : sa.a_hws := by
   classical
   use aAux₁ p, inferInstance
   intro d hd
-  apply ha.a_wins_of_ind h₁
+  apply ha.a_wins_of_ind_two h₁
   clear! sa
   intro sa ha hp
   specialize h₂ sa hp
@@ -394,7 +394,7 @@ theorem DStrat.wf_set_of_tr {d : DStrat} {s s' p} [hd : d.WF]
   subst h₂; exact System.validTr_of_eq_some h; simp
 
 theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_hws := by
-  apply ha.a_hws_of_ind (p := (¬·.d_hws)) h; clear! sa
+  apply ha.a_hws_of_ind_two (p := (¬·.d_hws)) h; clear! sa
   intro sa ha h
   unfold State.d_hws at h ⊢
   contrapose h
@@ -549,7 +549,7 @@ theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
   use aAux₂ sd, inferInstance
   intro d hd n
   cases n; rfl; nm n
-  obtain ⟨sa, h₁⟩ := d.validTr (sd := sd)
+  obtain ⟨sa, h₁⟩ := d.validTr sd
   simp [h₁]
   have ha := AState.of_tr h₁
   replace h : ¬sa.d_hws
@@ -621,7 +621,7 @@ sd.d_hws ↔ ∃ p sa, sys.tr sd p = some sa ∧ sa.d_hws := by
   constructor
   · intro h
     obtain ⟨d, hd, h⟩ := h
-    obtain ⟨sa, h₂⟩ := d.validTr (sd := sd)
+    obtain ⟨sa, h₂⟩ := d.validTr sd
     use d.f sd, sa, h₂, d, hd
     intro a ha
     specialize h a ha
@@ -638,3 +638,60 @@ sd.a_hws ↔ ∀ p sa, sys.tr sd p = some sa → sa.a_hws := by
   convert hs.d_hws_iff_tr using 5; nm p sa
   rw [and_congr_right_iff]; intro h
   have h₁ := AState.of_tr h; simp
+
+theorem AState.a_hws_of_ind {s} [ha : AState s]
+{p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] pd sa, p sd → sys.tr sd pd = some sa → p sa) : s.a_hws := by
+  apply ha.a_hws_of_ind_two h₁
+  intro sa h₄ h₅
+  specialize h₂ sa h₅
+  obtain ⟨pa, sd, h₂, h₆⟩ := h₂
+  use pa, sd, h₂
+  intro pd sa' h₇
+  have h₈ := DState.of_tr h₂
+  exact h₃ sd pd sa' h₆ h₇
+
+theorem AState.a_wins_of_ind {s} [ha : AState s]
+{st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (st.d.f sd) = some sa → p sa) :
+s.a_wins st := by
+  apply ha.a_wins_of_ind_two h₁
+  intro sa h₄ h₅
+  specialize h₂ sa h₅
+  obtain ⟨sd, h₂, h₆⟩ := h₂
+  use sd, h₂
+  intro sa' h₇
+  have h₈ := DState.of_tr h₂
+  exact h₃ sd sa' h₆ h₇
+
+theorem State.a_hws_of_ind {s} [hs : sys.WF s]
+{p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] pd sa, p sd → sys.tr sd pd = some sa → p sa) : s.a_hws := by
+  replace hs := s.aState_or_dState
+  rcases hs with ha | hd
+  · exact ha.a_hws_of_ind h₁ h₂ h₃
+  rw [hd.a_hws_iff_tr]
+  intro pd sa h₅
+  have h₆ := AState.of_tr h₅
+  have h₇ := h₃ s pd sa h₁ h₅
+  exact h₆.a_hws_of_ind h₇ h₂ h₃
+
+theorem State.a_wins_of_ind {s} [hs : sys.WF s]
+{st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (st.d.f sd) = some sa → p sa) :
+s.a_wins st := by
+  replace hs := s.aState_or_dState
+  rcases hs with ha | hd
+  · exact ha.a_wins_of_ind h₁ h₂ h₃
+  intro n
+  cases n; rfl; nm n
+  simp
+  obtain ⟨sa, h₄⟩ := st.d.validTr s
+  simp [h₄]
+  have h₅ := AState.of_tr h₄
+  have h₆ := h₃ s sa h₁ h₄
+  apply h₅.a_wins_of_ind h₆ h₂ h₃
