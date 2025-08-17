@@ -307,17 +307,28 @@ instance : LocallyFiniteOrderList ℤ := by
   · intro a b; simp; apply List.sorted_lt_range
   · intro a b x; simp; exact ⟨by omega, λ _ => ⟨x - a |>.toNat, by omega⟩⟩
 
-def List.icc {α : Type*} [ha : LocallyFiniteOrderList α] : α → α → List α :=
-  ha.listIcc
+namespace List
+
+variable {α : Type*} [ha : LocallyFiniteOrderList α]
+
+def icc : α → α → List α := ha.listIcc
 
 @[simp]
-theorem List.sorted_lt_icc {α : Type*} [ha : LocallyFiniteOrderList α] {a b : α} :
+theorem sorted_lt_icc {a b : α} :
 (icc a b).Sorted (· < ·) := ha.sorted_listIcc
 
 @[simp]
-theorem List.sorted_le_icc {α : Type*} [ha : LocallyFiniteOrderList α] {a b : α} :
+theorem sorted_le_icc {a b : α} :
 (icc a b).Sorted (· ≤ ·) := sorted_le_of_sorted_lt ha.sorted_listIcc
 
 @[simp]
-theorem List.mem_icc {α : Type*} [ha : LocallyFiniteOrderList α] {a b x : α} :
+theorem mem_icc {a b x : α} :
 x ∈ icc a b ↔ a ≤ x ∧ x ≤ b := ha.mem_listIcc
+
+@[simp]
+theorem icc_eq_nil_iff {a b : α} : icc a b = [] ↔ b < a := by
+  simp [eq_nil_iff_forall_not_mem]; constructor
+  · intro h; by_contra! h₁; specialize h _ h₁; simp at h
+  · intro h₁ c h₂; exact lt_of_lt_of_le h₁ h₂
+
+end List

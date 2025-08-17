@@ -73,23 +73,21 @@ sys.tr sa pa = some sd → sys.tr sd pd = some sa' → p sa')
   exact @ih ts.length (by simp) sa₁ _
     (h₂ sa pa sd pd sa₁ h₄ h₅) ts h₃ rfl
 
-noncomputable
 def mk_strat_fn (f : State → Option PointZ) : State → PointZ :=
-  λ s => (Option.getD · (Classical.epsilon # sys.validTr s)) # do
+  λ s => (·.getD s.chooseMove) # do
     let p ← f s
     guard # sys.validTr s p
     return p
 
 instance {f} : sys.SimFn # mk_strat_fn f := by
   constructor; intro s hs h; unfold mk_strat_fn
-  have h₁ := Classical.epsilon_spec h; dsimp; cases h₂ : f s; simpa
-  nm s'; simp [guard]; split_ifs with h₃; simpa; simpa
+  have h₁ := Classical.epsilon_spec h; dsimp
+  cases h₂ : f s; simp; exact State.validTr_chooseMove h
+  nm s'; simp [guard]; split_ifs with h₃; simpa
+  simp; exact State.validTr_chooseMove h
 
-@[simp] noncomputable
-def AStrat.mk' (f : State → Option PointZ) : AStrat := ⟨mk_strat_fn f⟩
-
-@[simp] noncomputable
-def DStrat.mk' (f : State → Option PointZ) : DStrat := ⟨mk_strat_fn f⟩
+@[simp] def AStrat.mk' (f : State → Option PointZ) : AStrat := ⟨mk_strat_fn f⟩
+@[simp] def DStrat.mk' (f : State → Option PointZ) : DStrat := ⟨mk_strat_fn f⟩
 
 instance {f} : (AStrat.mk' f).WF := by simp; infer_instance
 instance {f} : (DStrat.mk' f).WF := by simp; infer_instance
@@ -127,7 +125,7 @@ theorem AState.a_hws_of_ind_two {sa : State} [ha : AState sa] {p : State → Pro
   generalize h₁ : Classical.epsilon (aAuxCnd p sa) = pa at h₃ ⊢
   unfold aAuxCnd at h₃
   obtain ⟨sd, h₃, h₄⟩ := h₃; use sd
-  simp [-sys_tr_eq_some_iff, mk_strat_fn, h₂, h₁,
+  simp [-tr_eq_some_iff, mk_strat_fn, h₂, h₁,
     System.validTr_iff_isSome, h₃]; apply h₄
 
 theorem hist_eq_of_tr {s s' p}
@@ -171,10 +169,6 @@ def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
 def State.getMoveAt (s s_target : State) : Option PointZ :=
   getMoveFromHist s_target (initState s.pw) s.hist.reverse
 
-theorem pw_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.pw = s.pw := by
-  simp [sys, State.move, State.aMove, State.dMove] at h
-  split_ifs at h with h₁ <;> simp at h <;> rcases h with ⟨s', h, rfl⟩ <;> rfl
-
 theorem getMoveFromHist_append_eq_some_of {s acc ps ps₁ p}
 (h : getMoveFromHist s acc ps = some p) :
 getMoveFromHist s acc (ps ++ ps₁) = some p := by
@@ -196,43 +190,6 @@ s₂.getMoveAt s = some p := by
   generalize s₁.hist.reverse = ps at h₁ ⊢
   generalize [p₁] = ps₁
   exact getMoveFromHist_append_eq_some_of h₁
-
-@[simp]
-theorem pw_initState {pw} : (initState pw).pw = pw := rfl
-
-@[simp]
-theorem initial_iff {s} : sys.Initial s ↔ initState s.pw = s := by
-  simp [System.initial_def, sys]
-  symm; constructor; intro h; use s.pw
-  rintro ⟨pw, h⟩; subst h; rfl
-
-@[simp]
-theorem pw_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.pw = s.pw := by
-  induction ps generalizing s; rfl
-  nm p ps ih
-  simp; split; rfl
-  nm x s' h₁; clear x
-  have h₂ := System.wf_of_tr h₁
-  rw [ih, pw_eq_of_tr h₁]
-
-theorem pw_eq_of_reachable {s s'} [hs : sys.WF s]
-(h : sys.Reachable s s') : s'.pw = s.pw := by
-  rw [System.reachable_iff_exi_trs] at h; obtain ⟨ts, h⟩ := h
-  replace h := congrArg (·.1.pw) h; simp at h; rw [h]
-
-theorem State.wf_iff {s} : sys.WF s ↔ ∃ ps, sys.trs (initState s.pw) ps = (s, []) := by
-  simp [System.wf_def, System.reachable_iff_exi_trs]
-  constructor
-  · rintro ⟨s₁, h₁, ps, h₂⟩
-    have hs : sys.WF s₁
-    · have hs : sys.Initial s₁; simpa; infer_instance
-    use ps
-    have h₃ := congrArg (·.1.pw) h₂
-    simp at h₃
-    simpa [←h₃, h₁]
-  · rintro ⟨ps, h₁⟩; use initState s.pw, rfl; use ps
-
-instance {pw} : sys.Initial (initState pw) := by simp
 
 @[simp]
 theorem hist_eq_nil_iff {s} [hs : sys.WF s] : s.hist = [] ↔ initState s.pw = s := by
@@ -439,9 +396,9 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   have h₆ : sys.tr sd ((dAux₁ sa).f sd) = some sa'
   · have h₆ : sd.getMoveAt sa = some pa
     · apply getMoveAt_eq_some_of_tr_and_reachable h₁; rfl
-    simp [-DState.sys_tr_eq_some_iff, dAux₁, mk_strat_fn, h₆, h₁]
+    simp [-DState.tr_eq_some_iff, dAux₁, mk_strat_fn, h₆, h₁]
     rw [choose?_eq_of_exi, Hpd]; rotate_left; exact h
-    simpa [-DState.sys_tr_eq_some_iff, System.validTr_of_eq_some h₂]
+    simpa [-DState.tr_eq_some_iff, System.validTr_of_eq_some h₂]
   have ha' := AState.of_tr h₆
   dsimp at h₅
   simp [h₆]

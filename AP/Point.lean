@@ -468,16 +468,16 @@ def nbhd (a : Point α) (d : α) : List (Point α) :=
   a.rectRel d d d d
 
 omit ha₂ ha₃ in @[simp]
-theorem mem_rect {x₁ x₂ y₁ y₂} {a : Point α} : a ∈ rect x₁ y₁ x₂ y₂ ↔
+theorem mem_rect {a : Point α} {x₁ x₂ y₁ y₂} : a ∈ rect x₁ y₁ x₂ y₂ ↔
 x₁ ≤ a.x ∧ a.x ≤ x₂ ∧ y₁ ≤ a.y ∧ a.y ≤ y₂ := by
   rcases a with ⟨x, y⟩; simp [rect]; aesop
 
 omit ha₃ in @[simp]
-theorem mem_rectRel {dx₁ dx₂ dy₁ dy₂} {a b : Point α} : b ∈ a.rectRel dx₁ dy₁ dx₂ dy₂ ↔
+theorem mem_rectRel {a b : Point α} {dx₁ dx₂ dy₁ dy₂} : b ∈ a.rectRel dx₁ dy₁ dx₂ dy₂ ↔
 a.x - dx₁ ≤ b.x ∧ b.x ≤ a.x + dx₂ ∧ a.y - dy₁ ≤ b.y ∧ b.y ≤ a.y + dy₂ := mem_rect
 
 @[simp]
-theorem mem_nbhd {d} {a b : Point α} : b ∈ a.nbhd d ↔ a.dist b ≤ d := by
+theorem mem_nbhd {a b : Point α} {d} : b ∈ a.nbhd d ↔ a.dist b ≤ d := by
   simp [nbhd, dist, abs_le, add_comm d]; tauto
 
 theorem finite_setOf_dist_le {c : PointZ} {d : ℕ} :

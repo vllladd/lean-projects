@@ -10,23 +10,20 @@ structure State : Type where
   aPos : PointZ
   aTurn : Bool
   hist : List PointZ
-deriving Inhabited, DecidableEq
+deriving DecidableEq
 
 @[ext]
 structure AStrat : Type where
   f : State → PointZ
-deriving Inhabited
 
 @[ext]
 structure DStrat : Type where
   f : State → PointZ
-deriving Inhabited
 
 @[ext]
 structure Strat : Type where
   a : AStrat
   d : DStrat
-deriving Inhabited
 
 -----
 

@@ -11,12 +11,12 @@ def aStrat : AStrat := .mk # λ s =>
   let ⟨x, y⟩ := s.aPos
   ⟨1 - x, y⟩
 
-def dStrat : DStrat := .mk # λ s =>
+def dStrat : DStrat := .mk' # λ s =>
   let xs := do
     let p ← getPs 7
     guard # s.dMove p |>.isSome
     return p
-  xs.head?.getD s.dChooseMove
+  xs.head?
 
 def strat : Strat := ⟨aStrat, dStrat⟩
 

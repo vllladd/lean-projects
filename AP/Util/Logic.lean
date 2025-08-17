@@ -193,3 +193,12 @@ theorem choose?_eq_of_exi {α : Type*} (p : α → Prop)
 [hh : Decidable # ∃ x, p x] (h : ∃ x, p x) : haveI : Nonempty α := ⟨h.choose⟩
 choose? p = some (Classical.epsilon p) := by
   simp [choose?, h]; generalize_proofs h₁; exact choose_eq_epsilon h
+
+theorem forall_eq_left_iff_eq_iff {α : Type*} {x y : α} :
+(∀ z, z = x ↔ z = y) ↔ x = y := by aesop
+
+theorem forall_eq_right_iff_eq_iff {α : Type*} {x y : α} :
+(∀ z, x = z ↔ y = z) ↔ x = y := by aesop
+
+theorem and_iff_and_of {P Q R S : Prop}
+(h₁ : P ↔ R) (h₂ : Q ↔ S) : P ∧ Q ↔ R ∧ S := by tauto
