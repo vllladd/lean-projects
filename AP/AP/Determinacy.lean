@@ -362,7 +362,7 @@ sys.simulate st₂.f s k = (sa, 0) → sys.hasTr sa → st₁.a.f sa = st₂.a.f
 (h₂ : ∀ k < n, ∀ sd [DState sd], sys.simulate st₁.f s k = (sd, 0) →
 sys.simulate st₂.f s k = (sd, 0) → sys.hasTr sd → st₁.d.f sd = st₂.d.f sd) :
 sys.simulate st₁.f s n = sys.simulate st₂.f s n := by
-  apply System.simulate_eq_simulate_of_fn_congr
+  apply System.simulate_congr
   intro k hk s₁ h₄ h₅ h₆
   have h₇ := System.wf_of_reachable # System.reachable_of_simulate_full h₄
   replace h₇ := s₁.aState_or_dState
