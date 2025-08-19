@@ -189,6 +189,28 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
       choose?_eq_ite, h₃, h₄, h₇, h₈, H₄] at hd
     clear H₄
     
+    rw [←h₆] at hd
+    simp [-AState.tr_eq_some_iff] at hd
+    rcases hd with ⟨sd, H₈, rfl⟩
+    have h₉ := DState.of_tr H₈
+    have h' : sys.WF # sd.setHist # a.f s' :: s'.hist
+    · replace h₉ : sys.WF sd := inferInstance
+      convert h₉
+      simp
+      exact hist_eq_of_tr H₈
+    suffices h : (sd.setHist # a.f s' :: s'.hist).a_hws
+    · simp at h ⊢; exact h
+    
+    obtain ⟨a₁, ha₁, H₄⟩ : s'.a_hws := by use a
+    have H₅ : (a₁.set s' # a.f s').WF := AStrat.wf_set_of_tr H₈
+    use a₁, inferInstance
+    intro d₁ hd₁ n
+    specialize H₄ d₁ hd₁ (n + 1)
+    simp at H₄
+    split at H₄; simp at H₄
+    nm x s₃ H₇; clear x
+    convert H₄
+    
     sorry
     
     -- have H₄ : sd.setHist (a.f s' :: sa.hist) = sd; simp [hist_eq_of_tr hd]
