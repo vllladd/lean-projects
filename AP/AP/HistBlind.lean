@@ -130,7 +130,19 @@ def State.setHistAt' (s : State) (hist₁ hist₂ : List PointZ) : State :=
 
 def State.setHistAt (s : State) (hist₁ hist₂ : List PointZ) : State :=
   let s₁ := s.setHistAt' hist₁ hist₂
-  if ¬(sys.WF s₁ ∧ (AState s₁ ↔ AState s)) then s else s₁
+  if ¬(hist₁ <:+ s.hist ∧ sys.WF s₁) then s else s₁
+
+@[simp]
+instance {s : State} {hist₁ hist₂} [hs : AState s]
+[hs' : sys.WF # s.setHistAt' hist₁ hist₂] : AState # s.setHistAt' hist₁ hist₂ := by
+  use inferInstance; simp [State.setHistAt']
+
+@[simp]
+instance {s : State} {hist₁ hist₂} [hs : DState s]
+[hs' : sys.WF # s.setHistAt' hist₁ hist₂] : DState # s.setHistAt' hist₁ hist₂ := by
+  use inferInstance; simp [State.setHistAt']
+
+-- #check 0 #exit
 
 instance {a : AStrat} {hist₁ hist₂} [ha : a.WF] :
 AStrat.WF # .mk # λ s => a.f # s.setHistAt hist₁ hist₂ := by
@@ -142,16 +154,15 @@ AStrat.WF # .mk # λ s => a.f # s.setHistAt hist₁ hist₂ := by
   generalize hs' : s.setHistAt hist₁ hist₂ = s'
   simp [State.setHistAt] at hs'
   split_ifs at hs' with h₂; subst hs'; exact ha
-  simp at h₂; rcases h₂ with ⟨h₂, h₃⟩
+  simp at h₂; rcases h₂ with ⟨H, h₂⟩
   suffices h₄ : sys.validTr s' # a.f s'
   · subst hs'
     nth_rw 1 [State.setHistAt'] at h₄
     simp at h₄
     exact h₄
-  clear h₂
-  simp [hs, hs'] at h₃
+  subst hs'
   apply a.validTr
-  simpa [←hs', State.setHistAt', -AState.hasTr_iff]
+  simpa [State.setHistAt', -AState.hasTr_iff]
 
 instance {d : DStrat} {hist₁ hist₂} [hd : d.WF] :
 DStrat.WF # .mk # λ s => d.f # s.setHistAt hist₁ hist₂ := by
@@ -163,29 +174,53 @@ DStrat.WF # .mk # λ s => d.f # s.setHistAt hist₁ hist₂ := by
   generalize hs' : s.setHistAt hist₁ hist₂ = s'
   simp [State.setHistAt] at hs'
   split_ifs at hs' with h₂; subst hs'; exact hd
-  simp at h₂; rcases h₂ with ⟨h₂, h₃⟩
+  simp at h₂; rcases h₂ with ⟨H, h₂⟩
   suffices h₄ : sys.validTr s' # d.f s'
   · subst hs'
     nth_rw 1 [State.setHistAt'] at h₄
     simp at h₄
     exact h₄
-  rw [hs'] at h₂ h₃
-  replace h₂ := s'.aState_or_dState
-  simp [h₃] at h₂; clear h₃
-  apply d.validTr s'
+  subst hs'
+  exact d.validTr _
+
+-- #check 0 #exit
 
 @[simp]
 instance {s hist₁ hist₂} [hs : sys.WF s] : sys.WF # s.setHistAt hist₁ hist₂ := by
-  simp [State.setHistAt]; split_ifs with h; exact hs; simp at h; exact h.1
+  simp [State.setHistAt]; split_ifs with h; exact hs; simp at h; exact h.2
 
 @[simp]
 instance {s hist₁ hist₂} [hs : AState s] : AState # s.setHistAt hist₁ hist₂ := by
-  simp [State.setHistAt]; split_ifs with h₁; exact hs; simp at h₁; simpa [h₁]
+  simp [State.setHistAt]; split_ifs with h₁; exact hs; simp at h₁; simp [h₁]
 
 @[simp]
 instance {s hist₁ hist₂} [hs : DState s] : DState # s.setHistAt hist₁ hist₂ := by
   simp [State.setHistAt]; split_ifs with h₁; exact hs
-  simp at h₁; rcases h₁ with ⟨h₁, h₂⟩; simp at h₂; exact h₂
+  simp at h₁; rcases h₁ with ⟨h₁, h₂⟩; infer_instance
+
+-- @[simp]
+-- theorem setHistAt_idemp {s hist₁ hist₂} [hs : sys.WF s] :
+-- (s.setHistAt hist₁ hist₂).setHistAt hist₁ hist₂ = s.setHistAt hist₁ hist₂ := by
+--   simp [State.setHistAt]
+--   split_ifs with h₁; intros; simp_all only [not_true_eq_false, imp_false]
+--   simp at h₁
+--   rcases h₁ with ⟨h₁, h₂, h₃⟩
+--   rw [h₃]
+--   intro h₄ h₅ h₆
+--   rcases h₁ with ⟨ps₁, h₁⟩
+--   rcases h₄ with ⟨ps₂, h₄⟩
+--   symm at h₁ h₄
+--   simp only [State.setHistAt', State.hist_setHist, List.length_append,
+--     List.length_take, tsub_le_iff_right, le_add_iff_nonneg_right,
+--     zero_le, inf_of_le_left, State.setHist_setHist] at *
+--   congr 1
+--   rw [h₁] at h₄ ⊢
+--   simp [h₄]
+
+@[simp]
+theorem State.setHistAt_self {s : State} {hist} [hs' : sys.WF # s.setHist hist] :
+s.setHistAt s.hist hist = s.setHist hist := by
+  simp [State.setHistAt, State.setHistAt', hs']
 
 -- #check 0 #exit
 
@@ -193,23 +228,28 @@ theorem State.a_hws_setHist_of {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHis
 (h : s.a_hws) : (s.setHist hist).a_hws := by
   rename' s => s₀
   rcases h with ⟨a, ha, h₁⟩
-  use .mk # λ s => a.f # s.setHistAt s₀.hist hist, inferInstance
+  use .mk # λ s => a.f # s.setHistAt hist s₀.hist, inferInstance
   intro d hd n
-  specialize h₁ (.mk λ s => d.f # s.setHistAt hist s₀.hist) inferInstance n
+  specialize h₁ (.mk # λ s => d.f # s.setHistAt s₀.hist hist) inferInstance n
   apply System.simulate_congr_rel' h₁ (r := λ s₁ s₂ => s₁.setHistAt s₀.hist hist = s₂)
-  · simp [setHistAt, setHistAt', hs', AState.iff, hs]
-  · clear h₁
-    intro k hk b₁ b₂ c₁ hb₁ hb₂ h₁ h₂
-    use c₁.setHistAt s₀.hist hist
-    simp
-    have Hb₁ : sys.WF b₁ := sys.wf_of_simulate_eq hb₁
-    have Hb₂ : sys.WF b₂; subst h₁; infer_instance
-    replace Hb₁ := b₁.aState_or_dState; rcases Hb₁ with Hb₁ | Hb₁
-    · replace Hb₂ : AState b₂; use Hb₂; simp [←h₁]
-      subst h₁
-      simp [-AState.tr_eq_some_iff] at h₂ ⊢
-      sorry
+  · simp
+  clear h₁
+  intro k hk b₁ b₂ c₁ hb₁ hb₂ h₁ h₂
+  use c₁.setHistAt s₀.hist hist
+  simp
+  have Hb₁ : sys.WF b₁ := sys.wf_of_simulate_eq hb₁
+  have Hb₂ : sys.WF b₂; subst h₁; infer_instance
+  replace Hb₁ := b₁.aState_or_dState; rcases Hb₁ with Hb₁ | Hb₁
+  · replace Hb₂ : AState b₂; use Hb₂; simp [←h₁]
+    simp [-AState.tr_eq_some_iff] at h₂ ⊢
     sorry
+  · replace Hb₂ : DState b₂; use Hb₂; simp [←h₁]
+    simp [-DState.tr_eq_some_iff] at h₂ ⊢
+    nth_rw 1 [←h₁, State.setHistAt]
+    rw [h₁] at h₂
+    split_ifs with h₃; rotate_left
+    · sorry
+    · sorry
 
 -- #check 0 #exit
 
