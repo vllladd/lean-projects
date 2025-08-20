@@ -126,27 +126,6 @@ theorem AState.a_hws_of_ind_two {sa : State} [ha : AState sa] {p : State → Pro
   simp [-tr_eq_some_iff, mk_strat_fn, h₂, h₁,
     System.validTr_iff_isSome, h₃]; apply h₄
 
-theorem hist_eq_of_tr {s s' p}
-(h : sys.tr s p = some s') : s'.hist = p :: s.hist := by
-  simp [sys, State.move] at h
-  split_ifs at h with h₁ <;> simp at h <;> obtain ⟨s', h, rfl⟩ := h <;> rfl
-
-@[simp]
-theorem hist_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.hist =
-(ps.take # ps.length - (sys.trs s ps).2.length).reverse ++ s.hist := by
-  induction ps generalizing s; rfl
-  nm p ps ih
-  simp
-  split; simp
-  nm x s' h₁; clear x
-  have hs' := System.wf_of_tr h₁
-  rw [ih]; clear ih
-  replace h₁ := hist_eq_of_tr h₁
-  rw [h₁, List.append_cons, ←List.reverse_cons]; clear h₁
-  generalize hn : (sys.trs s' ps).2.length = n
-  have h₁ : n ≤ ps.length; subst hn; exact System.trs_snd_length_le
-  rw [Nat.sub_add_comm h₁]; simp
-
 instance {s} [hs : sys.WF s] : sys.Tree s := by
   rw [System.tree_iff_full_trs]
   use hs; intro ts₁ ts₂ s' h₁ h₂
@@ -188,61 +167,6 @@ s₂.getMoveAt s = some p := by
   generalize s₁.hist.reverse = ps at h₁ ⊢
   generalize [p₁] = ps₁
   exact getMoveFromHist_append_eq_some_of h₁
-
-@[simp]
-theorem hist_eq_nil_iff {s} [hs : sys.WF s] : s.hist = [] ↔ initState s.pw = s := by
-  refine' ⟨λ h => _, λ h => by rw [←h]; rfl⟩
-  obtain ⟨ps, h₁⟩ := s.wf_iff.mp hs
-  have h₂ := congrArg (·.1.hist) h₁
-  simp at h₂
-  simp [h₁, h] at h₂
-  simp [h₂.1] at h₁
-  exact h₁
-
-@[simp]
-theorem hist_initState {pw} : (initState pw).hist = [] := rfl
-
-theorem exi_prev_of_hist_eq_cons {s p ps} [hs : sys.WF s]
-(h : s.hist = p :: ps) : ∃ s₀, sys.WF s₀ ∧ sys.tr s₀ p = s := by
-  obtain ⟨ps', h₁⟩ := State.wf_iff.mp hs
-  induction ps' using List.reverseRecOn
-  · simp at h₁
-    rw [←h₁] at h
-    simp at h
-  nm ps' p' ih; clear ih
-  simp [System.trs_append] at h₁
-  split_ifs at h₁ with h₂ <;> simp at h₁
-  split at h₁ <;> simp at h₁
-  nm x s₁ h₃; clear x
-  rcases h₁ with ⟨rfl, h₁⟩
-  clear h₂
-  generalize hr : sys.trs (initState s₁.pw) ps' = r at h₁ h₃
-  rcases r with ⟨b, ps₁⟩
-  subst h₁
-  dsimp at h₃
-  use b, System.wf_of_trs hr
-  have h₄ := hist_eq_of_tr h₃
-  simp [h] at h₄
-  simpa [h₄.1]
-
-@[simp]
-theorem trs_reverse_hist_eq {s} [hs : sys.WF s] :
-sys.trs (initState s.pw) s.hist.reverse = (s, []) := by
-  generalize hp : s.hist = ps
-  induction ps generalizing s
-  · simp at hp; simpa
-  nm p ps ih
-  simp
-  obtain ⟨s₀, hs₁, h₂⟩ := exi_prev_of_hist_eq_cons hp
-  have h₃ := hist_eq_of_tr h₂
-  simp [hp] at h₃
-  symm at h₃
-  specialize ih h₃
-  simp [System.trs_append, pw_eq_of_tr h₂, ih, h₂]
-
-theorem state_eq_trs_reverse_hist {s} [hs : sys.WF s] :
-s = (sys.trs (initState s.pw) s.hist.reverse).1 := by
-  rw [trs_reverse_hist_eq]
 
 theorem getMoveFromHist_eq_some_iff_exi_trs {s acc p ps} [hs : sys.WF acc] :
 getMoveFromHist s acc ps = some p ↔ sys.WF s ∧

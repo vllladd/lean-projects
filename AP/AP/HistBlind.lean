@@ -54,30 +54,30 @@ theorem State.chooseDMove_setHist {s : State} {hist} :
   simp [chooseDMove]
 
 open Classical in noncomputable
-def aStratHistBlind : AStrat := .mk' # λ s => do
+def aHistBlind : AStrat := .mk' # λ s => do
   let s' ← choose? # λ (s' : State) => sys.WF s' ∧ s'.setHist s.hist = s
   let a ← choose? # λ (a : AStrat) => a.WF ∧ ∀ (d : DStrat), d.WF → s'.a_wins ⟨a, d⟩
   return a.f s'
 
 open Classical in noncomputable
-def dStratHistBlind : DStrat := .mk' # λ s => do
+def dHistBlind : DStrat := .mk' # λ s => do
   let s' ← choose? # λ (s' : State) => sys.WF s' ∧ s'.setHist s.hist = s
   let d ← choose? # λ (d : DStrat) => d.WF ∧ ∀ (a : AStrat), a.WF → s'.d_wins ⟨a, d⟩
   return d.f s'
 
-instance : aStratHistBlind.WF := by unfold aStratHistBlind; infer_instance
-instance : dStratHistBlind.WF := by unfold dStratHistBlind; infer_instance
+instance : aHistBlind.WF := by unfold aHistBlind; infer_instance
+instance : dHistBlind.WF := by unfold dHistBlind; infer_instance
 
-@[simp] theorem histBlind_aStratHistBlind : aStratHistBlind.histBlind := by
-  intro s hist hs hs' h₁; unfold aStratHistBlind
+@[simp] theorem histBlind_aHistBlind : aHistBlind.histBlind := by
+  intro s hist hs hs' h₁; unfold aHistBlind
   have h₃ : (λ s' => sys.WF s' ∧ s'.setHist hist = s.setHist hist) =
     (λ s' => sys.WF s' ∧ s'.setHist s.hist = s); simp [State.ext_iff]
   simp [AStrat.mk', Option.pure_def, Option.bind_eq_bind, AStrat.f_mk,
     mk_strat_fn, choose?_eq_ite, h₃]
   split_ifs with h₂ <;> first | (rw [h₃] at h₂; contradiction) | simp
 
-@[simp] theorem histBlind_dStratHistBlind : dStratHistBlind.histBlind := by
-  intro s hist hs hs' h₁; unfold dStratHistBlind
+@[simp] theorem histBlind_dHistBlind : dHistBlind.histBlind := by
+  intro s hist hs hs' h₁; unfold dHistBlind
   have h₃ : (λ s' => sys.WF s' ∧ s'.setHist hist = s.setHist hist) =
     (λ s' => sys.WF s' ∧ s'.setHist s.hist = s); simp [State.ext_iff]
   simp [DStrat.mk', Option.pure_def, Option.bind_eq_bind, DStrat.f_mk,
@@ -94,8 +94,6 @@ s₁.setHist s₂.hist = s₂ ↔ s₂.setHist s₁.hist = s₁ := by
 
 theorem length_hist_eq_of_tr {s s₁ p} (h : sys.tr s p = some s₁) :
 s₁.hist.length = s.hist.length + 1 := by simp [hist_eq_of_tr h]
-
--- #check 0 #exit
 
 theorem length_hist_le_of_reachable {s s₁} [hs : sys.WF s]
 (h : sys.Reachable s s₁) : s.hist.length ≤ s₁.hist.length := by
@@ -127,9 +125,91 @@ sys.simulate (Strat.mk a (d.set s₁ p₁)).f s n = sys.simulate (Strat.mk a d).
   intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
   exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
 
+def State.setHistAt' (s : State) (hist₁ hist₂ : List PointZ) : State :=
+  s.setHist # s.hist.take (s.hist.length - hist₁.length) ++ hist₂
+
+def State.setHistAt (s : State) (hist₁ hist₂ : List PointZ) : State :=
+  let s₁ := s.setHistAt' hist₁ hist₂
+  if ¬(sys.WF s₁ ∧ (AState s₁ ↔ AState s)) then s else s₁
+
+instance {a : AStrat} {hist₁ hist₂} [ha : a.WF] :
+AStrat.WF # .mk # λ s => a.f # s.setHistAt hist₁ hist₂ := by
+  have ha' := ha
+  rw [AStrat.wf_iff] at ha ⊢
+  intro s hs h₁
+  specialize ha h₁
+  dsimp
+  generalize hs' : s.setHistAt hist₁ hist₂ = s'
+  simp [State.setHistAt] at hs'
+  split_ifs at hs' with h₂; subst hs'; exact ha
+  simp at h₂; rcases h₂ with ⟨h₂, h₃⟩
+  suffices h₄ : sys.validTr s' # a.f s'
+  · subst hs'
+    nth_rw 1 [State.setHistAt'] at h₄
+    simp at h₄
+    exact h₄
+  clear h₂
+  simp [hs, hs'] at h₃
+  apply a.validTr
+  simpa [←hs', State.setHistAt', -AState.hasTr_iff]
+
+instance {d : DStrat} {hist₁ hist₂} [hd : d.WF] :
+DStrat.WF # .mk # λ s => d.f # s.setHistAt hist₁ hist₂ := by
+  have hd' := hd
+  rw [DStrat.wf_iff] at hd ⊢
+  intro s hs h₁
+  specialize hd h₁
+  dsimp
+  generalize hs' : s.setHistAt hist₁ hist₂ = s'
+  simp [State.setHistAt] at hs'
+  split_ifs at hs' with h₂; subst hs'; exact hd
+  simp at h₂; rcases h₂ with ⟨h₂, h₃⟩
+  suffices h₄ : sys.validTr s' # d.f s'
+  · subst hs'
+    nth_rw 1 [State.setHistAt'] at h₄
+    simp at h₄
+    exact h₄
+  rw [hs'] at h₂ h₃
+  replace h₂ := s'.aState_or_dState
+  simp [h₃] at h₂; clear h₃
+  apply d.validTr s'
+
+@[simp]
+instance {s hist₁ hist₂} [hs : sys.WF s] : sys.WF # s.setHistAt hist₁ hist₂ := by
+  simp [State.setHistAt]; split_ifs with h; exact hs; simp at h; exact h.1
+
+@[simp]
+instance {s hist₁ hist₂} [hs : AState s] : AState # s.setHistAt hist₁ hist₂ := by
+  simp [State.setHistAt]; split_ifs with h₁; exact hs; simp at h₁; simpa [h₁]
+
+@[simp]
+instance {s hist₁ hist₂} [hs : DState s] : DState # s.setHistAt hist₁ hist₂ := by
+  simp [State.setHistAt]; split_ifs with h₁; exact hs
+  simp at h₁; rcases h₁ with ⟨h₁, h₂⟩; simp at h₂; exact h₂
+
+-- #check 0 #exit
+
 theorem State.a_hws_setHist_of {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist]
 (h : s.a_hws) : (s.setHist hist).a_hws := by
-  sorry
+  rename' s => s₀
+  rcases h with ⟨a, ha, h₁⟩
+  use .mk # λ s => a.f # s.setHistAt s₀.hist hist, inferInstance
+  intro d hd n
+  specialize h₁ (.mk λ s => d.f # s.setHistAt hist s₀.hist) inferInstance n
+  apply System.simulate_congr_rel' h₁ (r := λ s₁ s₂ => s₁.setHistAt s₀.hist hist = s₂)
+  · simp [setHistAt, setHistAt', hs', AState.iff, hs]
+  · clear h₁
+    intro k hk b₁ b₂ c₁ hb₁ hb₂ h₁ h₂
+    use c₁.setHistAt s₀.hist hist
+    simp
+    have Hb₁ : sys.WF b₁ := sys.wf_of_simulate_eq hb₁
+    have Hb₂ : sys.WF b₂; subst h₁; infer_instance
+    replace Hb₁ := b₁.aState_or_dState; rcases Hb₁ with Hb₁ | Hb₁
+    · replace Hb₂ : AState b₂; use Hb₂; simp [←h₁]
+      subst h₁
+      simp [-AState.tr_eq_some_iff] at h₂ ⊢
+      sorry
+    sorry
 
 -- #check 0 #exit
 
@@ -145,118 +225,63 @@ theorem State.a_hws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHi
 theorem State.d_hws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist] :
 (s.setHist hist).d_hws ↔ s.d_hws := by simp only [←not_a_hws_iff, a_hws_setHist_iff]
 
--- #check 0 #exit
+theorem AState.aHistBlind_tr_a_hws {sa} [ha : AState sa]
+(h₁ : sa.a_hws) : ∃ sd, sys.tr sa (aHistBlind.f sa) = some sd ∧ sd.a_hws := by
+  have h₂ := ha.hasTr_of_a_hws h₁
+  obtain ⟨sd, hd⟩ := aHistBlind.validTr h₂
+  use sd, hd
+  have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sa.hist = sa
+  · use sa; simp; infer_instance
+  generalize h₄ : Classical.epsilon
+    (λ s' => sys.WF s' ∧ s'.setHist sa.hist = sa) = s'
+  have h₅ := Classical.epsilon_spec h₃; rw [h₄] at h₅
+  rcases h₅ with ⟨h₅, h₆⟩
+  have h₆' := setHist_eq_comm.mp h₆
+  have H₆ := System.wf_of_tr hd
+  have h₇' : sys.WF # sa.setHist s'.hist; rwa [h₆']
+  have h₇ : s'.a_hws; rw [←h₆']; simpa
+  unfold State.a_hws at h₇
+  generalize h₈ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
+    ∀ (d : DStrat), d.WF → s'.a_wins ⟨a, d⟩) = a
+  have h₉ := Classical.epsilon_spec h₇
+  rw [h₈] at h₉
+  rcases h₉ with ⟨H₁, H₂⟩
+  have H₃ : AState s'; use h₅; rw [←h₆']; simp
+  have H₄ : sys.validTr sa (a.f s')
+  · rw [←h₆]
+    simp
+    apply a.validTr
+    rw [←h₆']
+    rwa [State.hasTr_setHist]
+  simp [-AState.tr_eq_some_iff, aHistBlind, mk_strat_fn,
+    choose?_eq_ite, h₃, h₄, h₇, h₈, H₄] at hd
+  clear H₄
+  rw [←h₆] at hd
+  simp [-AState.tr_eq_some_iff] at hd
+  rcases hd with ⟨sd, H₈, rfl⟩
+  have h₉ := DState.of_tr H₈
+  have h' : sys.WF # sd.setHist # a.f s' :: s'.hist
+  · replace h₉ : sys.WF sd := inferInstance
+    convert h₉
+    simp
+    exact hist_eq_of_tr H₈
+  suffices h : (sd.setHist # a.f s' :: s'.hist).a_hws
+  · simp at h ⊢; exact h
+  use a, inferInstance
+  intro d hd n
+  specialize H₂ d hd (n + 1)
+  simp [H₈] at H₂
+  convert H₂
+  simp
+  exact hist_eq_of_tr H₈
 
 theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
 ∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ := by
-  use aStratHistBlind, inferInstance, by simp
+  use aHistBlind, inferInstance, by simp
   intro d Hd
-  generalize H : Strat.mk aStratHistBlind d = st
-  have Hst : st.WF; subst H; infer_instance
   apply a_wins_of_ind h <;> clear! s
-  rotate_left
-  · sorry
-  · intro sa ha h₁
-    have h₂ := ha.hasTr_of_a_hws h₁
-    obtain ⟨sd, hd⟩ := st.validTr h₂
-    rw [AState.start_f_eq] at hd
-    use sd, hd
-    subst H
-    have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sa.hist = sa
-    · use sa; simp; infer_instance
-    generalize h₄ : Classical.epsilon
-      (λ s' => sys.WF s' ∧ s'.setHist sa.hist = sa) = s'
-    have h₅ := Classical.epsilon_spec h₃; rw [h₄] at h₅
-    rcases h₅ with ⟨h₅, h₆⟩
-    have h₆' := setHist_eq_comm.mp h₆
-    have H₆ := System.wf_of_tr hd
-    have h₇' : sys.WF # sa.setHist s'.hist; rwa [h₆']
-    have h₇ : s'.a_hws; rw [←h₆']; simpa
-    unfold State.a_hws at h₇
-    generalize h₈ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
-      ∀ (d : DStrat), d.WF → s'.a_wins ⟨a, d⟩) = a
-    have h₉ := Classical.epsilon_spec h₇
-    rw [h₈] at h₉
-    rcases h₉ with ⟨H₁, H₂⟩
-    have H₃ : AState s'; use h₅; rw [←h₆']; simp
-    have H₄ : sys.validTr sa (a.f s')
-    · rw [←h₆]
-      simp
-      apply a.validTr
-      rw [←h₆']
-      rwa [hasTr_setHist]
-    simp [-AState.tr_eq_some_iff, aStratHistBlind, mk_strat_fn,
-      choose?_eq_ite, h₃, h₄, h₇, h₈, H₄] at hd
-    clear H₄
-    
-    rw [←h₆] at hd
-    simp [-AState.tr_eq_some_iff] at hd
-    rcases hd with ⟨sd, H₈, rfl⟩
-    have h₉ := DState.of_tr H₈
-    have h' : sys.WF # sd.setHist # a.f s' :: s'.hist
-    · replace h₉ : sys.WF sd := inferInstance
-      convert h₉
-      simp
-      exact hist_eq_of_tr H₈
-    suffices h : (sd.setHist # a.f s' :: s'.hist).a_hws
-    · simp at h ⊢; exact h
-    
-    obtain ⟨a₁, ha₁, H₄⟩ : s'.a_hws := by use a
-    have H₅ : (a₁.set s' # a.f s').WF := AStrat.wf_set_of_tr H₈
-    use a₁, inferInstance
-    intro d₁ hd₁ n
-    specialize H₄ d₁ hd₁ (n + 1)
-    simp at H₄
-    split at H₄; simp at H₄
-    nm x s₃ H₇; clear x
-    convert H₄
-    
-    sorry
-    
-    -- have H₄ : sd.setHist (a.f s' :: sa.hist) = sd; simp [hist_eq_of_tr hd]
-    -- have H₈ : sys.WF # sd.setHist # a.f s' :: s'.hist
-    -- · clear H₄; rw [←h₆] at hd
-    --   simp [-AState.tr_eq_some_iff] at hd
-    --   rcases hd with ⟨s₂, H₈, rfl⟩
-    --   simp
-    --   have H₄ := System.wf_of_tr H₈
-    --   convert H₄
-    --   simp
-    --   exact hist_eq_of_tr H₈
-    -- suffices h : (sd.setHist # a.f s' :: s'.hist).a_hws; simp at h; exact h
-    -- 
-    -- -- rw [ha.a_hws_iff_tr] at h₁
-    -- 
-    -- replace h₁ : s'.a_hws; rw [←h₆']; simpa
-    -- rcases h₁ with ⟨a₁, ha₁, h₁⟩
-    -- have H₅ : (a₁.set s' # a.f s').WF
-    -- · rw [←h₆] at hd
-    --   simp [-AState.tr_eq_some_iff] at hd
-    --   rcases hd with ⟨p₂, H₆, H₇⟩
-    --   exact a₁.wf_set_of_tr H₆
-    -- use a₁.set s' (a.f s'), H₅
-    -- intro d₁ hd₁ n
-    -- specialize h₁ d₁ hd₁ # n + 1
-    -- simp at h₁
-    -- split at h₁; simp at h₁
-    -- nm x s₂ H₇; clear x
-    -- rw [simulate_set_a_eq_of_length_hist_lt]
-    -- rotate_left
-    -- · rw [←h₆']
-    --   simp
-    --   rw [h₆']
-    --   exact System.validTr_of_eq_some hd
-    -- · simp
-    -- clear H₄
-    -- 
-    -- convert h₁
-    -- have H₉ := System.wf_of_tr H₇
-    -- 
-    -- rw [←h₆] at hd
-    -- simp [-AState.tr_eq_some_iff] at hd
-    -- rcases hd with ⟨p₂, A₁, rfl⟩
-    -- simp at H₈
-    -- 
-    -- ext:1 <;> simp
-    -- · rw [pw_eq_of_tr A₁, pw_eq_of_tr H₇]
-    -- · 
+  · exact @AState.aHistBlind_tr_a_hws
+  intro sd hd sa h₁ h₂
+  dsimp at h₂
+  rw [DState.a_hws_iff_tr] at h₁
+  apply h₁; exact h₂

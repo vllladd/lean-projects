@@ -54,10 +54,10 @@ class DState (s : State) : Prop where
   wf_s : s.WF
   turn : s.aTurn = false
 
-theorem AState.iff {s : State} : AState s ↔ s.WF ∧ s.aTurn :=
+theorem AState.iff {s : State} : AState s ↔ sys.WF s ∧ s.aTurn :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-theorem DState.iff {s : State} : DState s ↔ s.WF ∧ s.aTurn = false :=
+theorem DState.iff {s : State} : DState s ↔ sys.WF s ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
 instance {sa} [ha : AState sa] : sa.WF := ha.wf_s
@@ -199,9 +199,11 @@ s.setHist hist = s ↔ s.hist = hist := by
 @[simp]
 theorem State.setHist_hist_self_eq_self {s : State} : s.setHist s.hist = s := rfl
 
+@[simp]
 instance {s hist} [hs : AState s] [hs' : sys.WF # s.setHist hist] :
 AState # s.setHist hist := ⟨hs', by simp⟩
 
+@[simp]
 instance {s hist} [hs : DState s] [hs' : sys.WF # s.setHist hist] :
 DState # s.setHist hist := ⟨hs', by simp⟩
 
@@ -505,3 +507,133 @@ theorem State.wf_setPw_of_le {s pw} [hs : sys.WF s]
   have h₃ := trs_setPw_eq_of h₂ h₁
   simp at h₃
   exact h₃
+
+theorem hist_eq_of_tr {s s' p}
+(h : sys.tr s p = some s') : s'.hist = p :: s.hist := by
+  simp [sys, State.move] at h
+  split_ifs at h with h₁ <;> simp at h <;> obtain ⟨s', h, rfl⟩ := h <;> rfl
+
+@[simp]
+theorem hist_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.hist =
+(ps.take # ps.length - (sys.trs s ps).2.length).reverse ++ s.hist := by
+  induction ps generalizing s; rfl
+  nm p ps ih
+  simp
+  split; simp
+  nm x s' h₁; clear x
+  have hs' := System.wf_of_tr h₁
+  rw [ih]; clear ih
+  replace h₁ := hist_eq_of_tr h₁
+  rw [h₁, List.append_cons, ←List.reverse_cons]; clear h₁
+  generalize hn : (sys.trs s' ps).2.length = n
+  have h₁ : n ≤ ps.length; subst hn; exact System.trs_snd_length_le
+  rw [Nat.sub_add_comm h₁]; simp
+
+@[simp]
+theorem hist_eq_nil_iff {s} [hs : sys.WF s] : s.hist = [] ↔ initState s.pw = s := by
+  refine' ⟨λ h => _, λ h => by rw [←h]; rfl⟩
+  obtain ⟨ps, h₁⟩ := s.wf_iff.mp hs
+  have h₂ := congrArg (·.1.hist) h₁
+  simp at h₂
+  simp [h₁, h] at h₂
+  simp [h₂.1] at h₁
+  exact h₁
+
+@[simp]
+theorem hist_initState {pw} : (initState pw).hist = [] := rfl
+
+theorem exi_prev_of_hist_eq_cons {s p ps} [hs : sys.WF s]
+(h : s.hist = p :: ps) : ∃ s₀, sys.WF s₀ ∧ sys.tr s₀ p = s := by
+  obtain ⟨ps', h₁⟩ := State.wf_iff.mp hs
+  induction ps' using List.reverseRecOn
+  · simp at h₁
+    rw [←h₁] at h
+    simp at h
+  nm ps' p' ih; clear ih
+  simp [System.trs_append] at h₁
+  split_ifs at h₁ with h₂ <;> simp at h₁
+  split at h₁ <;> simp at h₁
+  nm x s₁ h₃; clear x
+  rcases h₁ with ⟨rfl, h₁⟩
+  clear h₂
+  generalize hr : sys.trs (initState s₁.pw) ps' = r at h₁ h₃
+  rcases r with ⟨b, ps₁⟩
+  subst h₁
+  dsimp at h₃
+  use b, System.wf_of_trs hr
+  have h₄ := hist_eq_of_tr h₃
+  simp [h] at h₄
+  simpa [h₄.1]
+
+@[simp]
+theorem trs_reverse_hist_eq {s} [hs : sys.WF s] :
+sys.trs (initState s.pw) s.hist.reverse = (s, []) := by
+  generalize hp : s.hist = ps
+  induction ps generalizing s
+  · simp at hp; simpa
+  nm p ps ih
+  simp
+  obtain ⟨s₀, hs₁, h₂⟩ := exi_prev_of_hist_eq_cons hp
+  have h₃ := hist_eq_of_tr h₂
+  simp [hp] at h₃
+  symm at h₃
+  specialize ih h₃
+  simp [System.trs_append, pw_eq_of_tr h₂, ih, h₂]
+
+theorem state_eq_trs_reverse_hist {s} [hs : sys.WF s] :
+s = (sys.trs (initState s.pw) s.hist.reverse).1 := by
+  rw [trs_reverse_hist_eq]
+
+def State.decideWF (s : State) : Bool :=
+  sys.trs (initState s.pw) s.hist.reverse = (s, [])
+
+def State.decideAState (s : State) : Bool :=
+  s.decideWF && s.aTurn
+
+def State.decideDState (s : State) : Bool :=
+  s.decideWF && !s.aTurn
+
+theorem State.wf_iff_decideWF {s} : sys.WF s ↔ s.decideWF := by
+  unfold decideWF; constructor <;> intro h; simp
+  simp at h; rw [State.wf_iff]; use s.hist.reverse
+
+instance {s} : Decidable # sys.WF s :=
+  match h : s.decideWF with
+  | true => .isTrue # by simp [State.wf_iff_decideWF, h]
+  | false => .isFalse # by simp [State.wf_iff_decideWF, h]
+
+@[simp]
+theorem State.decideWF_eq {s} : s.decideWF = decide (sys.WF s) := by
+  simp [wf_iff_decideWF]
+
+theorem State.aState_iff_decideAState {s} : AState s ↔ s.decideAState := by
+  simp [decideAState, AState.iff]
+
+theorem State.dState_iff_decideDState {s} : DState s ↔ s.decideDState := by
+  simp [decideDState, DState.iff]
+
+instance {s} : Decidable # AState s :=
+  match h : s.decideAState with
+  | true => .isTrue # by simp [State.aState_iff_decideAState, h]
+  | false => .isFalse # by simp [State.aState_iff_decideAState, h]
+
+instance {s} : Decidable # DState s :=
+  match h : s.decideDState with
+  | true => .isTrue # by simp [State.dState_iff_decideDState, h]
+  | false => .isFalse # by simp [State.dState_iff_decideDState, h]
+
+@[simp]
+theorem State.decideAState_eq {s} : s.decideAState = decide (AState s) := by
+  simp [aState_iff_decideAState]
+
+@[simp]
+theorem State.decideDState_eq {s} : s.decideDState = decide (DState s) := by
+  simp [dState_iff_decideDState]
+
+@[simp]
+theorem State.not_aState {s} [hs : sys.WF s] : ¬AState s ↔ DState s := by
+  simp [AState.iff, DState.iff]; aesop
+
+@[simp]
+theorem State.not_dState {s} [hs : sys.WF s] : ¬DState s ↔ AState s := by
+  simp [AState.iff, DState.iff]; aesop

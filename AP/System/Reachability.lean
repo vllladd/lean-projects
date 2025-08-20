@@ -1187,26 +1187,24 @@ sys.simulate f a (n + m) = (b, m) ↔ sys.simulate f a n = (b, 0) ∧
 theorem not_hasTr_iff {a} : ¬sys.hasTr a ↔ ∀ t, sys.tr a t = none := by
   simp [hasTr]
 
-theorem tr_eq_none_of_of_simFn {f g : S → T} [hf : sys.SimFn f] {a} [ha : sys.WF a]
-(h : sys.tr a (f a) = none) : sys.tr a (g a) = none := by
-  have h₁ : ¬sys.hasTr a
+theorem tr_eq_none_iff_of_simFn {f a} [hf : sys.SimFn f] [ha : sys.WF a] :
+sys.tr a (f a) = none ↔ ¬sys.hasTr a := by
+  constructor
+  · intro h₁ h₂
+    obtain ⟨b, hb⟩ := hf.1 h₂
+    simp [hb] at h₁
   · intro h₁
-    obtain ⟨b, h₂⟩ := hf.1 h₁
-    simp [h] at h₂
-  simp at h₁; apply h₁
+    contrapose! h₁
+    rw [Option.ne_none_iff_exists'] at h₁
+    rcases h₁ with ⟨b, hb⟩
+    exact hasTr_of_eq_some hb
 
------ Change the following two theorems
-
-theorem tr_eq_none_iff_of_simFn {f g} [hf : sys.SimFn f] [hg : sys.SimFn g]
-{a} [ha : sys.WF a] : sys.tr a (f a) = none ↔ sys.tr a (g a) = none :=
-  ⟨tr_eq_none_of_of_simFn, tr_eq_none_of_of_simFn⟩
-
-theorem false_of_tr_eq_none_and_some_of_simFn
-{f g : S → T} [hf : sys.SimFn f] {a b} [ha : sys.WF a]
+theorem false_of_tr_eq_none_and_some_of_simFn {f g a b}
+[hf : sys.SimFn f] [hg : sys.SimFn g] [ha : sys.WF a]
 (h₁ : sys.tr a (f a) = none) (h₂ : sys.tr a (g a) = some b) : False := by
-  simp [tr_eq_none_of_of_simFn h₁] at h₂
-
------
+  rw [tr_eq_none_iff_of_simFn] at h₁
+  rw [←tr_eq_none_iff_of_simFn (f := g)] at h₁
+  simp [h₁] at h₂
 
 theorem tree_iff_full_trs {s} : sys.Tree s ↔ sys.WF s ∧ ∀ {ts₁ ts₂ s'},
 sys.trs s ts₁ = (s', []) → sys.trs s ts₂ = (s', []) → ts₁ = ts₂ := by
@@ -1253,82 +1251,78 @@ theorem wf_of_simulate_eq {s f n r} [hs : sys.WF s]
 (h : sys.simulate f s n = r) : sys.WF r.1 := by
   subst r; simp
 
-theorem simulate_congr {f g}
-[hf : sys.SimFn f] [hg : sys.SimFn g] {a n} [ha : sys.WF a]
+theorem simulate_congr_rel {f g} {r : S → S → Prop} {a₁ a₂ n}
+[hf : sys.SimFn f] [hg : sys.SimFn g] [ha₁ : sys.WF a₁] [ha₂ : sys.WF a₂]
+(h₁ : r a₁ a₂) (h₂ : ∀ k < n, ∀ b₁ b₂, sys.simulate f a₁ k = (b₁, 0) →
+sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → (sys.hasTr b₁ ↔ sys.hasTr b₂) ∧
+∀ c₁ c₂, sys.tr b₁ (f b₁) = some c₁ → sys.tr b₂ (g b₂) = some c₂ → r c₁ c₂) :
+∃ b, r (sys.simulate f a₁ n).1 b ∧ sys.simulate g a₂ n = (b, (sys.simulate f a₁ n).2) := by
+  induction n generalizing a₁ a₂; use a₂; simpa; nm n ih
+  have h₄ : sys.tr a₁ (f a₁) = none ↔ sys.tr a₂ (g a₂) = none
+  · specialize h₂ 0 (by simp) a₁ a₂
+    simp [h₁] at h₂
+    replace h₂ := h₂.1
+    simp only [tr_eq_none_iff_of_simFn, h₂]
+  simp
+  split
+  · nm x h₃; clear x
+    use a₂
+    simp [h₁]
+    split; rfl
+    nm x b h₅; clear x
+    simp [h₄, h₅] at h₃
+  nm x b₁ h₃; clear x
+  split
+  · nm x h₅
+    simp [←h₄, h₃] at h₅
+  nm x b₂ h₅; clear x
+  have h₆ := h₂ 0 (by simp) a₁ a₂
+  simp [h₁] at h₆
+  replace h₆ := h₆.2 _ _ h₃ h₅
+  have hb₁ := wf_of_tr h₃
+  have hb₂ := wf_of_tr h₅
+  apply ih h₆
+  intro k hk
+  specialize h₂ (k + 1) (by linarith)
+  simp [h₃, h₅] at h₂
+  exact h₂
+
+theorem simulate_congr_rel' {f g} {r : S → S → Prop} {a₁ a₂ n}
+[hf : sys.SimFn f] [hg : sys.SimFn g] [ha₁ : sys.WF a₁] [ha₂ : sys.WF a₂]
+(h₂ : (sys.simulate f a₁ n).2 = 0) (h₁ : r a₁ a₂)
+(h₃ : ∀ k < n, ∀ b₁ b₂ c₁, sys.simulate f a₁ k = (b₁, 0) →
+sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → sys.tr b₁ (f b₁) = some c₁ →
+∃ c₂, sys.tr b₂ (g b₂) = some c₂ ∧ r c₁ c₂) : (sys.simulate g a₂ n).2 = 0 := by
+  have h₄ := @sys.simulate_congr_rel
+  specialize @h₄ f g r a₁ a₂ n _ _ _ _ h₁ _
+  · intro k hk b₁ b₂ hb₁ hb₂ h₅
+    specialize h₃ k hk b₁ b₂
+    have h₆ : (sys.simulate f a₁ (k + 1)).2 = 0
+    · apply simulate_snd_eq_zero_of_le_and_eq_zero h₂; linarith
+    obtain ⟨c₁, hc₁⟩ : ∃ c₁, sys.tr b₁ (f b₁) = some c₁
+    · rw [simulate_add] at h₆
+      simp [hb₁] at h₆
+      split at h₆; simp at h₆
+      nm x c₁ h₇; use c₁
+    specialize h₃ c₁ hb₁ hb₂ h₅ hc₁
+    obtain ⟨c₂, hc₂, h₇⟩ := h₃
+    simp [hasTr_of_eq_some hc₁, hasTr_of_eq_some hc₂]
+    intro c₁' c₂' hc₁' hc₂'
+    simp [hc₁] at hc₁'
+    simp [hc₂] at hc₂'
+    subst hc₁' hc₂'
+    exact h₇
+  obtain ⟨b, h₄, h₅⟩ := h₄
+  simpa [h₅]
+
+theorem simulate_congr {f g a n}
+[hf : sys.SimFn f] [hg : sys.SimFn g] [ha : sys.WF a]
 (h : ∀ k < n, ∀ b, sys.simulate f a k = (b, 0) →
 sys.simulate g a k = (b, 0) → sys.hasTr b → f b = g b) :
 sys.simulate f a n = sys.simulate g a n := by
-  induction n generalizing a; rfl
-  nm n ih
-  simp
-  split
-  · nm x h₁; clear x
-    split; rfl
-    nm x s₁ h₂; clear x
-    cases false_of_tr_eq_none_and_some_of_simFn h₁ h₂
-  nm x s₁ h₁; clear x
-  split
-  nm x h₂; clear x
-  · cases false_of_tr_eq_none_and_some_of_simFn h₂ h₁
-  nm x s₂ h₂; clear x
-  have h₃ := h 0 (by simp) a
-  simp at h₃
-  specialize h₃ # hasTr_of_eq_some h₁
-  rw [h₃] at h₁
-  simp [h₁] at h₂
-  subst h₂
-  have hs := wf_of_tr h₁
-  apply ih
-  intro k hk b
-  specialize h (k + 1) (by simpa) b
-  simp [h₃, h₁] at h
-  exact h
-
-#check 0 #exit
-
-theorem simulate_congr' {f g} {r : S → S}
-[hf : sys.SimFn f] [hg : sys.SimFn g] {a n} [ha : sys.WF a]
-(h₁ : ∀ b, sys.Reachable a b → sys.WF (r b))
-(h₂ : ∀ b, sys.Reachable a b → sys.hasTr (r b) ↔ sys.hasTr b)
-(h₃ : ∀ k < n, ∀ b, sys.simulate f a k = (b, 0) →
-sys.simulate g (r a) k = (b, 0) → sys.hasTr b → f b = g (r b)) :
-(sys.simulate f a n).2 = (sys.simulate g (r a) n).2 := by
-  rename' h₁ => H₁, h₂ => H₂, h₃ => H₃
-  induction n generalizing a; rfl
-  nm n ih
-  have H₄ : sys.tr a (f a) = none ↔ sys.tr (r a) (g (r a)) = none
-  · 
-    obtain ⟨b, hb⟩ := h₂
-    symm at hb
-    have h₃ : sys.hasTr a
-    · specialize H₂ a
-      simp at H₂
-      rw [←H₂]
-      exact ⟨_, _, hb⟩
-    obtain ⟨b, hb⟩ := hf.1 h₃
-    simp [h₁] at hb
-  simp
-  split
-  · nm x h₁; clear x
-    split; rfl
-    nm x s₁ h₂; clear x
-    simp [H₄ h₁] at h₂
-  nm x s₁ h₁; clear x
-  split
-  nm x h₂; clear x
-  · simp [H₄ h₁] at h₂
-  nm x s₂ h₂; clear x
-  have h₃ := h 0 (by simp) a
-  simp at h₃
-  specialize h₃ # hasTr_of_eq_some h₁
-  rw [h₃] at h₁
-  simp [h₁] at h₂
-  subst h₂
-  have hs := wf_of_tr h₁
-  apply ih
-  intro k hk b
-  specialize h (k + 1) (by simpa) b
-  simp [h₃, h₁] at h
-  exact h
-
-#check 0 #exit
+  have h₄ := @sys.simulate_congr_rel
+  specialize @h₄ f g Eq a a n _ _ _ _ rfl _
+  · rintro k hk b b' hb₁ hb₂ rfl; simp; intro c₁ c₂ hc₁ hc₂
+    specialize h k hk b hb₁ hb₂ # hasTr_of_eq_some hc₁
+    simp [h, hc₂] at hc₁; rw [hc₁]
+  obtain ⟨b, h₄, h₅⟩ := h₄; simp [h₅]; ext:1 <;> simp [h₄]
