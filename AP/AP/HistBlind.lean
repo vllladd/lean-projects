@@ -435,6 +435,6 @@ theorem State.a_hws_iff_a_hws_histBlind {s} [hs : sys.WF s] : s.a_hws ↔
 ∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
   ⟨a_hws_histBlind_of_a_hws, λ ⟨a, Ha, h₁, h₂⟩ => by use a⟩
 
-theorem State.d_hws_histBlind_iff_d_hws {s} [hs : sys.WF s] : s.d_hws ↔
+theorem State.d_hws_iff_d_hws_histBlind {s} [hs : sys.WF s] : s.d_hws ↔
 ∃ (d : DStrat), d.WF ∧ d.histBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ :=
   ⟨d_hws_histBlind_of_d_hws, λ ⟨d, Hd, h₁, h₂⟩ => by use d⟩
