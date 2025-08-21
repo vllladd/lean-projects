@@ -9,43 +9,79 @@ structure Edge : Type where
   offset : ℤ
 deriving Inhabited, DecidableEq
 
-def Edge.memPoints (e : Edge) (p : PointZ) : Bool :=
+namespace Edge
+
+@[simp] def hor (e : Edge) : Prop := e.dir.vert
+@[simp] def vert (e : Edge) : Prop := e.dir.hor
+
+instance {e : Edge} : Decidable e.hor := by unfold hor; infer_instance
+instance {e : Edge} : Decidable e.vert := by unfold vert; infer_instance
+
+def memPoints (e : Edge) (p : PointZ) : Bool :=
   match e.dir with
   | .up => p.y ≤ e.offset
   | .down => e.offset ≤ p.y
   | .left => p.x ≤ e.offset
   | .right => e.offset ≤ p.x
 
-def Edge.points (e : Edge) : Set PointZ :=
+def points (e : Edge) : Set PointZ :=
   {p | e.memPoints p}
 
-theorem Edge.mem_points_iff_memPoints {e : Edge} {p} :
+theorem mem_points_iff_memPoints {e : Edge} {p} :
 p ∈ e.points ↔ e.memPoints p := by rfl
 
 instance {e : Edge} {p} : Decidable # p ∈ e.points :=
   match h : e.memPoints p with
-  | true => .isTrue # by simp [Edge.mem_points_iff_memPoints, h]
-  | false => .isFalse # by simp [Edge.mem_points_iff_memPoints, h]
+  | true => .isTrue # by simp [mem_points_iff_memPoints, h]
+  | false => .isFalse # by simp [mem_points_iff_memPoints, h]
 
-theorem Edge.memPoints_eq {e : Edge} {p} : e.memPoints p = decide (p ∈ e.points) := by
+theorem memPoints_eq {e : Edge} {p} : e.memPoints p = decide (p ∈ e.points) := by
   simp [mem_points_iff_memPoints]
 
-theorem Edge.points_inj {e₁ e₂ : Edge} (h : e₁.points = e₂.points) : e₁ = e₂ := by
+theorem points_inj {e₁ e₂ : Edge} (h : e₁.points = e₂.points) : e₁ = e₂ := by
   rw [Set.ext_iff] at h; rcases e₁, e₂ with ⟨⟨d₁, n₁⟩, ⟨d₂, n₂⟩⟩; simp
   cases d₁ <;> cases d₂ <;> simp <;> simp [points, memPoints] at h <;> exact h
 
 @[simp]
-theorem Edge.points_eq_points_iff {e₁ e₂ : Edge} : e₁.points = e₂.points ↔ e₁ = e₂ :=
+theorem points_eq_points_iff {e₁ e₂ : Edge} : e₁.points = e₂.points ↔ e₁ = e₂ :=
   ⟨points_inj, λ h => by rw [h]⟩
 
-def Edge.dist (e : Edge) (p : PointZ) : ℤ :=
+def dist (e : Edge) (p : PointZ) : ℤ :=
   match e.dir with
   | .up => p.y - e.offset
   | .down => e.offset - p.y
   | .left => p.x - e.offset
   | .right => e.offset - p.x
 
--- def Edge.defenseFn {edge : Set PointZ} (s : State) : Option State := do
---   none
+def getBorderPoint (e : Edge) (p : PointZ) (d : ℤ) : PointZ :=
+  if e.hor then ⟨p.x + d, e.offset⟩ else ⟨e.offset, p.y + d⟩
+
+def getBorderPoint₀ (e : Edge) (p : PointZ) : PointZ :=
+  e.getBorderPoint p 0
+
+def getBorderPoints (e : Edge) (p : PointZ) (d : ℕ) : List PointZ :=
+  [e.getBorderPoint p (-d : ℤ), e.getBorderPoint p d]
+
+theorem sorted_lt_getBorderPoints {e : Edge} {p d} (h : d ≠ 0) :
+(e.getBorderPoints p d).Sorted (· < ·) := by
+  simp [getBorderPoints, getBorderPoint];
+  split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
+
+-- #check 0 #exit
+
+def defenseFn (e : Edge) (s : State) : Option PointZ :=
+  let pa := s.aPos
+  let p₀ := e.getBorderPoint₀ pa
+  let pick := λ (xs : List PointZ) => xs.find? (· ∉ s.taken)
+  match e.dist pa with
+  | 5 => some p₀
+  | 4 => pick # p₀ :: e.getBorderPoints pa 1
+  | 3 => pick # e.getBorderPoints pa 1 ++ [p₀]
+  | 2 => if p₀ ∉ s.taken then some p₀ else
+    match e.getBorderPoints pa 1 |>.find? (· ∈ s.taken) with
+    | some p => sorry
+    | none => sorry
+  | 1 => pick # p₀ :: e.getBorderPoints pa 1
+  | _ => none
 
 -- #check 0 #exit
