@@ -35,14 +35,6 @@ theorem State.hasTr_setHist {s : State} {hist} :
 sys.hasTr (s.setHist hist) ↔ sys.hasTr s := by
   apply exists_iff_of; simp
 
-def AStrat.histBlind (a : AStrat) : Prop :=
-  ∀ s hist, AState s → sys.WF (s.setHist hist) →
-  sys.hasTr s → a.f (s.setHist hist) = a.f s
-
-def DStrat.histBlind (d : DStrat) : Prop :=
-  ∀ s hist, DState s → sys.WF (s.setHist hist) →
-  sys.hasTr s → d.f (s.setHist hist) = d.f s
-
 @[simp]
 theorem State.chooseAMove_setHist {s : State} {hist} :
 (s.setHist hist).chooseAMove = s.chooseAMove := by
@@ -52,6 +44,14 @@ theorem State.chooseAMove_setHist {s : State} {hist} :
 theorem State.chooseDMove_setHist {s : State} {hist} :
 (s.setHist hist).chooseDMove = s.chooseDMove := by
   simp [chooseDMove]
+
+def AStrat.histBlind (a : AStrat) : Prop :=
+  ∀ s hist, AState s → sys.WF (s.setHist hist) →
+  sys.hasTr s → a.f (s.setHist hist) = a.f s
+
+def DStrat.histBlind (d : DStrat) : Prop :=
+  ∀ s hist, DState s → sys.WF (s.setHist hist) →
+  sys.hasTr s → d.f (s.setHist hist) = d.f s
 
 open Classical in noncomputable
 def aHistBlind : AStrat := .mk' # λ s => do
@@ -95,19 +95,24 @@ s₁.setHist s₂.hist = s₂ ↔ s₂.setHist s₁.hist = s₁ := by
 theorem length_hist_eq_of_tr {s s₁ p} (h : sys.tr s p = some s₁) :
 s₁.hist.length = s.hist.length + 1 := by simp [hist_eq_of_tr h]
 
-theorem length_hist_le_of_reachable {s s₁} [hs : sys.WF s]
-(h : sys.Reachable s s₁) : s.hist.length ≤ s₁.hist.length := by
-  rw [System.reachable_iff_exi_trs] at h
-  obtain ⟨ps, hp⟩ := h
-  induction ps generalizing s s₁
-  · simp at hp; simp [hp]
-  nm p ps ih
-  simp at hp
-  split at hp; simp at hp
-  nm x s₂ h₁; clear x
-  have h₂ := System.wf_of_tr h₁
-  specialize ih hp; trans s₂.hist.length
-  simp [length_hist_eq_of_tr h₁]; exact ih
+theorem hist_suffix_of_reachable {s₁ s₂ : State}
+(h : sys.Reachable s₁ s₂) : s₁.hist <:+ s₂.hist := by
+  induction h; rfl
+  clear s₂
+  nm a b c p h₁ h₂ ih
+  trans b.hist
+  rotate_left; exact ih
+  clear ih
+  rw [hist_eq_of_tr h₁]
+  simp
+
+theorem length_hist_le_of_reachable {s₁ s₂ : State}
+(h : sys.Reachable s₁ s₂) : s₁.hist.length ≤ s₂.hist.length :=
+  hist_suffix_of_reachable h |>.length_le
+
+theorem hist_suffix_of_tr {s₁ s₂ : State} {p}
+(h : sys.tr s₁ p = some s₂) : s₁.hist <:+ s₂.hist :=
+  hist_suffix_of_reachable # System.reachable_of_tr h
 
 theorem simulate_set_a_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat} 
 [hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
@@ -141,8 +146,6 @@ instance {s : State} {hist₁ hist₂} [hs : AState s]
 instance {s : State} {hist₁ hist₂} [hs : DState s]
 [hs' : sys.WF # s.setHistAt' hist₁ hist₂] : DState # s.setHistAt' hist₁ hist₂ := by
   use inferInstance; simp [State.setHistAt']
-
--- #check 0 #exit
 
 instance {a : AStrat} {hist₁ hist₂} [ha : a.WF] :
 AStrat.WF # .mk # λ s => a.f # s.setHistAt hist₁ hist₂ := by
@@ -183,8 +186,6 @@ DStrat.WF # .mk # λ s => d.f # s.setHistAt hist₁ hist₂ := by
   subst hs'
   exact d.validTr _
 
--- #check 0 #exit
-
 @[simp]
 instance {s hist₁ hist₂} [hs : sys.WF s] : sys.WF # s.setHistAt hist₁ hist₂ := by
   simp [State.setHistAt]; split_ifs with h; exact hs; simp at h; exact h.2
@@ -198,68 +199,166 @@ instance {s hist₁ hist₂} [hs : DState s] : DState # s.setHistAt hist₁ hist
   simp [State.setHistAt]; split_ifs with h₁; exact hs
   simp at h₁; rcases h₁ with ⟨h₁, h₂⟩; infer_instance
 
--- @[simp]
--- theorem setHistAt_idemp {s hist₁ hist₂} [hs : sys.WF s] :
--- (s.setHistAt hist₁ hist₂).setHistAt hist₁ hist₂ = s.setHistAt hist₁ hist₂ := by
---   simp [State.setHistAt]
---   split_ifs with h₁; intros; simp_all only [not_true_eq_false, imp_false]
---   simp at h₁
---   rcases h₁ with ⟨h₁, h₂, h₃⟩
---   rw [h₃]
---   intro h₄ h₅ h₆
---   rcases h₁ with ⟨ps₁, h₁⟩
---   rcases h₄ with ⟨ps₂, h₄⟩
---   symm at h₁ h₄
---   simp only [State.setHistAt', State.hist_setHist, List.length_append,
---     List.length_take, tsub_le_iff_right, le_add_iff_nonneg_right,
---     zero_le, inf_of_le_left, State.setHist_setHist] at *
---   congr 1
---   rw [h₁] at h₄ ⊢
---   simp [h₄]
-
 @[simp]
 theorem State.setHistAt_self {s : State} {hist} [hs' : sys.WF # s.setHist hist] :
 s.setHistAt s.hist hist = s.setHist hist := by
   simp [State.setHistAt, State.setHistAt', hs']
 
--- #check 0 #exit
+theorem _root_.List.take_length_sub_append_eq_of_suffix {α : Type*}
+{xs ys : List α} (h : ys <:+ xs) : xs.take (xs.length - ys.length) ++ ys = xs := by
+  obtain ⟨xs, rfl⟩ := h; simp
 
-theorem State.a_hws_setHist_of {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist]
-(h : s.a_hws) : (s.setHist hist).a_hws := by
-  rename' s => s₀
-  rcases h with ⟨a, ha, h₁⟩
+@[simp]
+theorem _root_.List.take_length_sub_append_eq_self_iff_suffix {α : Type*}
+{xs ys : List α} : xs.take (xs.length - ys.length) ++ ys = xs ↔ ys <:+ xs :=
+  ⟨λ h => ⟨_, h⟩, List.take_length_sub_append_eq_of_suffix⟩
+
+@[simp]
+theorem _root_.List.self_eq_take_length_sub_append_iff_suffix {α : Type*}
+{xs ys : List α} : xs = xs.take (xs.length - ys.length) ++ ys ↔ ys <:+ xs := by
+  rw [eq_comm]; simp
+
+theorem State.wf_setHist_take_append_of_reachable {s₀ s : State} {hist} [hs₀ : sys.WF s₀]
+[hs₀' : sys.WF # s₀.setHist hist] (h : sys.Reachable s₀ s) :
+sys.WF # s.setHist # s.hist.take (s.hist.length - s₀.hist.length) ++ hist := by
+  rw [System.reachable_iff_exi_trs] at h
+  obtain ⟨ps, h⟩ := h
+  rename' s => s₂
+  generalize hs₁ : s₀ = s₁
+  replace hs₀' : sys.WF # s₁.setHist # s₁.hist.take
+    (s₁.hist.length - s₀.hist.length) ++ hist
+  · subst hs₁; simpa
+  rw [hs₁] at h
+  simp only [←hs₁]
+  have hx : sys.WF s₁; rwa [←hs₁]
+  have hr : sys.Reachable s₀ s₁; subst hs₁; rfl
+  clear hs₁
+  induction ps generalizing s₁
+  · simp at h
+    subst h
+    simpa
+  nm p ps ih
+  simp at h
+  split at h; simp at h
+  nm x s' h₁; clear x
+  have h₂ := System.wf_of_tr h₁
+  have h₃ : sys.tr (s₁.setHist # s₁.hist.take (s₁.hist.length - s₀.hist.length) ++ hist)
+    p = some (s'.setHist # s'.hist.take (s'.hist.length - s₀.hist.length) ++ hist)
+  · simp
+    use s', h₁
+    congr
+    simp [hist_eq_of_tr h₁]
+    rw [Nat.succ_sub # length_hist_le_of_reachable hr]
+    simp
+  exact ih s' h (System.wf_of_tr h₃) h₂ (System.reachable_right hr h₁)
+
+theorem State.setHistAt_cancel_of_reachable {s₀ s : State} {hist}
+[hs₀ : sys.WF s₀] [hs₀' : sys.WF # s₀.setHist hist] (h : sys.Reachable s₀ s) :
+(s.setHistAt s₀.hist hist).setHistAt hist s₀.hist = s := by
+  unfold setHistAt setHistAt'
+  dsimp
+  split_ifs with h₁ h₂ h₂ <;> simp_all
+  · rcases h₁ with ⟨h₁, h₃⟩
+    exfalso
+    simp [List.take_length_sub_append_eq_of_suffix h₁] at h₂
+    apply h₂
+    exact System.wf_of_reachable h
+  exfalso
+  rcases h₂ with ⟨h₂, h₃⟩
+  have h₄ := hist_suffix_of_reachable h
+  specialize h₁ h₄
+  apply h₁
+  exact wf_setHist_take_append_of_reachable h
+
+theorem State.a_hws_setHist_of_a_hws {s hist} [hs : sys.WF s]
+[hs' : sys.WF # s.setHist hist] (h : s.a_hws) : (s.setHist hist).a_hws := by
+  rename' s => s₀, hs => hs₀, hs' => hs₀'
+  rcases h with ⟨a, ha, h⟩
   use .mk # λ s => a.f # s.setHistAt hist s₀.hist, inferInstance
   intro d hd n
-  specialize h₁ (.mk # λ s => d.f # s.setHistAt s₀.hist hist) inferInstance n
-  apply System.simulate_congr_rel' h₁ (r := λ s₁ s₂ => s₁.setHistAt s₀.hist hist = s₂)
+  specialize h ⟨λ s => d.f # s.setHistAt s₀.hist hist⟩ inferInstance n
+  apply System.simulate_congr_rel' h (r := λ s₁ s₂ => s₁.setHistAt s₀.hist hist = s₂)
   · simp
-  clear h₁
   intro k hk b₁ b₂ c₁ hb₁ hb₂ h₁ h₂
   use c₁.setHistAt s₀.hist hist
   simp
-  have Hb₁ : sys.WF b₁ := sys.wf_of_simulate_eq hb₁
-  have Hb₂ : sys.WF b₂; subst h₁; infer_instance
-  replace Hb₁ := b₁.aState_or_dState; rcases Hb₁ with Hb₁ | Hb₁
-  · replace Hb₂ : AState b₂; use Hb₂; simp [←h₁]
+  have H₁ := System.wf_of_simulate_eq hb₁
+  have H₂ := System.wf_of_simulate_eq hb₂
+  dsimp at H₁ H₂
+  replace H₁ := b₁.aState_or_dState
+  rcases H₁ with H₁ | H₁
+  · replace H₂ : AState b₂; simp [←h₁]
     simp [-AState.tr_eq_some_iff] at h₂ ⊢
-    sorry
-  · replace Hb₂ : DState b₂; use Hb₂; simp [←h₁]
+    nth_rw 2 [←h₁]
+    rw [setHistAt_cancel_of_reachable]
+    rotate_left; exact System.reachable_of_simulate_full hb₁
+    rw [←h₁]
+    dsimp [setHistAt, setHistAt']
+    split_ifs with h₃ h₄ h₄
+    · simp [-AState.tr_eq_some_iff]
+      use c₁, h₂
+      simp [hist_eq_of_tr h₂]
+      rw [Nat.succ_sub]
+      rotate_left
+      · apply length_hist_le_of_reachable
+        exact System.reachable_of_simulate_full hb₁
+      simp
+    · simp at h₄
+      specialize h₄ # h₃.1.trans # hist_suffix_of_tr h₂
+      exfalso
+      apply h₄
+      apply wf_setHist_take_append_of_reachable
+      trans b₁
+      · exact System.reachable_of_simulate_full hb₁
+      · exact System.reachable_of_tr h₂
+    · simp at h₃
+      specialize h₃ _
+      · apply hist_suffix_of_reachable
+        exact System.reachable_of_simulate_full hb₁
+      exfalso
+      apply h₃
+      apply wf_setHist_take_append_of_reachable
+      exact System.reachable_of_simulate_full hb₁
+    · exact h₂
+  · replace H₂ : DState b₂; simp [←h₁]
     simp [-DState.tr_eq_some_iff] at h₂ ⊢
-    nth_rw 1 [←h₁, State.setHistAt]
     rw [h₁] at h₂
-    split_ifs with h₃; rotate_left
-    · sorry
-    · sorry
-
--- #check 0 #exit
+    nth_rw 1 [←h₁]
+    dsimp [setHistAt, setHistAt']
+    split_ifs with h₃ h₄ h₄
+    · simp [-DState.tr_eq_some_iff]
+      use c₁, h₂
+      simp [hist_eq_of_tr h₂]
+      rw [Nat.succ_sub]
+      rotate_left
+      · apply length_hist_le_of_reachable
+        exact System.reachable_of_simulate_full hb₁
+      simp
+    · simp at h₄
+      specialize h₄ # h₃.1.trans # hist_suffix_of_tr h₂
+      exfalso
+      apply h₄
+      apply wf_setHist_take_append_of_reachable
+      trans b₁
+      · exact System.reachable_of_simulate_full hb₁
+      · exact System.reachable_of_tr h₂
+    · simp at h₃
+      specialize h₃ _
+      · apply hist_suffix_of_reachable
+        exact System.reachable_of_simulate_full hb₁
+      exfalso
+      apply h₃
+      apply wf_setHist_take_append_of_reachable
+      exact System.reachable_of_simulate_full hb₁
+    · exact h₂
 
 @[simp]
 theorem State.a_hws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist] :
 (s.setHist hist).a_hws ↔ s.a_hws := by
-  symm; use a_hws_setHist_of; rintro h
+  symm; use a_hws_setHist_of_a_hws; rintro h
   suffices h₁ : s.setHist hist |>.setHist s.hist |>.a_hws; simpa
   have h₁ : sys.WF # s.setHist hist |>.setHist s.hist; simpa
-  exact a_hws_setHist_of h
+  exact a_hws_setHist_of_a_hws h
 
 @[simp]
 theorem State.d_hws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist] :
@@ -325,3 +424,17 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
   dsimp at h₂
   rw [DState.a_hws_iff_tr] at h₁
   apply h₁; exact h₂
+
+theorem State.d_hws_histBlind_of_d_hws {s} [hs : sys.WF s] (h : s.d_hws) :
+∃ (d : DStrat), d.WF ∧ d.histBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ := by
+  sorry
+
+-- #check 0 #exit
+
+theorem State.a_hws_iff_a_hws_histBlind {s} [hs : sys.WF s] : s.a_hws ↔
+∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
+  ⟨a_hws_histBlind_of_a_hws, λ ⟨a, Ha, h₁, h₂⟩ => by use a⟩
+
+theorem State.d_hws_histBlind_iff_d_hws {s} [hs : sys.WF s] : s.d_hws ↔
+∃ (d : DStrat), d.WF ∧ d.histBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ :=
+  ⟨d_hws_histBlind_of_d_hws, λ ⟨d, Hd, h₁, h₂⟩ => by use d⟩

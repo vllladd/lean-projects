@@ -637,3 +637,15 @@ theorem State.not_aState {s} [hs : sys.WF s] : ¬AState s ↔ DState s := by
 @[simp]
 theorem State.not_dState {s} [hs : sys.WF s] : ¬DState s ↔ AState s := by
   simp [AState.iff, DState.iff]; aesop
+
+theorem AState.validTr_of_a_wins {s} {st : Strat} [hs : AState s]
+(h : s.a_wins st) : sys.validTr s (st.a.f s) := by
+  specialize h 1
+  simp at h
+  split at h; simp at h
+  nm x s' h₁; clear x
+  exact System.validTr_of_eq_some h₁
+
+theorem AState.hasTr_of_a_wins {s} {st : Strat} [hs : AState s]
+(h : s.a_wins st) : sys.hasTr s :=
+  System.hasTr_of_validTr # validTr_of_a_wins h
