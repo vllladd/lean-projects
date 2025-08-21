@@ -413,7 +413,20 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
 
 theorem State.d_hws_histBlind_of_d_hws {s} [hs : sys.WF s] (h : s.d_hws) :
 ∃ (d : DStrat), d.WF ∧ d.histBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ := by
-  sorry
+  contrapose h
+  push_neg at h
+  simp at h ⊢
+  apply a_hws_of_ind (p := λ s => ∀ (d : DStrat), d.WF → d.histBlind →
+    ∃ a, a.WF ∧ s.a_wins ⟨a, d⟩) h <;> clear! s
+  · intro sa ha ih
+    have h₁ := ih dHistBlind inferInstance (by simp)
+    obtain ⟨a, Ha, h₁⟩ := h₁
+    obtain ⟨sd, hd⟩ := ha.validTr_of_a_wins h₁
+    dsimp at hd
+    use a.f sa, sd, hd
+    intro d Hd h₂
+    sorry
+  · sorry
 
 -- #check 0 #exit
 
