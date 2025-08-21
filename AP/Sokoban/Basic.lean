@@ -151,7 +151,7 @@ theorem moveBox_movePlayer {s : State} {p₁ p₂ p₃} :
 
 @[simp]
 theorem move_eq_some_iff {s s' : State} (t : Move) : s.move t = some s' ↔
-let p_dif := t.toPoint
+let p_dif := t.point
 let p₁ := s.player + p_dif
 let p₂ := p₁ + p_dif
 let s₁ := s.movePlayer p₁
@@ -170,10 +170,6 @@ d₂.wall = false ∧ s₁.moveBox p₁ p₂ = s' := by
   rw [eq_comm]
   revert s'
   simp [movePlayer_moveBox]
-
-@[simp]
-theorem Move.toPoint_ne_zero {t : Move} : t.toPoint ≠ 0 := by
-  cases t <;> decide
 
 theorem State.Get.player_eq {s : State} {p d} [hs : s.WF] (hd : s.Get p d) :
 s.player = p ↔ d.player := hs.h_player_iff hd |>.symm

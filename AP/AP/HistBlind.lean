@@ -204,20 +204,6 @@ theorem State.setHistAt_self {s : State} {hist} [hs' : sys.WF # s.setHist hist] 
 s.setHistAt s.hist hist = s.setHist hist := by
   simp [State.setHistAt, State.setHistAt', hs']
 
-theorem _root_.List.take_length_sub_append_eq_of_suffix {α : Type*}
-{xs ys : List α} (h : ys <:+ xs) : xs.take (xs.length - ys.length) ++ ys = xs := by
-  obtain ⟨xs, rfl⟩ := h; simp
-
-@[simp]
-theorem _root_.List.take_length_sub_append_eq_self_iff_suffix {α : Type*}
-{xs ys : List α} : xs.take (xs.length - ys.length) ++ ys = xs ↔ ys <:+ xs :=
-  ⟨λ h => ⟨_, h⟩, List.take_length_sub_append_eq_of_suffix⟩
-
-@[simp]
-theorem _root_.List.self_eq_take_length_sub_append_iff_suffix {α : Type*}
-{xs ys : List α} : xs = xs.take (xs.length - ys.length) ++ ys ↔ ys <:+ xs := by
-  rw [eq_comm]; simp
-
 theorem State.wf_setHist_take_append_of_reachable {s₀ s : State} {hist} [hs₀ : sys.WF s₀]
 [hs₀' : sys.WF # s₀.setHist hist] (h : sys.Reachable s₀ s) :
 sys.WF # s.setHist # s.hist.take (s.hist.length - s₀.hist.length) ++ hist := by

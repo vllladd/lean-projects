@@ -841,3 +841,17 @@ theorem reverse_snoc {x} : (xs ++ [x]).reverse = x :: xs.reverse := by
 theorem append_take_eq_of_suffix (h : ys <:+ xs) :
 xs.take (xs.length - ys.length) ++ ys = xs := by
   rwa [←suffix_iff_eq_append]
+
+theorem take_length_sub_append_eq_of_suffix (h : ys <:+ xs) :
+xs.take (xs.length - ys.length) ++ ys = xs := by
+  obtain ⟨xs, rfl⟩ := h; simp
+
+@[simp]
+theorem take_length_sub_append_eq_self_iff_suffix :
+xs.take (xs.length - ys.length) ++ ys = xs ↔ ys <:+ xs :=
+  ⟨λ h => ⟨_, h⟩, List.take_length_sub_append_eq_of_suffix⟩
+
+@[simp]
+theorem self_eq_take_length_sub_append_iff_suffix :
+xs = xs.take (xs.length - ys.length) ++ ys ↔ ys <:+ xs := by
+  rw [eq_comm]; simp

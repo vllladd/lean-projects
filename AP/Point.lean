@@ -485,3 +485,98 @@ theorem finite_setOf_dist_le {c : PointZ} {d : ℕ} :
   apply Set.finite_of_subset_finset # List.toFinset # c.nbhd d; simp [dist_comm]
 
 end rect
+
+section le
+
+variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
+variable [ha₃ : IsOrderedAddMonoid α] [ha₄ : ZeroLEOneClass α] [ha₅ : NeZero (1 : α)]
+
+omit ha₃ ha₄ ha₅ in @[simp]
+theorem forall_le_iff_le_xx_iff₁ {a b : α} :
+(∀ (p : Point α), p.x ≤ a ↔ p.x ≤ b) ↔ a = b := by
+  symm; constructor; rintro rfl; simp; intro h
+  have h₁ := h ⟨a, 0⟩; have h₂ := h ⟨b, 0⟩
+  simp at h₁ h₂; exact le_antisymm h₁ h₂
+
+omit ha₃ ha₄ ha₅ in @[simp]
+theorem forall_le_iff_le_yy_iff₁ {a b : α} :
+(∀ (p : Point α), p.y ≤ a ↔ p.y ≤ b) ↔ a = b := by
+  symm; constructor; rintro rfl; simp; intro h
+  have h₁ := h ⟨0, a⟩; have h₂ := h ⟨0, b⟩
+  simp at h₁ h₂; exact le_antisymm h₁ h₂
+
+@[simp]
+theorem forall_le_iff_le_xy_iff₁ {a b : α} :
+(∀ (p : Point α), p.x ≤ a ↔ p.y ≤ b) ↔ False := by
+  simp [not_iff]; use ⟨a + 1, b⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_yx_iff₁ {a b : α} :
+(∀ (p : Point α), p.y ≤ a ↔ p.x ≤ b) ↔ False := by
+  simp [not_iff]; use ⟨b, a + 1⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_xx_iff₂ {a b : α} :
+(∀ (p : Point α), a ≤ p.x ↔ p.x ≤ b) ↔ False := by
+  simp [not_iff]; use ⟨min a b - 1, 0⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_yy_iff₂ {a b : α} :
+(∀ (p : Point α), a ≤ p.y ↔ p.y ≤ b) ↔ False := by
+  simp [not_iff]; use ⟨0, min a b - 1⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_xy_iff₂ {a b : α} :
+(∀ (p : Point α), a ≤ p.x ↔ p.y ≤ b) ↔ False := by
+  simp [not_iff]; use ⟨a, b + 1⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_yx_iff₂ {a b : α} :
+(∀ (p : Point α), a ≤ p.y ↔ p.x ≤ b) ↔ False := by
+  simp [not_iff]; use ⟨b + 1, a⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_xx_iff₃ {a b : α} :
+(∀ (p : Point α), p.x ≤ a ↔ b ≤ p.x) ↔ False := by
+  simp [not_iff]; use ⟨max a b + 1, 0⟩; simp; apply le_of_lt; simp
+
+@[simp]
+theorem forall_le_iff_le_yy_iff₃ {a b : α} :
+(∀ (p : Point α), p.y ≤ a ↔ b ≤ p.y) ↔ False := by
+  simp [not_iff]; use ⟨0, max a b + 1⟩; simp; apply le_of_lt; simp
+
+@[simp]
+theorem forall_le_iff_le_xy_iff₃ {a b : α} :
+(∀ (p : Point α), p.x ≤ a ↔ b ≤ p.y) ↔ False := by
+  simp [not_iff]; use ⟨a, b - 1⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_yx_iff₃ {a b : α} :
+(∀ (p : Point α), p.y ≤ a ↔ b ≤ p.x) ↔ False := by
+  simp [not_iff]; use ⟨b - 1, a⟩; simp
+
+omit ha₃ ha₄ ha₅ in @[simp]
+theorem forall_le_iff_le_xx_iff₄ {a b : α} :
+(∀ (p : Point α), a ≤ p.x ↔ b ≤ p.x) ↔ a = b := by
+  symm; constructor; rintro rfl; simp; intro h
+  have h₁ := h ⟨a, 0⟩; have h₂ := h ⟨b, 0⟩
+  simp at h₁ h₂; exact le_antisymm h₂ h₁
+
+omit ha₃ ha₄ ha₅ in @[simp]
+theorem forall_le_iff_le_yy_iff₄ {a b : α} :
+(∀ (p : Point α), a ≤ p.y ↔ b ≤ p.y) ↔ a = b := by
+  symm; constructor; rintro rfl; simp; intro h
+  have h₁ := h ⟨0, a⟩; have h₂ := h ⟨0, b⟩
+  simp at h₁ h₂; exact le_antisymm h₂ h₁
+
+@[simp]
+theorem forall_le_iff_le_xy_iff₄ {a b : α} :
+(∀ (p : Point α), a ≤ p.x ↔ b ≤ p.y) ↔ False := by
+  simp [not_iff]; use ⟨a, b - 1⟩; simp
+
+@[simp]
+theorem forall_le_iff_le_yx_iff₄ {a b : α} :
+(∀ (p : Point α), a ≤ p.y ↔ b ≤ p.x) ↔ False := by
+  simp [not_iff]; use ⟨b - 1, a⟩; simp
+
+end le

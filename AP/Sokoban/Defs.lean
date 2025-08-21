@@ -1,4 +1,4 @@
-import AP.Point
+import AP.Dir
 import AP.System
 
 namespace Sokoban
@@ -19,12 +19,7 @@ structure State where
   player : PointZ
 deriving Inhabited, DecidableEq
 
-inductive Move where
-| up : Move
-| left : Move
-| right : Move
-| down : Move
-deriving Inhabited, DecidableEq, Fintype
+abbrev Move := Dir
 
 -----
 
@@ -55,12 +50,6 @@ structure State.WFTargets (s : State) extends State.WF s where
 
 -----
 
-def Move.toPoint : Move → PointZ
-| .up => ⟨0, -1⟩
-| .left => ⟨-1, 0⟩
-| .right => ⟨1, 0⟩
-| .down => ⟨0, 1⟩
-
 def State.movePlayer (s : State) (p : PointZ) : State :=
   { s with
     player := p
@@ -79,7 +68,7 @@ def State.moveBox (s : State) (p₁ p₂ : PointZ) : State :=
   }
 
 def State.move (s : State) (m : Move) : Option State := do
-  let p_dif := m.toPoint
+  let p_dif := m.point
   let p₁ := s.player + p_dif
   let d₁ ← s.grid.get? p₁
   guard # !d₁.wall

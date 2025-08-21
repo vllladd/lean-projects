@@ -332,3 +332,23 @@ theorem icc_eq_nil_iff {a b : α} : icc a b = [] ↔ b < a := by
   · intro h₁ c h₂; exact lt_of_lt_of_le h₁ h₂
 
 end List
+
+variable {α : Type*}
+variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
+variable [ha₃ : IsOrderedAddMonoid α] [ha₄ : ZeroLEOneClass α] [ha₅ : NeZero (1 : α)]
+
+@[simp]
+theorem min_sub_one_lt_left {a b : α} : min a b - 1 < a :=
+  lt_of_le_of_lt' (min_le_left _ _) (sub_one_lt _)
+
+@[simp]
+theorem min_sub_one_lt_right {a b : α} : min a b - 1 < b :=
+  lt_of_le_of_lt' (min_le_right _ _) (sub_one_lt _)
+
+@[simp]
+theorem left_lt_max_add_one {a b : α} : a < max a b + 1 :=
+  lt_of_le_of_lt (le_max_left _ _) (lt_add_one _)
+
+@[simp]
+theorem right_lt_max_add_one {a b : α} : b < max a b + 1 :=
+  lt_of_le_of_lt (le_max_right _ _) (lt_add_one _)

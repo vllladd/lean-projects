@@ -1,33 +1,51 @@
+import AP.Dir
 import AP.AP.Defense
 
 namespace AP
 
-class Edge (ps : Set PointZ) : Prop where
-  h : ∃ (a₁ a₂ : Bool) (i : ℤ), ∀ p, p ∈ ps ↔ (a₂ ↔ ite a₁ p.x p.y ≤ i)
+@[ext]
+structure Edge : Type where
+  dir : Dir
+  offset : ℤ
+deriving Inhabited, DecidableEq
 
-theorem Edge.def {ps} : Edge ps ↔ ∃ (a₁ a₂ : Bool) (i : ℤ),
-∀ p, p ∈ ps ↔ (a₂ ↔ ite a₁ p.x p.y ≤ i) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+def Edge.memPoints (e : Edge) (p : PointZ) : Bool :=
+  match e.dir with
+  | .up => p.y ≤ e.offset
+  | .down => e.offset ≤ p.y
+  | .left => p.x ≤ e.offset
+  | .right => e.offset ≤ p.x
 
-instance {y} : Edge {p | y ≤ p.y} := by
-  constructor; use false, false, y - 1; simp [Int.sub_one_lt_iff]
+def Edge.points (e : Edge) : Set PointZ :=
+  {p | e.memPoints p}
 
-instance {x} : Edge {p | x ≤ p.x} := by
-  constructor; use true, false, x - 1; simp [Int.sub_one_lt_iff]
+theorem Edge.mem_points_iff_memPoints {e : Edge} {p} :
+p ∈ e.points ↔ e.memPoints p := by rfl
 
-instance {y} : Edge {p | p.y < y} := by
-  constructor; use false, true, y - 1; simp [Int.le_sub_one_iff]
+instance {e : Edge} {p} : Decidable # p ∈ e.points :=
+  match h : e.memPoints p with
+  | true => .isTrue # by simp [Edge.mem_points_iff_memPoints, h]
+  | false => .isFalse # by simp [Edge.mem_points_iff_memPoints, h]
 
-instance {x} : Edge {p | p.x < x} := by
-  constructor; use true, true, x - 1; simp [Int.le_sub_one_iff]
+theorem Edge.memPoints_eq {e : Edge} {p} : e.memPoints p = decide (p ∈ e.points) := by
+  simp [mem_points_iff_memPoints]
 
-instance {y} : Edge {p | y < p.y} := by
-  constructor; use false, false, y; simp
+theorem Edge.points_inj {e₁ e₂ : Edge} (h : e₁.points = e₂.points) : e₁ = e₂ := by
+  rw [Set.ext_iff] at h; rcases e₁, e₂ with ⟨⟨d₁, n₁⟩, ⟨d₂, n₂⟩⟩; simp
+  cases d₁ <;> cases d₂ <;> simp <;> simp [points, memPoints] at h <;> exact h
 
-instance {x} : Edge {p | x < p.x} := by
-  constructor; use true, false, x; simp
+@[simp]
+theorem Edge.points_eq_points_iff {e₁ e₂ : Edge} : e₁.points = e₂.points ↔ e₁ = e₂ :=
+  ⟨points_inj, λ h => by rw [h]⟩
 
-instance {y} : Edge {p | p.y ≤ y} := by
-  constructor; use false, true, y; simp
+def Edge.dist (e : Edge) (p : PointZ) : ℤ :=
+  match e.dir with
+  | .up => p.y - e.offset
+  | .down => e.offset - p.y
+  | .left => p.x - e.offset
+  | .right => e.offset - p.x
 
-instance {x} : Edge {p | p.x ≤ x} := by
-  constructor; use true, true, x; simp
+-- def Edge.defenseFn {edge : Set PointZ} (s : State) : Option State := do
+--   none
+
+-- #check 0 #exit
