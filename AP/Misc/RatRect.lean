@@ -17,8 +17,7 @@ def Rect.y₁ (r : Rect) : ℝ := r.pos.y
 def Rect.x₂ (r : Rect) : ℝ := r.x₁ + r.width
 def Rect.y₂ (r : Rect) : ℝ := r.y₁ + r.height
 
-@[class]
-structure Rect.WF (r : Rect) : Prop where
+class Rect.WF (r : Rect) : Prop where
   width_pos : 0 < r.width
   height_pos : 0 < r.height
 
@@ -31,15 +30,14 @@ def Rect.interior (r : Rect) : Set PointR :=
 def Rect.boundary (r : Rect) : Set PointR :=
   r.surface \ r.interior
 
-@[class]
-structure Tiling.WF (t : Tiling) : Prop where
+def Rect.tiledBy (r : Rect) (t : Tiling) : Prop :=
+  ⋃ r' ∈ t.rs, r'.surface = r.surface
+
+class Tiling.WF (t : Tiling) : Prop where
   r_wf : ∀ r ∈ t.rs, r.WF
   rect_eq_of_mem_interior : ∀ r₁ ∈ t.rs, ∀ r₂ ∈ t.rs, ∀ p,
     p ∈ r₁.interior → p ∈ r₂.interior → r₁ = r₂
-  exi_rect : ∃ (r : Rect), r.WF ∧ ⋃ r' ∈ t.rs, r'.surface = r.surface
-
-def Rect.tiledBy (r : Rect) (t : Tiling) : Prop :=
-  ∀ p ∈ r.surface, ∃ r' ∈ t.rs, p ∈ r'.surface
+  exi_rect : ∃ (r : Rect), r.WF ∧ r.tiledBy t
 
 def Rect.trivTiling (r : Rect) : Tiling := ⟨{r}⟩
 
@@ -149,7 +147,7 @@ r.surface \ r.boundary = r.interior := by
   apply Set.union_diff_cancel_right; simp
 
 instance [wf : r.WF] : r.trivTiling.WF := by
-  simp [Rect.trivTiling]; constructor; simpa; simp; use r, wf; simp
+  simp [Rect.trivTiling]; constructor; simpa; simp; use r, wf; simp [Rect.tiledBy]
 
 @[simp]
 theorem tiledBy_trivTiling : r.tiledBy r.trivTiling := by
@@ -165,5 +163,5 @@ theorem trivTiling_rat_iff : r.trivTiling.rat ↔ r.rat := by
 @[simp]
 theorem rs_ne_empty [wf : t.WF] : t.rs ≠ ∅ := by
   have ⟨r, r_wf, h⟩ := wf.exi_rect
-  intro h₁; simp [h₁] at h
+  intro h₁; simp [h₁, Rect.tiledBy] at h
   symm at h; simp at h

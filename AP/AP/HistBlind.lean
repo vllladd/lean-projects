@@ -413,11 +413,99 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
 
 theorem State.d_hws_histBlind_of_d_hws {s} [hs : sys.WF s] (h : s.d_hws) :
 ∃ (d : DStrat), d.WF ∧ d.histBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ := by
+  sorry
+
+#check 0 #exit
+
   contrapose h
   push_neg at h
   simp at h ⊢
   apply a_hws_of_ind (p := λ s => ∀ (d : DStrat), d.WF → d.histBlind →
     ∃ a, a.WF ∧ s.a_wins ⟨a, d⟩) h <;> clear! s
+  · intro sa ha ih
+    obtain ⟨a, Ha, h₁⟩ := ih dHistBlind inferInstance (by simp)
+    obtain ⟨sd, h₂⟩ := a.validTr # ha.hasTr_of_a_wins h₁
+    generalize a.f sa = pa at h₂
+    use pa, sd, h₂
+    intro d Hd h₃
+    specialize ih d Hd h₃
+    clear! a h₃
+    obtain ⟨a, Ha, ih⟩ := ih
+  intro sd hd pd sa ih h₁ n
+  specialize ih # n + 1
+  simp at ih; split at ih; simp at ih; nm x sa' h₂; clear x
+  simp [-DState.tr_eq_some_iff, dHistBlind, mk_strat_fn] at h₂
+  have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sd.hist = sd
+  · use sd; simp; infer_instance
+  generalize hd' : Classical.epsilon (λ s' => sys.WF s' ∧ s'.setHist sd.hist = sd) = sd'
+  have h₄ := Classical.epsilon_spec h₃ <;> rw [hd'] at h₄
+  rcases h₄ with ⟨h₄, h₅⟩
+  have h₆ : ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sd'.d_wins ⟨a, d⟩
+  · sorry
+  generalize h₇ : Classical.epsilon (λ (d : DStrat) => d.WF ∧ ∀ (a : AStrat), a.WF →
+    sd'.d_wins ⟨a, d⟩) = d
+  have h₈ := Classical.epsilon_spec h₆; rw [h₇] at h₈
+  rcases h₈ with ⟨h₈, h₉⟩
+  have h₅' := setHist_eq_comm.mp h₅
+  have hd₁ : DState sd'; use h₄; rw [←h₅']; simp
+  have H₁ : sys.validTr sd (d.f sd'); rw [←h₅]; simp
+  simp [-DState.tr_eq_some_iff, choose?_eq_ite, h₃, hd', h₆, h₇, H₁] at h₂
+  clear H₁
+  
+  rw [←h₅] at h₂
+  simp [-DState.tr_eq_some_iff] at h₂
+  rcases h₂ with ⟨sa₁, ha₁, rfl⟩
+
+#check 0 #exit
+
+  use dHistBlind, inferInstance, by simp
+  contrapose h
+  push_neg at h
+  simp at h ⊢
+  apply a_hws_of_ind (p := λ s => ∃ (a : AStrat), a.WF ∧
+    s.a_wins ⟨a, dHistBlind⟩) h <;> clear! s
+  · rintro sa ha ⟨a, Ha, ih⟩
+    obtain ⟨sd, h₁⟩ := ha.validTr_of_a_wins ih
+    dsimp at h₁
+    use a.f sa, sd, h₁, a, Ha
+    intro n
+    specialize ih # n + 1
+    simp [h₁] at ih
+    exact ih
+  intro sd hd pd sa ih h₁
+  specialize ih # n + 1
+  simp at ih; split at ih; simp at ih; nm x sa' h₂; clear x
+  simp [-DState.tr_eq_some_iff, dHistBlind, mk_strat_fn] at h₂
+  have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sd.hist = sd
+  · use sd; simp; infer_instance
+  generalize hd' : Classical.epsilon (λ s' => sys.WF s' ∧ s'.setHist sd.hist = sd) = sd'
+  have h₄ := Classical.epsilon_spec h₃ <;> rw [hd'] at h₄
+  rcases h₄ with ⟨h₄, h₅⟩
+  have h₆ : ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sd'.d_wins ⟨a, d⟩
+  · sorry
+  generalize h₇ : Classical.epsilon (λ (d : DStrat) => d.WF ∧ ∀ (a : AStrat), a.WF →
+    sd'.d_wins ⟨a, d⟩) = d
+  have h₈ := Classical.epsilon_spec h₆; rw [h₇] at h₈
+  rcases h₈ with ⟨h₈, h₉⟩
+  have h₅' := setHist_eq_comm.mp h₅
+  have hd₁ : DState sd'; use h₄; rw [←h₅']; simp
+  have H₁ : sys.validTr sd (d.f sd'); rw [←h₅]; simp
+  simp [-DState.tr_eq_some_iff, choose?_eq_ite, h₃, hd', h₆, h₇, H₁] at h₂
+  clear H₁
+  
+  rw [←h₅] at h₂
+  simp [-DState.tr_eq_some_iff] at h₂
+
+#check 0 #exit
+
+  contrapose h
+  push_neg at h
+  simp at h ⊢
+  apply a_hws_of_ind (p := λ s => ∀ (d : DStrat), d.WF → d.histBlind →
+    ∃ a, a.WF ∧ s.a_wins ⟨a, d⟩) h <;> clear! s
+  rotate_left
+  · intro sd hd pd sa ih h₁ d Hd h₂
+    sorry
   · intro sa ha ih
     have h₁ := ih dHistBlind inferInstance (by simp)
     obtain ⟨a, Ha, h₁⟩ := h₁
@@ -425,10 +513,10 @@ theorem State.d_hws_histBlind_of_d_hws {s} [hs : sys.WF s] (h : s.d_hws) :
     dsimp at hd
     use a.f sa, sd, hd
     intro d Hd h₂
+    specialize ih d Hd h₂
     sorry
-  · sorry
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.a_hws_iff_a_hws_histBlind {s} [hs : sys.WF s] : s.a_hws ↔
 ∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
