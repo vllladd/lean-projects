@@ -1,4 +1,4 @@
-import AP.AP.HistBlind
+import AP.AP.HistBlind.A
 
 namespace AP
 
