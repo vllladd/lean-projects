@@ -67,8 +67,6 @@ theorem sorted_lt_getBorderPoints {e : Edge} {p d} (h : d ≠ 0) :
   simp [getBorderPoints, getBorderPoint];
   split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
 
--- #check 0 #exit
-
 def defenseFn (e : Edge) (s : State) : Option PointZ :=
   let pa := s.aPos
   let p₀ := e.getBorderPoint₀ pa
@@ -78,10 +76,19 @@ def defenseFn (e : Edge) (s : State) : Option PointZ :=
   | 4 => pick # p₀ :: e.getBorderPoints pa 1
   | 3 => pick # e.getBorderPoints pa 1 ++ [p₀]
   | 2 => if p₀ ∉ s.taken then some p₀ else
-    match e.getBorderPoints pa 1 |>.find? (· ∈ s.taken) with
-    | some p => sorry
-    | none => sorry
+    let ps₁ := e.getBorderPoints pa 1
+    let ps₂ := e.getBorderPoints pa 2
+    let f := λ (ps₁ ps₂ : List PointZ) => do
+      let p ← ps₁ |>.find? (· ∈ s.taken)
+      ps₂ |>.find? # λ p' => p' ∉ s.taken ∧ p'.dist p ≠ 1
+    f ps₁ ps₂ |>.elim (f ps₂ ps₁) some
   | 1 => pick # p₀ :: e.getBorderPoints pa 1
   | _ => none
+
+def defense (e : Edge) : Defense :=
+  { cnd := λ s => 6 ≤ e.dist s.aPos
+  , ps := e.points
+  , f := e.defenseFn
+  }
 
 -- #check 0 #exit
