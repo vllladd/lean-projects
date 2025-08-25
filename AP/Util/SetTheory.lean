@@ -476,13 +476,20 @@ theorem Set.nat_exists_le_of_infinite {s : Set ℕ} {n : ℕ}
   apply nonempty_infinite_diff_finite h
   exact finite_lt_nat n
 
-theorem Set.exists_infinite_preimage_of {α β : Type*} [ha : Infinite α] [hb : Finite β]
+theorem Set.exists_infinite_preimage_of' {α β : Type*} [ha : Infinite α] [hb : Finite β]
 {f : α → β} : ∃ b, (f ⁻¹' b).Infinite := by
   by_contra h
   simp at h
   replace h := finite_iUnion h
   rw [iUnion_preimage, finite_univ_iff] at h
   exact not_finite α
+
+theorem Set.exists_infinite_preimage_of {α β : Type*} [ha : Infinite α] [hb : Finite β]
+{f : α → β} : ∃ b, (f ⁻¹' {b}).Infinite := by
+  obtain ⟨s, hs⟩ := exists_infinite_preimage_of' (f := f)
+  contrapose hs
+  simp at hs ⊢
+  exact toFinite s |>.preimage' # λ b _ => hs b
 
 theorem Set.infinite_of_subset {α : Type*} {s₁ s₂ : Set α}
 (h₁ : s₂ ⊆ s₁) (h₂ : s₂.Infinite) : s₁.Infinite := h₂.mono h₁

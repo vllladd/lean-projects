@@ -264,7 +264,7 @@ theorem DStrat.f_set {d : DStrat} {s p} : (d.set s p).f = fn_set s p d.f := rfl
 theorem AStrat.wf_set_of_validTr {a : AStrat} {s p} [ha : a.WF]
 (h : sys.validTr s p) : (a.set s p).WF := by
   simp [set, wf_iff]; intro s₁ hs₁ h₁; unfold fn_set; split_ifs with h₂
-  subst h₂; exact h; exact validTr h₁
+  subst h₂; exact h; exact ha.validTr h₁
 
 theorem DStrat.wf_set_of_validTr {d : DStrat} {s p} [hd : d.WF]
 (h : sys.validTr s p) : (d.set s p).WF := by
@@ -305,7 +305,7 @@ theorem AState.a_hws_of_not_d_hws {sa} [ha : AState sa] (h : ¬sa.d_hws) : sa.a_
   by_cases h₁ : ¬sys.hasTr sa
   · simp [System.hasTr] at h₁; use 1; simp [h₁]
   push_neg at h₁
-  replace h₁ := a.validTr h₁
+  replace h₁ := hsa.validTr h₁
   generalize hpa : a.f sa = pa at h₁
   obtain ⟨sd, h₁⟩ := h₁
   have hd := DState.of_tr h₁
@@ -433,7 +433,7 @@ theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
   use aStratOfAHws sd, inferInstance
   intro d hd n
   cases n; rfl; nm n
-  obtain ⟨sa, h₁⟩ := d.validTr sd
+  obtain ⟨sa, h₁⟩ := hd.validTr sd
   simp [h₁]
   have ha := AState.of_tr h₁
   replace h : ¬sa.d_hws
@@ -454,7 +454,7 @@ theorem State.a_hws_of_not_d_hws {s : State} [hs : sys.WF s]
     exact System.reachable_of_simulate_full H₂
   simp [aStratOfAHws, mk_strat_fn, H₆, h₁]
   rw [choose?_eq_of_exi, h₂]; rotate_left; exact h
-  simp [a.validTr H₄]
+  simp [h₃.validTr H₄]
 
 @[simp]
 theorem State.not_a_hws_iff {s : State} [hs : s.WF] : ¬s.a_hws ↔ s.d_hws := by
@@ -480,7 +480,7 @@ sa.a_hws ↔ ∃ p sd, sys.tr sa p = some sd ∧ sd.a_hws := by
   · intro h
     obtain h₁ := hs.hasTr_of_a_hws h
     obtain ⟨a, ha, h⟩ := h
-    obtain ⟨sd, h₂⟩ := a.validTr h₁
+    obtain ⟨sd, h₂⟩ := ha.validTr h₁
     use a.f sa, sd, h₂, a, ha
     intro d hd n
     specialize h d hd (n + 1)
@@ -502,7 +502,7 @@ sd.d_hws ↔ ∃ p sa, sys.tr sd p = some sa ∧ sa.d_hws := by
   constructor
   · intro h
     obtain ⟨d, hd, h⟩ := h
-    obtain ⟨sa, h₂⟩ := d.validTr sd
+    obtain ⟨sa, h₂⟩ := hd.validTr sd
     use d.f sd, sa, h₂, d, hd
     intro a ha
     specialize h a ha
@@ -547,6 +547,23 @@ s.a_wins st := by
   have h₈ := DState.of_tr h₂
   exact h₃ sd sa' h₆ h₇
 
+theorem State.a_wins_of_ind {s} [hs : sys.WF s]
+{st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (st.d.f sd) = some sa → p sa) :
+s.a_wins st := by
+  replace hs := s.aState_or_dState
+  rcases hs with ha | hd
+  · exact ha.a_wins_of_ind h₁ h₂ h₃
+  intro n
+  cases n; rfl; nm n
+  simp
+  obtain ⟨sa, h₄⟩ := hst.wf_d.validTr s
+  simp [h₄]
+  have h₅ := AState.of_tr h₄
+  have h₆ := h₃ s sa h₁ h₄
+  apply h₅.a_wins_of_ind h₆ h₂ h₃
+
 theorem State.a_hws_of_ind {s} [hs : sys.WF s]
 {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
@@ -560,19 +577,29 @@ theorem State.a_hws_of_ind {s} [hs : sys.WF s]
   have h₇ := h₃ s pd sa h₁ h₅
   exact h₆.a_hws_of_ind h₇ h₂ h₃
 
-theorem State.a_wins_of_ind {s} [hs : sys.WF s]
-{st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
-(h₂ : ∀ sa [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
-(h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (st.d.f sd) = some sa → p sa) :
-s.a_wins st := by
-  replace hs := s.aState_or_dState
-  rcases hs with ha | hd
-  · exact ha.a_wins_of_ind h₁ h₂ h₃
-  intro n
-  cases n; rfl; nm n
-  simp
-  obtain ⟨sa, h₄⟩ := st.d.validTr s
-  simp [h₄]
-  have h₅ := AState.of_tr h₄
-  have h₆ := h₃ s sa h₁ h₄
-  apply h₅.a_wins_of_ind h₆ h₂ h₃
+open Classical in noncomputable
+def aSeek (p : State → Prop) : AStrat := .mk' # λ sa =>
+  choose? # λ pa => ∃ sd, sys.tr sa pa = some sd ∧ p sd
+
+instance {p} : (aSeek p).WF := by unfold aSeek; infer_instance
+
+theorem State.exi_a_wins_of_ind {s} [hs : sys.WF s]
+{d : DStrat} [Hd : d.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (d.f sd) = some sa → p sa) :
+∃ (a : AStrat), a.WF ∧ s.a_wins ⟨a, d⟩ := by
+  use aSeek p, inferInstance
+  apply a_wins_of_ind h₁; clear! s
+  · intro sa ha ih; dsimp
+    specialize h₂ sa ih
+    simp [-AState.tr_eq_some_iff, aSeek, mk_strat_fn, choose?_eq_ite, h₂]
+    generalize hp : Classical.epsilon
+      (λ pa => ∃ sd, sys.tr sa pa = some sd ∧ p sd) = pa
+    have h₄ := Classical.epsilon_spec h₂
+    rw [hp] at h₄
+    rcases h₄ with ⟨sd, h₄, h₅⟩
+    simp [-AState.tr_eq_some_iff, sys.validTr_of_eq_some h₄]
+    use sd
+  · intro sd hd sa ih h₄; dsimp at h₄
+    have ha := AState.of_tr h₄
+    exact h₃ sd sa ih h₄

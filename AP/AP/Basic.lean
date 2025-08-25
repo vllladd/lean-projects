@@ -345,16 +345,23 @@ instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
 theorem State.aState_or_dState {s} [hs : sys.WF s] : AState s ∨ DState s := by
   simp [AState.iff, DState.iff, hs]
 
-theorem AStrat.validTr {s} [hs : AState s] {st : AStrat} [hst : st.WF]
+theorem AStrat.WF.validTr {s} [hs : AState s] {st : AStrat} [hst : st.WF]
 (h : sys.hasTr s) : sys.validTr s (st.f s) := by
   rw [AStrat.wf_iff] at hst; exact hst h
 
 @[simp]
-theorem DStrat.validTr (s : State) [hs : DState s] {st : DStrat} [hst : st.WF] :
+theorem DStrat.WF.validTr (s : State) [hs : DState s] {st : DStrat} [hst : st.WF] :
 sys.validTr s (st.f s) := by
   rw [DStrat.wf_iff] at hst; apply hst; simp
 
-theorem Strat.validTr {s} [hs : sys.WF s] {st : Strat} [hst : st.WF]
+theorem AStrat.validTr {s} [hs : AState s] {st : AStrat} [hst : st.WF]
+(h : sys.hasTr s) : sys.validTr s (st.f s) := hst.validTr h
+
+@[simp]
+theorem DStrat.validTr (s : State) [hs : DState s] {st : DStrat} [hst : st.WF] :
+sys.validTr s (st.f s) := hst.validTr s
+
+theorem Strat.WF.validTr {s} [hs : sys.WF s] {st : Strat} [hst : st.WF]
 (h : sys.hasTr s) : sys.validTr s (st.f s) := by
   rw [Strat.wf_def] at hst; exact hst h
 

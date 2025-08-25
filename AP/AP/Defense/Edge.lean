@@ -35,6 +35,7 @@ instance {e : Edge} {p} : Decidable # p ∈ e.points :=
   | true => .isTrue # by simp [mem_points_iff_memPoints, h]
   | false => .isFalse # by simp [mem_points_iff_memPoints, h]
 
+@[simp]
 theorem memPoints_eq {e : Edge} {p} : e.memPoints p = decide (p ∈ e.points) := by
   simp [mem_points_iff_memPoints]
 
@@ -64,25 +65,26 @@ def getBorderPoints (e : Edge) (p : PointZ) (d : ℕ) : List PointZ :=
 
 theorem sorted_lt_getBorderPoints {e : Edge} {p d} (h : d ≠ 0) :
 (e.getBorderPoints p d).Sorted (· < ·) := by
-  simp [getBorderPoints, getBorderPoint];
+  simp [getBorderPoints, getBorderPoint]
   split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
 
 def defenseFn (e : Edge) (s : State) : Option PointZ :=
   let pa := s.aPos
   let p₀ := e.getBorderPoint₀ pa
   let pick := λ (xs : List PointZ) => xs.find? (· ∉ s.taken)
+  let get := e.getBorderPoints pa
   match e.dist pa with
   | 5 => some p₀
-  | 4 => pick # p₀ :: e.getBorderPoints pa 1
-  | 3 => pick # e.getBorderPoints pa 1 ++ [p₀]
+  | 4 => pick # p₀ :: get 1
+  | 3 => pick # get 1 ++ [p₀]
   | 2 => if p₀ ∉ s.taken then some p₀ else
-    let ps₁ := e.getBorderPoints pa 1
-    let ps₂ := e.getBorderPoints pa 2
+    let ps₁ := get 1
+    let ps₂ := get 2
     let f := λ (ps₁ ps₂ : List PointZ) => do
       let p ← ps₁ |>.find? (· ∈ s.taken)
       ps₂ |>.find? # λ p' => p' ∉ s.taken ∧ p'.dist p ≠ 1
     f ps₁ ps₂ |>.elim (f ps₂ ps₁) some
-  | 1 => pick # p₀ :: e.getBorderPoints pa 1
+  | 1 => pick # p₀ :: get 1
   | _ => none
 
 def defense (e : Edge) : Defense :=
@@ -90,5 +92,17 @@ def defense (e : Edge) : Defense :=
   , ps := e.points
   , f := e.defenseFn
   }
+
+def cnd (e : Edge) (s : State) : Prop :=
+  let pa := s.aPos
+  let p₀ := e.getBorderPoint₀ pa
+  let get := e.getBorderPoints pa
+  match e.dist pa with
+  | 5 => p₀ ∈ s.taken
+  | 4 => p₀ ∈ s.taken ∧ (get 1).any (· ∈ s.taken)
+  | 3 => 2 ≤ (p₀ :: get 1).countP (· ∈ s.taken)
+  | 2 => sorry
+  | 1 => (p₀ :: get 1).all (· ∈ s.taken)
+  | d => 0 < d
 
 -- #check 0 #exit

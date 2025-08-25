@@ -1326,3 +1326,23 @@ sys.simulate f a n = sys.simulate g a n := by
     specialize h k hk b hb₁ hb₂ # hasTr_of_eq_some hc₁
     simp [h, hc₂] at hc₁; rw [hc₁]
   obtain ⟨b, h₄, h₅⟩ := h₄; simp [h₅]; ext:1 <;> simp [h₄]
+
+theorem not_reachable_of_acyclic_and_simulate_and_lt {a b f k n}
+[ha : sys.Acyclic a] (h₁ : sys.simulate f a n = (b, 0)) (h₂ : k < n) :
+¬sys.Reachable b (sys.simulate f a k).1 := by
+  rcases ha with ⟨ha, h₃⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt h₂; clear h₂
+  rw [add_assoc, add_comm n, simulate_add] at h₁
+  simp at h₁
+  split_ifs at h₁ with h₂ <;> simp [h₂] at h₁
+  generalize hr : sys.simulate f a k = r at h₁ h₂ ⊢
+  rcases r with ⟨c, r⟩
+  simp at h₁ h₂ ⊢
+  subst h₂
+  rw [simulate_add] at h₁
+  simp at h₁; split at h₁ <;> simp at h₁
+  nm x d h₄; clear x
+  specialize @h₃ c d (f c) (reachable_of_simulate_full hr) h₄
+  contrapose! h₃
+  trans b; rotate_left; exact h₃
+  exact reachable_of_simulate_full h₁

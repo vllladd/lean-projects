@@ -45,6 +45,9 @@ theorem State.chooseDMove_setHist {s : State} {hist} :
 (s.setHist hist).chooseDMove = s.chooseDMove := by
   simp [chooseDMove]
 
+instance : (default : AStrat).histBlind := by
+  simp [AStrat.histBlind]
+
 open Classical in noncomputable
 def aHistBlind : AStrat := .mk' # λ s => do
   let s' ← choose? # λ (s' : State) => sys.WF s' ∧ s'.setHist s.hist = s
@@ -141,7 +144,7 @@ AStrat.WF # .mk # λ s => a.f # s.setHistAt hist₁ hist₂ := by
     simp at h₄
     exact h₄
   subst hs'
-  apply a.validTr
+  apply ha'.validTr
   simpa [State.setHistAt', -AState.hasTr_iff]
 
 instance {d : DStrat} {hist₁ hist₂} [hd : d.WF] :
@@ -161,7 +164,7 @@ DStrat.WF # .mk # λ s => d.f # s.setHistAt hist₁ hist₂ := by
     simp at h₄
     exact h₄
   subst hs'
-  exact d.validTr _
+  exact hd'.validTr _
 
 @[simp]
 instance {s hist₁ hist₂} [hs : sys.WF s] : sys.WF # s.setHistAt hist₁ hist₂ := by
@@ -391,6 +394,3 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
 theorem State.a_hws_iff_a_hws_histBlind {s} [hs : sys.WF s] : s.a_hws ↔
 ∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
   ⟨a_hws_histBlind_of_a_hws, λ ⟨a, Ha, h₁, h₂⟩ => by use a⟩
-
-instance : (default : AStrat).histBlind := by
-  simp [AStrat.histBlind]
