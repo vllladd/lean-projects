@@ -603,3 +603,71 @@ theorem State.exi_a_wins_of_ind {s} [hs : sys.WF s]
   · intro sd hd sa ih h₄; dsimp at h₄
     have ha := AState.of_tr h₄
     exact h₃ sd sa ih h₄
+
+theorem State.a_wins_iff_add {s st} (k : ℕ) :
+s.a_wins st ↔ ∀ n, (sys.simulate st.f s # k + n).2 = 0 := by
+  constructor <;> intro h₁ n
+  · exact h₁ # k + n
+  · apply System.simulate_snd_eq_zero_of_le_and_eq_zero # h₁ n
+    linarith
+
+theorem State.d_wins_iff_add {s st} (k : ℕ) :
+s.d_wins st ↔ ∃ n, (sys.simulate st.f s # k + n).2 ≠ 0 := by
+  constructor <;> rintro ⟨n, h₁⟩
+  · use n
+    contrapose! h₁
+    apply System.simulate_snd_eq_zero_of_le_and_eq_zero h₁
+    linarith
+  · use k + n
+
+theorem DState.d_wins_of_decreasing_dState {s} [hs : DState s]
+{a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {f : State → ℕ}
+(h : ∀ sd [DState sd] sa [AState sa] sd' [DState sd'], sys.tr sd (d.f sd) = some sa →
+sys.tr sa (a.f sa) = some sd' → f sd' < f sd) : s.d_wins ⟨a, d⟩ := by
+  generalize hn : f s = n
+  replace hn : f s ≤ n; simp [hn]
+  induction n generalizing s
+  · use 2
+    simp
+    split; simp; nm x s₁ h₁; clear x
+    split; simp; nm x s₂ h₂; clear x
+    have hs₁ := AState.of_tr h₁
+    simp [-AState.tr_eq_some_iff] at h₂
+    have h₃ := AState.of_tr h₁
+    have h₄ := DState.of_tr h₂
+    specialize h s s₁ s₂ h₁ h₂
+    linarith
+  nm n ih
+  obtain ⟨s₁, h₁⟩ := d.validTr s
+  have h₂ := AState.of_tr h₁
+  by_cases h₃ : sys.hasTr s₁
+  · replace h₃ := a.validTr h₃
+    rcases h₃ with ⟨s₂, h₃⟩
+    have h₄ := DState.of_tr h₃
+    specialize h s s₁ s₂ h₁ h₃
+    specialize @ih s₂ _ # by linarith
+    rcases ih with ⟨n, ih⟩
+    use n + 2
+    simpa [h₁, h₃]
+  use 2
+  simp [h₁]
+  split; simp
+  nm x s₂ h₄
+  exfalso
+  apply h₃
+  exact System.hasTr_of_eq_some h₄
+
+theorem State.d_wins_of_decreasing_dState {s} [hs : sys.WF s]
+{a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {f : State → ℕ}
+(h : ∀ sd [DState sd] sa [AState sa] sd' [DState sd'], sys.tr sd (d.f sd) = some sa →
+sys.tr sa (a.f sa) = some sd' → f sd' < f sd) : s.d_wins ⟨a, d⟩ := by
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs; rotate_left
+  · exact hs.d_wins_of_decreasing_dState h
+  rw [d_wins_iff_add 1]
+  simp_rw [add_comm]
+  simp
+  split; simp
+  nm x s₁ h₁
+  have h₂ := DState.of_tr h₁
+  exact h₂.d_wins_of_decreasing_dState h

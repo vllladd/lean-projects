@@ -580,3 +580,11 @@ theorem forall_le_iff_le_yx_iff₄ {a b : α} :
   simp [not_iff]; use ⟨b - 1, a⟩; simp
 
 end le
+
+@[simp]
+theorem zero_le_dist [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+{a b : Point α} : 0 ≤ a.dist b := by simp [dist]
+
+@[simp]
+theorem max_dist_zero [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+{a b : Point α} : max (a.dist b) 0 = a.dist b := by simp
