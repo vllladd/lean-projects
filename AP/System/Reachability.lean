@@ -1346,3 +1346,22 @@ theorem not_reachable_of_acyclic_and_simulate_and_lt {a b f k n}
   contrapose! h₃
   trans b; rotate_left; exact h₃
   exact reachable_of_simulate_full h₁
+
+theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.SimFn f]
+(h₁ : sys.simulate f a n = r) (h₂ : r.2 ≠ 0) : ¬sys.hasTr r.1 := by
+  rcases r with ⟨b, r⟩
+  dsimp at h₂ ⊢
+  induction n generalizing a
+  · simp [ne_symm' h₂] at h₁
+  nm n ih
+  simp at h₁
+  split at h₁
+  · nm x h₃; clear x
+    simp at h₁
+    rcases h₁ with ⟨rfl, rfl⟩
+    contrapose! h₃
+    obtain ⟨c, hc⟩ := hf.1 h₃
+    simp [hc]
+  nm x c h₃; clear x
+  have hc := sys.wf_of_tr h₃
+  exact ih h₁

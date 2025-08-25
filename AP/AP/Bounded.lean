@@ -93,12 +93,6 @@ theorem State.d_hws_iff_d_hws_bounded {s} [hs : sys.WF s]
   obtain ⟨n, h₁⟩ := h
   use n, d
 
-def State.getATrap (s : State) : Set PointZ :=
-  {p | ∃ s', sys.Reachable s s' ∧ s'.aPos = p}
-
-def State.aTrapped (s : State) : Prop :=
-  s.getATrap.Finite
-
 theorem State.a_wins_iff_add {s st} (k : ℕ) :
 s.a_wins st ↔ ∀ n, (sys.simulate st.f s # k + n).2 = 0 := by
   constructor <;> intro h₁ n
@@ -115,9 +109,48 @@ s.d_wins st ↔ ∃ n, (sys.simulate st.f s # k + n).2 ≠ 0 := by
     linarith
   · use k + n
 
+def State.getATrap (s : State) : Set PointZ :=
+  {p | ∃ s', sys.Reachable s s' ∧ s'.aPos = p}
+
+def State.aTrapped (s : State) : Prop :=
+  s.getATrap.Finite
+
+def State.aTrappedIn (s : State) (ps : Set PointZ) : Prop :=
+  ∀ s', sys.Reachable s s' → s'.aPos ∈ ps
+
+def State.dEntrapsAIn (s : State) (st : Strat) (ps : Set PointZ) : Prop :=
+  ∃ n, (sys.simulate st.f s n).1.aTrappedIn ps
+
+theorem State.aTrappedIn_iff_of_not_hasTr {sa ps}
+(h : ¬sys.hasTr sa) : sa.aTrappedIn ps ↔ sa.aPos ∈ ps := by
+  constructor
+  · intro h₁; exact h₁ sa # by rfl
+  intro h₁ s' h₂
+  have h₃ := System.eq_of_reachable_and_not_hasTr h₂ h
+  subst h₃
+  exact h₁
+
 #check 0 #exit
 
-not_reachable_of_acyclic_and_simulate_and_lt
+theorem State.dEntrapsAIn_of_forall_d_wins {s} [hs : sys.WF s] {d : DStrat} [Hd : d.WF]
+(h : ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩) :
+∃ (N : ℕ), ∀ (a : AStrat), a.WF → s.dEntrapsAIn ⟨a, d⟩ {p | p ∈ (0 : PointZ).nbhd N} := by
+  rw [forall_d_wins_iff_forall_d_wins_bounded] at h
+  obtain ⟨n, h⟩ := h
+  use n * s.pw
+  intro a Ha
+  specialize h a Ha
+  use n
+  generalize hr : sys.simulate (Strat.mk a d).f s n = r at h ⊢
+  rcases r with ⟨s₁, r⟩
+  simp at h ⊢
+  rw [aTrappedIn_iff_of_not_hasTr]
+  rotate_left
+  · apply System.not_hasTr
+  simp [aTrappedIn]
+  intro s₂ h₁
+
+#check 0 #exit
 
 theorem State.d_hws_of_exi_aTrapped {s} [hs : sys.WF s]
 (h : ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → ∃ n,
@@ -141,7 +174,6 @@ theorem State.d_hws_of_exi_aTrapped {s} [hs : sys.WF s]
   subst hr'
   
   use d₁, Hd₁
-  use n + s₁.getATrap.ncard
   have h₂ : sys.simulate (Strat.mk a d₁).f s n = ⟨s₁, 0⟩
   · rw [←hr]
     apply simulate_congr # by simp
@@ -149,8 +181,11 @@ theorem State.d_hws_of_exi_aTrapped {s} [hs : sys.WF s]
     dsimp
     suffices h₅ : ¬sys.Reachable s₁ sd
     · simp [←hd₁, mk_strat_fn, h₅]
-    have h₅ := System.reachable_of_simulate_full h₂
-    have h₆ : sys.Reachable sa s₁
-    · 
+    have h₅ := System.not_reachable_of_acyclic_and_simulate_and_lt hr hk
+    simp [h₃] at h₅
+    exact h₅
+  rw [d_wins_iff_add n]
   simp [System.simulate_add, h₂]
+  change s₁.d_wins _
+  
   sorry
