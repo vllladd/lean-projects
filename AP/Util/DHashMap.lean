@@ -888,3 +888,19 @@ theorem toList_insert_eq_of_isEmpty {i x}
   rcases hx with ⟨rfl, hx⟩
   simp at hx
   simp [hx]
+
+theorem toList_insert_perm_cons_of_not_mem {i x} (h : i ∉ mp) :
+(mp.insert i x).toList.Perm (⟨i, x⟩ :: mp.toList) := by
+  rw [List.perm_iff_mem_iff_of_nodup # by simp]
+  rotate_left; simp [get?_eq_none h]
+  rintro ⟨j, y⟩
+  rw [mem_toList_insert]
+  split_ifs with h₁
+  · subst h₁
+    simp
+    rw [get?_eq_none h]
+    simp
+  generalize hx : mp.toList = xs
+  simp
+  rintro rfl h₂
+  simp at h₁

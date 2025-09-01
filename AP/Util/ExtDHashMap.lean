@@ -576,20 +576,20 @@ theorem fold_empty {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {
 (∅ : ExtDHashMap α β).fold f z h = z := by
   simp [fold, lift]; change (Quotient.mk _ ∅).lift _ _ = _; simp
 
-theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {h i x} :
-(mp.insert i x).fold f z h = mp.fold f (f z i x) h := by
+theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {h i x}
+(h₁ : i ∉ mp) : (mp.insert i x).fold f z h = mp.fold f (f z i x) h := by
   rcases mp with ⟨mp⟩
-  apply mp.ind; clear mp
-  intro mp
-  simp [fold, lift, insert]
-  induction mp using DHashMap.ind
-  · nm mp h₁
-    rw [DHashMap.fold_eq_of_isEmpty h₁, DHashMap.fold_eq_foldl_toList]
-    rw [DHashMap.toList_insert_eq_of_isEmpty h₁]
-    rfl
-  nm mp₁ mp₂ j y ih h₁ h₂
-  simp_rw [DHashMap.fold_eq_foldl_toList] at ih ⊢
-  rw [DHashMap.equiv_iff_toList_perm] at h₂
-  generalize hx : mp₁.toList = xs at ih h₂ ⊢
-  generalize hy : mp₂.toList = ys at ih h₂ ⊢
-  sorry
+  change ExtDHashMap.lift _ _ _ ≠ _ at h₁
+  simp [lift] at h₁
+  revert h₁
+  apply mp.ind; clear! mp
+  intro mp h₁
+  simp at h₁
+  replace h₁ : i ∉ mp
+  · change mp.contains i ≠ _
+    simpa only [ne_eq, Bool.not_eq_true]
+  simp [fold, lift, DHashMap.fold_eq_foldl_toList, insert]
+  trans (⟨i, x⟩ :: mp.toList).foldl (λ a b => f a b.1 b.2) z
+  rotate_left; rfl
+  apply List.foldl_eq_foldl_of_perm h
+  exact DHashMap.toList_insert_perm_cons_of_not_mem h₁
