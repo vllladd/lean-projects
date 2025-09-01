@@ -190,14 +190,15 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   symm; constructor
   · simp [System.wf_def]; intro h; use s
   intro h
-  apply sys.invariant_init h; simp
-  clear! s; intro s s' t hs h₂
+  apply sys.invariant_wf h; simp
+  clear! s
+  intro s s' t hs hs' h₁ h₂
   simp at h₂
   obtain ⟨d₁, h₂, h₃, h₄⟩ := h₂
   split_ifs at h₄ with h₅
   · obtain ⟨d₂, h₄, h₆, h₇, rfl⟩ := h₄
     constructor
-    · simp; exact hs.h_bounds
+    · simp; exact h₁.h_bounds
     · intro d ⟨p, hd⟩
       simp at hd
       obtain ⟨d₃, H₁, H₂⟩ := hd
@@ -233,7 +234,7 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
       · nm H₁ H₂ H₃; simpa [H₂, hp.player_iff]
   subst h₄
   constructor;
-  · simp; exact hs.h_bounds
+  · simp; exact h₁.h_bounds
   · intro d₂ ⟨p, h₆⟩
     simp at h₆
     obtain ⟨d₃, hp, hp₁⟩ := h₆
@@ -271,22 +272,23 @@ theorem height_ne_zero {s : State} [hs : s.WF] : s.height ≠ 0 := by
 instance {s : State} [hs : s.WF] : NeZero s.width := ⟨width_ne_zero⟩
 instance {s : State} [hs : s.WF] : NeZero s.height := ⟨height_ne_zero⟩
 
-theorem width_and_height_eq_of_reachable {s₀ s : State}
+theorem width_and_height_eq_of_reachable {s₀ s : State} [hs₀ : s₀.WF]
 (h : sys.Reachable s₀ s) : s.width = s₀.width ∧ s.height = s₀.height := by
   rw [←Prod.mk.injEq]
+  have hs₀ : sys.WF s₀; rwa [sys_wf_iff]
   apply sys.invariant_val h
-  intro x y t h₁
+  intro x y t hx hy h₁
   simp at h₁
   obtain ⟨d₁, h₁, h₂, h₃⟩ := h₁
   split_ifs at h₃ with h₄
   · obtain ⟨d₂, h₃, h₅, h₆, h₇⟩ := h₃; simp [←h₇]
   · simp [←h₃]
 
-theorem width_eq_of_reachable {s₀ s : State}
+theorem width_eq_of_reachable {s₀ s : State} [hs₀ : s₀.WF]
 (h : sys.Reachable s₀ s) : s.width = s₀.width :=
   width_and_height_eq_of_reachable h |>.1
 
-theorem height_eq_of_reachable {s₀ s : State}
+theorem height_eq_of_reachable {s₀ s : State} [hs₀ : s₀.WF]
 (h : sys.Reachable s₀ s) : s.height = s₀.height :=
   width_and_height_eq_of_reachable h |>.2
 

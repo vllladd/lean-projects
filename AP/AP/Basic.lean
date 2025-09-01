@@ -418,8 +418,8 @@ instance : Inhabited AStrat := ⟨⟨State.chooseAMove⟩⟩
 instance : Inhabited DStrat := ⟨⟨State.chooseDMove⟩⟩
 instance : Inhabited Strat := ⟨default, default⟩
 
-@[simp] theorem Astrat.default_eq : (default : AStrat) = ⟨State.chooseAMove⟩ := rfl
-@[simp] theorem Dstrat.default_eq : (default : DStrat) = ⟨State.chooseDMove⟩ := rfl
+@[simp] theorem AStrat.default_eq : (default : AStrat) = ⟨State.chooseAMove⟩ := rfl
+@[simp] theorem DStrat.default_eq : (default : DStrat) = ⟨State.chooseDMove⟩ := rfl
 
 @[simp] theorem Strat.default_eq : (default : Strat) =
 ⟨⟨State.chooseAMove⟩, ⟨State.chooseDMove⟩⟩ := rfl

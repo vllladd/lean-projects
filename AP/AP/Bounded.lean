@@ -103,11 +103,11 @@ s.d_hws ↔ ∃ (n : ℕ) (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF →
   specialize h a Ha
   use n
 
-def State.getATrap (s : State) : Set PointZ :=
+def State.aTrap (s : State) : Set PointZ :=
   {p | ∃ s', sys.Reachable s s' ∧ s'.aPos = p}
 
 def State.aTrapped (s : State) : Prop :=
-  s.getATrap.Finite
+  s.aTrap.Finite
 
 def State.aTrappedIn (s : State) (ps : Set PointZ) : Prop :=
   ∀ s', sys.Reachable s s' → s'.aPos ∈ ps
@@ -176,12 +176,12 @@ theorem State.dEntrapsAIn_of_forall_d_wins {s} [hs : sys.WF s] {d : DStrat} [Hd 
 theorem State.aTrapped_of_aTrappedIn_and_finite {s : State} {ps}
 (h₁ : s.aTrappedIn ps) (h₂ : ps.Finite) : s.aTrapped := by
   unfold aTrappedIn at h₁
-  unfold aTrapped getATrap
+  unfold aTrapped aTrap
   apply Set.finite_of_subset_finset h₂.toFinset
   simpa
 
-theorem State.getATrap_eq_of_not_hasTr {s} (h : ¬sys.hasTr s) : s.getATrap = {s.aPos} := by
-  unfold getATrap
+theorem State.aTrap_eq_of_not_hasTr {s} (h : ¬sys.hasTr s) : s.aTrap = {s.aPos} := by
+  unfold aTrap
   ext p
   simp
   symm; constructor; rintro rfl; use s
@@ -189,12 +189,170 @@ theorem State.getATrap_eq_of_not_hasTr {s} (h : ¬sys.hasTr s) : s.getATrap = {s
   rw [System.eq_of_reachable_and_not_hasTr h₁ h]
 
 theorem State.aTrapped_of_not_hasTr {s} (h : ¬sys.hasTr s) : s.aTrapped := by
-  simp [aTrapped, getATrap_eq_of_not_hasTr h]
+  simp [aTrapped, aTrap_eq_of_not_hasTr h]
 
-theorem DState.getATrap_eq_of_tr {s₁ s₂ p} [hd : DState s₁]
-(h₁ : s₁.aTrapped) (h₂ : sys.tr s₁ p = some s₂) : s₂.getATrap = s₁.getATrap := by
+@[simp]
+theorem State.mem_aTrap_iff {s p} : p ∈ s.aTrap ↔ ∃ s', sys.Reachable s s' ∧ s'.aPos = p := by
+  simp [aTrap]
+
+inductive State.AReachable (s : State) : PointZ → Prop where
+| mk₁ : s.AReachable s.aPos
+| mk₂ : ∀ {p p' : PointZ}, s.AReachable p → p.dist p' ≤ s.pw → p' ∉ s.taken → s.AReachable p'
+
+theorem State.taken_subset_of_tr {s s' p} [hs : sys.WF s]
+(h : sys.tr s p = some s') : s.taken ⊆ s'.taken := by
+  intro p' hp'
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs <;> simp at h
+  · rcases h with ⟨⟨h₁, h₂, h₃⟩, rfl⟩; simpa
+  · rcases h with ⟨⟨h₁, h₂⟩, rfl⟩; simp [hp']
+
+theorem State.taken_subset_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : s.taken ⊆ s'.taken := by
+  revert hs
+  induction h; simp
+  clear! s s'
+  nm a b c p h₁ h₂ ih
+  intro ha
+  have hb := sys.wf_of_tr h₁
+  have hc := sys.wf_of_reachable h₂
+  specialize @ih hb
+  apply Set'.subset_trans (taken_subset_of_tr h₁) ih
+
+theorem State.mem_taken_of_tr {s s' p p'} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s') (h₂ : p' ∈ s.taken) : p' ∈ s'.taken :=
+  taken_subset_of_tr h₁ _ h₂
+
+theorem State.mem_taken_of_reachable {s s' p} [hs : sys.WF s]
+(h₁ : sys.Reachable s s') (h₂ : p ∈ s.taken) : p ∈ s'.taken :=
+  taken_subset_of_reachable h₁ _ h₂
+
+@[simp]
+theorem initState_aPos {pw} : (initState pw).aPos = 0 := rfl
+
+@[simp]
+theorem initState_taken {pw} : (initState pw).taken = ∅ := rfl
+
+@[simp]
+theorem State.not_aPos_mem_taken {s} [hs : sys.WF s] : s.aPos ∉ s.taken := by
+  apply sys.invariant_wf (p := λ s => s.aPos ∉ s.taken) hs <;> clear! s
+  · intro s hs
+    simp at hs
+    rw [←hs]
+    simp
+  intro s s' p hs hs' h₁ h₂
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs <;> simp at h₂
+  · rcases h₂ with ⟨⟨h₃, h₄, h₅⟩, rfl⟩; simpa
+  · rcases h₂ with ⟨⟨h₃, h₄⟩, rfl⟩; simp [h₁, h₃]
+
+theorem State.aReachable_of_mem_aTrap {s p} [hs : sys.WF s]
+(h : p ∈ s.aTrap) : s.AReachable p := by
+  obtain ⟨s', h, rfl⟩ := h
+  revert hs
+  induction h using sys.reachable_ind_right <;> clear! s s'
+  · intros; constructor
+  nm s₀ s s' p h₁ h₂ ih
+  intro hs₀
+  have hs' := sys.wf_of_reachable h₁
+  have hs₁ := sys.wf_of_tr h₂
+  specialize ih
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs <;> simp at h₂
+  · rcases h₂ with ⟨⟨h₃, h₄, h₅⟩, h₆⟩
+    apply AReachable.mk₂ ih
+    · rw [←pw_eq_of_reachable h₁]
+      rw [Point.dist_comm, ←h₆]
+      simpa
+    · rw [←h₆]; simp
+      contrapose! h₄
+      exact mem_taken_of_reachable h₁ h₄
+  · rcases h₂ with ⟨⟨h₃, h₄⟩, h₅⟩
+    apply AReachable.mk₂ ih
+    · rw [←pw_eq_of_reachable h₁]
+      rw [Point.dist_comm, ←h₅]
+      simp
+    · rw [←h₅]; simp
+      have h₆ := s.not_aPos_mem_taken
+      contrapose! h₆
+      exact mem_taken_of_reachable h₁ h₆
+
+@[simp]
+theorem ASTate.tr_eq_none_iff {s p} [hs : AState s] :
+sys.tr s p = none ↔ s.aPos = p ∨ p ∈ s.taken ∨ s.pw < p.dist s.aPos := by
+  simp [sys, State.move, State.aMove]
+  constructor
+  · intro h
+    by_contra! h₁
+    simp [h₁] at h
+  rintro h s' h₁ h₂ h₃ rfl
+  simp [h₁, h₂] at h
+  linarith
+
+-- #check 0 #exit
+
+theorem State.exi_taken_disjoint_of_reachable
+{s₀ s} [hs₀ : sys.WF s₀] {ps : Set PointZ}
+(h₁ : ps.Finite) (h₂ : ∀ p ∈ ps, p ∉ s₀.taken) (h₃ : sys.Reachable s₀ s) :
+∃ s₁, sys.Reachable s₀ s₁ ∧ s₁.aTurn = s.aTurn ∧
+(∀ p ∈ ps, p ∉ s₁.taken) ∧ s₁.aPos = s.aPos := by
+  sorry
+
+-- #check 0 #exit
+
+theorem State.exi_taken_disjoint_of_reachable_with_turn
+{s₀ s} [hs₀ : sys.WF s₀] {ps : Set PointZ} {t : Bool}
+(h₁ : ps.Finite) (h₂ : ∀ p ∈ ps, p ∉ s₀.taken) (h₃ : sys.Reachable s₀ s) (h₄ : s.aTurn → t) :
+∃ s₁, sys.Reachable s₀ s₁ ∧ s₁.aTurn = t ∧ (∀ p ∈ ps, p ∉ s₁.taken) ∧ s₁.aPos = s.aPos := by
+  obtain ⟨s', h₅, h₆, h₇, h₈⟩ := exi_taken_disjoint_of_reachable h₁ h₂ h₃
+  by_cases ht : s.aTurn = t; subst ht; use s'
+  replace ht : s.aTurn = false
+  · contrapose! ht; simp at ht; rwa [h₄ ht]
+  have hs : DState s
+  · use System.wf_of_reachable h₃
+  clear ht
+  have hs' : DState s'
+  · use System.wf_of_reachable h₅
+    simp [h₆]
+  clear h₆
+  have H₁ := h₁.fintype
+  -- generalize hp : (Set'.ofList ps.toFinset.toSortedList ∪ insert s'.aPos s'.taken).max = p
+  sorry
+
+#check 0 #exit
+
+theorem State.mem_aTrap_of_aReachable {s p} [hs : sys.WF s]
+(h : s.AReachable p) : p ∈ s.aTrap := by
+  induction h; use s
+  clear p
+  rename' s => s₀, hs => hs₀
+  nm p p' h₁ h₂ h₃ ih
+  simp at ih ⊢
+  rcases ih with ⟨s, h₄, rfl⟩
+  have h₆ := @exi_taken_disjoint_of_reachable_with_turn s₀ s _ {p'} true
+  simp [h₃, h₄] at h₆
+  obtain ⟨s₁, h₆, h₇, h₈, h₉⟩ := h₆
+  have hs₁ : AState s₁; use sys.wf_of_reachable h₆
+  generalize H₁ : sys.tr s₁ p' = s'
+  have H₂ := H₁
+  rcases s' with _ | s' <;> simp at H₁
+  · simp [h₈, h₉] at H₁
+    rcases H₁ with rfl | H₁; use s
+    rw [Point.dist_comm, pw_eq_of_reachable h₆] at H₁
+    linarith
+  use s', System.reachable_right h₆ H₂
+  rcases H₁ with ⟨⟨H₁, H₂, H₃⟩, rfl⟩
+  simp
+
+theorem State.mem_aTrap_iff_aReachable {s p} [hs : sys.WF s] :
+p ∈ s.aTrap ↔ s.AReachable p := ⟨aReachable_of_mem_aTrap, mem_aTrap_of_aReachable⟩
+
+#check 0 #exit
+
+theorem DState.aTrap_eq_of_tr {s₁ s₂ p} [hd : DState s₁]
+(h₁ : s₁.aTrapped) (h₂ : sys.tr s₁ p = some s₂) : s₂.aTrap = s₁.aTrap := by
   rename' h₁ => H₁, h₂ => H₂
-  unfold State.getATrap
+  unfold State.aTrap
   ext p₁
   simp
   have h₁ := H₂
@@ -214,12 +372,12 @@ theorem DState.getATrap_eq_of_tr {s₁ s₂ p} [hd : DState s₁]
 theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
 (h : s.aTrapped) : ∃ (d: DStrat), d.WF ∧ s.d_wins ⟨a, d⟩ := by
   classical
-  generalize hd : DStrat.mk' (λ s => choose? # λ p => p ∈ s.getATrap ∧ p ≠ s.aPos) = d
+  generalize hd : DStrat.mk' (λ s => choose? # λ p => p ∈ s.aTrap ∧ p ≠ s.aPos) = d
   have Hd : d.WF; rw [←hd]; infer_instance
   use d, Hd
-  apply d_wins_of_decreasing_dState (f := (·.getATrap.ncard))
+  apply d_wins_of_decreasing_dState (f := (·.aTrap.ncard))
   intro sd hsd sa hsa sd' hsd' h₁ h₂
-  -- rw [←hsd.getATrap_eq_of_tr h₁]
+  -- rw [←hsd.aTrap_eq_of_tr h₁]
   sorry
 
 -- #check 0 #exit

@@ -11,7 +11,7 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
 variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
 variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
-variable {s : Set' α}
+variable {s s' : Set' α}
 
 namespace Set'
 
@@ -214,9 +214,21 @@ theorem mem_values [LinearOrder α] {i} : i ∈ s.values ↔ i ∈ s := by
 def all (s : Set' α) (p : α → Bool) : Bool :=
   s.1.all # λ i _ => p i
 
+theorem forall_mem_iff_all {p : α → Prop} [hp : DecidablePred p] :
+(∀ x ∈ s, p x) ↔ s.all p := by
+  rcases s with ⟨⟨mp⟩⟩
+  simp [all, Std.ExtDHashMap.all, mem_def]
+  induction mp using Quotient.ind
+  simp [Std.ExtDHashMap.mem_iff_get?_eq_some]; rfl
+
+instance {p : α → Prop} [hp : DecidablePred p] : Decidable # ∀ x ∈ s, p x :=
+  match h : s.all p with
+  | true => .isTrue # by simpa [forall_mem_iff_all]
+  | false => .isFalse # by simpa [forall_mem_iff_all]
+
 @[simp]
-theorem all_def [LinearOrder α] {p} : s.all p = decide (∀ x ∈ s.values, p x) := by
-  simp [all, values, Option.eq_iff_of_subsingleton]
+theorem all_iff {p} [DecidablePred p] : s.all p = decide (∀ x ∈ s, p x) := by
+  simp [forall_mem_iff_all]
 
 instance [ha : Fintype α] : Fintype (Set' α) :=
   haveI h : Fintype # Std.ExtDHashMap α (λ _ => Unit) := inferInstance
@@ -321,3 +333,33 @@ theorem not_mem_of_lt_min! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 
 theorem not_mem_of_max!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 (h : s.max! < x) : x ∉ s := Std.ExtDHashMap.not_mem_of_maxKey!_lt h
+
+def subset (s s' : Set' α) : Prop :=
+  ∀ x ∈ s, x ∈ s'
+
+instance : HasSubset (Set' α) := ⟨subset⟩
+
+theorem subset_def : s ⊆ s' ↔ ∀ x ∈ s, x ∈ s' := by rfl
+
+def subset_comp (s s' : Set' α) : Bool :=
+  s.all (· ∈ s')
+
+theorem subset_iff_subset_comp : s ⊆ s' ↔ s.subset_comp s' := by
+  simp [subset_def, subset_comp]
+
+instance : Decidable (s ⊆ s') :=
+  match h : s.subset_comp s' with
+  | true => .isTrue # by simpa [subset_iff_subset_comp]
+  | false => .isFalse # by simpa [subset_iff_subset_comp]
+
+@[simp]
+theorem subset_comp_eq : s.subset_comp s' = decide (s ⊆ s') := by
+  simp [subset_iff_subset_comp]
+
+@[refl, simp]
+theorem subset_refl : s ⊆ s := λ _ h => h
+
+@[trans]
+theorem subset_trans {s₁ s₂ s₃ : Set' α}
+(h₁ : s₁ ⊆ s₂) (h₂ : s₂ ⊆ s₃) : s₁ ⊆ s₃ := by
+  intro x hx; apply h₂; apply h₁; exact hx
