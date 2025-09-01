@@ -11,7 +11,7 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
 variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
 variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
-variable {s s' : Set' α}
+variable {s s' s₁ s₂ s₃ : Set' α}
 
 namespace Set'
 
@@ -31,7 +31,6 @@ instance : Insert α (Set' α) := ⟨insertP⟩
 theorem insert_def {x : α} {s : Set' α} :
 insert x s = ⟨insert ⟨x, ()⟩ s.inner⟩ := rfl
 
-@[simp]
 protected def insert (s : Set' α) (i : α) : Set' α :=
   ⟨s.inner.insert i ()⟩
 
@@ -73,14 +72,14 @@ i ∈ s.insertP x ↔ i = x ∨ i ∈ s :=
   Std.ExtDHashMap.mem_insert'
 
 @[simp]
-theorem mem_insert' {i j} :
+theorem mem_insert {i j} :
 j ∈ s.insert i ↔ j = i ∨ j ∈ s := by
-  simp [mem_def]; tauto
+  simp [Set'.insert, mem_def]; tauto
 
 @[simp]
-theorem mem_insert {x i} :
+theorem mem_insert' {x i} :
 i ∈ Insert.insert x s ↔ i = x ∨ i ∈ s :=
-  mem_insert'
+  mem_insert
 
 @[simp]
 theorem mem_ofList {xs : List α} {i} :
@@ -360,6 +359,34 @@ theorem subset_comp_eq : s.subset_comp s' = decide (s ⊆ s') := by
 theorem subset_refl : s ⊆ s := λ _ h => h
 
 @[trans]
-theorem subset_trans {s₁ s₂ s₃ : Set' α}
-(h₁ : s₁ ⊆ s₂) (h₂ : s₂ ⊆ s₃) : s₁ ⊆ s₃ := by
+theorem subset_trans (h₁ : s₁ ⊆ s₂) (h₂ : s₂ ⊆ s₃) : s₁ ⊆ s₃ := by
   intro x hx; apply h₂; apply h₁; exact hx
+
+theorem insert_comm {x y : α} : (s.insert x).insert y = (s.insert y).insert x := by
+  ext z; simp; tauto
+
+theorem ind {p : Set' α → Prop} (h₁ : p ∅)
+(h₂ : ∀ (s : Set' α) x, p s → x ∉ s → p (s.insert x)) (s : Set' α) : p s := by
+  rcases s with ⟨mp⟩; induction mp using Std.ExtDHashMap.ind
+  exact h₁; apply h₂ <;> assumption
+
+def union (s₁ s₂ : Set' α) : Set' α :=
+  s₂.fold (λ s x => s.insert x) s₁ # by simp [insert_comm]
+
+instance : Union (Set' α) := ⟨union⟩
+
+theorem union_def : s₁ ∪ s₂ = s₁.union s₂ := rfl
+
+omit hb₁ hb₂ in @[simp]
+theorem fold_empty {f : β → α → β} {z : β} {h} : (∅ : Set' α).fold f z h = z :=
+  Std.ExtDHashMap.fold_empty
+
+-- #check 0 #exit
+
+@[simp]
+theorem mem_union {x : α} : x ∈ s₁ ∪ s₂ ↔ x ∈ s₁ ∨ x ∈ s₂ := by
+  simp [union_def, union]
+  induction s₂ using ind <;> clear! s₂
+  · simp
+  nm s₂ y ih h₁
+  sorry

@@ -545,3 +545,51 @@ theorem not_mem_of_maxKey!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x
   · simp at h₁; simp [h₁]
   nm i; simp [h₁] at h
   exact not_mem_of_maxKey?_lt h₁ h
+
+theorem ind {p : ExtDHashMap α β → Prop} (h₁ : p ∅)
+(h₂ : ∀ (mp : ExtDHashMap α β) i x, p mp → i ∉ mp → p (mp.insert i x)) mp : p mp := by
+  rcases mp with ⟨mp⟩
+  apply mp.ind; clear! mp; intro mp
+  induction mp using DHashMap.ind
+  · nm mp h₃
+    specialize h₁
+    convert h₁
+    change _ = ⟦∅⟧
+    simp
+    change mp.Equiv ∅
+    simpa
+  nm mp₁ mp₂ i x ih h₃ h₄
+  specialize h₂ ⟨Quotient.mk _ mp₁⟩ i x ih h₃
+  convert h₂
+  change _ = ⟦_⟧
+  simp
+  change mp₂.Equiv _
+  rw [DHashMap.equiv_iff_mem_toList] at h₄ ⊢
+  simp
+  rintro ⟨j, y⟩
+  specialize h₄ ⟨j, y⟩
+  simp at h₄
+  exact h₄.symm
+
+@[simp]
+theorem fold_empty {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {h} :
+(∅ : ExtDHashMap α β).fold f z h = z := by
+  simp [fold, lift]; change (Quotient.mk _ ∅).lift _ _ = _; simp
+
+theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {h i x} :
+(mp.insert i x).fold f z h = mp.fold f (f z i x) h := by
+  rcases mp with ⟨mp⟩
+  apply mp.ind; clear mp
+  intro mp
+  simp [fold, lift, insert]
+  induction mp using DHashMap.ind
+  · nm mp h₁
+    rw [DHashMap.fold_eq_of_isEmpty h₁, DHashMap.fold_eq_foldl_toList]
+    rw [DHashMap.toList_insert_eq_of_isEmpty h₁]
+    rfl
+  nm mp₁ mp₂ j y ih h₁ h₂
+  simp_rw [DHashMap.fold_eq_foldl_toList] at ih ⊢
+  rw [DHashMap.equiv_iff_toList_perm] at h₂
+  generalize hx : mp₁.toList = xs at ih h₂ ⊢
+  generalize hy : mp₂.toList = ys at ih h₂ ⊢
+  sorry

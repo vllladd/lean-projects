@@ -748,3 +748,143 @@ f acc x.1 x.2 # mem_toList_iff_get?_eq_some wf |>.mp h) z := by
 end Raw
 
 end foldWith
+
+theorem equiv_iff_mem_toList {mp₁ mp₂ : DHashMap α β} :
+mp₁ ~m mp₂ ↔ ∀ x, x ∈ mp₁.toList ↔ x ∈ mp₂.toList := by
+  simp only [equiv_iff_get?, mem_toList_iff_get?_eq_some']
+  constructor
+  · rintro h ⟨i, x⟩; simp [h]
+  · intro h i
+    ext x
+    exact h ⟨i, x⟩
+
+theorem mem_toList_insert {i j : α} {x y} :
+⟨i, x⟩ ∈ (mp.insert j y).toList ↔ if i = j then HEq x y else ⟨i, x⟩ ∈ mp.toList := by
+  simp [get?_insert]
+  split_ifs with h₁ h₂ h₂
+  · simp; rw [cast_eq_iff_heq, HEq.comm]
+  · simp [h₁] at h₂
+  · simp [h₂] at h₁
+  · rfl
+
+theorem mem_toList_erase {i j : α} {x} :
+⟨i, x⟩ ∈ (mp.erase j).toList ↔ i ≠ j ∧ ⟨i, x⟩ ∈ mp.toList := by
+  simp [get?_erase]; tauto
+
+theorem mem_toList_insert_erase {i j : α} {x y} :
+⟨i, x⟩ ∈ (mp.erase j |>.insert j y).toList ↔
+if i = j then HEq x y else ⟨i, x⟩ ∈ mp.toList := by
+  rw [mem_toList_insert, mem_toList_erase]
+  split_ifs with h <;> simp [h]
+
+theorem keys_eq_map_fst_toList : mp.keys = mp.toList.map (·.1) :=
+  map_fst_toList_eq_keys.symm
+
+theorem ind {p : DHashMap α β → Prop}
+(h₁ : ∀ (mp : DHashMap α β), mp.isEmpty → p mp)
+(h₂ : ∀ (mp₁ mp₂ : DHashMap α β) i x, p mp₁ → i ∉ mp₁ →
+mp₁.insert i x ~m mp₂ → p mp₂) mp : p mp := by
+  generalize hx : mp.toList = xs
+  replace hx : mp.toList.Perm xs; simp [hx]
+  induction xs generalizing mp
+  · simp at hx; exact h₁ _ hx
+  nm x xs ih
+  rcases x with ⟨i, x⟩
+  apply h₂ (mp.erase i) mp i x
+  · apply ih
+    rw [List.perm_ext_iff_of_nodup # by simp]
+    rotate_left
+    · have h₁ : ⟨i, x⟩ :: xs |>.Nodup
+      · have h₁ : mp.toList.Nodup; simp
+        exact List.Perm.nodup hx h₁
+      exact List.Nodup.of_cons h₁
+    rintro ⟨j, y⟩
+    rw [mem_toList_erase]
+    constructor
+    · rintro ⟨h₃, h₄⟩
+      rw [hx.mem_iff] at h₄
+      simp [h₃] at h₄
+      exact h₄
+    intro h₃
+    have h₄ : ⟨j, y⟩ ∈ ⟨i, x⟩ :: xs
+    · simp [h₃]
+    rw [←hx.mem_iff] at h₄
+    simp [h₄]
+    rintro rfl
+    rename' h₃ => h₅
+    have h₃ := mp.nodup_keys
+    rw [keys_eq_map_fst_toList] at h₃
+    rw [List.nodup_map_iff_inj_on # by simp] at h₃
+    simp_rw [hx.mem_iff] at h₃
+    specialize h₃ ⟨j, x⟩ (by simp) ⟨j, y⟩ (by simp [h₅]) rfl
+    simp at h₃
+    subst h₃
+    have h₆ : ⟨j, x⟩ :: xs |>.Nodup
+    · simp [←hx.nodup_iff]
+    simp [h₅] at h₆
+  · simp
+  · rw [equiv_iff_mem_toList]
+    rintro ⟨j, y⟩
+    rw [mem_toList_insert_erase]
+    simp
+    rintro rfl
+    simp
+    rw [←mem_toList_iff_get?_eq_some]
+    rw [hx.mem_iff]; simp
+    intro h
+    have h₃ := mp.nodup_keys
+    rw [keys_eq_map_fst_toList] at h₃
+    rw [List.nodup_map_iff_inj_on # by simp] at h₃
+    simp_rw [hx.mem_iff] at h₃
+    specialize h₃ ⟨j, x⟩ (by simp) ⟨j, y⟩ (by simp [h]) rfl
+    simp at h₃
+    rw [h₃]
+
+theorem isEmpty_iff_equiv_empty : mp.isEmpty ↔ mp ~m ∅ :=
+  equiv_empty_iff_isEmpty.symm
+
+theorem toList_eq_nil_iff_isEmpty : mp.toList = [] ↔ mp.isEmpty := by
+  simp
+
+theorem toList_eq_nil_of_isEmpty (h : mp.isEmpty) : mp.toList = [] := by
+  simpa
+
+theorem fold_eq_of_isEmpty {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ}
+(h : mp.isEmpty) : mp.fold f z = z := by
+  simp [fold_eq_foldl_toList, toList_eq_nil_of_isEmpty h]
+
+@[simp]
+theorem fold_empty {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} :
+(∅ : DHashMap α β).fold f z = z := fold_eq_of_isEmpty # by simp
+
+@[simp]
+theorem size_eq_zero_iff_isEmpty : mp.size = 0 ↔ mp.isEmpty := by
+  rw [←length_toList, List.length_eq_zero_iff]; simp
+
+@[simp]
+theorem size_eq_zero_of_isEmpty (h : mp.isEmpty) : mp.size = 0 := by
+  simpa
+
+theorem toList_insert_eq_of_isEmpty {i x}
+(h : mp.isEmpty) : (mp.insert i x).toList = [⟨i, x⟩] := by
+  generalize hx : (mp.insert i x).toList = xs
+  have h₁ : xs.length = 1
+  · subst hx
+    simp
+    rw [size_insert]
+    split_ifs with h₁
+    · simp [not_mem_of_isEmpty h] at h₁
+    simpa
+  cases xs; simp at h₁
+  nm y xs
+  rcases y with ⟨j, y⟩
+  cases xs
+  rotate_left
+  · simp at h₁
+  clear h₁
+  simp
+  apply congrArg (⟨i, x⟩ ∈ ·) at hx
+  simp at hx
+  rcases hx with ⟨rfl, hx⟩
+  simp at hx
+  simp [hx]

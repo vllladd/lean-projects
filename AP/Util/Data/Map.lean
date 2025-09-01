@@ -445,3 +445,12 @@ theorem not_mem_of_lt_minKey! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x
 
 theorem not_mem_of_maxKey!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 (h : mp.maxKey! < x) : x ∉ mp := Std.ExtDHashMap.not_mem_of_maxKey!_lt h
+
+theorem ind {p : Map α β → Prop} (h₁ : p ∅)
+(h₂ : ∀ (m : Map α β) i x, p m → i ∉ m → p (m.insert i x)) m : p m := by
+  rcases m with ⟨mp⟩; induction mp using Std.ExtDHashMap.ind
+  exact h₁; apply h₂ <;> assumption
+
+@[simp]
+theorem fold_empty {γ : Type*} {f : γ → (i : α) → β → γ} {z : γ} {h} :
+(∅ : Map α β).fold f z h = z := Std.ExtDHashMap.fold_empty
