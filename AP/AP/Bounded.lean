@@ -289,6 +289,11 @@ sys.tr s p = none ↔ s.aPos = p ∨ p ∈ s.taken ∨ s.pw < p.dist s.aPos := b
   simp [h₁, h₂] at h
   linarith
 
+@[simp]
+theorem DSTate.tr_eq_none_iff {s p} [hs : DState s] :
+sys.tr s p = none ↔ s.aPos = p ∨ p ∈ s.taken := by
+  simp [sys, State.move, State.dMove]; tauto
+
 -- #check 0 #exit
 
 theorem State.exi_taken_disjoint_of_reachable
@@ -314,12 +319,45 @@ theorem State.exi_taken_disjoint_of_reachable_with_turn
   have hs' : DState s'
   · use System.wf_of_reachable h₅
     simp [h₆]
-  clear h₆
-  have H₁ := h₁.fintype
-  -- generalize hp : (Set'.ofList ps.toFinset.toSortedList ∪ insert s'.aPos s'.taken).max = p
-  sorry
-
-#check 0 #exit
+  clear h₄ h₆
+  cases t; use s', h₅, by simp
+  generalize hm : (ps ∪ insert s'.aPos s'.taken : Set' _).max! = m
+  generalize hp : m + ⟨1, 0⟩ = p
+  have hm₁ : m < p
+  · subst hp
+    rw [lt_add_iff_pos_right]
+    simp [Point.zero_def]
+  generalize H₂ : sys.tr s' p = s₁
+  have H₂' := H₂
+  rcases s₁ with _ | s₁ <;> simp at H₂
+  · contrapose H₂; clear H₂
+    simp
+    constructor
+    · intro H₂
+      contrapose! hm₁
+      subst hm
+      apply Set'.le_max!_of_mem
+      simp [H₂]
+    contrapose! hm₁
+    subst hm
+    apply Set'.le_max!_of_mem
+    simp [hm₁]
+  rcases H₂ with ⟨⟨H₂, H₃⟩, H₄⟩
+  have hs₁ := sys.wf_of_tr H₂'
+  use s₁
+  refine' ⟨_, _, _, _⟩
+  · apply h₅.trans
+    exact System.reachable_of_tr H₂'
+  · simp [←H₄]
+  · simp [←H₄]
+    intro p' hp'
+    simp [h₇ _ hp']
+    rintro rfl
+    contrapose! hm₁
+    subst hm
+    apply Set'.le_max!_of_mem
+    simp [Set'.mem_ofSet h₁, hp']
+  · simpa [←H₄]
 
 theorem State.mem_aTrap_of_aReachable {s p} [hs : sys.WF s]
 (h : s.AReachable p) : p ∈ s.aTrap := by
@@ -347,7 +385,7 @@ theorem State.mem_aTrap_of_aReachable {s p} [hs : sys.WF s]
 theorem State.mem_aTrap_iff_aReachable {s p} [hs : sys.WF s] :
 p ∈ s.aTrap ↔ s.AReachable p := ⟨aReachable_of_mem_aTrap, mem_aTrap_of_aReachable⟩
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem DState.aTrap_eq_of_tr {s₁ s₂ p} [hd : DState s₁]
 (h₁ : s₁.aTrapped) (h₂ : sys.tr s₁ p = some s₂) : s₂.aTrap = s₁.aTrap := by

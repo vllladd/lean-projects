@@ -327,8 +327,8 @@ def keys [ha : LinearOrder α] (mp : DMap α β) : List α :=
 theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) :=
   Std.ExtDHashMap.sorted_keys
 
-theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) :=
-  Std.ExtDHashMap.keys_eq_map_toList
+theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) :=
+  Std.ExtDHashMap.keys_eq_map_fst_toList
 
 def minKey? [ha : LinearOrder α] (mp : DMap α β) : Option α :=
   mp.inner.minKey?
@@ -369,6 +369,22 @@ theorem not_mem_of_lt_minKey! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x
 
 theorem not_mem_of_maxKey!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 (h : mp.maxKey! < x) : x ∉ mp := Std.ExtDHashMap.not_mem_of_maxKey!_lt h
+
+theorem minKey?_le_of_mem [ha : LinearOrder α] {m x}
+(h₁ : mp.minKey? = some m) (h₂ : x ∈ mp) : m ≤ x := by
+  contrapose! h₂; exact not_mem_of_lt_minKey? h₁ h₂
+
+theorem le_maxKey?_of_mem [ha : LinearOrder α] {m x}
+(h₁ : mp.maxKey? = some m) (h₂ : x ∈ mp) : x ≤ m := by
+  contrapose! h₂; exact not_mem_of_maxKey?_lt h₁ h₂
+
+theorem minKey!_le_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x ∈ mp) : mp.minKey! ≤ x := by
+  contrapose! h; exact not_mem_of_lt_minKey! h
+
+theorem le_maxKey!_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x ∈ mp) : x ≤ mp.maxKey! := by
+  contrapose! h; exact not_mem_of_maxKey!_lt h
 
 theorem ind {p : DMap α β → Prop} (h₁ : p ∅)
 (h₂ : ∀ (m : DMap α β) i x, p m → i ∉ m → p (m.insert i x)) m : p m := by

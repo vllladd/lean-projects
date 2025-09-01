@@ -333,6 +333,22 @@ theorem not_mem_of_lt_min! [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 theorem not_mem_of_max!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 (h : s.max! < x) : x ∉ s := Std.ExtDHashMap.not_mem_of_maxKey!_lt h
 
+theorem min?_le_of_mem [ha : LinearOrder α] {m x}
+(h₁ : s.min? = some m) (h₂ : x ∈ s) : m ≤ x := by
+  contrapose! h₂; exact not_mem_of_lt_min? h₁ h₂
+
+theorem le_max?_of_mem [ha : LinearOrder α] {m x}
+(h₁ : s.max? = some m) (h₂ : x ∈ s) : x ≤ m := by
+  contrapose! h₂; exact not_mem_of_max?_lt h₁ h₂
+
+theorem min!_le_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x ∈ s) : s.min! ≤ x := by
+  contrapose! h; exact not_mem_of_lt_min! h
+
+theorem le_max!_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x ∈ s) : x ≤ s.max! := by
+  contrapose! h; exact not_mem_of_max!_lt h
+
 def subset (s s' : Set' α) : Prop :=
   ∀ x ∈ s, x ∈ s'
 
@@ -381,12 +397,41 @@ omit hb₁ hb₂ in @[simp]
 theorem fold_empty {f : β → α → β} {z : β} {h} : (∅ : Set' α).fold f z h = z :=
   Std.ExtDHashMap.fold_empty
 
--- #check 0 #exit
-
 @[simp]
 theorem mem_union {x : α} : x ∈ s₁ ∪ s₂ ↔ x ∈ s₁ ∨ x ∈ s₂ := by
   simp [union_def, union]
-  induction s₂ using ind <;> clear! s₂
+  induction s₂ using ind generalizing s₁
   · simp
   nm s₂ y ih h₁
-  sorry
+  generalize_proofs h₂
+  unfold fold Set'.insert
+  rw [Std.ExtDHashMap.fold_insert h₁]
+  rw [←Set'.insert, ←fold]; rotate_left; exact h₂
+  simp
+  apply ih.trans
+  rw [←Set'.insert]
+  simp
+  tauto
+
+def ofFinset (s : Finset α) : Set' α :=
+  s.1.liftWith ofList # by
+    intro xs ys (h₁ : s.1.out.Perm xs) (h₂ : s.1.out.Perm ys)
+    rw [ofList_eq_ofList_iff]
+    · exact h₁.symm.trans h₂
+    · simp [←h₁.nodup_iff]
+    · simp [←h₂.nodup_iff]
+
+@[simp]
+theorem mem_ofFinset {s : Finset α} {x} : x ∈ ofFinset s ↔ x ∈ s := by
+  simp [ofFinset]
+
+open Classical in noncomputable
+def ofSet (s : Set α) : Set' α :=
+  if h : s.Finite then haveI := h.fintype; ofFinset s.toFinset else ∅
+
+theorem mem_ofSet {s : Set α} {x} (h : s.Finite) : x ∈ ofSet s ↔ x ∈ s := by
+  simp [ofSet, h]
+
+instance : Coe (List α) (Set' α) := ⟨ofList⟩
+instance : Coe (Finset α) (Set' α) := ⟨ofFinset⟩
+noncomputable instance : Coe (Set α) (Set' α) := ⟨ofSet⟩

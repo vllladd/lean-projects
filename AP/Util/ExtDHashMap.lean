@@ -431,7 +431,7 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List ((i : α) × β i)}
 theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) := by
   rcases mp with ⟨mp⟩; apply mp.ind; intro m; simp [keys, lift]
 
-theorem keys_eq_map_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) := by
+theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) := by
   unfold keys toList lift Std.DHashMap.toSortedKeys
   symm; apply Quotient.apply_lift
 
@@ -455,7 +455,7 @@ theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head?
   rw [minKey?, fold_eq_foldl_toList]
   convert @mp.keys.min?_eq_head? α _ _
   rotate_left; simp_rw [min_eq_left_iff]; exact sorted_keys
-  rw [keys_eq_map_toList]
+  rw [keys_eq_map_fst_toList]
   generalize hx : mp.toList = xs
   cases xs; rfl
   nm x xs
@@ -468,7 +468,7 @@ theorem maxKey?_eq_getLast?_keys [ha : LinearOrder α] : mp.maxKey? = mp.keys.ge
   rw [maxKey?, fold_eq_foldl_toList]
   convert @mp.keys.max?_eq_getLast? α _ _
   rotate_left; exact sorted_keys
-  rw [keys_eq_map_toList]
+  rw [keys_eq_map_fst_toList]
   generalize hx : mp.toList = xs
   cases xs; rfl
   nm x xs
@@ -545,6 +545,29 @@ theorem not_mem_of_maxKey!_lt [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x
   · simp at h₁; simp [h₁]
   nm i; simp [h₁] at h
   exact not_mem_of_maxKey?_lt h₁ h
+
+theorem minKey?_le_of_mem [ha : LinearOrder α] {m x}
+(h₁ : mp.minKey? = some m) (h₂ : x ∈ mp) : m ≤ x := by
+  contrapose! h₂; exact not_mem_of_lt_minKey? h₁ h₂
+
+theorem le_maxKey?_of_mem [ha : LinearOrder α] {m x}
+(h₁ : mp.maxKey? = some m) (h₂ : x ∈ mp) : x ≤ m := by
+  contrapose! h₂; exact not_mem_of_maxKey?_lt h₁ h₂
+
+theorem minKey!_le_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x ∈ mp) : mp.minKey! ≤ x := by
+  contrapose! h; exact not_mem_of_lt_minKey! h
+
+theorem le_maxKey!_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
+(h : x ∈ mp) : x ≤ mp.maxKey! := by
+  contrapose! h; exact not_mem_of_maxKey!_lt h
+
+@[simp]
+theorem keys_eq_nil_iff [LinearOrder α] : mp.keys = [] ↔ mp.isEmpty := by
+  rw [keys_eq_map_fst_toList, List.map_eq_nil_iff]; simp
+
+theorem keys_empty [LinearOrder α] : (∅ : ExtDHashMap α β).keys = [] := by
+  simp
 
 theorem ind {p : ExtDHashMap α β → Prop} (h₁ : p ∅)
 (h₂ : ∀ (mp : ExtDHashMap α β) i x, p mp → i ∉ mp → p (mp.insert i x)) mp : p mp := by

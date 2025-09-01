@@ -581,10 +581,18 @@ theorem forall_le_iff_le_yx_iff₄ {a b : α} :
 
 end le
 
+variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
+
 @[simp]
-theorem zero_le_dist [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+theorem zero_le_dist [ha₃ : AddLeftMono α]
 {a b : Point α} : 0 ≤ a.dist b := by simp [dist]
 
 @[simp]
-theorem max_dist_zero [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+theorem max_dist_zero [ha₃ : AddLeftMono α]
 {a b : Point α} : max (a.dist b) 0 = a.dist b := by simp
+
+instance [ha₃ : AddLeftMono α] : AddLeftMono # Point α := by
+  constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp
+
+instance [ha₃ : AddRightMono α] : AddRightMono # Point α := by
+  constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp [Function.swap]

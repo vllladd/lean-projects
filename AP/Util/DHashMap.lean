@@ -904,3 +904,10 @@ theorem toList_insert_perm_cons_of_not_mem {i x} (h : i ∉ mp) :
   simp
   rintro rfl h₂
   simp at h₁
+
+@[simp]
+theorem keys_eq_nil_iff : mp.keys = [] ↔ mp.isEmpty := by
+  rw [keys_eq_map_fst_toList, List.map_eq_nil_iff]; simp
+
+theorem keys_empty : (∅ : DHashMap α β).keys = [] := by
+  simp
