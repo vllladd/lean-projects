@@ -1287,18 +1287,20 @@ sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → (sys.hasTr b₁ ↔ sys.ha
   simp [h₃, h₅] at h₂
   exact h₂
 
-theorem simulate_congr_rel' {f g} {r : S → S → Prop} {a₁ a₂ n}
+theorem simulate_congr_rel_full {f g} {r : S → S → Prop} {a₁ a₂ b₁ n}
 [hf : sys.SimFn f] [hg : sys.SimFn g] [ha₁ : sys.WF a₁] [ha₂ : sys.WF a₂]
-(h₂ : (sys.simulate f a₁ n).2 = 0) (h₁ : r a₁ a₂)
+(h₂ : sys.simulate f a₁ n = (b₁, 0)) (h₁ : r a₁ a₂)
 (h₃ : ∀ k < n, ∀ b₁ b₂ c₁, sys.simulate f a₁ k = (b₁, 0) →
 sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → sys.tr b₁ (f b₁) = some c₁ →
-∃ c₂, sys.tr b₂ (g b₂) = some c₂ ∧ r c₁ c₂) : (sys.simulate g a₂ n).2 = 0 := by
+∃ c₂, sys.tr b₂ (g b₂) = some c₂ ∧ r c₁ c₂) :
+∃ b₂, sys.simulate g a₂ n = (b₂, 0) ∧ r b₁ b₂ := by
   have h₄ := @sys.simulate_congr_rel
   specialize @h₄ f g r a₁ a₂ n _ _ _ _ h₁ _
   · intro k hk b₁ b₂ hb₁ hb₂ h₅
     specialize h₃ k hk b₁ b₂
     have h₆ : (sys.simulate f a₁ (k + 1)).2 = 0
-    · apply simulate_snd_eq_zero_of_le_and_eq_zero h₂; linarith
+    · apply simulate_snd_eq_zero_of_le_and_eq_zero
+      rw [h₂]; linarith
     obtain ⟨c₁, hc₁⟩ : ∃ c₁, sys.tr b₁ (f b₁) = some c₁
     · rw [simulate_add] at h₆
       simp [hb₁] at h₆
@@ -1313,7 +1315,20 @@ sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → sys.tr b₁ (f b₁) = som
     subst hc₁' hc₂'
     exact h₇
   obtain ⟨b, h₄, h₅⟩ := h₄
-  simpa [h₅]
+  simp [h₂] at h₄ ⊢
+  simpa [h₂, h₅]
+
+theorem simulate_congr_rel' {f g} {r : S → S → Prop} {a₁ a₂ n}
+[hf : sys.SimFn f] [hg : sys.SimFn g] [ha₁ : sys.WF a₁] [ha₂ : sys.WF a₂]
+(h₂ : (sys.simulate f a₁ n).2 = 0) (h₁ : r a₁ a₂)
+(h₃ : ∀ k < n, ∀ b₁ b₂ c₁, sys.simulate f a₁ k = (b₁, 0) →
+sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → sys.tr b₁ (f b₁) = some c₁ →
+∃ c₂, sys.tr b₂ (g b₂) = some c₂ ∧ r c₁ c₂) : (sys.simulate g a₂ n).2 = 0 := by
+  generalize hr₁ : sys.simulate f a₁ n = r₁ at h₂
+  rcases r₁ with ⟨b₁, r₁⟩
+  subst h₂
+  obtain ⟨b₂, h₂, h₄⟩ := simulate_congr_rel_full hr₁ h₁ h₃
+  simp [h₂]
 
 theorem simulate_congr {f g a n}
 [hf : sys.SimFn f] [hg : sys.SimFn g] [ha : sys.WF a]

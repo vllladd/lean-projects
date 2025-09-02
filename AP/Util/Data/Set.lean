@@ -115,10 +115,6 @@ theorem ext_iff {s₁ s₂ : Set' α} : s₁ = s₂ ↔ ∀ i, i ∈ s₁ ↔ i 
 theorem ext {s₁ s₂ : Set' α} (h : ∀ i, i ∈ s₁ ↔ i ∈ s₂) : s₁ = s₂ := by
   rwa [ext_iff]
 
-theorem get?_eq_ite_of_unit {m : Map α Unit} {i} :
-m.get? i = if i ∈ m then some () else none :=
-  Std.ExtDHashMap.get?_eq_ite_of_unit
-
 theorem ofList_eq_ofList_iff {xs ys : List α}
 (hx : xs.Nodup) (hy : ys.Nodup) :
 ofList xs = ofList ys ↔ xs.Perm ys := by
@@ -435,3 +431,40 @@ theorem mem_ofSet {s : Set α} {x} (h : s.Finite) : x ∈ ofSet s ↔ x ∈ s :=
 instance : Coe (List α) (Set' α) := ⟨ofList⟩
 instance : Coe (Finset α) (Set' α) := ⟨ofFinset⟩
 noncomputable instance : Coe (Set α) (Set' α) := ⟨ofSet⟩
+
+def filter (s : Set' α) (p : α → Bool) : Set' α :=
+  .mk # s.1.filter # λ x _ => p x
+
+@[simp]
+theorem mem_filter {p x} : x ∈ s.filter p ↔ x ∈ s ∧ p x := by
+  simp [filter, mem_def, Std.ExtDHashMap.mem_filter]
+
+def diff (s₁ s₂ : Set' α) : Set' α :=
+  s₁.filter (· ∉ s₂)
+
+instance : SDiff (Set' α) := ⟨diff⟩
+
+theorem diff_def : s₁ \ s₂ = s₁.diff s₂ := rfl
+
+@[simp]
+theorem mem_diff {x} : x ∈ s₁ \ s₂ ↔ x ∈ s₁ ∧ x ∉ s₂ := by
+  simp [diff_def, diff]
+
+def inter (s₁ s₂ : Set' α) : Set' α :=
+  s₁.filter (· ∈ s₂)
+
+instance : Inter (Set' α) := ⟨inter⟩
+
+theorem inter_def : s₁ ∩ s₂ = s₁.inter s₂ := rfl
+
+@[simp]
+theorem mem_inter {x} : x ∈ s₁ ∩ s₂ ↔ x ∈ s₁ ∧ x ∈ s₂ := by
+  simp [inter_def, inter]
+
+@[simp]
+theorem inter_left_subset_self : s₁ ∩ s₂ ⊆ s₁ := by
+  intro x; simp; tauto
+
+@[simp]
+theorem inter_right_subset_self : s₂ ∩ s₁ ⊆ s₁ := by
+  intro x; simp

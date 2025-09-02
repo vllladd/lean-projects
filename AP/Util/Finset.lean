@@ -663,7 +663,7 @@ theorem le_max? [ha : LinearOrder α] {x m : α}
 
 end List namespace Finset
 
-variable {α : Type*} {s : Finset α}
+variable {α β γ : Type*} {s : Finset α}
 
 @[simp]
 theorem nodup_out_val : s.val.out.Nodup := by
@@ -684,3 +684,10 @@ theorem card_insert_erase_eq {x y : α} [ha : DecidableEq α]
   cases h₃ : s.card
   · simp at h₃; simp [h₃] at h₁
   simp
+
+def map' [DecidableEq β] (s : Finset α) (f : α → β) : Finset β :=
+  s.biUnion ({f ·})
+
+@[simp]
+theorem mem_map'' [hb : DecidableEq β] {f : α → β} {y : β} :
+y ∈ s.map' f ↔ ∃ x ∈ s, f x = y := by simp [map', eq_comm]

@@ -294,13 +294,122 @@ theorem DSTate.tr_eq_none_iff {s p} [hs : DState s] :
 sys.tr s p = none ↔ s.aPos = p ∨ p ∈ s.taken := by
   simp [sys, State.move, State.dMove]; tauto
 
+instance {f} [hf : sys.SimFn f] : AStrat.WF ⟨f⟩ := by
+  rw [AStrat.wf_iff]; intro s hs h₁; exact hf.1 h₁
+
+instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
+  rw [DStrat.wf_iff]; intro s hs h₁; exact hf.1 h₁
+
+theorem exi_strat_of_simFn f [hf : sys.SimFn f] :
+∃ (a : AStrat) (d : DStrat), a.WF ∧ d.WF ∧ f = Strat.f ⟨a, d⟩ := by
+  use ⟨f⟩, ⟨f⟩, inferInstance, inferInstance
+  ext:1; nm s; unfold Strat.f; split_ifs <;> rfl
+
+theorem exi_strat_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : ∃ (a : AStrat) (d : DStrat) (n : ℕ),
+a.WF ∧ d.WF ∧ sys.simulate (Strat.f ⟨a, d⟩) s n = (s', 0) := by
+  rw [System.reachable_iff_exi_simulate] at h
+  obtain ⟨f, hf, n, h⟩ := h
+  obtain ⟨a, d, ha, hd, rfl⟩ := exi_strat_of_simFn f
+  use a, d, n
+
+def aMimic (st : Strat) (s₀ : State) : AStrat := .mk' # λ s => some #
+  let n := s.hist.length - s₀.hist.length
+  let r := sys.simulate st.f s₀ n
+  st.a.f r.1
+
+instance {st s₀} : (aMimic st s₀).WF := by unfold aMimic; infer_instance
+
+theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀]
+(h : sys.simulate st.f s₀ n = (s, 0)) : s.hist.length - s₀.hist.length = n := by
+  induction n generalizing s₀
+  · simp at h; simp [h]
+  nm n ih
+  simp at h
+  split at h; simp at h; nm x s' h₁; clear x
+  have hs' := sys.wf_of_tr h₁
+  specialize ih h
+  rw [hist_eq_of_tr h₁] at ih
+  simp at ih
+  rw [←ih]; clear ih
+  rw [Nat.sub_succ]
+  simp
+  rw [Nat.sub_add_cancel]
+  have h₂ : s'.hist.length ≤ s.hist.length
+  · apply length_hist_le_of_reachable
+    exact System.reachable_of_simulate_full h
+  have h₃ : s₀.hist.length < s'.hist.length
+  · exact State.length_hist_lt_of_tr h₁
+  omega
+
+theorem aMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
+(h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
+(h₃ : sys.validTr s₂ (st.a.f s₁)) : (aMimic st s₀).f s₂ = st.a.f s₁ := by
+  simp [aMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
+
 -- #check 0 #exit
 
 theorem State.exi_taken_disjoint_of_reachable
 {s₀ s} [hs₀ : sys.WF s₀] {ps : Set PointZ}
 (h₁ : ps.Finite) (h₂ : ∀ p ∈ ps, p ∉ s₀.taken) (h₃ : sys.Reachable s₀ s) :
 ∃ s₁, sys.Reachable s₀ s₁ ∧ s₁.aTurn = s.aTurn ∧
-(∀ p ∈ ps, p ∉ s₁.taken) ∧ s₁.aPos = s.aPos := by
+s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
+  obtain ⟨a, d, n, ha, hd, h₄⟩ := exi_strat_of_reachable h₃
+  generalize hS : (Finset.Icc 0 n).map' (λ k =>
+    sys.simulate (Strat.f ⟨a, d⟩) s₀ k |>.1.aPos) = S
+  generalize hp' : (ps ∪ s.taken ∪ S : Set' _) = ps'
+  generalize ha' : aMimic ⟨a, d⟩ s₀ = a'
+  generalize hd' : DStrat.mk' (λ sd => some # (sd.taken ∪ ps').max! + ⟨1, 0⟩) = d'
+  have Ha : a'.WF; subst ha'; infer_instance
+  have Hd : d'.WF; subst hd'; infer_instance
+  generalize hr : sys.simulate (Strat.f ⟨a', d'⟩) s₀ n = r
+  have hc := System.simulate_congr_rel_full (g := Strat.f ⟨a', d'⟩) (a₂ := s₀)
+    (r := λ s₁ s₂ => s₁.aTurn = s₂.aTurn ∧ s₁.aPos = s₂.aPos ∧ s₂.taken ∩ ps' ⊆ s₀.taken) h₄
+  specialize hc (by simp) _
+  · clear hc
+    dsimp
+    rintro k hk s₁ s₂ s₁' hs₁ hs₂ ⟨ih₁, ih₂, ih₃⟩ H₁
+    have Hs₁ := sys.wf_of_simulate_eq hs₁
+    have Hs₂ := sys.wf_of_simulate_eq hs₂
+    dsimp at Hs₁ Hs₂
+    replace Hs₁ := s₁.aState_or_dState
+    have hr₁ := System.reachable_of_simulate_full hs₁
+    have hr₂ := System.reachable_of_simulate_full hs₂
+    rcases Hs₁ with Hs₁ | Hs₁ <;> simp only [Hs₁.start_f_eq] at H₁
+    · generalize hp : a.f s₁ = p at H₁
+      replace Hs₂ : AState s₂; use Hs₂; simp [←ih₁]
+      have H₁' := H₁
+      simp at H₁
+      rcases H₁ with ⟨⟨H₁, H₃, H₄⟩, rfl⟩
+      rw [pw_eq_of_reachable hr₁] at H₄
+      have H : ¬s₂.aPos = p ∧ p ∉ s₂.taken ∧ Point.dist p s₂.aPos ≤ ↑s₂.pw
+      · simp [←ih₂, H₁, pw_eq_of_reachable hr₂, H₄]
+        contrapose! H₃
+        specialize ih₃ p
+        simp [H₃] at ih₃; clear H₃
+        apply mem_taken_of_reachable hr₁
+        apply ih₃; clear ih₃
+        subst hp' hS
+        clear hd'
+        simp [Set'.mem_ofSet h₁]
+        right
+        use k + 1, by linarith
+        rw [System.simulate_add]
+        simp [hs₁, hp, H₁']
+      have H₂ : a'.f s₂ = p
+      · rw [←ha', ←hp]; apply aMimic_apply_eq_of hs₁ hs₂
+        simpa [hp, AState.validTr_iff]
+      simp [H₂]; use H
+    · generalize hp : d.f s₁ = p at H₁
+      replace Hs₂ : DState s₂; use Hs₂; simp [←ih₁]
+      sorry
+  obtain ⟨s₁, H₁, H₂, H₃, H₄⟩ := hc
+  use s₁
+  simp [H₂, H₃]
+  use System.reachable_of_simulate_full H₁
+  intro p hp H₅
+  specialize H₄ p
+  simp [H₅, ←hp', Set'.mem_ofSet h₁, hp] at H₄
   sorry
 
 -- #check 0 #exit
@@ -308,7 +417,7 @@ theorem State.exi_taken_disjoint_of_reachable
 theorem State.exi_taken_disjoint_of_reachable_with_turn
 {s₀ s} [hs₀ : sys.WF s₀] {ps : Set PointZ} {t : Bool}
 (h₁ : ps.Finite) (h₂ : ∀ p ∈ ps, p ∉ s₀.taken) (h₃ : sys.Reachable s₀ s) (h₄ : s.aTurn → t) :
-∃ s₁, sys.Reachable s₀ s₁ ∧ s₁.aTurn = t ∧ (∀ p ∈ ps, p ∉ s₁.taken) ∧ s₁.aPos = s.aPos := by
+∃ s₁, sys.Reachable s₀ s₁ ∧ s₁.aTurn = t ∧ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
   obtain ⟨s', h₅, h₆, h₇, h₈⟩ := exi_taken_disjoint_of_reachable h₁ h₂ h₃
   by_cases ht : s.aTurn = t; subst ht; use s'
   replace ht : s.aTurn = false
@@ -349,15 +458,15 @@ theorem State.exi_taken_disjoint_of_reachable_with_turn
   · apply h₅.trans
     exact System.reachable_of_tr H₂'
   · simp [←H₄]
+  · simpa [←H₄]
   · simp [←H₄]
     intro p' hp'
-    simp [h₇ _ hp']
+    simp [h₈ _ hp']
     rintro rfl
     contrapose! hm₁
     subst hm
     apply Set'.le_max!_of_mem
     simp [Set'.mem_ofSet h₁, hp']
-  · simpa [←H₄]
 
 theorem State.mem_aTrap_of_aReachable {s p} [hs : sys.WF s]
 (h : s.AReachable p) : p ∈ s.aTrap := by
@@ -385,25 +494,43 @@ theorem State.mem_aTrap_of_aReachable {s p} [hs : sys.WF s]
 theorem State.mem_aTrap_iff_aReachable {s p} [hs : sys.WF s] :
 p ∈ s.aTrap ↔ s.AReachable p := ⟨aReachable_of_mem_aTrap, mem_aTrap_of_aReachable⟩
 
--- #check 0 #exit
+@[simp]
+theorem State.aReachable_aPos {s : State} : s.AReachable s.aPos :=
+  AReachable.mk₁
 
-theorem DState.aTrap_eq_of_tr {s₁ s₂ p} [hd : DState s₁]
-(h₁ : s₁.aTrapped) (h₂ : sys.tr s₁ p = some s₂) : s₂.aTrap = s₁.aTrap := by
-  rename' h₁ => H₁, h₂ => H₂
-  unfold State.aTrap
+theorem State.not_mem_taken_of_tr {s s' p p'} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s') (h₂ : p' ∉ s'.taken) : p' ∉ s.taken := by
+  contrapose! h₂; exact mem_taken_of_tr h₁ h₂
+
+theorem AState.aTrap_eq_of_tr {s s' p} [hs : AState s]
+(h₂ : sys.tr s p = some s') : s'.aTrap = s.aTrap := by
+  rename' p => p₀
+  have hs' := sys.wf_of_tr h₂
   ext p₁
-  simp
-  have h₁ := H₂
-  simp at h₁
-  rcases h₁ with ⟨⟨h₁, h₂⟩, h₃⟩
-  constructor
-  · rintro ⟨b, h₄, h₅⟩
-    refine' ⟨b, _, h₅⟩
-    trans s₂
-    · exact System.reachable_of_tr H₂
-    · exact h₄
-  rintro ⟨b, h₄, h₅⟩
-  sorry
+  simp_rw [State.mem_aTrap_iff_aReachable]
+  have h₃ := h₂
+  simp at h₃
+  rcases h₃ with ⟨⟨h₃, h₄, h₅⟩, h₆⟩
+  constructor <;> intro h
+  · induction h
+    · subst h₆
+      apply State.AReachable.mk₂ (p := s.aPos)
+      · simp
+      · rwa [Point.dist_comm]
+      · simpa
+    nm p p' h₇ h₈ h₉ ih
+    rw [pw_eq_of_tr h₂] at h₈
+    apply State.AReachable.mk₂ (p := p) ih h₈
+    exact State.not_mem_taken_of_tr h₂ h₉
+  · induction h
+    · apply State.AReachable.mk₂ (p := s'.aPos)
+      · simp
+      · rwa [←h₆]
+      · simp [←h₆]
+    nm p p' h₇ h₈ h₉ ih
+    apply State.AReachable.mk₂ (p := p) ih
+    · rwa [pw_eq_of_tr h₂]
+    · rwa [←h₆]
 
 -- #check 0 #exit
 
