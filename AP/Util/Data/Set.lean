@@ -468,3 +468,9 @@ theorem inter_left_subset_self : s₁ ∩ s₂ ⊆ s₁ := by
 @[simp]
 theorem inter_right_subset_self : s₂ ∩ s₁ ⊆ s₁ := by
   intro x; simp
+
+theorem inter_subset_inter_of_left (h : s₁ ⊆ s₂) : s₁ ∩ s₃ ⊆ s₂ ∩ s₃ := by
+  intro x; specialize h x; simp; tauto
+
+theorem inter_subset_inter_of_right (h : s₁ ⊆ s₂) : s₃ ∩ s₁ ⊆ s₃ ∩ s₂ := by
+  intro x; specialize h x; simp; tauto

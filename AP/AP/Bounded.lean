@@ -347,7 +347,17 @@ theorem aMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s
 (h₃ : sys.validTr s₂ (st.a.f s₁)) : (aMimic st s₀).f s₂ = st.a.f s₁ := by
   simp [aMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
 
--- #check 0 #exit
+theorem DState.aPos_eq_of_tr {s s' p} [hs : DState s]
+(h : sys.tr s p = some s') : s'.aPos = s.aPos := by
+  simp at h; rw [←h.2]
+
+theorem taken_subset_of_tr {s s' p} [hs : sys.WF s]
+(h : sys.tr s p = some s') : s.taken ⊆ s'.taken :=
+  λ _ => State.mem_taken_of_tr h
+
+theorem taken_subset_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : s.taken ⊆ s'.taken :=
+  λ _ => State.mem_taken_of_reachable h
 
 theorem State.exi_taken_disjoint_of_reachable
 {s₀ s} [hs₀ : sys.WF s₀] {ps : Set PointZ}
@@ -402,7 +412,59 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
       simp [H₂]; use H
     · generalize hp : d.f s₁ = p at H₁
       replace Hs₂ : DState s₂; use Hs₂; simp [←ih₁]
-      sorry
+      generalize H₂ : d'.f s₂ = p'
+      simp [←hd', mk_strat_fn, guard] at H₂
+      split_ifs at H₂ with H₃
+      rotate_left
+      · clear H₂
+        exfalso
+        simp at H₃
+        contrapose! H₃; clear H₃
+        constructor
+        · apply ne_of_lt
+          apply lt_add_of_le_of_pos _ # by simp [Point.zero_def]
+          apply Set'.le_max!_of_mem
+          simp [←hp']
+          right
+          simp [←hS]
+          use k + 1, by linarith
+          rw [sys.simulate_add]
+          simp [hs₁, hp, H₁]
+          rwa [Hs₁.aPos_eq_of_tr H₁]
+        · generalize hm : (s₂.taken ∪ ps').max! + ⟨1, 0⟩ = m
+          intro H₂
+          have H₃ : m ≤ (s₂.taken ∪ ps').max!
+          · apply Set'.le_max!_of_mem
+            simp [H₂]
+          symm at hm; contrapose! hm; clear hm
+          apply ne_of_lt
+          apply lt_add_of_le_of_pos H₃
+          simp [Point.zero_def]
+      simp at H₂
+      simp [-DState.tr_eq_some_iff, ←hd', mk_strat_fn, H₃]
+      rcases H₃ with ⟨s₂', H₃⟩
+      use s₂'
+      rw [H₂] at H₃ ⊢
+      use H₃
+      have H₄ := AState.of_tr H₁
+      have H₅ := AState.of_tr H₃
+      simp [Hs₁.aPos_eq_of_tr H₁, Hs₂.aPos_eq_of_tr H₃, ih₂]
+      have H₆ : s₂'.taken = insert p' s₂.taken
+      · simp at H₃; simp [←H₃.2]
+      rw [H₆]
+      replace H₆ : p' ∉ s₂.taken ∪ ps'
+      · apply Set'.not_mem_of_max!_lt
+        rw [←H₂]
+        apply lt_add_of_le_of_pos; rfl
+        simp [Point.zero_def]
+      intro p₁ hp₁
+      simp at hp₁ H₆
+      rcases H₆ with ⟨H₆, H₇⟩
+      rcases hp₁ with ⟨rfl | hp₁, hp₂⟩
+      · contradiction
+      specialize ih₃ p₁
+      simp at ih₃
+      exact ih₃ hp₁ hp₂
   obtain ⟨s₁, H₁, H₂, H₃, H₄⟩ := hc
   use s₁
   simp [H₂, H₃]
@@ -410,9 +472,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
   intro p hp H₅
   specialize H₄ p
   simp [H₅, ←hp', Set'.mem_ofSet h₁, hp] at H₄
-  sorry
-
--- #check 0 #exit
+  exact h₂ p hp H₄
 
 theorem State.exi_taken_disjoint_of_reachable_with_turn
 {s₀ s} [hs₀ : sys.WF s₀] {ps : Set PointZ} {t : Bool}
