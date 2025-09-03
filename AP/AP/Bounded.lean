@@ -2,10 +2,6 @@ import AP.AP.Determinacy
 
 namespace AP
 
-theorem State.length_hist_lt_of_tr {s s' p}
-(h : sys.tr s p = some s') : s.hist.length < s'.hist.length := by
-  simp [hist_eq_of_tr h]
-
 theorem State.forall_d_wins_bounded_of_forall_d_wins {s} [hs : sys.WF s]
 {d : DStrat} [Hd : d.WF] (h : ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩) :
 ∃ (n : ℕ), ∀ (a : AStrat), a.WF → (sys.simulate (Strat.mk a d).f s n).2 ≠ 0 := by
@@ -311,40 +307,6 @@ a.WF ∧ d.WF ∧ sys.simulate (Strat.f ⟨a, d⟩) s n = (s', 0) := by
   obtain ⟨f, hf, n, h⟩ := h
   obtain ⟨a, d, ha, hd, rfl⟩ := exi_strat_of_simFn f
   use a, d, n
-
-def aMimic (st : Strat) (s₀ : State) : AStrat := .mk' # λ s => some #
-  let n := s.hist.length - s₀.hist.length
-  let r := sys.simulate st.f s₀ n
-  st.a.f r.1
-
-instance {st s₀} : (aMimic st s₀).WF := by unfold aMimic; infer_instance
-
-theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀]
-(h : sys.simulate st.f s₀ n = (s, 0)) : s.hist.length - s₀.hist.length = n := by
-  induction n generalizing s₀
-  · simp at h; simp [h]
-  nm n ih
-  simp at h
-  split at h; simp at h; nm x s' h₁; clear x
-  have hs' := sys.wf_of_tr h₁
-  specialize ih h
-  rw [hist_eq_of_tr h₁] at ih
-  simp at ih
-  rw [←ih]; clear ih
-  rw [Nat.sub_succ]
-  simp
-  rw [Nat.sub_add_cancel]
-  have h₂ : s'.hist.length ≤ s.hist.length
-  · apply length_hist_le_of_reachable
-    exact System.reachable_of_simulate_full h
-  have h₃ : s₀.hist.length < s'.hist.length
-  · exact State.length_hist_lt_of_tr h₁
-  omega
-
-theorem aMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
-(h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
-(h₃ : sys.validTr s₂ (st.a.f s₁)) : (aMimic st s₀).f s₂ = st.a.f s₁ := by
-  simp [aMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
 
 theorem DState.aPos_eq_of_tr {s s' p} [hs : DState s]
 (h : sys.tr s p = some s') : s'.aPos = s.aPos := by

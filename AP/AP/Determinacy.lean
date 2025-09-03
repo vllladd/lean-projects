@@ -73,8 +73,9 @@ sys.tr sa pa = some sd → sys.tr sd pd = some sa' → p sa')
   exact @ih ts.length (by simp) sa₁ _
     (h₂ sa pa sd pd sa₁ h₄ h₅) ts h₃ rfl
 
-def mk_strat_fn (f : State → Option PointZ) : State → PointZ :=
-  λ s => (·.getD s.chooseMove) # do
+@[simp]
+def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
+  (·.getD s.chooseMove) # do
     let p ← f s
     guard # sys.validTr s p
     return p
@@ -683,3 +684,52 @@ f sd' < f sd) : s.d_wins ⟨a, d⟩ := by
   specialize h sd sa sd' (k + 1)
   simp [-AState.tr_eq_some_iff, -DState.tr_eq_some_iff, h₁] at h
   apply h <;> assumption
+
+theorem State.length_hist_lt_of_tr {s s' p}
+(h : sys.tr s p = some s') : s.hist.length < s'.hist.length := by
+  simp [hist_eq_of_tr h]
+
+theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀]
+(h : sys.simulate st.f s₀ n = (s, 0)) : s.hist.length - s₀.hist.length = n := by
+  induction n generalizing s₀
+  · simp at h; simp [h]
+  nm n ih
+  simp at h
+  split at h; simp at h; nm x s' h₁; clear x
+  have hs' := sys.wf_of_tr h₁
+  specialize ih h
+  rw [hist_eq_of_tr h₁] at ih
+  simp at ih
+  rw [←ih]; clear ih
+  rw [Nat.sub_succ]
+  simp
+  rw [Nat.sub_add_cancel]
+  have h₂ : s'.hist.length ≤ s.hist.length
+  · apply length_hist_le_of_reachable
+    exact System.reachable_of_simulate_full h
+  have h₃ : s₀.hist.length < s'.hist.length
+  · exact State.length_hist_lt_of_tr h₁
+  omega
+
+def aMimic (st : Strat) (s₀ : State) : AStrat := .mk' # λ s => some #
+  let n := s.hist.length - s₀.hist.length
+  let r := sys.simulate st.f s₀ n
+  st.a.f r.1
+
+def dMimic (st : Strat) (s₀ : State) : DStrat := .mk' # λ s => some #
+  let n := s.hist.length - s₀.hist.length
+  let r := sys.simulate st.f s₀ n
+  st.d.f r.1
+
+instance {st s₀} : (aMimic st s₀).WF := by unfold aMimic; infer_instance
+instance {st s₀} : (dMimic st s₀).WF := by unfold dMimic; infer_instance
+
+theorem aMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
+(h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
+(h₃ : sys.validTr s₂ (st.a.f s₁)) : (aMimic st s₀).f s₂ = st.a.f s₁ := by
+  simp [aMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
+
+theorem dMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
+(h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
+(h₃ : sys.validTr s₂ (st.d.f s₁)) : (dMimic st s₀).f s₂ = st.d.f s₁ := by
+  simp [dMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]

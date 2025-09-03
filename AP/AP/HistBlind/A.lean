@@ -364,3 +364,18 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
 theorem State.a_hws_iff_a_hws_histBlind {s} [hs : sys.WF s] : s.a_hws ↔
 ∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
   ⟨a_hws_histBlind_of_a_hws, λ ⟨a, Ha, h₁, h₂⟩ => by use a⟩
+
+@[simp]
+theorem State.setHistAt_setHist {s : State} {hist₁ hist₂} [hs : sys.WF # s.setHist hist₂] :
+(s.setHist hist₁).setHistAt hist₁ hist₂ = s.setHist hist₂ := by
+  simp [setHistAt, setHistAt', hs]
+
+instance {s} [hs : sys.WF s] : sys.WF (s.setHist s.hist) := by simpa
+
+theorem State.setHistAt_cancel_of_suffix {s : State} {hist₁ hist₂}
+(h : hist₁ <:+ s.hist) : (s.setHistAt hist₁ hist₂).setHistAt hist₂ hist₁ = s := by
+  simp [setHistAt, setHistAt']
+  split_ifs with h₁ h₂ h₂ <;> simp [h] at h₁ h₂ ⊢
+  · rcases h₂ with ⟨h₂, h₃⟩
+    sorry
+  · sorry
