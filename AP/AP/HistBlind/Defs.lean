@@ -1,4 +1,4 @@
-import AP.AP.Determinacy
+import AP.AP.Bounded
 
 namespace AP
 

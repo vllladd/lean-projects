@@ -64,36 +64,6 @@ instance : aHistBlind.WF := by unfold aHistBlind; infer_instance
     mk_strat_fn, choose?_eq_ite, h₃]
   split_ifs with h₂ <;> first | (rw [h₃] at h₂; contradiction) | simp
 
-theorem setPw_eq_comm {s₁ s₂ : State} :
-s₁.setPw s₂.pw = s₂ ↔ s₂.setPw s₁.pw = s₁ := by
-  simp [State.ext_iff]; tauto
-
-theorem setHist_eq_comm {s₁ s₂ : State} :
-s₁.setHist s₂.hist = s₂ ↔ s₂.setHist s₁.hist = s₁ := by
-  simp [State.ext_iff]; tauto
-
-theorem length_hist_eq_of_tr {s s₁ p} (h : sys.tr s p = some s₁) :
-s₁.hist.length = s.hist.length + 1 := by simp [hist_eq_of_tr h]
-
-theorem hist_suffix_of_reachable {s₁ s₂ : State}
-(h : sys.Reachable s₁ s₂) : s₁.hist <:+ s₂.hist := by
-  induction h; rfl
-  clear s₂
-  nm a b c p h₁ h₂ ih
-  trans b.hist
-  rotate_left; exact ih
-  clear ih
-  rw [hist_eq_of_tr h₁]
-  simp
-
-theorem length_hist_le_of_reachable {s₁ s₂ : State}
-(h : sys.Reachable s₁ s₂) : s₁.hist.length ≤ s₂.hist.length :=
-  hist_suffix_of_reachable h |>.length_le
-
-theorem hist_suffix_of_tr {s₁ s₂ : State} {p}
-(h : sys.tr s₁ p = some s₂) : s₁.hist <:+ s₂.hist :=
-  hist_suffix_of_reachable # System.reachable_of_tr h
-
 theorem simulate_set_a_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat} 
 [hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
 (h₁ : sys.validTr s₁ p₁) (h₂ : s₁.hist.length < s.hist.length) :

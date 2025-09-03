@@ -1,4 +1,4 @@
-import AP.AP.King
+import AP.AP.Determinacy
 
 namespace AP
 

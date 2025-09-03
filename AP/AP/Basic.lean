@@ -656,3 +656,33 @@ theorem AState.validTr_of_a_wins {s} {st : Strat} [hs : AState s]
 theorem AState.hasTr_of_a_wins {s} {st : Strat} [hs : AState s]
 (h : s.a_wins st) : sys.hasTr s :=
   System.hasTr_of_validTr # validTr_of_a_wins h
+
+theorem setPw_eq_comm {s₁ s₂ : State} :
+s₁.setPw s₂.pw = s₂ ↔ s₂.setPw s₁.pw = s₁ := by
+  simp [State.ext_iff]; tauto
+
+theorem setHist_eq_comm {s₁ s₂ : State} :
+s₁.setHist s₂.hist = s₂ ↔ s₂.setHist s₁.hist = s₁ := by
+  simp [State.ext_iff]; tauto
+
+theorem length_hist_eq_of_tr {s s₁ p} (h : sys.tr s p = some s₁) :
+s₁.hist.length = s.hist.length + 1 := by simp [hist_eq_of_tr h]
+
+theorem hist_suffix_of_reachable {s₁ s₂ : State}
+(h : sys.Reachable s₁ s₂) : s₁.hist <:+ s₂.hist := by
+  induction h; rfl
+  clear s₂
+  nm a b c p h₁ h₂ ih
+  trans b.hist
+  rotate_left; exact ih
+  clear ih
+  rw [hist_eq_of_tr h₁]
+  simp
+
+theorem length_hist_le_of_reachable {s₁ s₂ : State}
+(h : sys.Reachable s₁ s₂) : s₁.hist.length ≤ s₂.hist.length :=
+  hist_suffix_of_reachable h |>.length_le
+
+theorem hist_suffix_of_tr {s₁ s₂ : State} {p}
+(h : sys.tr s₁ p = some s₂) : s₁.hist <:+ s₂.hist :=
+  hist_suffix_of_reachable # System.reachable_of_tr h
