@@ -668,7 +668,9 @@ theorem AState.aReachable_strat_of_tr {a : AStrat} {s s' p} [hs : AState s] [ha 
 theorem aPos_ne_of_mem_taken {s p} [hs : sys.WF s] (hp : p ∈ s.taken) : s.aPos ≠ p := by
   rintro rfl; simp at hp
 
--- #check 0 #exit
+theorem not_mem_taken_of_aReachable {s p} [hs : sys.WF s]
+(h : s.AReachable p) : p ∉ s.taken := by
+  induction h; simp; assumption
 
 theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
 (h : s.aTrapped) : ∃ (d: DStrat), d.WF ∧ s.d_wins ⟨a, d⟩ := by
@@ -680,7 +682,7 @@ theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF
   intro sd sa sd' hsd hsa hsd' n h₁ h₂ h₃
   replace h₁ := sys.reachable_of_simulate_full h₁
   rw [hsa.aTrap_eq_of_tr h₃]
-  rename' h₃ => h₃'
+  rename' h₃ => h₅
   have h₃ := aTrapped_of_reachable h₁ h
   have h₄ := aTrapped_of_tr h₂ h₃
   clear h
@@ -691,17 +693,22 @@ theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF
   use d.f sd
   simp
   symm; use DState.not_aReachable_of_tr h₂
-  have h₅ : ∃ p, sd.AReachable p ∧ ¬p = sd.aPos
+  have h₆ : ∃ p, sd.AReachable p ∧ ¬p = sd.aPos
   · use a.f sa
     constructor
     · apply aReachable_of_tr h₂
-      exact AState.aReachable_strat_of_tr h₃'
+      exact AState.aReachable_strat_of_tr h₅
     rw [eq_comm]
-    sorry -- simp at h₂ and h₃, then use aPos_eq for d turn
+    simp at h₅
+    rcases h₅ with ⟨⟨ha₁, ha₂, ha₃⟩, hax⟩
+    rwa [←hsd.aPos_eq_of_tr h₂]
   simp [←hd, mk_strat_fn, choose?_eq_ite]
-  sorry
-
--- #check 0 #exit
+  have h₇ := Classical.epsilon_spec h₆
+  generalize hp : Classical.epsilon
+    (λ p => sd.AReachable p ∧ ¬p = sd.aPos) = p at h₇ ⊢
+  rcases h₇ with ⟨hp₁, hp₂⟩
+  have hp₃ := not_mem_taken_of_aReachable hp₁
+  simpa [h₆, hsd.validTr_iff, ne_symm' hp₂, hp₃]
 
 theorem State.exi_d_wins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF]
