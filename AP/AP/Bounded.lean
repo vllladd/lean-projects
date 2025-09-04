@@ -346,7 +346,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
     replace Hs₁ := s₁.aState_or_dState
     have hr₁ := System.reachable_of_simulate_full hs₁
     have hr₂ := System.reachable_of_simulate_full hs₂
-    rcases Hs₁ with Hs₁ | Hs₁ <;> simp only [Hs₁.start_f_eq] at H₁
+    rcases Hs₁ with Hs₁ | Hs₁ <;> simp only [Hs₁.strat_f_eq] at H₁
     · generalize hp : a.f s₁ = p at H₁
       replace Hs₂ : AState s₂; use Hs₂; simp [←ih₁]
       have H₁' := H₁
@@ -634,35 +634,49 @@ theorem not_mem_taken_of_aReachable {s p} [hs : sys.WF s]
 (h : s.AReachable p) : p ∉ s.taken := by
   induction h; simp; assumption
 
+@[simp]
+theorem aTrap_nonempty {s} [hs : sys.WF s] : s.aTrap.Nonempty := by
+  use s.aPos; simp
+
+theorem aTrap_ncard_pos_of_aTrapped {s} [hs : sys.WF s]
+(h : s.aTrapped) : 0 < s.aTrap.ncard := by
+  have h₁ := h.fintype; rw [Set.ncard_pos]; simp
+
 theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
 (h : s.aTrapped) : ∃ (d: DStrat), d.WF ∧ s.d_wins ⟨a, d⟩ := by
   classical
   generalize hd : DStrat.mk' (λ s => choose? # λ p => p ∈ s.aTrap ∧ p ≠ s.aPos) = d
   have Hd : d.WF; rw [←hd]; infer_instance
   use d, Hd
-  apply d_wins_of_decreasing_dState (f := (·.aTrap.ncard))
-  intro sd sa sd' hsd hsa hsd' n h₁ h₂ h₃
-  replace h₁ := sys.reachable_of_simulate_full h₁
-  rw [hsa.aTrap_eq_of_tr h₃]
-  rename' h₃ => h₅
-  have h₃ := aTrapped_of_reachable h₁ h
-  have h₄ := aTrapped_of_tr h₂ h₃
-  clear h
-  unfold aTrapped at h₃ h₄
-  apply Set.ncard_lt_ncard _ h₃
+  apply d_wins_of_le_lt (p := λ s => s.aTrapped)
+    (f := λ s => if sys.hasTr s then s.aTrap.ncard else 0)
+    h <;> clear! s
+  · rintro sa sd hsa hsd h₁ h₂
+    use aTrapped_of_tr h₂ h₁
+    simp [-AState.hasTr_iff, sys.hasTr_of_eq_some h₂]
+    rw [AState.aTrap_eq_of_tr h₂]
+  intro sd sa hsd hsa h₁ h₂
+  use aTrapped_of_tr h₂ h₁
+  simp [-AState.hasTr_iff]
+  split_ifs with h₃
+  rotate_left; exact aTrap_ncard_pos_of_aTrapped h₁
+  unfold aTrapped at h₁
+  apply Set.ncard_lt_ncard _ h₁
   rw [Set.ssubset_iff_exists]
   use aTrap_subset_of_tr h₂
   use d.f sd
   simp
   symm; use DState.not_aReachable_of_tr h₂
+  replace h₃ := a.validTr h₃
+  obtain ⟨sd', h₃⟩ := h₃
   have h₆ : ∃ p, sd.AReachable p ∧ ¬p = sd.aPos
   · use a.f sa
     constructor
     · apply aReachable_of_tr h₂
-      exact AState.aReachable_strat_of_tr h₅
+      exact AState.aReachable_strat_of_tr h₃
     rw [eq_comm]
-    simp at h₅
-    rcases h₅ with ⟨⟨ha₁, ha₂, ha₃⟩, hax⟩
+    simp at h₃
+    rcases h₃ with ⟨⟨ha₁, ha₂, ha₃⟩, hax⟩
     rwa [←hsd.aPos_eq_of_tr h₂]
   simp [←hd, mk_strat_fn, choose?_eq_ite]
   have h₇ := Classical.epsilon_spec h₆

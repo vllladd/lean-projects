@@ -47,11 +47,11 @@ instance : sys.WF default := by
   simp [System.wf_def, System.initial_def]; use default; simp [sys]
 
 class AState (s : State) : Prop where
-  wf_s : s.WF
+  wf : s.WF
   turn : s.aTurn
 
 class DState (s : State) : Prop where
-  wf_s : s.WF
+  wf : s.WF
   turn : s.aTurn = false
 
 theorem AState.iff {s : State} : AState s ↔ sys.WF s ∧ s.aTurn :=
@@ -60,8 +60,8 @@ theorem AState.iff {s : State} : AState s ↔ sys.WF s ∧ s.aTurn :=
 theorem DState.iff {s : State} : DState s ↔ sys.WF s ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-instance {sa} [ha : AState sa] : sa.WF := ha.wf_s
-instance {sd} [hd : DState sd] : sd.WF := hd.wf_s
+instance {sa} [ha : AState sa] : sa.WF := ha.wf
+instance {sd} [hd : DState sd] : sd.WF := hd.wf
 
 @[simp] theorem AState.turn' {s : State} [hs : AState s] : s.aTurn := hs.turn
 @[simp] theorem DState.turn' {s : State} [hs : DState s] : s.aTurn = false := hs.turn
@@ -276,11 +276,11 @@ sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken) ∧
   s.tr_eq_some_iff_of_not_aTurn turn
 
 @[simp]
-theorem AState.start_f_eq {sa} {st : Strat} [ha : AState sa] :
+theorem AState.strat_f_eq {sa} {st : Strat} [ha : AState sa] :
 st.f sa = st.a.f sa := by simp [Strat.f]
 
 @[simp]
-theorem DState.start_f_eq {sd} {st : Strat} [hd : DState sd] :
+theorem DState.strat_f_eq {sd} {st : Strat} [hd : DState sd] :
 st.f sd = st.d.f sd := by simp [Strat.f]
 
 theorem State.a_wins_iff_mul_two {s : State} {st : Strat} :
@@ -505,7 +505,7 @@ sys.trs (s.setPw pw) ps = (s'.setPw pw, []) := by
   refine' ih _ h₂
   rwa [pw_eq_of_tr h₃]
 
-theorem State.wf_setPw_of_le {s pw} [hs : sys.WF s]
+theorem State.wfetPw_of_le {s pw} [hs : sys.WF s]
 (h : s.pw ≤ pw) : sys.WF (s.setPw pw) := by
   have H := hs
   rw [wf_iff] at hs ⊢; dsimp
@@ -695,3 +695,79 @@ theorem length_hist_le_of_tr {s₁ s₂ : State} {p}
 theorem setHist_eq_setHist_iff {s : State} {hist₁ hist₂} :
 s.setHist hist₁ = s.setHist hist₂ ↔ hist₁ = hist₂ := by
   simp [State.ext_iff]
+
+@[simp]
+theorem State.aMove_setHist {s : State} {hist p} :
+(s.setHist hist).aMove p = (s.aMove p).map (·.setHist hist) := by
+  simp [State.aMove]; rfl
+
+@[simp]
+theorem State.dMove_setHist {s : State} {hist p} :
+(s.setHist hist).dMove p = (s.dMove p).map (·.setHist hist) := by
+  simp [State.dMove]; rfl
+
+@[simp]
+theorem State.move_setHist {s : State} {hist p} :
+(s.setHist hist).move p = (s.move p).map (·.setHist # p :: hist) := by
+  simp [State.move, Option.bind_map]
+  split_ifs with ht <;> simp [State.setHist]
+
+@[simp]
+theorem State.tr_setHist {s : State} {hist p} :
+sys.tr (s.setHist hist) p = (sys.tr s p).map (·.setHist # p :: hist) := by
+  simp [sys]
+
+@[simp]
+theorem State.validTr_setHist {s : State} {hist} :
+sys.validTr (s.setHist hist) = sys.validTr s := by
+  ext p; constructor <;> rintro ⟨s₁, h₁⟩
+  · simp at h₁; obtain ⟨s', h₁, h₂⟩ := h₁; use s'
+  · use s₁.setHist (p :: hist); simp; use s₁
+
+@[simp]
+theorem State.hasTr_setHist {s : State} {hist} :
+sys.hasTr (s.setHist hist) ↔ sys.hasTr s := by
+  apply exists_iff_of; simp
+
+@[simp]
+theorem State.chooseAMove_setHist {s : State} {hist} :
+(s.setHist hist).chooseAMove = s.chooseAMove := by
+  simp [chooseAMove]
+
+@[simp]
+theorem State.chooseDMove_setHist {s : State} {hist} :
+(s.setHist hist).chooseDMove = s.chooseDMove := by
+  simp [chooseDMove]
+
+theorem State.setHist_eq_self_of {s : State} {hist}
+(h : s.hist = hist) : s.setHist hist = s := by
+  simp [←h]
+
+@[simp]
+theorem aTurn_initState {pw} : (initState pw).aTurn = false := rfl
+
+theorem AState.exi_prev {sa} [ha : AState sa] :
+∃ sd p, sys.tr sd p = sa := by
+  rcases ha with ⟨h₁, h₂⟩
+  rw [State.WF, State.wf_iff] at h₁
+  obtain ⟨ps, h₁⟩ := h₁
+  induction ps using List.reverseRecOn generalizing sa
+  · simp at h₁
+    rw [←h₁] at h₂
+    simp at h₂
+  nm ps p ih
+  clear ih
+  generalize hr : sys.trs (initState sa.pw) ps = r
+  simp [sys.trs_append, hr] at h₁
+  split at h₁ <;> simp at h₁
+  nm h₃
+  rcases h₁ with ⟨h₁, h₄⟩
+  split at h₄ <;> simp at h₄
+  nm x sa' h₅; clear x
+  clear h₄
+  simp [h₅] at h₁
+  subst h₁
+  rcases r with ⟨s, r⟩
+  simp at h₃ h₅
+  subst h₃
+  use s, p

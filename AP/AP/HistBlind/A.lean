@@ -2,52 +2,6 @@ import AP.AP.HistBlind.Basic
 
 namespace AP
 
-@[simp]
-theorem State.aMove_setHist {s : State} {hist p} :
-(s.setHist hist).aMove p = (s.aMove p).map (·.setHist hist) := by
-  simp [State.aMove]; rfl
-
-@[simp]
-theorem State.dMove_setHist {s : State} {hist p} :
-(s.setHist hist).dMove p = (s.dMove p).map (·.setHist hist) := by
-  simp [State.dMove]; rfl
-
-@[simp]
-theorem State.move_setHist {s : State} {hist p} :
-(s.setHist hist).move p = (s.move p).map (·.setHist # p :: hist) := by
-  simp [State.move, Option.bind_map]
-  split_ifs with ht <;> simp [State.setHist]
-
-@[simp]
-theorem State.tr_setHist {s : State} {hist p} :
-sys.tr (s.setHist hist) p = (sys.tr s p).map (·.setHist # p :: hist) := by
-  simp [sys]
-
-@[simp]
-theorem State.validTr_setHist {s : State} {hist} :
-sys.validTr (s.setHist hist) = sys.validTr s := by
-  ext p; constructor <;> rintro ⟨s₁, h₁⟩
-  · simp at h₁; obtain ⟨s', h₁, h₂⟩ := h₁; use s'
-  · use s₁.setHist (p :: hist); simp; use s₁
-
-@[simp]
-theorem State.hasTr_setHist {s : State} {hist} :
-sys.hasTr (s.setHist hist) ↔ sys.hasTr s := by
-  apply exists_iff_of; simp
-
-@[simp]
-theorem State.chooseAMove_setHist {s : State} {hist} :
-(s.setHist hist).chooseAMove = s.chooseAMove := by
-  simp [chooseAMove]
-
-@[simp]
-theorem State.chooseDMove_setHist {s : State} {hist} :
-(s.setHist hist).chooseDMove = s.chooseDMove := by
-  simp [chooseDMove]
-
-instance : (default : AStrat).histBlind := by
-  simp [AStrat.histBlind]
-
 open Classical in noncomputable
 def aHistBlind : AStrat := .mk' # λ s => do
   let s' ← choose? # λ (s' : State) => sys.WF s' ∧ s'.setHist s.hist = s
@@ -56,13 +10,16 @@ def aHistBlind : AStrat := .mk' # λ s => do
 
 instance : aHistBlind.WF := by unfold aHistBlind; infer_instance
 
-@[simp] theorem histBlind_aHistBlind : aHistBlind.histBlind := by
-  intro s hist hs hs' h₁; unfold aHistBlind
+theorem histBlind_aHistBlind : aHistBlind.HistBlind := by
+  use inferInstance; intro s hist hs hs' h₁; unfold aHistBlind
   have h₃ : (λ s' => sys.WF s' ∧ s'.setHist hist = s.setHist hist) =
     (λ s' => sys.WF s' ∧ s'.setHist s.hist = s); simp [State.ext_iff]
   simp [AStrat.mk', Option.pure_def, Option.bind_eq_bind, AStrat.f_mk,
     mk_strat_fn, choose?_eq_ite, h₃]
   split_ifs with h₂ <;> first | (rw [h₃] at h₂; contradiction) | simp
+
+@[simp]
+instance : aHistBlind.HistBlind := histBlind_aHistBlind
 
 theorem simulate_set_a_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat} 
 [hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
@@ -351,8 +308,8 @@ theorem AState.aHistBlind_tr_a_hws {sa} [ha : AState sa]
   exact hist_eq_of_tr H₈
 
 theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
-∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ := by
-  use aHistBlind, inferInstance, by simp
+∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ := by
+  use aHistBlind, inferInstance
   intro d Hd
   apply a_wins_of_ind h <;> clear! s
   · exact @AState.aHistBlind_tr_a_hws
@@ -362,8 +319,8 @@ theorem State.a_hws_histBlind_of_a_hws {s} [hs : sys.WF s] (h : s.a_hws) :
   apply h₁; exact h₂
 
 theorem State.a_hws_iff_a_hws_histBlind {s} [hs : sys.WF s] : s.a_hws ↔
-∃ (a : AStrat), a.WF ∧ a.histBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
-  ⟨a_hws_histBlind_of_a_hws, λ ⟨a, Ha, h₁, h₂⟩ => by use a⟩
+∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
+  ⟨a_hws_histBlind_of_a_hws, λ ⟨a, Ha, h₁⟩ => by use a, Ha.wf⟩
 
 @[simp]
 theorem State.setHistAt_setHist {s : State} {hist₁ hist₂} [hs : sys.WF # s.setHist hist₂] :
@@ -379,4 +336,3 @@ theorem State.setHistAt_cancel_of_suffix {s : State} {hist₁ hist₂}
   split_ifs at hs ⊢ with h₁ h₂ h₂ <;> simp [h] at h₁ h₂ ⊢
   · rcases h₂ with ⟨h₂, h₃⟩; contradiction
   · simp [List.take_length_sub_append_eq_of_suffix h, hs] at h₂
-    

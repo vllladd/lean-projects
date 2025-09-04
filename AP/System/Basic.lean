@@ -327,3 +327,13 @@ theorem wf_of_tree {a} [ha : sys.Tree a] : sys.WF a := by
 
 instance {a} [ha : sys.Acyclic a] : sys.WF a := wf_of_acyclic
 instance {a} [ha : sys.Tree a] : sys.WF a := wf_of_tree
+
+theorem simulate_eq_of_not_hasTr {f s n}
+(h : ¬sys.hasTr s) : sys.simulate f s n = (s, n) := by
+  cases n; rfl; nm n
+  simp
+  split; rfl
+  nm x s' h₁; clear x
+  exfalso
+  apply h
+  exact ⟨_, _, h₁⟩
