@@ -686,3 +686,12 @@ theorem length_hist_le_of_reachable {s₁ s₂ : State}
 theorem hist_suffix_of_tr {s₁ s₂ : State} {p}
 (h : sys.tr s₁ p = some s₂) : s₁.hist <:+ s₂.hist :=
   hist_suffix_of_reachable # System.reachable_of_tr h
+
+theorem length_hist_le_of_tr {s₁ s₂ : State} {p}
+(h : sys.tr s₁ p = some s₂) : s₁.hist.length ≤ s₂.hist.length :=
+  hist_suffix_of_tr h |>.length_le
+
+@[simp]
+theorem setHist_eq_setHist_iff {s : State} {hist₁ hist₂} :
+s.setHist hist₁ = s.setHist hist₂ ↔ hist₁ = hist₂ := by
+  simp [State.ext_iff]

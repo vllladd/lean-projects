@@ -373,9 +373,10 @@ theorem State.setHistAt_setHist {s : State} {hist₁ hist₂} [hs : sys.WF # s.s
 instance {s} [hs : sys.WF s] : sys.WF (s.setHist s.hist) := by simpa
 
 theorem State.setHistAt_cancel_of_suffix {s : State} {hist₁ hist₂}
+[hs : sys.WF s] [hs' : sys.WF # s.setHistAt' hist₁ hist₂]
 (h : hist₁ <:+ s.hist) : (s.setHistAt hist₁ hist₂).setHistAt hist₂ hist₁ = s := by
-  simp [setHistAt, setHistAt']
-  split_ifs with h₁ h₂ h₂ <;> simp [h] at h₁ h₂ ⊢
-  · rcases h₂ with ⟨h₂, h₃⟩
-    sorry
-  · sorry
+  simp [setHistAt, setHistAt'] at hs' ⊢
+  split_ifs at hs ⊢ with h₁ h₂ h₂ <;> simp [h] at h₁ h₂ ⊢
+  · rcases h₂ with ⟨h₂, h₃⟩; contradiction
+  · simp [List.take_length_sub_append_eq_of_suffix h, hs] at h₂
+    
