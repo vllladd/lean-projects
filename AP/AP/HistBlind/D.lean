@@ -184,8 +184,8 @@ theorem AState.dwn_lt_of_tr {sa sd p} [hsa : AState sa]
   apply simulate_set_a_eq_of_length_hist_lt ⟨_, h₂⟩
   exact State.length_hist_lt_of_tr h₂
 
-theorem DState.exi_dwn_lt_tr {sd} [hsd : DState sd]
-(h₁ : sd.d_hws) : ∃ p sa, sys.tr sd p = some sa ∧ sa.dwn < sd.dwn := by
+theorem DState.exi_tr_d_hws_and_dwn_lt {sd} [hsd : DState sd]
+(h₁ : sd.d_hws) : ∃ p sa, sys.tr sd p = some sa ∧ sa.d_hws ∧ sa.dwn < sd.dwn := by
   have hp₁ := State.dwn_pos_of_d_hws h₁
   rw [State.d_hws_iff_d_hws_bounded] at h₁
   replace h₁ := Nat.findRaw_spec' h₁
@@ -209,6 +209,15 @@ theorem DState.exi_dwn_lt_tr {sd} [hsd : DState sd]
   generalize hn' : sa.dwn = n' at h₁ h₂ hp₁ h₄ ⊢
   rcases h₄ with ⟨h₄, h₅⟩
   by_contra! h₆
+  specialize h₆ _
+  · clear h₆
+    cases n; simp at hp₁; nm n
+    use d, Hd
+    intro a Ha
+    specialize h₁ a Ha
+    use n
+    simp [h₃] at h₁
+    exact h₁
   specialize h₅ (n - 1) _
   rotate_left; cases n; simp at hp₁; omega
   clear h₅
@@ -219,6 +228,10 @@ theorem DState.exi_dwn_lt_tr {sd} [hsd : DState sd]
   contrapose! h₁
   cases n; simp at hp₁; nm n
   simpa [h₃]
+
+theorem DState.exi_tr_dwn_lt {sd} [hsd : DState sd]
+(h₁ : sd.d_hws) : ∃ p sa, sys.tr sd p = some sa ∧ sa.dwn < sd.dwn := by
+  have h₂ := hsd.exi_tr_d_hws_and_dwn_lt h₁; tauto
 
 open Classical in noncomputable
 def dHistBlind : DStrat := .mk' # λ s => do
@@ -331,23 +344,27 @@ theorem d_hws_and_dwn_lt_of_dHistBlind_tr {sd sa} [hsd : DState sd]
 (h₁ : sys.tr sd (dHistBlind.f sd) = some sa) (h₂ : sd.d_hws) :
 sa.d_hws ∧ sa.dwn < sd.dwn := by
   simp [-DState.tr_eq_some_iff, dHistBlind, choose?_eq_ite] at h₁
-  
   have h₃ : ∃ (sd' : State), sys.WF sd' ∧ sd'.setHist sd.hist = sd
   · use sd; simp [hsd.wf]
   have h₅ := Classical.epsilon_spec h₃
   generalize h₄ : Classical.epsilon (λ (sd' : State) =>
     sys.WF sd' ∧ sd'.setHist sd.hist = sd) = sd' at h₁ h₅
   rcases h₅ with ⟨hsd', h₅⟩
-  
+  have h₅' := setHist_eq_comm.mp h₅
+  replace hsd' : DState sd'
+  · clear h₁
+    use hsd'
+    rw [←h₅']
+    simp
   have h₆ : ∃ p sa, sys.tr sd' p = some sa ∧ sa.d_hws ∧ sa.dwn < sd'.dwn
-  · sorry
+  · clear h₁
+    rw [←h₅] at hsd h₂
+    simp at h₂
+    exact hsd'.exi_tr_d_hws_and_dwn_lt h₂
   have h₇ := Classical.epsilon_spec h₆
   generalize h₈ : Classical.epsilon (λ p => ∃ sa,
     sys.tr sd' p = some sa ∧ sa.d_hws ∧ sa.dwn < sd'.dwn) = p at h₁ h₇
   rcases h₇ with ⟨sa', h₇, h₉, H⟩
-  
-  have h₅' := setHist_eq_comm.mp h₅
-  
   have H₁ : sys.tr sd p = sa'.setHist (p :: sd.hist)
   · clear h₁
     rw [←h₅'] at h₇
@@ -356,21 +373,19 @@ sa.d_hws ∧ sa.dwn < sd.dwn := by
     simp [-DState.tr_eq_some_iff]
     rwa [State.setHist_eq_self_of]
     exact hist_eq_of_tr h₇
-  
   have H₁' : sys.validTr sd p := ⟨_, H₁⟩
-  
-  have H₂ : sa.setHist sa'.hist = sa'
-  · clear h₁
-    rw [←h₅'] at h₇
-    sorry
-  
   simp [-DState.tr_eq_some_iff, h₃, h₆, h₈, H₁'] at h₁
-  
+  have H₂ : sa.setHist sa'.hist = sa'
+  · simp [H₁] at h₁; simp [←h₁]
+  have H₃ := AState.of_tr h₁
+  have H₄ := AState.of_tr h₇
+  have H₄' : AState # sa.setHist sa'.hist; rwa [←H₂] at H₄
+  have H₅ : DState # sd.setHist sd'.hist; rwa [h₅']
   constructor
-  · sorry
-  · sorry
-
--- #check 0 #exit
+  · rwa [←H₂, State.d_hws_setHist_iff] at h₉
+  · rw [←H₂, ←h₅'] at H
+    simp at H
+    exact H
 
 theorem State.d_hws_histBlind_of_d_hws {s} [hs : sys.WF s] (h : s.d_hws) :
 ∃ (d : DStrat), d.HistBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ := by
@@ -381,8 +396,6 @@ theorem State.d_hws_histBlind_of_d_hws {s} [hs : sys.WF s] (h : s.d_hws) :
     use hsa.d_hws_of_tr h₂ h₁, hsa.dwn_lt_of_tr h₁ h₂
   · intro sd sa hsd hsa h₁ h₂
     exact d_hws_and_dwn_lt_of_dHistBlind_tr h₂ h₁
-
--- #check 0 #exit
 
 theorem State.d_hws_iff_d_hws_histBlind {s} [hs : sys.WF s] : s.d_hws ↔
 ∃ (d : DStrat), d.HistBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ :=
