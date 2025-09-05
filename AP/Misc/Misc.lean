@@ -7,7 +7,7 @@ namespace P1
 noncomputable
 def f (n : ℕ) : ℝ :=
   let r := (n : ℝ)
-  let a := r ^ (1 / r)
+  let a := r ^ r⁻¹
   (a ^ ·)^[n] 1
 
 example : f 2 = √2 ^ √2 := by
