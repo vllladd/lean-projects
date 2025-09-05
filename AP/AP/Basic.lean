@@ -846,3 +846,14 @@ theorem AState.validTr_setPw_of_le {s pw p} [hs : sys.WF s]
 theorem State.setPw_eq_self_of {s : State} {pw}
 (h : s.pw = pw) : s.setPw pw = s := by
   simp [←h]
+
+theorem AState.setPw_of_le {s pw} [hs : AState s]
+(h : s.pw ≤ pw) : AState (s.setPw pw) := by
+  constructor <;> simp [State.wf_setPw_of_le h]
+
+theorem DState.setPw_of_le {s pw} [hs : DState s]
+(h : s.pw ≤ pw) : DState (s.setPw pw) := by
+  constructor <;> simp [State.wf_setPw_of_le h]
+
+instance {pw pw'} : sys.WF # (initState pw).setPw pw' := by
+  simp; infer_instance
