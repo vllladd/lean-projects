@@ -77,13 +77,19 @@ theorem State.a_hws_of_setPw_le {s pw} [hs : sys.WF s]
     rwa [setPw_eq_self_of]
     simp [pw_eq_of_tr h₃, ←h₄]
 
+theorem State.d_hws_of_setPw_le' {s : State} {pw} [hs : sys.WF s]
+(h₁ : s.pw ≤ pw) (h₂ : (s.setPw pw).d_hws) : s.d_hws := by
+  have hs' := wf_setPw_of_le h₁
+  contrapose h₂; simp at h₂ ⊢
+  exact a_hws_of_setPw_le h₁ h₂
+
 theorem State.d_hws_of_setPw_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
 (h₁ : pw ≤ s.pw) (h₂ : s.d_hws) : (s.setPw pw).d_hws := by
   generalize h₃ : s.setPw pw = s' at hs
   have h₄ : s'.pw = pw; simp [←h₃]; subst h₄
   rw [setPw_eq_comm] at h₃
   have h₄ : sys.WF s; rw [←h₃]; exact wf_setPw_of_le h₁
-  contrapose h₂; simp at h₂ ⊢; rw [←h₃]; exact a_hws_of_setPw_le h₁ h₂
+  rw [←h₃] at h₂; exact d_hws_of_setPw_le' h₁ h₂
 
 theorem a_hws_pw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : a_hws_pw pw) : a_hws_pw pw' :=
   State.a_hws_of_setPw_le h₁ h₂
