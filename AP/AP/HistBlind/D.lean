@@ -135,7 +135,7 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
     simp [setHistAt', hist_eq_of_tr G₁]
     rw [Nat.succ_sub]
     simp
-    exact List.IsSuffix.length_le H₈'
+    exact H₈'.length_le
 
 theorem State.a_hws_of_dwn_eq_zero {s} [hs : sys.WF s]
 (h : s.dwn = 0) : s.a_hws := by
