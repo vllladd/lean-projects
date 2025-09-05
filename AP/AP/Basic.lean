@@ -505,7 +505,7 @@ sys.trs (s.setPw pw) ps = (s'.setPw pw, []) := by
   refine' ih _ h₂
   rwa [pw_eq_of_tr h₃]
 
-theorem State.wfetPw_of_le {s pw} [hs : sys.WF s]
+theorem State.wf_setPw_of_le {s pw} [hs : sys.WF s]
 (h : s.pw ≤ pw) : sys.WF (s.setPw pw) := by
   have H := hs
   rw [wf_iff] at hs ⊢; dsimp
@@ -771,3 +771,78 @@ theorem AState.exi_prev {sa} [ha : AState sa] :
   simp at h₃ h₅
   subst h₃
   use s, p
+
+theorem State.aTurn_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.aTurn = !s.aTurn := by
+  simp [sys, move] at h; split_ifs at h with h₁
+  all_goals simp [h₁]; simp at h; obtain ⟨s₁, h₂, rfl⟩ := h; simp [h₁]
+
+theorem State.aTurn_eq_of_simulate_eq {st : Strat} {s s₁ n r}
+[hs : sys.WF s] (h : sys.simulate st.f s n = (s₁, r)) :
+s₁.aTurn = (s.aTurn == decide (Even # n - r)) := by
+  induction n generalizing s
+  · simp at h ⊢; simp [h]
+  nm n ih
+  simp at h
+  split at h
+  · nm x h₁; clear x; simp at h; simp [h]
+  nm x s' h₁; clear x
+  have h₂ := sys.wf_of_tr h₁
+  rw [ih h, aTurn_eq_of_tr h₁]; clear ih
+  simp only [beq_eq_beq, Bool.not_eq_eq_eq_not]
+  rw [Nat.succ_sub # sys.snd_le_of_simulate_eq h]
+  simp only [Nat.succ_eq_add_one, Nat.even_succ_iff]
+  simp_rw [←Nat.not_even_iff_odd]
+  simp [-Nat.not_even_iff_odd]
+
+theorem State.aTurn_eq_of_simulate_full_eq {st : Strat} {s s₁ n}
+[hs : sys.WF s] (h : sys.simulate st.f s n = (s₁, 0)) :
+s₁.aTurn = (s.aTurn == decide (Even n)) :=
+  aTurn_eq_of_simulate_eq h
+
+theorem State.simulate_congr_rel_full'
+{st st' : Strat} {r : State → State → Prop} {s s' s₁ n}
+[hst : st.WF] [hst' : st'.WF] [hs : sys.WF s] [hs' : sys.WF s']
+(h₁ : sys.simulate st.f s n = (s₁, 0)) (ht : s.aTurn = s'.aTurn) (h₂ : r s s')
+(h₃ : ∀ sa sa' sd [AState sa] [AState sa'] [DState sd],
+sys.tr sa (st.a.f sa) = some sd → r sa sa' →
+∃ sd', sys.tr sa' (st'.a.f sa') = some sd' ∧ r sd sd')
+(h₄ : ∀ sd sd' sa [DState sd] [DState sd'] [AState sa],
+sys.tr sd (st.d.f sd) = some sa → r sd sd' →
+∃ sa', sys.tr sd' (st'.d.f sd') = some sa' ∧ r sa sa') :
+∃ s₁', sys.simulate st'.f s' n = (s₁', 0) ∧ r s₁ s₁' := by
+  apply sys.simulate_congr_rel_full (r := r) h₁ h₂
+  intro k hk b b' b₁ h₅ h₆ h₇ h₈
+  have hb : sys.WF b := sys.wf_of_simulate_eq h₅
+  have hb' : sys.WF b' := sys.wf_of_simulate_eq h₆
+  have H₁ : b.aTurn = b'.aTurn
+  · rw [aTurn_eq_of_simulate_full_eq h₅, aTurn_eq_of_simulate_full_eq h₆, ht]
+  replace hb := b.aState_or_dState
+  rcases hb with hb | hb <;> simp [-AState.tr_eq_some_iff, -DState.tr_eq_some_iff] at h₈
+  · replace hb' : AState b' := ⟨hb', by simp [←H₁]⟩
+    have H₂ := DState.of_tr h₈; specialize h₃ b b' b₁ h₈ h₇
+    simpa [-AState.tr_eq_some_iff]
+  · replace hb' : DState b' := ⟨hb', by simp [←H₁]⟩
+    have H₂ := AState.of_tr h₈; specialize h₄ b b' b₁ h₈ h₇
+    simpa [-DState.tr_eq_some_iff]
+
+theorem State.simulate_congr_rel_full
+{st st' : Strat} {r : State → State → Prop} {s s' n}
+[hst : st.WF] [hst' : st'.WF] [hs : sys.WF s] [hs' : sys.WF s']
+(h₁ : (sys.simulate st.f s n).2 = 0) (ht : s.aTurn = s'.aTurn) (h₂ : r s s')
+(h₃ : ∀ sa sa' sd [AState sa] [AState sa'] [DState sd],
+sys.tr sa (st.a.f sa) = some sd → r sa sa' →
+∃ sd', sys.tr sa' (st'.a.f sa') = some sd' ∧ r sd sd')
+(h₄ : ∀ sd sd' sa [DState sd] [DState sd'] [AState sa],
+sys.tr sd (st.d.f sd) = some sa → r sd sd' →
+∃ sa', sys.tr sd' (st'.d.f sd') = some sa' ∧ r sa sa') :
+(sys.simulate st'.f s' n).2 = 0 := by
+  obtain ⟨s₁, h₁⟩ : ∃ s₁, sys.simulate st.f s n = (s₁, 0); simpa [Prod.ext_iff]
+  obtain ⟨s₁', h₅⟩ := s.simulate_congr_rel_full' h₁ ht h₂ h₃ h₄; simp [h₅]
+
+theorem AState.validTr_setPw_of_le {s pw p} [hs : sys.WF s]
+(h₁ : s.pw ≤ pw) (h₂ : sys.validTr s p) : sys.validTr (s.setPw pw) p := by
+  obtain ⟨s', h₂⟩ := h₂; exact ⟨_, State.tr_setPw_eq_some_of h₁ h₂⟩
+
+theorem State.setPw_eq_self_of {s : State} {pw}
+(h : s.pw = pw) : s.setPw pw = s := by
+  simp [←h]

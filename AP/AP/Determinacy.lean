@@ -649,29 +649,6 @@ theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀
   · exact State.length_hist_lt_of_tr h₁
   omega
 
-def aMimic (st : Strat) (s₀ : State) : AStrat := .mk' # λ s => some #
-  let n := s.hist.length - s₀.hist.length
-  let r := sys.simulate st.f s₀ n
-  st.a.f r.1
-
-def dMimic (st : Strat) (s₀ : State) : DStrat := .mk' # λ s => some #
-  let n := s.hist.length - s₀.hist.length
-  let r := sys.simulate st.f s₀ n
-  st.d.f r.1
-
-instance {st s₀} : (aMimic st s₀).WF := by unfold aMimic; infer_instance
-instance {st s₀} : (dMimic st s₀).WF := by unfold dMimic; infer_instance
-
-theorem aMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
-(h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
-(h₃ : sys.validTr s₂ (st.a.f s₁)) : (aMimic st s₀).f s₂ = st.a.f s₁ := by
-  simp [aMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
-
-theorem dMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
-(h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
-(h₃ : sys.validTr s₂ (st.d.f s₁)) : (dMimic st s₀).f s₂ = st.d.f s₁ := by
-  simp [dMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
-
 theorem AState.d_hws_of_tr {sa sd p} [ha : AState sa]
 (h₁ : sys.tr sa p = some sd) (h₂ : sa.d_hws) : sd.d_hws :=
   d_hws_iff_tr.mp h₂ _ _ h₁
@@ -679,60 +656,6 @@ theorem AState.d_hws_of_tr {sa sd p} [ha : AState sa]
 theorem DState.a_hws_of_tr {sd sa p} [hd : DState sd]
 (h₁ : sys.tr sd p = some sa) (h₂ : sd.a_hws) : sa.a_hws :=
   a_hws_iff_tr.mp h₂ _ _ h₁
-
--- theorem State.d_wins_of_aux {s} [hs : sys.WF s]
--- {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {p : State → Prop} {f : State → ℕ}
--- {r₁ r₂ op₁ op₂ ops} (hr₁ : (f · < f ·) = r₁) (hr₂ : (f · ≤ f ·) = r₂)
--- (h_ops : {op₁, op₂} = ops) (h₁_op : ops ⊆ ({r₁, r₂} : Set _)) (h₂_op : r₁ ∈ ops)
--- (h₁ : p s) (h₂ : ∀ sa sd [AState sa] [DState sd], p sa →
--- sys.tr sa (a.f sa) = some sd → p sd ∧ op₁ sd sa)
--- (h₃ : ∀ sd sa [DState sd] [AState sa], p sd →
--- sys.tr sd (d.f sd) = some sa → p sa ∧ op₂ sa sd) : s.d_wins ⟨a, d⟩ := by
---   have H₁ : op₁ = r₂ → op₂ = r₁
---   · subst h_ops
---     intro h; symm at h; subst h
---     simp at h₂_op; symm at h₂_op
---     rcases h₂_op with h | h; rw [h]
---     subst hr₁ hr₂
---     apply congrArg (λ x => x default default) at h
---     simp at h
---   have H₂ : op₂ = r₂ → op₁ = r₁
---   · subst h_ops
---     intro h; symm at h; subst h
---     simp at h₂_op
---     rcases h₂_op with h | h; rw [h]
---     subst hr₁ hr₂
---     apply congrArg (λ x => x default default) at h
---     simp at h
---   generalize hn : f s = n
---   induction n using Nat.strong_induction_on generalizing s
---   nm n ih
---   subst hn h_ops
---   simp at h₂_op
---   replace hs := s.aState_or_dState; rcases hs with hs | hs
---   · by_cases h₄ : sys.hasTr s
---     rotate_left
---     · use 1
---       rw [sys.simulate_eq_of_not_hasTr h₄]
---       simp
---     replace h₄ := a.validTr h₄
---     obtain ⟨s', h₄⟩ := h₄
---     have := DState.of_tr h₄
---     obtain ⟨h₅, h₆⟩ := h₂ s s' h₁ h₄
---     specialize ih (f s') h₆ h₅ rfl
---     obtain ⟨n, ih⟩ := ih
---     use n + 1
---     simpa [h₄]
---   · have h₄ := d.validTr s
---     obtain ⟨s', h₄⟩ := h₄
---     have := AState.of_tr h₄
---     obtain ⟨h₅, h₆⟩ := h₃ s s' h₁ h₄
---     specialize ih (f s') h₆ h₅ rfl
---     obtain ⟨n, ih⟩ := ih
---     use n + 1
---     simpa [h₄]
-
--- #check 0 #exit
 
 theorem State.d_wins_of_lt_lt {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {p : State → Prop} {f : State → ℕ}
@@ -828,3 +751,11 @@ theorem State.d_wins_of_lt_le_uncond {s} [hs : sys.WF s]
 s.d_wins ⟨a, d⟩ := by
   have h₃ := s.d_wins_of_lt_le (a := a) (d := d) (p := λ _ => True) (f := f)
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
+
+@[simp]
+theorem not_a_hws_pw_iff {pw} : ¬a_hws_pw pw ↔ d_hws_pw pw :=
+  State.not_a_hws_iff
+
+@[simp]
+theorem not_d_hws_pw_iff {pw} : ¬d_hws_pw pw ↔ a_hws_pw pw :=
+  State.not_d_hws_iff

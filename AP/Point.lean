@@ -397,6 +397,13 @@ instance [ha : MulRightStrictMono α] : MulRightStrictMono (Point α) := by
 
 end StrictMono
 
+-- instance [ha : SubtractionMonoid α] : SubtractionMonoid (Point α) := by
+--   constructor
+--   · rintro ⟨x, y⟩; simp
+--   · rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩; simp
+--   · rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩; simp; intro h₁ h₂
+--     constructor <;> apply neg_eq_of_add_eq_zero_right <;> assumption
+
 theorem ofNat_def [ha : Ring α] {n} :
 (OfNat.ofNat n : Point α) = ⟨OfNat.ofNat n, OfNat.ofNat n⟩ := by
   induction n; simp
@@ -445,9 +452,24 @@ theorem triangle : dist a c ≤ dist a b + dist b c := by
     simp at h; nth_rw 1 [max_comm]; exact h
 
 omit ha₃ in
-theorem dist_le_iff {a b : Point α} {d : ℕ} :
+theorem dist_le_iff {a b : Point α} {d : α} :
 a.dist b ≤ d ↔ max (|a.x - b.x|) (|a.y - b.y|) ≤ d := by
   simp [dist]
+
+@[simp]
+theorem dist_le_zero_iff : a.dist b ≤ 0 ↔ a = b := by
+  refine' ⟨λ h => _, λ h => by simp [h]⟩
+  rcases a, b with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩
+  simp [dist_le_iff] at h; simp
+  constructor <;> apply eq_of_sub_eq_zero <;> simp [h]
+
+@[simp]
+theorem zero_le_dist : 0 ≤ a.dist b := by
+  simp [dist]
+
+@[simp]
+theorem not_dist_lt_zero : ¬(a.dist b < 0) := by
+  simp
 
 end dist
 
@@ -584,12 +606,13 @@ end le
 variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
 
 @[simp]
-theorem zero_le_dist [ha₃ : AddLeftMono α]
+theorem zero_le_dist' [ha₃ : AddLeftMono α]
 {a b : Point α} : 0 ≤ a.dist b := by simp [dist]
 
 @[simp]
 theorem max_dist_zero [ha₃ : AddLeftMono α]
-{a b : Point α} : max (a.dist b) 0 = a.dist b := by simp
+{a b : Point α} : max (a.dist b) 0 = a.dist b := by
+  simp
 
 instance [ha₃ : AddLeftMono α] : AddLeftMono # Point α := by
   constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp
