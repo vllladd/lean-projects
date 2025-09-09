@@ -12,8 +12,6 @@ if x = a then b else f x
 def fn_swap {α β : Type*} [DecidableEq α] (a b : α) (f : α → β) (x : α) : β :=
 f # fn_swap' a b x
 
------
-
 theorem fn_set_eq {α β : Type*} [DecidableEq α] {a : α} {b : β} {f : α → β} {x : α} :
 fn_set a b f x = if x = a then b else f x := rfl
 
@@ -109,3 +107,47 @@ theorem fn_set_ext {α β : Type*} [DecidableEq α] {f g : α → β} {a : α} {
 @[simp]
 theorem Function.comp_def' {α β γ : Type*} {f : β → γ} {g : α → β} :
 f ∘ g = λ x => f (g x) := comp_def _ _
+
+@[simp] theorem leftInverse_id {α : Type*} : (@id α).LeftInverse id := congrFun rfl
+@[simp] theorem rightInverse_id {α : Type*} : (@id α).RightInverse id := congrFun rfl
+
+namespace Function
+
+variable {α β : Type*}
+variable {pa : α → Prop} {pb : β → Prop}
+variable {f : α → β} {f' : β → α}
+
+structure BijectiveOn {α β : Type*}
+(pa : α → Prop) (pb : β → Prop) (f : α → β) (f' : β → α) : Prop where
+  h : ∃ (e : {x // pa x} ≃ {y // pb y}),
+    (∀ {x} hx, f x = e ⟨x, hx⟩) ∧ (∀ {y} hy, f' y = e.symm ⟨y, hy⟩)
+
+@[simp]
+theorem bijectiveOn_id : BijectiveOn pa pa id id := by
+  refine ⟨⟨⟨id, id, ?_, ?_⟩, ?_⟩⟩ <;> simp
+
+namespace BijectiveOn
+
+variable {H : BijectiveOn pa pb f f'}
+include H
+
+theorem cnd_right {x} (h : pa x) : pb (f x) := by
+  obtain ⟨⟨e, h₁, h₂⟩⟩ := H; rw [h₁ h]; exact e _ |>.2
+
+theorem cnd_left {y} (h : pb y) : pa (f' y) := by
+  obtain ⟨⟨e, h₁, h₂⟩⟩ := H; rw [h₂ h]; exact e.symm _ |>.2
+
+theorem cancel_left {x} (h : pa x) : f' (f x) = x := by
+  obtain ⟨⟨e, h₁, h₂⟩⟩ := id H; rw [h₁ h, h₂]
+  rotate_left; rw [←h₁]; apply H.cnd_right h; simp
+
+theorem cancel_right {y} (h : pb y) : f (f' y) = y := by
+  obtain ⟨⟨e, h₁, h₂⟩⟩ := id H; rw [h₂ h, h₁]
+  rotate_left; rw [←h₂]; apply H.cnd_left h; simp
+
+@[symm]
+theorem symm : BijectiveOn pb pa f' f := by
+  obtain ⟨⟨e, h₁, h₂⟩⟩ := H; use e.symm; simp_all
+
+end BijectiveOn
+end Function
