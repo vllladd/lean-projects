@@ -43,17 +43,17 @@ class WF (sym : sys.Symmetry) : Prop where
   tr_eq : ∀ {s t} [sys.WF s], sys.tr s t = (sys.tr (sym.fs s) (sym.ft t)).map sym.fs'
   tr_eq' : ∀ {s t} [sys.WF s], sys.tr s t = (sys.tr (sym.fs' s) (sym.ft' t)).map sym.fs
 
-def zero : sys.Symmetry := ⟨id, id, id, id⟩
+def one : sys.Symmetry := ⟨id, id, id, id⟩
 
-instance : Zero sys.Symmetry := ⟨zero⟩
-theorem zero_def : (0 : sys.Symmetry) = zero := rfl
+instance : One sys.Symmetry := ⟨one⟩
+theorem one_def : (1 : sys.Symmetry) = one := rfl
 
-instance : Inhabited sys.Symmetry := ⟨zero⟩
-theorem default_eq : (default : sys.Symmetry) = 0 := rfl
+instance : Inhabited sys.Symmetry := ⟨one⟩
+theorem default_eq : (default : sys.Symmetry) = 1 := rfl
 
 @[simp]
-instance : (0 : sys.Symmetry).WF := by
-  rw [zero_def, zero]; constructor <;> simp
+instance : (1 : sys.Symmetry).WF := by
+  rw [one_def, one]; constructor <;> simp
 
 @[simp]
 instance : (default : sys.Symmetry).WF := by
@@ -167,41 +167,41 @@ instance {f} [H : sym.WF] [hf : sys.SimFn f] : sys.SimFn (sym.simFn f) := by
   rw [sys.simFn_def]; intro s hs h; simp; apply hf.1 at h; apply validTr_ft_of
   have h₁ : sys.hasTr (sym.fs' s); simp; exact ⟨_, h⟩; exact hf.1 h₁
 
-def neg (sym : sys.Symmetry) : sys.Symmetry where
+def inv (sym : sys.Symmetry) : sys.Symmetry where
   fs := sym.fs'
   fs' := sym.fs
   ft' := sym.ft
   ft := sym.ft'
 
-instance : Neg sys.Symmetry := ⟨.neg⟩
-theorem neg_def : -sym = sym.neg := rfl
+instance : Inv sys.Symmetry := ⟨.inv⟩
+theorem inv_def : sym⁻¹ = sym.inv := rfl
 
 @[simp]
-theorem neg_neg : -(-sym) = sym := by ext <;> rfl
+protected theorem inv_inv : sym⁻¹⁻¹ = sym := by ext <;> rfl
 
-instance [H : sym.WF] : (-sym).WF where
+instance [H : sym.WF] : sym⁻¹.WF where
   h_fs := H.h_fs.symm
   h_ft := H.h_ft.symm
   tr_eq := WF.tr_eq'
   tr_eq' := WF.tr_eq
 
 @[simp]
-theorem wf_neg_iff : (-sym).WF ↔ sym.WF := by
+theorem wf_inv_iff : sym⁻¹.WF ↔ sym.WF := by
   symm; constructor <;> intro h; infer_instance
-  rw [←sym.neg_neg]; infer_instance
+  rw [←sym.inv_inv]; infer_instance
 
-def add (sym₁ sym₂ : sys.Symmetry) : sys.Symmetry where
+def mul (sym₁ sym₂ : sys.Symmetry) : sys.Symmetry where
   fs := sym₁.fs ∘ sym₂.fs
   fs' := sym₂.fs' ∘ sym₁.fs'
   ft := sym₁.ft ∘ sym₂.ft
   ft' := sym₂.ft' ∘ sym₁.ft'
 
-instance : Add sys.Symmetry := ⟨add⟩
-theorem add_def : sym₁ + sym₂ = sym₁.add sym₂ := rfl
+instance : Mul sys.Symmetry := ⟨mul⟩
+theorem mul_def : sym₁ * sym₂ = sym₁.mul sym₂ := rfl
 
 @[simp]
-instance [H₁ : sym₁.WF] [H₂ : sym₂.WF] : (sym₁ + sym₂).WF := by
-  rw [add_def, add]; constructor <;> dsimp
+instance [H₁ : sym₁.WF] [H₂ : sym₂.WF] : (sym₁ * sym₂).WF := by
+  rw [mul_def, mul]; constructor <;> dsimp
   · constructor; have ⟨e₁, h₁, h₂⟩ := H₁.h_fs; have ⟨e₂, h₃, h₄⟩ := H₂.h_fs
     use e₁.comp e₂; constructor <;> intro s hs <;> simp
     rw [h₃ hs]; apply h₁; rw [h₂ hs]; apply h₄
@@ -219,37 +219,69 @@ instance [H₁ : sym₁.WF] [H₂ : sym₂.WF] : (sym₁ + sym₂).WF := by
     · rintro ⟨s', h₁, rfl⟩; have hs₁ := wf_of_tr h₁; simp [tr_ft'] at h₁
       obtain ⟨s', h₁, rfl⟩ := h₁; have hs' := wf_of_tr h₁; simpa
 
-def mulNat (sym : sys.Symmetry) (n : ℕ) : sys.Symmetry :=
-  (sym + ·)^[n] 0
+def npow (n : ℕ) (sym : sys.Symmetry) : sys.Symmetry :=
+  (· * sym)^[n] 1
 
-def mulInt (sym : sys.Symmetry) : ℤ → sys.Symmetry
-| .ofNat n => sym.mulNat n
-| .negSucc n => (-sym).mulNat # n + 1
+protected theorem one_mul : 1 * sym = sym := rfl
+protected theorem mul_one : sym * 1 = sym := rfl
+protected theorem mul_assoc {s₁ s₂ s₃ : sys.Symmetry} : s₁ * s₂ * s₃ = s₁ * (s₂ * s₃) := rfl
 
-theorem zero_add : 0 + sym = sym := rfl
-theorem add_zero : sym + 0 = sym := rfl
-theorem add_assoc {s₁ s₂ s₃ : sys.Symmetry} : s₁ + s₂ + s₃ = s₁ + (s₂ + s₃) := rfl
+instance : Monoid sys.Symmetry where
+  one_mul := λ _ => Symmetry.one_mul
+  mul_one := λ _ => Symmetry.mul_one
+  mul_assoc := λ _ _ _ => Symmetry.mul_assoc
+  npow := npow
+  npow_succ := by intros; simp_rw [npow, Function.iterate_succ']; simp
 
-instance : AddMonoid sys.Symmetry where
-  zero_add := λ _ => zero_add
-  add_zero := λ _ => add_zero
-  add_assoc := λ _ _ _ => add_assoc
-  nsmul := λ n sym => sym.mulNat n
-  nsmul_succ := by
-    intro n sym; simp_rw [mulNat, Function.iterate_succ']; simp
-    induction n; rfl; nm n ih; rw [Function.iterate_succ']; simp [←add_assoc, ih]
+def zpow (z : ℤ) (sym : sys.Symmetry) : sys.Symmetry :=
+  match z with
+  | .ofNat n => sym ^ n
+  | .negSucc n => sym⁻¹ ^ (n + 1)
+
+protected theorem inv_one : (1 : sys.Symmetry)⁻¹ = 1 := rfl
+protected theorem mul_inv_rev : (sym₁ * sym₂)⁻¹ = sym₂⁻¹ * sym₁⁻¹ := rfl
 
 #check 0 #exit
 
-theorem nsmul_neg {n} : -sym n = -sym.mulNat n := by
-  sorry
+protected theorem inv_mul_cancel : sym * sym⁻¹ = 1 := by
+  ext
+  · nm s
+    simp [inv_def, mul_def, one_def, inv, mul, one]
 
--- #check 0 #exit
+#check 0 #exit
 
-instance : SubNegMonoid sys.Symmetry where
-  zsmul := λ n sym => sym.mulInt n
-  zsmul_succ' := AddMonoid.nsmul_succ
-  zsmul_neg' := by
-    clear sym sym₁ sym₂
-    intro n sym
-    simp [mulInt]
+instance : Group sys.Symmetry where
+  inv_mul_cancel := by
+
+#check 0 #exit
+
+protected theorem inv_eq_of_mul (h : sym₁ * sym₂ = 1) : sym₁⁻¹ = sym₂ := by
+  apply congrArg (· * sym₂⁻¹) at h
+  simp [mul_assoc] at h
+
+#check 0 #exit
+
+theorem inv_npow {n} : sym⁻¹ ^ n = (sym ^ n)⁻¹ := by
+  induction n; rfl; nm n ih; simp [pow_succ]
+  rw [ih]; clear ih; induction n; rfl; nm n ih
+  simp [pow_succ, Symmetry.mul_inv_rev]; rw [mul_assoc, ih]
+
+instance : DivInvMonoid sys.Symmetry where
+  zpow := zpow
+  zpow_succ' := Monoid.npow_succ
+  zpow_neg' := λ _ _ => inv_npow
+
+instance : DivisionMonoid sys.Symmetry where
+  inv_inv := λ _ => Symmetry.inv_inv
+  mul_inv_rev := λ _ _ => Symmetry.mul_inv_rev
+  inv_eq_of_mul := by
+  -- inv_mul := by
+  --   sorry
+
+#check 0 #exit
+
+-- instance : InvOneClass sys.Symmetry where
+--   inv_one := Symmetry.inv_one
+
+example : sym ^ (-1 : ℤ) = sym⁻¹ := by
+  rw [zpow_neg]
