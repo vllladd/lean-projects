@@ -73,29 +73,6 @@ sys.tr sa pa = some sd → sys.tr sd pd = some sa' → p sa')
   exact @ih ts.length (by simp) sa₁ _
     (h₂ sa pa sd pd sa₁ h₄ h₅) ts h₃ rfl
 
-@[simp]
-def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
-  (·.getD s.chooseMove) # do
-    let p ← f s
-    guard # sys.validTr s p
-    return p
-
-instance {f} : sys.SimFn # mk_strat_fn f := by
-  constructor; intro s hs h; unfold mk_strat_fn
-  have h₁ := Classical.epsilon_spec h; dsimp
-  cases h₂ : f s; simp; exact State.validTr_chooseMove h
-  nm s'; simp [guard]; split_ifs with h₃; simpa
-  simp; exact State.validTr_chooseMove h
-
-@[simp] def AStrat.mk' (f : State → Option PointZ) : AStrat := ⟨mk_strat_fn f⟩
-@[simp] def DStrat.mk' (f : State → Option PointZ) : DStrat := ⟨mk_strat_fn f⟩
-
-instance {f} : (AStrat.mk' f).WF := by simp; infer_instance
-instance {f} : (DStrat.mk' f).WF := by simp; infer_instance
-
-@[simp] theorem AStrat.f_mk {f} : (AStrat.mk f).f = f := rfl
-@[simp] theorem DStrat.f_mk {f} : (DStrat.mk f).f = f := rfl
-
 def aStratChooseCnd (p : State → Prop) (sa : State) (pa : PointZ) : Prop :=
   ∃ sd, sys.tr sa pa = some sd ∧ ∀ pd sa', sys.tr sd pd = some sa' → p sa'
 
