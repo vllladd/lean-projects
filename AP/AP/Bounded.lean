@@ -223,12 +223,6 @@ theorem State.mem_taken_of_reachable {s s' p} [hs : sys.WF s]
   taken_subset_of_reachable h₁ _ h₂
 
 @[simp]
-theorem initState_aPos {pw} : (initState pw).aPos = 0 := rfl
-
-@[simp]
-theorem initState_taken {pw} : (initState pw).taken = ∅ := rfl
-
-@[simp]
 theorem State.not_aPos_mem_taken {s} [hs : sys.WF s] : s.aPos ∉ s.taken := by
   apply sys.invariant_wf (p := λ s => s.aPos ∉ s.taken) hs <;> clear! s
   · intro s hs

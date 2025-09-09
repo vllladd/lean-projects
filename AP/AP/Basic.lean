@@ -865,7 +865,7 @@ instance {pw pw'} : DState # (initState pw).setPw pw' := by
 theorem aPos_initState {pw} : (initState pw).aPos = 0 := rfl
 
 @[simp]
-theorem initState_taken {pw} : (initState pw).taken = ∅ := rfl
+theorem taken_initState {pw} : (initState pw).taken = ∅ := rfl
 
 @[simp]
 def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
@@ -890,27 +890,44 @@ instance {f} : (DStrat.mk' f).WF := by simp; infer_instance
 @[simp] theorem AStrat.f_mk {f} : (AStrat.mk f).f = f := rfl
 @[simp] theorem DStrat.f_mk {f} : (DStrat.mk f).f = f := rfl
 
-#check 0 #exit
-
-example {α : Type*} {x : α} {xs : List α} (h : x ∈ xs) :
-∃ ys zs, ys ++ [x] ++ zs = xs := by
-  simp_rw [eq_comm]
-  exact?
-
-#check 0 #exit
-
-theorem exi_tr_reachable_of_mem_hist {s p} [hs : sys.WF s] (h : p ∈ s.hist) :
+theorem State.exi_tr_reachable_of_mem_hist {s p} [hs : sys.WF s] (h : p ∈ s.hist) :
 ∃ s₀, sys.WF s₀ ∧ sys.validTr s₀ p ∧ sys.Reachable s₀ s := by
-  have := s.trs_reverse_hist_eq
-  have := @List.exists_append_of_mem
-
-#check 0 #exit
+  have h₁ := s.trs_reverse_hist_eq
+  rw [←List.mem_reverse, List.mem_iff_append] at h
+  obtain ⟨xs, ys, h⟩ := h
+  rw [h] at h₁
+  clear h
+  simp [sys.trs_append] at h₁
+  generalize hr : sys.trs (initState s.pw) xs = r at h₁
+  rcases r with ⟨s₁, r⟩
+  dsimp at h₁
+  split_ifs at h₁ with h₂ <;> simp at h₁
+  subst h₂
+  simp at h₁
+  rcases h₁ with ⟨h₁, h₂⟩
+  split at h₂; simp at h₂
+  nm x s₂ h₃; clear x
+  simp [h₃] at h₁
+  refine ⟨s₁, ?_, ⟨_, h₃⟩, ?_⟩
+  · rw [wf_iff]
+    use xs
+    convert hr using 3
+    change _ = (initState s.pw).pw
+    apply pw_eq_of_reachable
+    exact sys.reachable_of_trs hr
+  · rw [←h₁]
+    apply sys.reachable_of_trs (ts := p :: ys)
+    simp [h₃]
 
 theorem wfTrans {p} : sys.WFTrans p := by
   by_cases h : p ≠ 0
   · use initState 0, inferInstance
     simp [DState.validTr_iff, ne_symm' h]
-  let a : AStrat := .mk' # λ s => some # 1 - s.aPos
-  let s := sys.simulate (Strat.f ⟨a, default⟩) (initState 1) 4 |>.1
+  simp at h; subst h
+  let d : DStrat := .mk' # λ _ => some 0
+  let s := sys.simulate (Strat.f ⟨default, d⟩) (initState 1) 3 |>.1
   have h₁ : 0 ∈ s.hist; native_decide
-  sorry
+  obtain ⟨s₀, hs₀, h₂, h₃⟩ := s.exi_tr_reachable_of_mem_hist h₁
+  exact sys.wfTrans_of_validTr h₂
+
+@[simp] instance {p} : sys.WFTrans p := wfTrans

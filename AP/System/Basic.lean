@@ -344,5 +344,8 @@ class WFTrans (sys : System S T) (t : T) : Prop where
 theorem WFTrans_def {t} : sys.WFTrans t ↔ ∃ s, sys.WF s ∧ sys.validTr s t := by
   use (·.1), (⟨·⟩)
 
+theorem wfTrans_of_validTr {s t} [hs : sys.WF s]
+(h : sys.validTr s t) : sys.WFTrans t := by use s
+
 theorem wfTrans_of_tr {s s' t} [hs : sys.WF s]
 (h : sys.tr s t = some s') : sys.WFTrans t := by use s, hs, s'

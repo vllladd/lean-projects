@@ -111,7 +111,7 @@ f ∘ g = λ x => f (g x) := comp_def _ _
 @[simp] theorem leftInverse_id {α : Type*} : (@id α).LeftInverse id := congrFun rfl
 @[simp] theorem rightInverse_id {α : Type*} : (@id α).RightInverse id := congrFun rfl
 
-namespace Function
+section bijection
 
 variable {α β : Type*}
 variable {pa : α → Prop} {pb : β → Prop}
@@ -150,4 +150,4 @@ theorem symm : BijectiveOn pb pa f' f := by
   obtain ⟨⟨e, h₁, h₂⟩⟩ := H; use e.symm; simp_all
 
 end BijectiveOn
-end Function
+end bijection
