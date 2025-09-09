@@ -111,22 +111,20 @@ f ∘ g = λ x => f (g x) := comp_def _ _
 @[simp] theorem leftInverse_id {α : Type*} : (@id α).LeftInverse id := congrFun rfl
 @[simp] theorem rightInverse_id {α : Type*} : (@id α).RightInverse id := congrFun rfl
 
-section bijection
-
-variable {α β : Type*}
-variable {pa : α → Prop} {pb : β → Prop}
-variable {f : α → β} {f' : β → α}
-
 structure BijectiveOn {α β : Type*}
 (pa : α → Prop) (pb : β → Prop) (f : α → β) (f' : β → α) : Prop where
   h : ∃ (e : {x // pa x} ≃ {y // pb y}),
     (∀ {x} hx, f x = e ⟨x, hx⟩) ∧ (∀ {y} hy, f' y = e.symm ⟨y, hy⟩)
 
+namespace BijectiveOn
+
+variable {α β : Type*}
+variable {pa : α → Prop} {pb : β → Prop}
+variable {f : α → β} {f' : β → α}
+
 @[simp]
 theorem bijectiveOn_id : BijectiveOn pa pa id id := by
   refine ⟨⟨⟨id, id, ?_, ?_⟩, ?_⟩⟩ <;> simp
-
-namespace BijectiveOn
 
 variable {H : BijectiveOn pa pb f f'}
 include H
@@ -150,4 +148,22 @@ theorem symm : BijectiveOn pb pa f' f := by
   obtain ⟨⟨e, h₁, h₂⟩⟩ := H; use e.symm; simp_all
 
 end BijectiveOn
-end bijection
+
+namespace Equiv
+
+variable {α β γ : Type*}
+variable {e : α ≃ β} {e₁ : β ≃ γ} {e₂ : α ≃ β}
+
+def comp (e₁ : β ≃ γ) (e₂ : α ≃ β) : α ≃ γ where
+  toFun := e₁ ∘ e₂
+  invFun := e₂.symm ∘ e₁.symm
+  left_inv := by intros x; simp
+  right_inv := by intros x; simp
+
+@[simp]
+theorem coe_toFun_comp : (e₁.comp e₂ : _ → _) = e₁ ∘ e₂ := rfl
+
+@[simp]
+theorem symm_comp : (e₁.comp e₂).symm = e₂.symm.comp e₁.symm := rfl
+
+end Equiv
