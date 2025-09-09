@@ -1,4 +1,4 @@
-import AP.System.Invariant
+import AP.System.Symmetry
 
 namespace System.Misc
 
