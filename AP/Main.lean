@@ -7,9 +7,9 @@ namespace AP
 def getPs (d : ℕ) : List PointZ :=
   (⟨0, 0⟩ : PointZ).nbhd d
 
-def aStrat : AStrat := .mk # λ s =>
+def aStrat : AStrat := .mk' # λ s =>
   let ⟨x, y⟩ := s.aPos
-  some ⟨1 - x, y⟩
+  ⟨1 - x, y⟩
 
 def dStrat : DStrat := .mk # λ s =>
   let xs := do
