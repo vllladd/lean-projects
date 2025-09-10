@@ -104,3 +104,61 @@ theorem Equiv.iseqv : Equivalence # Equiv (sys := sys) where
 instance setoid : Setoid (Raw sys) where
   r := Equiv
   iseqv := Equiv.iseqv
+
+#check 0 #exit
+
+instance : Monoid sys.Symmetry where
+  one_mul := λ _ => rfl
+  mul_one := λ _ => rfl
+  mul_assoc := λ _ _ _ => rfl
+  npow := npow
+  npow_succ := by intros; simp_rw [npow, Function.iterate_succ']; simp
+
+protected theorem inv_one : (1 : sys.Symmetry)⁻¹ = 1 := rfl
+protected theorem mul_inv_rev : (sym₁ * sym₂)⁻¹ = sym₂⁻¹ * sym₁⁻¹ := rfl
+
+#check 0 #exit
+
+protected theorem inv_mul_cancel : sym * sym⁻¹ = 1 := by
+  ext
+  · nm s
+    simp [inv_def, mul_def, one_def, inv, mul, one]
+    simp
+
+#check 0 #exit
+
+instance : Group sys.Symmetry where
+  inv_mul_cancel := by
+
+#check 0 #exit
+
+protected theorem inv_eq_of_mul (h : sym₁ * sym₂ = 1) : sym₁⁻¹ = sym₂ := by
+  apply congrArg (· * sym₂⁻¹) at h
+  simp [mul_assoc] at h
+
+#check 0 #exit
+
+theorem inv_npow {n} : sym⁻¹ ^ n = (sym ^ n)⁻¹ := by
+  induction n; rfl; nm n ih; simp [pow_succ]
+  rw [ih]; clear ih; induction n; rfl; nm n ih
+  simp [pow_succ, Symmetry.mul_inv_rev]; rw [mul_assoc, ih]
+
+instance : DivInvMonoid sys.Symmetry where
+  zpow := zpow
+  zpow_succ' := Monoid.npow_succ
+  zpow_neg' := λ _ _ => inv_npow
+
+instance : DivisionMonoid sys.Symmetry where
+  inv_inv := λ _ => Symmetry.inv_inv
+  mul_inv_rev := λ _ _ => Symmetry.mul_inv_rev
+  inv_eq_of_mul := by
+  -- inv_mul := by
+  --   sorry
+
+#check 0 #exit
+
+-- instance : InvOneClass sys.Symmetry where
+--   inv_one := Symmetry.inv_one
+
+example : sym ^ (-1 : ℤ) = sym⁻¹ := by
+  rw [zpow_neg]
