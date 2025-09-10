@@ -393,6 +393,11 @@ omit hb₁ hb₂ in @[simp]
 theorem fold_empty {f : β → α → β} {z : β} {h} : (∅ : Set' α).fold f z h = z :=
   Std.ExtDHashMap.fold_empty
 
+omit hb₁ hb₂ in
+theorem fold_insert {f : β → α → β} {z : β} {h x}
+(h₁ : x ∉ s) : (s.insert x).fold f z h = s.fold f (f z x) h :=
+  Std.ExtDHashMap.fold_insert # by simpa
+
 @[simp]
 theorem mem_union {x : α} : x ∈ s₁ ∪ s₂ ↔ x ∈ s₁ ∨ x ∈ s₂ := by
   simp [union_def, union]
@@ -474,3 +479,48 @@ theorem inter_subset_inter_of_left (h : s₁ ⊆ s₂) : s₁ ∩ s₃ ⊆ s₂ 
 
 theorem inter_subset_inter_of_right (h : s₁ ⊆ s₂) : s₃ ∩ s₁ ⊆ s₃ ∩ s₂ := by
   intro x; specialize h x; simp; tauto
+
+theorem insert_eq_of_mem {x} (h : x ∈ s) : s.insert x = s := by
+  ext y; simp; rintro rfl; exact h
+
+@[simp]
+theorem insert_idemp {x} : (s.insert x).insert x = s.insert x := by
+  simp [Set'.insert]
+
+def map (s : Set' α) (f : α → β) : Set' β :=
+  s.fold (z := ∅) (λ s' x => s'.insert # f x) insert_comm
+
+@[simp]
+theorem map_empty {f : α → β} : (∅ : Set' α).map f = ∅ := by
+  simp [map]
+
+@[simp]
+theorem map_insert {f : α → β} {x : α} : (s.insert x).map f = (s.map f).insert (f x) := by
+  unfold map
+  suffices h : ∀ z h, (s.insert x).fold (λ s' x ↦ s'.insert (f x)) z h =
+    (s.fold (λ (s' : Set' β) x ↦ s'.insert (f x)) z h).insert (f x); apply h
+  intro z hh
+  dsimp at hh
+  induction s using Set'.ind generalizing z
+  · rw [fold_insert # by simp]; simp
+  clear! s; nm s y ih h
+  by_cases h₁ : x ∈ s.insert y
+  · simp at h₁
+    rcases h₁ with rfl | h₁
+    · simp [ih]
+    rw [insert_comm]
+    rw [insert_eq_of_mem h₁] at ih ⊢
+    rw [fold_insert h]
+    apply ih
+  rw [fold_insert h₁]
+  simp at h₁
+  rcases h₁ with ⟨h₁, h₂⟩
+  simp_rw [fold_insert h₂] at ih
+  by_cases h₃ : y ∈ s
+  · rw [insert_eq_of_mem h₃, ih]
+  simp [fold_insert h₃]
+  rw [insert_comm, ih]
+
+@[simp]
+theorem mem_map {f : α → β} {y : β} : y ∈ s.map f ↔ ∃ x ∈ s, f x = y := by
+  induction s using Set'.ind; simp; aesop

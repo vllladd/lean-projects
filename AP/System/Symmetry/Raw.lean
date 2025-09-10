@@ -14,30 +14,6 @@ structure Raw (sys : System S T) : Type u where
 
 namespace Raw
 
-section func
-
-structure Inverse {α β : Type*} (f : α → β) (g : β → α) : Prop where
-  fg : ∀ {x}, f (g x) = x
-  gf : ∀ {x}, g (f x) = x
-
-@[simp]
-theorem inverse_id {α : Type*} : Inverse (@id α) id := by
-  constructor <;> simp
-
-namespace Inverse
-
-variable {α β : Type*} {f : α → β} {g : β → α}
-variable {H : Inverse f g}
-include H
-
-@[symm]
-theorem symm : Inverse g f := ⟨H.2, H.1⟩
-
--- #check 0 #exit
-
-end Inverse
-end func
-
 class WF (sym : Raw sys) : Prop where
   h_fs : ∀ {s}, sys.WF (sym.fs s) ↔ sys.WF s
   h_fs' : ∀ {s}, sys.WF (sym.fs' s) ↔ sys.WF s

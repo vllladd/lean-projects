@@ -394,3 +394,15 @@ theorem ind {p : DMap α β → Prop} (h₁ : p ∅)
 @[simp]
 theorem fold_empty {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {h} :
 (∅ : DMap α β).fold f z h = z := Std.ExtDHashMap.fold_empty
+
+theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} {h i x}
+(h₁ : i ∉ mp) : (mp.insert i x).fold f z h = mp.fold f (f z i x) h :=
+  Std.ExtDHashMap.fold_insert # by simpa
+
+theorem insert_comm {i x j y} (h : i ≠ j ∨ HEq x y) :
+(mp.insert i x).insert j y = (mp.insert j y).insert i x := by
+  simp [DMap.insert]; exact Std.ExtDHashMap.insert_comm h
+
+@[simp]
+theorem insert_idemp {i x} : (mp.insert i x).insert i x = mp.insert i x := by
+  simp [DMap.insert]

@@ -1,4 +1,5 @@
 import AP.Dir
+import AP.AP.Symmetry
 import AP.AP.Defense.Basic
 
 namespace AP

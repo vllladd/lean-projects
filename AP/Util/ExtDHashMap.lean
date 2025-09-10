@@ -616,3 +616,11 @@ theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} 
   rotate_left; rfl
   apply List.foldl_eq_foldl_of_perm h
   exact DHashMap.toList_insert_perm_cons_of_not_mem h₁
+
+theorem insert_comm {i x j y} (h : i ≠ j ∨ HEq x y) :
+(mp.insert i x).insert j y = (mp.insert j y).insert i x := by
+  ext; simp [get?_insert]; aesop
+
+@[simp]
+theorem insert_idemp {i x} : (mp.insert i x).insert i x = mp.insert i x := by
+  ext; simp [get?_insert]; aesop
