@@ -6,56 +6,56 @@ universe u
 variable {S T : Type u} {sys : System S T}
 
 @[ext]
-structure Raw₀ (sys : System S T) : Type u where
+structure Raw (sys : System S T) : Type u where
   fs : S → S
   fs' : S → S
   ft : T → T
   ft' : T → T
 
-namespace Raw₀
+namespace Raw
 
-class WF (sym : Raw₀ sys) : Prop where
+class WF (sym : Raw sys) : Prop where
   h_fs : StrictBijectiveOn sys.WF sys.WF sym.fs sym.fs'
   h_ft : StrictBijectiveOn sys.WFTrans sys.WFTrans sym.ft sym.ft'
   tr_eq : ∀ {s t} [sys.WF s], sys.tr s t = (sys.tr (sym.fs s) (sym.ft t)).map sym.fs'
   tr_eq' : ∀ {s t} [sys.WF s], sys.tr s t = (sys.tr (sym.fs' s) (sym.ft' t)).map sym.fs
 
-def one : Raw₀ sys where
+def one : Raw sys where
   fs := id
   fs' := id
   ft := id
   ft' := id
 
-instance : Inhabited (Raw₀ sys) := ⟨one⟩
-theorem default_eq : (default : Raw₀ sys) = one := rfl
+instance : Inhabited (Raw sys) := ⟨one⟩
+theorem default_eq : (default : Raw sys) = one := rfl
 
 @[simp]
-def simFn (sym : Raw₀ sys) (f : S → T) (s : S) : T :=
+def simFn (sym : Raw sys) (f : S → T) (s : S) : T :=
   sym.ft # f # sym.fs' s
 
-def inv (sym : Raw₀ sys) : Raw₀ sys where
+def inv (sym : Raw sys) : Raw sys where
   fs := sym.fs'
   fs' := sym.fs
   ft' := sym.ft
   ft := sym.ft'
 
-def mul (sym₁ sym₂ : Raw₀ sys) : Raw₀ sys where
+def mul (sym₁ sym₂ : Raw sys) : Raw sys where
   fs := sym₁.fs ∘ sym₂.fs
   fs' := sym₂.fs' ∘ sym₁.fs'
   ft := sym₁.ft ∘ sym₂.ft
   ft' := sym₂.ft' ∘ sym₁.ft'
 
-def npow (n : ℕ) (sym : Raw₀ sys) : Raw₀ sys :=
+def npow (n : ℕ) (sym : Raw sys) : Raw sys :=
   (·.mul sym)^[n] one
 
-def zpow (z : ℤ) (sym : Raw₀ sys) : Raw₀ sys :=
+def zpow (z : ℤ) (sym : Raw sys) : Raw sys :=
   match z with
   | .ofNat n => sym.npow n
   | .negSucc n => sym.inv.npow (n + 1)
 
 -----
 
-variable {sym sym₁ sym₂ sym₃ : Raw₀ sys}
+variable {sym sym₁ sym₂ sym₃ : Raw sys}
 variable [wf : sym.WF] [wf₁ : sym₁.WF] [wf₂ : sym₂.WF] [wf₃ : sym₃.WF]
 
 instance {s} [hs : sys.WF s] : sys.WF (sym.fs s) :=
@@ -156,8 +156,8 @@ sys.hasTr (sym.fs' s) ↔ sys.hasTr s := by
 
 omit wf
 
-instance : (Raw₀.one : Raw₀ sys).WF := by
-  unfold Raw₀.one; constructor <;> simp
+instance : (Raw.one : Raw sys).WF := by
+  unfold Raw.one; constructor <;> simp
 
 instance {f} [hf : sys.SimFn f] : sys.SimFn (sym.simFn f) := by
   rw [sys.simFn_def]; intro s hs h; simp; apply hf.1 at h; apply validTr_ft_of
@@ -176,7 +176,7 @@ theorem inv_inv : sym.inv.inv = sym := by ext <;> rfl
 include wf₁ wf₂ in
 instance : (sym₁.mul sym₂).WF where
   h_fs := by
-    simp [Raw₀.mul]; constructor
+    simp [Raw.mul]; constructor
     · have ⟨e₁, h₁, h₂⟩ := wf₁.h_fs.toBijectiveOn
       have ⟨e₂, h₃, h₄⟩ := wf₂.h_fs.toBijectiveOn
       use e₁.comp e₂; constructor <;> intro s hs <;> simp
@@ -186,7 +186,7 @@ instance : (sym₁.mul sym₂).WF where
     · intro x h; apply wf₁.h_fs.cnd_of_left
       exact wf₂.h_fs.cnd_of_left h
   h_ft := by
-    simp [Raw₀.mul]; constructor
+    simp [Raw.mul]; constructor
     · have ⟨e₁, h₁, h₂⟩ := wf₁.h_ft.toBijectiveOn
       have ⟨e₂, h₃, h₄⟩ := wf₂.h_ft.toBijectiveOn
       use e₁.comp e₂; constructor <;> intro s hs <;> simp
@@ -196,13 +196,13 @@ instance : (sym₁.mul sym₂).WF where
     · intro x h; apply wf₁.h_ft.cnd_of_left
       exact wf₂.h_ft.cnd_of_left h
   tr_eq := by
-    intro s t hs; ext s'; simp [Raw₀.mul]; constructor
+    intro s t hs; ext s'; simp [Raw.mul]; constructor
     · intro h₁; have hs' := wf_of_tr h₁; use sym₁.fs # sym₂.fs s'
       have ht := wfTrans_of_tr h₁; simp [tr_fs]; use s'
     · rintro ⟨s', h₁, rfl⟩; have hs₁ := wf_of_tr h₁; simp [tr_ft] at h₁
       obtain ⟨s', h₁, rfl⟩ := h₁; have hs' := wf_of_tr h₁; simpa
   tr_eq' := by
-    intro s t hs; ext s'; simp [Raw₀.mul]; constructor
+    intro s t hs; ext s'; simp [Raw.mul]; constructor
     · intro h₁; have hs' := wf_of_tr h₁; use sym₂.fs' # sym₁.fs' s'
       have ht := wfTrans_of_tr h₁; simp [tr_fs']; use s'
     · rintro ⟨s', h₁, rfl⟩; have hs₁ := wf_of_tr h₁; simp [tr_ft'] at h₁
@@ -210,14 +210,14 @@ instance : (sym₁.mul sym₂).WF where
 
 include wf in
 instance {n} : (sym.npow n).WF := by
-  simp [Raw₀.npow]; induction n; simp; infer_instance; nm n ih
+  simp [Raw.npow]; induction n; simp; infer_instance; nm n ih
   rw [Function.iterate_succ']; simp; infer_instance
 
 include wf in
 instance {z} : (sym.zpow z).WF := by
-  simp [Raw₀.zpow]; split <;> infer_instance
+  simp [Raw.zpow]; split <;> infer_instance
 
-structure Equiv (sym₁ sym₂ : Raw₀ sys) : Prop where
+structure Equiv (sym₁ sym₂ : Raw sys) : Prop where
   hs : ∀ {s} [sys.WF s], sym₁.fs s = sym₂.fs s
   hs' : ∀ {s} [sys.WF s], sym₁.fs' s = sym₂.fs' s
   ht : ∀ {t} [sys.WFTrans t], sym₁.ft t = sym₂.ft t
@@ -245,6 +245,6 @@ theorem Equiv.iseqv : Equivalence # Equiv (sys := sys) where
   symm := symm
   trans := trans
 
-instance setoid : Setoid (Raw₀ sys) where
+instance setoid : Setoid (Raw sys) where
   r := Equiv
   iseqv := Equiv.iseqv
