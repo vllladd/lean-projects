@@ -1,29 +1,28 @@
-import AP.System.Symmetry.Raw
+import AP.System.Symmetry.Raw0
 
-namespace System
+namespace System.Symmetry
 
 universe u
 variable {S T : Type u} {sys : System S T}
 
-def Symmetry (sys : System S T) : Type u :=
-  Quotient # Symmetry.Raw.setoid (sys := sys)
+structure Raw (sys : System S T) : Type u extends Raw₀ sys where
+  wf : toRaw₀.WF
 
-namespace Symmetry
+namespace Raw
 
-variable {sym sym₁ sym₂ sym₃ : Symmetry sys}
+variable {sym sym₁ sym₂ sym₃ : Raw sys}
 
-def one : Symmetry sys :=
-  Quotient.mk' Raw.one
+@[ext]
+theorem ext (h : sym₁.toRaw₀ = sym₂.toRaw₀) : sym₁ = sym₂ := by
+  cases sym₁; cases sym₂; simp_all
 
-instance : One (Symmetry sys) := ⟨one⟩
-theorem one_def : (1 : Symmetry sys) = one := rfl
+def one : Raw sys :=
+  ⟨Raw₀.one, inferInstance⟩
 
-instance : Inhabited (Symmetry sys) := ⟨1⟩
-theorem default_eq : (default : Symmetry sys) = 1 := rfl
+instance : Inhabited (Raw sys) := ⟨one⟩
+theorem default_eq : (default : Raw sys) = one := rfl
 
-instance : sym.out.toRaw₀.WF := sym.out.wf
-
-#check 0 #exit
+instance : sym.toRaw₀.WF := sym.wf
 
 @[simp] theorem fs'_fs {s} [hs : sys.WF s] : sym.fs' (sym.fs s) = s := Raw₀.fs'_fs
 @[simp] theorem fs_fs' {s} [hs : sys.WF s] : sym.fs (sym.fs' s) = s := Raw₀.fs_fs'
@@ -96,60 +95,25 @@ def npow (n : ℕ) (sym : Raw sys) : Raw sys :=
 def zpow (z : ℤ) (sym : Raw sys) : Raw sys :=
   ⟨sym.toRaw₀.zpow z, inferInstance⟩
 
-#check 0 #exit
+def Equiv (sym₁ sym₂ : Raw sys) : Prop :=
+  sym₁.toRaw₀.Equiv sym₂.toRaw₀
 
-instance : Monoid sys.Symmetry where
-  one_mul := λ _ => rfl
-  mul_one := λ _ => rfl
-  mul_assoc := λ _ _ _ => rfl
-  npow := npow
-  npow_succ := by intros; simp_rw [npow, Function.iterate_succ']; simp
+@[simp, refl]
+theorem Equiv.refl : sym.Equiv sym := Raw₀.Equiv.refl
 
-protected theorem inv_one : (1 : sys.Symmetry)⁻¹ = 1 := rfl
-protected theorem mul_inv_rev : (sym₁ * sym₂)⁻¹ = sym₂⁻¹ * sym₁⁻¹ := rfl
+@[symm]
+theorem Equiv.symm (h : sym₁.Equiv sym₂) : sym₂.Equiv sym₁ :=
+  Raw₀.Equiv.symm h
 
-#check 0 #exit
+@[trans]
+theorem Equiv.trans (h₁ : sym₁.Equiv sym₂) (h₂ : sym₂.Equiv sym₃) : sym₁.Equiv sym₃ :=
+  Raw₀.Equiv.trans h₁ h₂
 
-protected theorem inv_mul_cancel : sym * sym⁻¹ = 1 := by
-  ext
-  · nm s
-    simp [inv_def, mul_def, one_def, inv, mul, one]
-    simp
+theorem Equiv.iseqv : Equivalence # Equiv (sys := sys) where
+  refl := λ _ => refl
+  symm := symm
+  trans := trans
 
-#check 0 #exit
-
-instance : Group sys.Symmetry where
-  inv_mul_cancel := by
-
-#check 0 #exit
-
-protected theorem inv_eq_of_mul (h : sym₁ * sym₂ = 1) : sym₁⁻¹ = sym₂ := by
-  apply congrArg (· * sym₂⁻¹) at h
-  simp [mul_assoc] at h
-
-#check 0 #exit
-
-theorem inv_npow {n} : sym⁻¹ ^ n = (sym ^ n)⁻¹ := by
-  induction n; rfl; nm n ih; simp [pow_succ]
-  rw [ih]; clear ih; induction n; rfl; nm n ih
-  simp [pow_succ, Symmetry.mul_inv_rev]; rw [mul_assoc, ih]
-
-instance : DivInvMonoid sys.Symmetry where
-  zpow := zpow
-  zpow_succ' := Monoid.npow_succ
-  zpow_neg' := λ _ _ => inv_npow
-
-instance : DivisionMonoid sys.Symmetry where
-  inv_inv := λ _ => Symmetry.inv_inv
-  mul_inv_rev := λ _ _ => Symmetry.mul_inv_rev
-  inv_eq_of_mul := by
-  -- inv_mul := by
-  --   sorry
-
-#check 0 #exit
-
--- instance : InvOneClass sys.Symmetry where
---   inv_one := Symmetry.inv_one
-
-example : sym ^ (-1 : ℤ) = sym⁻¹ := by
-  rw [zpow_neg]
+instance setoid : Setoid (Raw sys) where
+  r := Equiv
+  iseqv := Equiv.iseqv

@@ -116,7 +116,7 @@ structure BijectiveOn {α β : Type*}
   h : ∃ (e : {x // pa x} ≃ {y // pb y}),
     (∀ {x} hx, f x = e ⟨x, hx⟩) ∧ (∀ {y} hy, f' y = e.symm ⟨y, hy⟩)
 
-namespace BijectiveOn
+section bijectiveOn
 
 variable {α β : Type*}
 variable {pa : α → Prop} {pb : β → Prop}
@@ -125,6 +125,8 @@ variable {f : α → β} {f' : β → α}
 @[simp]
 theorem bijectiveOn_id : BijectiveOn pa pa id id := by
   refine ⟨⟨⟨id, id, ?_, ?_⟩, ?_⟩⟩ <;> simp
+
+namespace BijectiveOn
 
 variable {H : BijectiveOn pa pb f f'}
 include H
@@ -148,6 +150,39 @@ theorem symm : BijectiveOn pb pa f' f := by
   obtain ⟨⟨e, h₁, h₂⟩⟩ := H; use e.symm; simp_all
 
 end BijectiveOn
+end bijectiveOn
+
+structure StrictBijectiveOn {α β : Type*}
+(pa : α → Prop) (pb : β → Prop) (f : α → β) (f' : β → α) : Prop
+extends BijectiveOn pa pb f f' where
+  cnd_of_right : ∀ {x}, pb (f x) → pa x
+  cnd_of_left : ∀ {y}, pa (f' y) → pb y
+
+section strictBijectiveOn
+
+variable {α β : Type*}
+variable {pa : α → Prop} {pb : β → Prop}
+variable {f : α → β} {f' : β → α}
+
+@[simp]
+theorem strictBijectiveOn_id : StrictBijectiveOn pa pa id id where
+  toBijectiveOn := bijectiveOn_id
+  cnd_of_right := by simp
+  cnd_of_left := by simp
+
+namespace StrictBijectiveOn
+
+variable {H : StrictBijectiveOn pa pb f f'}
+include H
+
+@[symm]
+theorem symm : StrictBijectiveOn pb pa f' f where
+  toBijectiveOn := H.toBijectiveOn.symm
+  cnd_of_right := H.cnd_of_left
+  cnd_of_left := H.cnd_of_right
+
+end StrictBijectiveOn
+end strictBijectiveOn
 
 namespace Equiv
 
