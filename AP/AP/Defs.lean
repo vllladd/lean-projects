@@ -13,11 +13,11 @@ structure State : Type where
 deriving DecidableEq
 
 @[ext]
-structure AStrat : Type where
+structure AStrat : Type where mk' ::
   f : State → PointZ
 
 @[ext]
-structure DStrat : Type where
+structure DStrat : Type where mk' ::
   f : State → PointZ
 
 @[ext]
@@ -73,14 +73,14 @@ def State.a_wins (s : State) (st : Strat) : Prop :=
 def State.d_wins (s : State) (st : Strat) : Prop :=
   ∃ n, (sys.simulate st.f s n).2 ≠ 0
 
-def State.a_hws (s : State) : Prop :=
+def State.aHws (s : State) : Prop :=
   ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩
 
-def State.d_hws (s : State) : Prop :=
+def State.dHws (s : State) : Prop :=
   ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩
 
-def a_hws_pw (pw : ℕ) : Prop :=
-  (initState pw).a_hws
+def aHwsPw (pw : ℕ) : Prop :=
+  (initState pw).aHws
 
-def d_hws_pw (pw : ℕ) : Prop :=
-  (initState pw).d_hws
+def dHwsPw (pw : ℕ) : Prop :=
+  (initState pw).dHws

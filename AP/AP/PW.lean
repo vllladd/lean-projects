@@ -13,7 +13,7 @@ sys.tr s s.chooseDMove ≠ none := by
   obtain ⟨s', h₁⟩ := hs.validTr_chooseDMove; simp [h₁]
 
 @[simp]
-theorem State.d_hws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.d_hws := by
+theorem State.dHws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.dHws := by
   use default, inferInstance
   intro a Ha
   replace hs := s.aState_or_dState; rcases hs with hs | hs
@@ -36,8 +36,8 @@ theorem State.d_hws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.d_hws := by
     simp [h₄] at h₂
 
 @[simp]
-theorem d_hws_pw_0 : d_hws_pw 0 :=
-  State.d_hws_of_pw_0 rfl
+theorem dHwsPw_0 : dHwsPw 0 :=
+  State.dHws_of_pw_0 rfl
 
 @[simp]
 theorem DState.tr_setPw {s p pw} [hs : DState s] :
@@ -49,13 +49,13 @@ theorem DState.validTr_setPw {s p pw} [hs : DState s] :
 sys.validTr (s.setPw pw) p = sys.validTr s p := by
   simp [System.validTr]
 
-theorem State.a_hws_setPw_of_le {s pw} [hs : sys.WF s]
-(h₁ : s.pw ≤ pw) (h₂ : s.a_hws) : (s.setPw pw).a_hws := by
+theorem State.aHws_setPw_of_le {s pw} [hs : sys.WF s]
+(h₁ : s.pw ≤ pw) (h₂ : s.aHws) : (s.setPw pw).aHws := by
   have hs' := wf_setPw_of_le h₁
   obtain ⟨a, Ha, h₂⟩ := h₂
-  use .mk' (a.f # ·.setPw s.pw), inferInstance
+  use .mk (a.f # ·.setPw s.pw), inferInstance
   intro d Hd n
-  specialize h₂ (.mk' (d.f # ·.setPw pw)) inferInstance n
+  specialize h₂ (.mk (d.f # ·.setPw pw)) inferInstance n
   apply simulate_congr_rel_full (r := λ s₁ s₂ => s₁.pw = s.pw ∧ s₁.setPw pw = s₂)
     h₂ (by simp) (by simp)
   · rintro sa sa' sd hsa hsa' hsd h₃ ⟨h₀, h₄⟩
@@ -77,31 +77,31 @@ theorem State.a_hws_setPw_of_le {s pw} [hs : sys.WF s]
     rwa [setPw_eq_self_of]
     simp [pw_eq_of_tr h₃, ←h₄]
 
-theorem State.d_hws_of_setPw_le {s : State} {pw} [hs : sys.WF s]
-(h₁ : s.pw ≤ pw) (h₂ : (s.setPw pw).d_hws) : s.d_hws := by
+theorem State.dHws_of_setPw_le {s : State} {pw} [hs : sys.WF s]
+(h₁ : s.pw ≤ pw) (h₂ : (s.setPw pw).dHws) : s.dHws := by
   have hs' := wf_setPw_of_le h₁
   contrapose h₂; simp at h₂ ⊢
-  exact a_hws_setPw_of_le h₁ h₂
+  exact aHws_setPw_of_le h₁ h₂
 
-theorem State.d_hws_setPw_of_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
-(h₁ : pw ≤ s.pw) (h₂ : s.d_hws) : (s.setPw pw).d_hws := by
+theorem State.dHws_setPw_of_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
+(h₁ : pw ≤ s.pw) (h₂ : s.dHws) : (s.setPw pw).dHws := by
   generalize h₃ : s.setPw pw = s' at hs
   have h₄ : s'.pw = pw; simp [←h₃]; subst h₄
   rw [setPw_eq_comm] at h₃
   have h₄ : sys.WF s; rw [←h₃]; exact wf_setPw_of_le h₁
-  rw [←h₃] at h₂; exact d_hws_of_setPw_le h₁ h₂
+  rw [←h₃] at h₂; exact dHws_of_setPw_le h₁ h₂
 
-theorem State.a_hws_of_setPw_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
-(h₁ : pw ≤ s.pw) (h₂ : (s.setPw pw).a_hws) : s.a_hws := by
+theorem State.aHws_of_setPw_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
+(h₁ : pw ≤ s.pw) (h₂ : (s.setPw pw).aHws) : s.aHws := by
   generalize h₃ : s.setPw pw = s' at hs
   have h₄ : s'.pw = pw; simp [←h₃]; subst h₄
   rw [setPw_eq_comm] at h₃
   have h₄ : sys.WF s; rw [←h₃]; exact wf_setPw_of_le h₁
   rw [←h₃] at h₂; contrapose h₂; simp at h₂ ⊢
-  apply d_hws_of_setPw_le h₁; simpa [h₃]
+  apply dHws_of_setPw_le h₁; simpa [h₃]
 
-theorem a_hws_pw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : a_hws_pw pw) : a_hws_pw pw' :=
-  State.a_hws_setPw_of_le h₁ h₂
+theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw' :=
+  State.aHws_setPw_of_le h₁ h₂
 
-theorem d_hws_pw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : d_hws_pw pw) : d_hws_pw pw' :=
-  State.d_hws_of_setPw_le h₁ h₂
+theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' :=
+  State.dHws_of_setPw_le h₁ h₂

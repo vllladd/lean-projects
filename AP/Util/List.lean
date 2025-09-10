@@ -865,3 +865,39 @@ theorem mem_of_count_pos [ha : DecidableEq α] {x} (h : 0 < xs.count x) : x ∈ 
 
 theorem mem_of_lt_count [ha : DecidableEq α] {x n} (h : n < xs.count x) : x ∈ xs :=
   mem_of_count_pos # by linarith
+
+def toSet (xs : List α) : Set α := {x | x ∈ xs}
+
+@[simp]
+theorem mem_toSet {x} : x ∈ xs.toSet ↔ x ∈ xs := by
+  simp [toSet]
+
+@[simp]
+theorem toSet_nil : ([] : List α).toSet = ∅ := by simp [toSet]
+
+@[simp]
+theorem toSet_cons {x} : (x :: xs).toSet = insert x xs.toSet := by
+  simp [toSet]; aesop
+
+theorem Perm.toSet_eq (h : xs ~ ys) : xs.toSet = ys.toSet := by
+  simp [List.toSet, h.mem_iff]
+
+section linearIndep
+
+variable [ha₁ : One α] [ha₂ : Mul α] [ha₃ : HPow α ℤ α]
+
+theorem linearIndep_iff_toSet : linearIndep xs ↔ linearIndep xs.toSet := by
+  simp only [linearIndep, ne_eq, Prod.forall, and_imp, mem_toSet]
+
+@[simp]
+theorem linearIndep_nil : linearIndep ([] : List α) := by
+  simp [linearIndep_iff_toSet]
+
+@[simp]
+theorem linearIndep_singleton {x : α} : linearIndep [x] := by
+  simp [linearIndep_iff_toSet]
+
+theorem Perm.linearIndep_iff (h : xs ~ ys) : linearIndep xs ↔ linearIndep ys := by
+  simp [linearIndep_iff_toSet, h.toSet_eq]
+
+end linearIndep

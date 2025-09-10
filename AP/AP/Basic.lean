@@ -881,14 +881,14 @@ instance {f} : sys.SimFn # mk_strat_fn f := by
   nm s'; simp [guard]; split_ifs with h₃; simpa
   simp; exact State.validTr_chooseMove h
 
-@[simp] def AStrat.mk' (f : State → Option PointZ) : AStrat := ⟨mk_strat_fn f⟩
-@[simp] def DStrat.mk' (f : State → Option PointZ) : DStrat := ⟨mk_strat_fn f⟩
+@[simp] def AStrat.mk (f : State → Option PointZ) : AStrat := ⟨mk_strat_fn f⟩
+@[simp] def DStrat.mk (f : State → Option PointZ) : DStrat := ⟨mk_strat_fn f⟩
 
-instance {f} : (AStrat.mk' f).WF := by simp; infer_instance
-instance {f} : (DStrat.mk' f).WF := by simp; infer_instance
+instance {f} : (AStrat.mk f).WF := by simp; infer_instance
+instance {f} : (DStrat.mk f).WF := by simp; infer_instance
 
-@[simp] theorem AStrat.f_mk {f} : (AStrat.mk f).f = f := rfl
-@[simp] theorem DStrat.f_mk {f} : (DStrat.mk f).f = f := rfl
+@[simp] theorem AStrat.f_mk {f} : (AStrat.mk' f).f = f := rfl
+@[simp] theorem DStrat.f_mk {f} : (DStrat.mk' f).f = f := rfl
 
 theorem State.exi_tr_reachable_of_mem_hist {s p} [hs : sys.WF s] (h : p ∈ s.hist) :
 ∃ s₀, sys.WF s₀ ∧ sys.validTr s₀ p ∧ sys.Reachable s₀ s := by
@@ -924,7 +924,7 @@ theorem wfTrans {p} : sys.WFTrans p := by
   · use initState 0, inferInstance
     simp [DState.validTr_iff, ne_symm' h]
   simp at h; subst h
-  let d : DStrat := .mk' # λ _ => some 0
+  let d : DStrat := .mk # λ _ => some 0
   let s := sys.simulate (Strat.f ⟨default, d⟩) (initState 1) 3 |>.1
   have h₁ : 0 ∈ s.hist; native_decide
   obtain ⟨s₀, hs₀, h₂, h₃⟩ := s.exi_tr_reachable_of_mem_hist h₁

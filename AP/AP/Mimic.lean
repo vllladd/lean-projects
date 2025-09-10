@@ -2,12 +2,12 @@ import AP.AP.Determinacy
 
 namespace AP
 
-def aMimic (st : Strat) (s₀ : State) : AStrat := .mk' # λ s => some #
+def aMimic (st : Strat) (s₀ : State) : AStrat := .mk # λ s => some #
   let n := s.hist.length - s₀.hist.length
   let r := sys.simulate st.f s₀ n
   st.a.f r.1
 
-def dMimic (st : Strat) (s₀ : State) : DStrat := .mk' # λ s => some #
+def dMimic (st : Strat) (s₀ : State) : DStrat := .mk # λ s => some #
   let n := s.hist.length - s₀.hist.length
   let r := sys.simulate st.f s₀ n
   st.d.f r.1
