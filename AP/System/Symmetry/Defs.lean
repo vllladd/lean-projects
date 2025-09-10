@@ -21,8 +21,6 @@ theorem one_def : (1 : Symmetry sys) = one := rfl
 instance : Inhabited (Symmetry sys) := ⟨1⟩
 theorem default_eq : (default : Symmetry sys) = 1 := rfl
 
-instance : sym.out.toRaw₀.WF := sym.out.wf
-
 #check 0 #exit
 
 @[simp] theorem fs'_fs {s} [hs : sys.WF s] : sym.fs' (sym.fs s) = s := Raw₀.fs'_fs
