@@ -1,3 +1,3 @@
-import AP.System.Symmetry.Raw
+import AP.System.Symmetry.Defs
 
 namespace System.Symmetry

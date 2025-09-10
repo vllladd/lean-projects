@@ -5,7 +5,7 @@ namespace System
 universe u
 variable {S T : Type u} {sys : System S T}
 
-structure Symmetry (sys : System S T) : Type u extends Raw sys where
+structure Symmetry (sys : System S T) : Type u extends Symmetry.Raw sys where
   wf : toRaw.WF
 
 namespace Symmetry
