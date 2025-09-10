@@ -15,14 +15,14 @@ structure Raw (sys : System S T) : Type u where
 namespace Raw
 
 class WF (sym : Raw sys) : Prop where
-  h_fs : ∀ {s}, sys.WF (sym.fs s) ↔ sys.WF s
-  h_fs' : ∀ {s}, sys.WF (sym.fs' s) ↔ sys.WF s
-  h_ft : ∀ {t}, sys.WFTrans (sym.ft t) ↔ sys.WFTrans t
-  h_ft' : ∀ {t}, sys.WFTrans (sym.ft' t) ↔ sys.WFTrans t
+  h_fs : ∀ {s}, sys.WF (sym.fs s) ↔ sys.WF s -- derivable?
+  h_fs' : ∀ {s}, sys.WF (sym.fs' s) ↔ sys.WF s -- derivable?
+  h_ft : ∀ {t}, sys.WFTrans (sym.ft t) ↔ sys.WFTrans t -- derivable?
+  h_ft' : ∀ {t}, sys.WFTrans (sym.ft' t) ↔ sys.WFTrans t -- derivable?
   fs_fs' : Inverse sym.fs sym.fs'
   ft_ft' : Inverse sym.ft sym.ft'
   tr_eq : ∀ {s t}, sys.tr s t = (sys.tr (sym.fs s) (sym.ft t)).map sym.fs'
-  tr_eq' : ∀ {s t}, sys.tr s t = (sys.tr (sym.fs' s) (sym.ft' t)).map sym.fs
+  tr_eq' : ∀ {s t}, sys.tr s t = (sys.tr (sym.fs' s) (sym.ft' t)).map sym.fs -- derivable?
 
 def one : Raw sys where
   fs := id

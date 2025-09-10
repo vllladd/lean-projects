@@ -11,7 +11,8 @@ def symFnState (f : PointZ → PointZ) (s : State) : State where
 
 #check 0 #exit
 
-def mkSym (f f' : PointZ → PointZ) (h₁ : Inverse f f') : sys.Symmetry where
+def mkSym (f f' : PointZ → PointZ) (h₁ : Inverse f f')
+(h₂ : ∀ {s}, sys.hasTr (symFnState f s) ↔ sys.hasTr s) : sys.Symmetry where
   fs := symFnState f
   fs' := symFnState f'
   ft := f
