@@ -1,3 +1,4 @@
+import AP.Util.Algebra
 import AP.Util.Function
 
 import Init.Data.List.Perm
@@ -855,3 +856,12 @@ xs.take (xs.length - ys.length) ++ ys = xs ↔ ys <:+ xs :=
 theorem self_eq_take_length_sub_append_iff_suffix :
 xs = xs.take (xs.length - ys.length) ++ ys ↔ ys <:+ xs := by
   rw [eq_comm]; simp
+
+theorem mem_of_count_ne_zero [ha : DecidableEq α] {x} (h : xs.count x ≠ 0) : x ∈ xs := by
+  simp [count_eq_zero] at h; exact h
+
+theorem mem_of_count_pos [ha : DecidableEq α] {x} (h : 0 < xs.count x) : x ∈ xs :=
+  count_pos_iff.mp h
+
+theorem mem_of_lt_count [ha : DecidableEq α] {x n} (h : n < xs.count x) : x ∈ xs :=
+  mem_of_count_pos # by linarith
