@@ -24,11 +24,6 @@ theorem default_eq : (default : Raw sys) = one := rfl
 
 instance : sym.toRaw₀.WF := sym.wf
 
-@[simp] theorem fs'_fs {s} [hs : sys.WF s] : sym.fs' (sym.fs s) = s := Raw₀.fs'_fs
-@[simp] theorem fs_fs' {s} [hs : sys.WF s] : sym.fs (sym.fs' s) = s := Raw₀.fs_fs'
-@[simp] theorem ft'_ft {t} [ht : sys.WFTrans t] : sym.ft' (sym.ft t) = t := Raw₀.ft'_ft
-@[simp] theorem ft_ft' {t} [ht : sys.WFTrans t] : sym.ft (sym.ft' t) = t := Raw₀.ft_ft'
-
 theorem tr_fs {s t} [hs : sys.WF s] :
 sys.tr (sym.fs s) t = (sys.tr s (sym.ft' t)).map sym.fs := Raw₀.tr_fs
 
@@ -66,14 +61,6 @@ theorem validTr_ft' {s t} [hs : sys.WF s] :
 sys.validTr s (sym.ft' t) ↔ sys.validTr (sym.fs s) t :=
   ⟨validTr_fs_of, validTr_ft'_of⟩
 
-@[simp] theorem hasTr_fs {s} [hs : sys.WF s] :
-sys.hasTr (sym.fs s) ↔ sys.hasTr s := Raw₀.hasTr_fs
-
-@[simp]
-theorem hasTr_fs' {s} [hs : sys.WF s] :
-sys.hasTr (sym.fs' s) ↔ sys.hasTr s := Raw₀.hasTr_fs'
-
-@[simp]
 def simFn (sym : Raw sys) (f : S → T) (s : S) : T :=
   sym.toRaw₀.simFn f s
 
