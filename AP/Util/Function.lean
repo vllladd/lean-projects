@@ -221,3 +221,10 @@ include H
 theorem symm : Inverse g f := ⟨H.2, H.1⟩
 
 end Inverse
+
+theorem Equiv.forall_iff {α β : Type*} {e : α ≃ β} {p : α → Prop} :
+(∀ x, p x) ↔ ∀ y, p (e.symm y) := by
+  constructor <;> intro h x; apply h; specialize h # e x; simp at h; exact h
+
+theorem Equiv.forall_iff' {α β : Type*} {e : α ≃ β} {p : β → Prop} :
+(∀ x, p x) ↔ ∀ y, p (e y) := e.symm.forall_iff
