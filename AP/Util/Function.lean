@@ -228,3 +228,7 @@ theorem Equiv.forall_iff {α β : Type*} {e : α ≃ β} {p : α → Prop} :
 
 theorem Equiv.forall_iff' {α β : Type*} {e : α ≃ β} {p : β → Prop} :
 (∀ x, p x) ↔ ∀ y, p (e y) := e.symm.forall_iff
+
+@[simp]
+theorem Equiv.mk_symm {α β : Type*} {f : α → β} {g : β → α} {h₁ h₂} :
+(⟨f, g, h₁, h₂⟩ : α ≃ β).symm = ⟨g, f, h₂, h₁⟩ := rfl

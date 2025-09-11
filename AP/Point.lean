@@ -463,13 +463,20 @@ theorem dist_le_zero_iff : a.dist b ≤ 0 ↔ a = b := by
   simp [dist_le_iff] at h; simp
   constructor <;> apply eq_of_sub_eq_zero <;> simp [h]
 
-@[simp]
-theorem zero_le_dist : 0 ≤ a.dist b := by
-  simp [dist]
+@[simp] theorem zero_le_dist : 0 ≤ a.dist b := by simp [dist]
+@[simp] theorem not_dist_lt_zero : ¬(a.dist b < 0) := by simp
+
+omit ha₃
 
 @[simp]
-theorem not_dist_lt_zero : ¬(a.dist b < 0) := by
-  simp
+theorem dist_add_left_cancel : (c + a).dist (c + b) = a.dist b := by
+  cases a; cases b; cases c; simp only [dist, mk_add_mk, add_sub_add_left_eq_sub]
+
+@[simp]
+theorem dist_add_right_cancel : (a + c).dist (b + c) = a.dist b := by
+  rw [add_comm a, add_comm b]; simp
+
+include ha₃
 
 end dist
 

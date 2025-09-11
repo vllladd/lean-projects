@@ -442,12 +442,12 @@ theorem State.aHws_of_not_dHws {s : State} [hs : sys.WF s]
   simp [h₃.validTr H₄]
 
 @[simp]
-theorem State.not_aHws_iff {s : State} [hs : s.WF] : ¬s.aHws ↔ s.dHws := by
+theorem State.not_aHws_iff {s : State} [hs : sys.WF s] : ¬s.aHws ↔ s.dHws := by
   refine' ⟨λ h => _, s.not_aHws_of_dHws⟩
   contrapose! h; exact s.aHws_of_not_dHws h
 
 @[simp]
-theorem State.not_dHws_iff {s : State} [hs : s.WF] : ¬s.dHws ↔ s.aHws := by
+theorem State.not_dHws_iff {s : State} [hs : sys.WF s] : ¬s.dHws ↔ s.aHws := by
   simp [not_iff_comm']
 
 theorem AState.hasTr_of_aHws {sa} [hs : AState sa]
@@ -733,14 +733,3 @@ theorem State.d_wins_of_lt_le_uncond {s} [hs : sys.WF s]
 s.d_wins ⟨a, d⟩ := by
   have h₃ := s.d_wins_of_lt_le (a := a) (d := d) (p := λ _ => True) (f := f)
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
-
-@[simp]
-theorem not_aHwsPw_iff {pw} : ¬aHwsPw pw ↔ dHwsPw pw := by
-  simp [aHwsPw, dHwsPw]
-  symm; constructor; intro h; simp [h]
-  rintro ⟨p₀, h⟩ p
-  sorry -- Translational symmetry
-
-@[simp]
-theorem not_dHwsPw_iff {pw} : ¬dHwsPw pw ↔ aHwsPw pw := by
-  rw [←not_aHwsPw_iff, not_not]

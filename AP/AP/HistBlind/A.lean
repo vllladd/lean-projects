@@ -263,7 +263,7 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
   obtain ⟨sd, hd⟩ := aHistBlind.validTr h₂
   use sd, hd
   have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sa.hist = sa
-  · use sa; simp; infer_instance
+  · use sa; simp
   generalize h₄ : Classical.epsilon
     (λ s' => sys.WF s' ∧ s'.setHist sa.hist = sa) = s'
   have h₅ := Classical.epsilon_spec h₃; rw [h₄] at h₅

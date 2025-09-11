@@ -524,3 +524,22 @@ theorem map_insert {f : α → β} {x : α} : (s.insert x).map f = (s.map f).ins
 @[simp]
 theorem mem_map {f : α → β} {y : β} : y ∈ s.map f ↔ ∃ x ∈ s, f x = y := by
   induction s using Set'.ind; simp; aesop
+
+theorem eq_empty_iff_not_mem : s = ∅ ↔ ∀ x, x ∉ s := by
+  constructor; rintro rfl; simp; intro h; ext i; simp [h]
+
+@[simp]
+theorem map_eq_empty_iff {f : α → β} : s.map f = ∅ ↔ s = ∅ := by
+  simp only [eq_empty_iff_not_mem, mem_map, not_exists, not_and,
+    forall_apply_eq_imp_iff₂, imp_false]
+
+@[simp]
+theorem empty_eq_map_iff {f : α → β} : ∅ = s.map f ↔ s = ∅ := by
+  rw [eq_comm]; exact map_eq_empty_iff
+
+@[simp]
+theorem map_map {f : α → β} {g : β → γ} : (s.map f).map g = s.map (g # f ·) := by
+  ext; simp
+
+@[simp] theorem map_id : s.map id = s := by ext; simp
+@[simp] theorem map_id' : s.map (·) = s := map_id

@@ -37,8 +37,6 @@ theorem Strat.WF.wf_d {st : Strat} [hst : st.WF] : st.d.WF := by
 @[simp] instance {st : Strat} [hst : st.WF] : st.a.WF := hst.wf_a
 @[simp] instance {st : Strat} [hst : st.WF] : st.d.WF := hst.wf_d
 
-abbrev State.WF (s : State) : Prop := sys.WF s
-
 instance : Inhabited State := ⟨initState 0 0⟩
 
 @[simp] theorem State.default_eq : (default : State) = initState 0 0 := rfl
@@ -47,11 +45,11 @@ instance : Inhabited State := ⟨initState 0 0⟩
   simp [System.wf_def, System.initial_def]; use default; simp [sys]
 
 class AState (s : State) : Prop where
-  wf : s.WF
+  wf : sys.WF s
   turn : s.aTurn
 
 class DState (s : State) : Prop where
-  wf : s.WF
+  wf : sys.WF s
   turn : s.aTurn = false
 
 theorem AState.iff {s : State} : AState s ↔ sys.WF s ∧ s.aTurn :=
@@ -60,8 +58,8 @@ theorem AState.iff {s : State} : AState s ↔ sys.WF s ∧ s.aTurn :=
 theorem DState.iff {s : State} : DState s ↔ sys.WF s ∧ s.aTurn = false :=
   ⟨λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩, λ ⟨h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
 
-instance {sa} [ha : AState sa] : sa.WF := ha.wf
-instance {sd} [hd : DState sd] : sd.WF := hd.wf
+@[simp] instance {sa} [ha : AState sa] : sys.WF sa := ha.wf
+@[simp] instance {sd} [hd : DState sd] : sys.WF sd := hd.wf
 
 @[simp] theorem AState.turn' {s : State} [hs : AState s] : s.aTurn := hs.turn
 @[simp] theorem DState.turn' {s : State} [hs : DState s] : s.aTurn = false := hs.turn
@@ -150,7 +148,7 @@ sys.hasTr s ↔ s.aHasMove := ⟨s.aHasMove_of_hasTr ht, s.hasTr_of_aHasMove ht�
 
 theorem State.WF.ind_turn {P : State → Prop}
 (h₁ : ∀ (s : State), AState s → P s) (h₂ : ∀ (s : State), DState s → P s)
-{s : State} (hs : s.WF) : P s := by
+{s : State} (hs : sys.WF s) : P s := by
   cases ht : s.aTurn
   · apply h₂; constructor <;> assumption
   · apply h₁; constructor <;> assumption
@@ -260,7 +258,7 @@ sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s
 
 theorem State.tr_eq_some_iff_of_not_aTurn {s : State} {s' p} (ht : s.aTurn = false) :
 sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken) ∧
-{s with taken := insert p s.taken, aTurn := true, hist := p :: s.hist} = s' := by
+{s with taken := s.taken.insert p, aTurn := true, hist := p :: s.hist} = s' := by
   simp [sys, State.move, State.dMove, ht]
 
 @[simp]
@@ -272,7 +270,7 @@ sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s
 @[simp]
 theorem DState.tr_eq_some_iff {s s' p} [hs : DState s] :
 sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken) ∧
-{s with taken := insert p s.taken, aTurn := true, hist := p :: s.hist} = s' :=
+{s with taken := s.taken.insert p, aTurn := true, hist := p :: s.hist} = s' :=
   s.tr_eq_some_iff_of_not_aTurn turn
 
 @[simp]
@@ -833,7 +831,7 @@ theorem State.setHist_eq_self_of {s : State} {hist}
 theorem AState.exi_prev {sa} [ha : AState sa] :
 ∃ sd p, sys.tr sd p = sa := by
   rcases ha with ⟨h₁, h₂⟩
-  rw [State.WF, State.wf_iff] at h₁
+  rw [State.wf_iff] at h₁
   obtain ⟨ps, h₁⟩ := h₁
   induction ps using List.reverseRecOn generalizing sa
   · simp at h₁
@@ -1012,3 +1010,13 @@ theorem wfTrans {p} : sys.WFTrans p := by
   use initState 0 # p + 1; simp [DState.validTr_iff, Point.one_def]
 
 @[simp] instance {p} : sys.WFTrans p := wfTrans
+
+theorem State.hist_eq_snoc {s} [hs : sys.WF s] :
+s.hist = s.hist.dropLast ++ [s.aPos₀] := by
+  generalize h : s.hist = ps
+  induction ps using List.reverseRecOn; simp at h
+  nm ps p ih; clear ih; simp [aPos₀, h]
+
+theorem State.exi_hist_eq_snoc {s} [hs : sys.WF s] :
+∃ (ps : List PointZ), s.hist = ps ++ [s.aPos₀] :=
+  ⟨_, s.hist_eq_snoc⟩

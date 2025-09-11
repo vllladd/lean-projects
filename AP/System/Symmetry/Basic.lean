@@ -167,3 +167,43 @@ theorem zpow_def {z : ℤ} : sym ^ z = sym.zpow z := by
 
 instance {z : ℤ} : (sym ^ z).WF := by
   cases z <;> simp <;> infer_instance
+
+@[simp] theorem simFn'_simFn {f} : sym.simFn' (sym.simFn f) = f := by ext s; simp
+@[simp] theorem simFn_simFn' {f} : sym.simFn (sym.simFn' f) = f := by ext s; simp
+@[simp] theorem simFn_inv : sym⁻¹.simFn = sym.simFn' := by rfl
+
+include wf
+
+theorem tr_fs_ft {s t} : sys.tr (sym.fs s) (sym.ft t) = (sys.tr s t).map sym.fs := by
+  rw [sym.tr_eq']; simp
+
+theorem tr_fs'_ft' {s t} : sys.tr (sym.fs' s) (sym.ft' t) = (sys.tr s t).map sym.fs' := by
+  rw [sym.tr_eq]; simp
+
+theorem trs_eq {s ts} : sys.trs s ts =
+(sys.trs (sym.fs s) # ts.map sym.ft).map sym.fs' (·.map sym.ft') := by
+  induction ts generalizing s; simp; nm t ts ih; simp [tr_fs_ft]
+  split; nm x h₁; clear x; simp [h₁]; nm x s' h₁; clear x; simp [h₁, ih]
+
+theorem trs_eq' {s ts} : sys.trs s ts =
+(sys.trs (sym.fs' s) # ts.map sym.ft').map sym.fs (·.map sym.ft) :=
+  sym⁻¹.trs_eq
+
+theorem simulate_eq {f s n} : sys.simulate f s n =
+(sys.simulate (sym.simFn f) (sym.fs s) n).map sym.fs' id := by
+  induction n generalizing s; simp; nm n ih; simp [tr_fs_ft]
+  split; nm x h₁; clear x; simp [h₁]; nm x s' h₁; clear x; simp [h₁, ih]
+
+theorem simulate_eq' {f s n} : sys.simulate f s n =
+(sys.simulate (sym.simFn' f) (sym.fs' s) n).map sym.fs id :=
+  sym⁻¹.simulate_eq
+
+@[simp]
+theorem snd_simulate_eq {f s n} :
+(sys.simulate (sym.simFn f) s n).2 = (sys.simulate f (sym.fs' s) n).2 := by
+  rw [sym.simulate_eq']; simp
+
+@[simp]
+theorem snd_simulate_eq' {f s n} :
+(sys.simulate (sym.simFn' f) s n).2 = (sys.simulate f (sym.fs s) n).2 := by
+  rw [sym.simulate_eq]; simp

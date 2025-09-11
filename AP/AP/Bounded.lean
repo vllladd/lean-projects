@@ -404,7 +404,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
       have H₄ := AState.of_tr H₁
       have H₅ := AState.of_tr H₃
       simp [Hs₁.aPos_eq_of_tr H₁, Hs₂.aPos_eq_of_tr H₃, ih₂]
-      have H₆ : s₂'.taken = insert p' s₂.taken
+      have H₆ : s₂'.taken = s₂.taken.insert p'
       · simp at H₃; simp [←H₃.2]
       rw [H₆]
       replace H₆ : p' ∉ s₂.taken ∪ ps'

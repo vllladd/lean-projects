@@ -1,4 +1,5 @@
 import AP.AP.Mimic
+import AP.AP.Symmetry
 
 namespace AP
 
@@ -100,9 +101,25 @@ theorem State.aHws_of_setPw_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
   rw [←h₃] at h₂; contrapose h₂; simp at h₂ ⊢
   apply dHws_of_setPw_le h₁; simpa [h₃]
 
-theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw' := by
-  intro p
-  sorry -- Translational symmetry
+theorem aHws_initState_iff_aHws_origin {pw p} :
+(initState pw p).aHws ↔ (initState pw 0).aHws := by
+  rw [State.aHws_iff_sym (sym := translate (-p))]; simp [translate]
+
+theorem dHws_initState_iff_dHws_origin {pw p} :
+(initState pw p).dHws ↔ (initState pw 0).dHws := by
+  rw [←not_iff_not]; simp [aHws_initState_iff_aHws_origin]
+
+@[simp]
+theorem not_aHwsPw_iff {pw} : ¬aHwsPw pw ↔ dHwsPw pw := by
+  simp [aHwsPw, dHwsPw]; symm; constructor; intro h; simp [h]
+  rintro ⟨p₀, h⟩ p; rw [dHws_initState_iff_dHws_origin] at h ⊢; exact h
+
+@[simp]
+theorem not_dHwsPw_iff {pw} : ¬dHwsPw pw ↔ aHwsPw pw := by
+  rw [←not_aHwsPw_iff, not_not]
+
+theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw' :=
+  λ p => State.aHws_of_setPw_le h₁ # h₂ p
 
 theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' := by
   contrapose h₂; simp at h₂ ⊢; exact aHwsPw_of_le h₁ h₂

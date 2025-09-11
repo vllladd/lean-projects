@@ -235,7 +235,7 @@ theorem DState.exi_tr_dwn_lt {sd} [hsd : DState sd]
 
 open Classical in noncomputable
 def dHistBlind : DStrat := .mk # λ s => do
-  let sd ← choose? # λ (sd : State) => sd.WF ∧ sd.setHist s.hist = s
+  let sd ← choose? # λ (sd : State) => sys.WF sd ∧ sd.setHist s.hist = s
   choose? # λ p => ∃ sa, sys.tr sd p = some sa ∧ sa.dHws ∧ sa.dwn < sd.dwn
 
 instance : dHistBlind.WF := by unfold dHistBlind; infer_instance
@@ -243,9 +243,9 @@ instance : dHistBlind.WF := by unfold dHistBlind; infer_instance
 theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
   use inferInstance
   intro s hist hs hs' h₁
-  have h₂ : ∃ (sd : State), sd.WF ∧ sd.setHist hist = s.setHist hist; use s, hs.wf
+  have h₂ : ∃ (sd : State), sys.WF sd ∧ sd.setHist hist = s.setHist hist; use s, hs.wf
   generalize h₃ : Classical.epsilon (λ (sd : State) =>
-    sd.WF ∧ sd.setHist hist = s.setHist hist) = sd
+    sys.WF sd ∧ sd.setHist hist = s.setHist hist) = sd
   have h₄ := Classical.epsilon_spec h₂
   rw [h₃] at h₄
   rcases h₄ with ⟨hsd, h₄⟩
@@ -255,9 +255,9 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
     simp at h₄
     rw [h₄]
     simp
-  have h₅ : ∃ (sd : State), sd.WF ∧sd.setHist s.hist = s; use s, hs.wf; simp
+  have h₅ : ∃ (sd : State), sys.WF sd ∧ sd.setHist s.hist = s; use s, hs.wf; simp
   generalize h₆ : Classical.epsilon (λ (sd : State) =>
-    sd.WF ∧ sd.setHist s.hist = s) = sd'
+    sys.WF sd ∧ sd.setHist s.hist = s) = sd'
   have h₇ := Classical.epsilon_spec h₅
   rw [h₆] at h₇
   rcases h₇ with ⟨hsd', h₇⟩

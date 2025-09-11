@@ -2,22 +2,19 @@ import AP.AP.Determinacy
 
 namespace AP
 
-def symFnState (f : PointZ → PointZ) (s : State) : State where
+def mkSymFsAux (f : PointZ → PointZ) (s : State) : State where
   pw := s.pw
   taken := s.taken.map f
   aPos := f s.aPos
   aTurn := s.aTurn
   hist := s.hist.map f
 
-#check 0 #exit
+def mkSymFs (ft : PointZ ≃ PointZ) : State ≃ State where
+  toFun := mkSymFsAux ft
+  invFun := mkSymFsAux ft.symm
+  left_inv := by intro s; simp [mkSymFsAux]
+  right_inv := by intro s; simp [mkSymFsAux]
 
-def mkSym (f f' : PointZ → PointZ) (h₁ : Inverse f f')
-(h₂ : ∀ {s}, sys.hasTr (symFnState f s) ↔ sys.hasTr s) : sys.Symmetry where
-  fs := symFnState f
-  fs' := symFnState f'
-  ft := f
-  ft' := f'
-  wf :=
-    { h_fs := by
-        simp
-    }
+def mkSym (ft : PointZ ≃ PointZ) : sys.Symmetry where
+  ft := ft
+  fs := mkSymFs ft

@@ -44,7 +44,7 @@ def State.aMove (s : State) (p : PointZ) : Option State := do
 def State.dMove (s : State) (p : PointZ) : Option State := do
   guard # s.aPos ≠ p
   guard # p ∉ s.taken
-  return {s with taken := insert p s.taken}
+  return {s with taken := s.taken.insert p}
 
 def State.move (s : State) (p : PointZ) : Option State := do
   let s' ← if s.aTurn then s.aMove p else s.dMove p

@@ -33,6 +33,10 @@ theorem default_eq : (default : sys.Symmetry) = 1 := rfl
 def simFn (sym : sys.Symmetry) (f : S → T) (s : S) : T :=
   sym.ft # f # sym.fs' s
 
+@[simp]
+def simFn' (sym : sys.Symmetry) (f : S → T) (s : S) : T :=
+  sym.ft' # f # sym.fs s
+
 def inv (sym : sys.Symmetry) : sys.Symmetry where
   ft := sym.ft'
   fs := sym.fs'
