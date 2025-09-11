@@ -27,14 +27,29 @@ if s.hist = [] then s.aPos₀ else ft s.aPos₀ := by
   simp at h; simp [h]; intro h₁; simp [h₁] at h
 
 @[simp]
-theorem aTurn_sym_fs {s} {sym : sys.Symmetry} (H : sym.WF) :
+theorem aTurn_sym_fs {s} {sym : sys.Symmetry} [hs : sys.WF s] (H : sym.WF) :
 (sym.fs s).aTurn = s.aTurn := by
-  sorry
-
--- #check 0 #exit
+  rw [State.wf_iff] at hs
+  obtain ⟨ps, h⟩ := hs
+  generalize h₀ : initState s.pw s.aPos₀ = s₀ at h
+  replace h₀ : (sym.fs s₀).aTurn = s₀.aTurn
+  · simp [←h₀]
+  induction ps generalizing s₀
+  · simp at h; rwa [←h]
+  nm p ps ih
+  simp at h
+  split at h; simp at h
+  nm x s' h₁; clear x
+  have h₂ := h₁
+  rw [sym.tr_eq] at h₁
+  simp at h₁
+  obtain ⟨s₁, h₁, rfl⟩ := h₁
+  apply ih _ h; clear ih
+  simp
+  rw [State.aTurn_eq_of_tr h₁, State.aTurn_eq_of_tr h₂, h₀]
 
 @[simp]
-theorem aTurn_sym_fs' {s} {sym : sys.Symmetry} (H : sym.WF) :
+theorem aTurn_sym_fs' {s} {sym : sys.Symmetry} [hs : sys.WF s] (H : sym.WF) :
 (sym.fs' s).aTurn = s.aTurn := by rw [←aTurn_sym_fs H]; simp
 
 def AStrat.sym (a : AStrat) (sym : sys.Symmetry) : AStrat where
@@ -46,10 +61,6 @@ def DStrat.sym (d : DStrat) (sym : sys.Symmetry) : DStrat where
 def Strat.sym (st : Strat) (sym : sys.Symmetry) : Strat where
   a := st.a.sym sym
   d := st.d.sym sym
-
-theorem Strat.f_sym_eq {st : Strat} {sym : sys.Symmetry} [H : sym.WF] :
-(st.sym sym).f = sym.simFn st.f := by
-  ext s :1; simp [Strat.f]; split_ifs with h₁ <;> rfl
 
 @[simp]
 instance AState.sym_fs {s} {sym : sys.Symmetry} [hs : AState s] [H : sym.WF] :
@@ -87,10 +98,26 @@ instance {d : DStrat} {sym : sys.Symmetry} [hd : d.WF] [H : sym.WF] : (d.sym sym
   simp
 
 @[simp]
+instance {st : Strat} {sym : sys.Symmetry} [hst : st.WF] [H : sym.WF] :
+sys.SimFn (st.sym sym).f := by simp [Strat.sym]
+
+theorem Strat.f_sym_eq {st : Strat} {s} {sym : sys.Symmetry}
+[hs : sys.WF s] [H : sym.WF] : (st.sym sym).f s = sym.simFn st.f s := by
+  simp [Strat.f]; split_ifs with h₁ <;> rfl
+
+theorem Strat.simulate_sym_eq {st : Strat} {s n} {sym : sys.Symmetry}
+[hst : st.WF] [hs : sys.WF s] [H : sym.WF] : sys.simulate (st.sym sym).f s n =
+sys.simulate (sym.simFn st.f) s n := by
+  apply sys.simulate_congr
+  intro k hk b h₁ h₂ h
+  have hb := sys.wf_of_simulate_eq h₁
+  rw [f_sym_eq]
+
+@[simp]
 instance {st : Strat} {sym : sys.Symmetry} [hst : st.WF] [H : sym.WF] : (st.sym sym).WF := by
   rw [Strat.wf_def]; intro s hs h; rw [st.f_sym_eq]; exact sys.validTr_of_simFn_and_hasTr h
 
-theorem State.aHws_sym_of {s} {sym : sys.Symmetry}
+theorem State.aHws_sym_of {s} {sym : sys.Symmetry} [hs : sys.WF s]
 [H : sym.WF] (h : s.aHws) : (sym.fs s).aHws := by
   obtain ⟨a, Ha, h⟩ := h
   use a.sym sym, inferInstance
@@ -102,9 +129,9 @@ theorem State.aHws_sym_of {s} {sym : sys.Symmetry}
   intro n
   specialize h n
   convert h using 1; clear h
-  simp [Strat.f_sym_eq]
+  simp [Strat.simulate_sym_eq]
 
-theorem State.aHws_iff_sym {s} {sym : sys.Symmetry}
+theorem State.aHws_iff_sym {s} {sym : sys.Symmetry} [hs : sys.WF s]
 [H : sym.WF] : s.aHws ↔ (sym.fs s).aHws := by
   use aHws_sym_of; intro h; have h₁ := aHws_sym_of (sym := sym⁻¹) h; simp at h₁; exact h₁
 

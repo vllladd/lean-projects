@@ -294,6 +294,7 @@ sys.tr sd (st.f sd) ≠ none := by
   obtain ⟨sa, h₂⟩ := hst h₁
   simp [h₂]
 
+@[simp]
 instance {st : Strat} [hst : st.WF] : sys.SimFn st.f := by
   rw [Strat.wf_def] at hst; exact ⟨hst⟩
 
