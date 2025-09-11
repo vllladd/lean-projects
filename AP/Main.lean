@@ -42,7 +42,7 @@ def logb : IO Unit := do
 def n : ℕ := 1000
 
 def result : State × ℕ :=
-  sys.simulate strat.f (initState 1) n
+  sys.simulate strat.f (initState 1 0) n
 
 example : result.2 ≠ 0 := by native_decide
 
