@@ -7,9 +7,9 @@ namespace AP
 def getPs (d : ℕ) : List PointZ :=
   (⟨0, 0⟩ : PointZ).nbhd d
 
-def aStrat : AStrat := .mk # λ s =>
+def aStrat : AStrat := .mk' # λ s =>
   let ⟨x, y⟩ := s.aPos
-  some ⟨1 - x, y⟩
+  ⟨1 - x, y⟩
 
 def dStrat : DStrat := .mk # λ s =>
   let xs := do
@@ -39,9 +39,15 @@ def logb : IO Unit := do
   IO.println # String.mk # List.replicate 100 '='
   IO.println ""
 
+def n : ℕ := 1000
+
+def result : State × ℕ :=
+  sys.simulate strat.f (initState 1) n
+
+example : result.2 ≠ 0 := by native_decide
+
 def _root_.main : IO Unit := do
-  let n := 1000
-  let (res, k) := sys.simulate strat.f (initState 1) n
+  let (s, k) := result
   IO.println # toString n ++ " ---> " ++ toString k
   logb
-  IO.println # res
+  IO.println s
