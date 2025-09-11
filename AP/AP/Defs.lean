@@ -27,12 +27,12 @@ structure Strat : Type where
 
 -----
 
-def initState (pw : ℕ) : State :=
+def initState (pw : ℕ) (aPos : PointZ) : State :=
   { pw := pw
   , taken := ∅
-  , aPos := 0
+  , aPos := aPos
   , aTurn := false
-  , hist := []
+  , hist := [aPos]
   }
 
 def State.aMove (s : State) (p : PointZ) : Option State := do
@@ -51,7 +51,7 @@ def State.move (s : State) (p : PointZ) : Option State := do
   return {s' with aTurn := ¬s.aTurn, hist := p :: s.hist}
 
 def sys : System State PointZ :=
-  { initial := {s | ∃ pw, initState pw = s}
+  { initial := {s | ∃ pw p, initState pw p = s}
   , tr := State.move
   }
 
@@ -80,7 +80,7 @@ def State.dHws (s : State) : Prop :=
   ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩
 
 def aHwsPw (pw : ℕ) : Prop :=
-  (initState pw).aHws
+  ∀ p, (initState pw p).aHws
 
 def dHwsPw (pw : ℕ) : Prop :=
-  (initState pw).dHws
+  ∀ p, (initState pw p).dHws

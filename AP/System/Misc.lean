@@ -25,9 +25,6 @@ theorem aux₃ {s ts} :
 ∃ s' rs, sys.trs s ts = (s', rs) ∧ rs.length ≤ ts.length := by
   simp [Prod.ext_iff]
 
-theorem aux₄ {s ts s'} (h₁ : sys.trs s ts = (s', [])) : sys.Reachable s s' :=
-  reachable_of_trs h₁
-
 theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
   simp [Prod.ext_iff]
 
@@ -118,7 +115,7 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
   use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
   simp [acyclic_def]
-  constructor; simp [wf_def, initial_def]
+  constructor; simp [initial_def]
   use λ _ => ()
   simp [simFn_def, hasTr]
   intro N
@@ -132,7 +129,7 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
   use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
   simp [acyclic_def]
-  constructor; simp [wf_def, initial_def]
+  constructor; simp [initial_def]
   use default
   simp [simFn_def, hasTr]
   left

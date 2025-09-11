@@ -1380,3 +1380,6 @@ theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.Si
   nm x c h₃; clear x
   have hc := sys.wf_of_tr h₃
   exact ih h₁
+
+theorem reachable_of_trs' {s ts s' r} (h₁ : sys.trs s ts = (s', r)) :
+sys.Reachable s s' := reachable_of_trs h₁

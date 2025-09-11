@@ -12,7 +12,7 @@ def dflt_simFn [Inhabited # S → T] : S → T :=
   by classical exact
   λ s => if h : sys.hasTr s then h.choose else (default : S → T) s
 
-instance [Inhabited # S → T] : sys.SimFn sys.dflt_simFn := by
+@[simp] instance [Inhabited # S → T] : sys.SimFn sys.dflt_simFn := by
   constructor
   intro s hs h₁
   unfold dflt_simFn
@@ -31,7 +31,7 @@ def mk_simFn (f : S → T) : S → T := by
 theorem validTr_of_simFn_and_hasTr {f} [hf : sys.SimFn f] {s} [hs : sys.WF s]
 (h : sys.hasTr s) : sys.validTr s (f s) := hf.h h
 
-instance {f} : sys.SimFn # sys.mk_simFn f := by
+@[simp] instance {f} : sys.SimFn # sys.mk_simFn f := by
   constructor
   intro s hs h₁
   unfold mk_simFn
@@ -289,7 +289,7 @@ theorem wf_def {b} : sys.WF b ↔ ∃ a, sys.Initial a ∧ sys.Reachable a b := 
 theorem wf_of_initial {s} [sys.Initial s] : sys.WF s := by
   constructor; use s
 
-instance {s} [sys.Initial s] : sys.WF s := wf_of_initial
+@[simp] instance {s} [sys.Initial s] : sys.WF s := wf_of_initial
 
 theorem wf_of_reachable {a b}
 [ha : sys.WF a] (hb : sys.Reachable a b) : sys.WF b := by

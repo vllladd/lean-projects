@@ -37,7 +37,7 @@ theorem State.dHws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.dHws := by
 
 @[simp]
 theorem dHwsPw_0 : dHwsPw 0 :=
-  State.dHws_of_pw_0 rfl
+  λ _ => State.dHws_of_pw_0 rfl
 
 @[simp]
 theorem DState.tr_setPw {s p pw} [hs : DState s] :
@@ -100,8 +100,9 @@ theorem State.aHws_of_setPw_le {s : State} {pw} [hs : sys.WF # s.setPw pw]
   rw [←h₃] at h₂; contrapose h₂; simp at h₂ ⊢
   apply dHws_of_setPw_le h₁; simpa [h₃]
 
-theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw' :=
-  State.aHws_setPw_of_le h₁ h₂
+theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw' := by
+  intro p
+  sorry -- Translational symmetry
 
-theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' :=
-  State.dHws_of_setPw_le h₁ h₂
+theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' := by
+  contrapose h₂; simp at h₂ ⊢; exact aHwsPw_of_le h₁ h₂

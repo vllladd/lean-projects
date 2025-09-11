@@ -122,7 +122,7 @@ def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
   getMoveFromHist s_target s' ps
 
 def State.getMoveAt (s s_target : State) : Option PointZ :=
-  getMoveFromHist s_target (initState s.pw) s.hist.reverse
+  getMoveFromHist s_target (initState s.pw s.aPos₀) s.hist.reverse.tail
 
 theorem getMoveFromHist_append_eq_some_of {s acc ps ps₁ p}
 (h : getMoveFromHist s acc ps = some p) :
@@ -136,15 +136,18 @@ getMoveFromHist s acc (ps ++ ps₁) = some p := by
   use s', h₂
   exact ih h₃
 
-theorem getMoveAt_eq_getMoveAt_eq_some_and_tr {s₁ s₂ p₁ s p}
+theorem getMoveAt_eq_getMoveAt_eq_some_and_tr {s₁ s₂ p₁ s p} [hs : sys.WF s₁]
 (h₁ : s₁.getMoveAt s = some p) (h₂ : sys.tr s₁ p₁  = some s₂) :
 s₂.getMoveAt s = some p := by
   unfold State.getMoveAt at h₁ ⊢
-  simp [pw_eq_of_tr h₂, hist_eq_of_tr h₂]
+  simp [-List.tail_reverse, pw_eq_of_tr h₂, hist_eq_of_tr h₂]
   generalize initState s₁.pw = acc at h₁ ⊢
-  generalize s₁.hist.reverse = ps at h₁ ⊢
+  generalize hp : s₁.hist.reverse = ps at h₁ ⊢
+  replace hp : ps ≠ []; simp [←hp]
   generalize [p₁] = ps₁
-  exact getMoveFromHist_append_eq_some_of h₁
+  apply getMoveFromHist_append_eq_some_of
+  convert h₁ using 3
+  exact State.aPos₀_eq_of_tr h₂
 
 theorem getMoveFromHist_eq_some_iff_exi_trs {s acc p ps} [hs : sys.WF acc] :
 getMoveFromHist s acc ps = some p ↔ sys.WF s ∧
@@ -180,9 +183,9 @@ getMoveFromHist s acc ps = some p ↔ sys.WF s ∧
 
 theorem getMoveAt_eq_some_of_tr {s s' p} [hs : sys.WF s]
 (h₁ : sys.tr s p = some s') : s'.getMoveAt s = some p := by
-  simp [State.getMoveAt, pw_eq_of_tr h₁, hist_eq_of_tr h₁]
-  rw [getMoveFromHist_eq_some_iff_exi_trs]
-  use hs, s.hist.reverse; simp
+  simp [-List.tail_reverse, State.getMoveAt, pw_eq_of_tr h₁, hist_eq_of_tr h₁]
+  rw [getMoveFromHist_eq_some_iff_exi_trs]; use hs, s.hist.reverse.tail
+  simp [-List.tail_reverse, State.aPos₀_eq_of_tr h₁]
 
 theorem getMoveAt_eq_some_of_tr_and_reachable {s s₁ s₂ p} [hs : sys.WF s]
 (h₁ : sys.tr s p = some s₁) (h₂ : sys.Reachable s₁ s₂) : s₂.getMoveAt s = some p := by
@@ -205,11 +208,13 @@ theorem getMoveAt_eq_some_of_tr_and_reachable {s s₁ s₂ p} [hs : sys.WF s]
   simp [h₄] at h₂
   subst h₂
   specialize ih hr
+  have hs₁ := sys.wf_of_tr h₁
+  have hs₃ := sys.wf_of_trs hr
   exact getMoveAt_eq_getMoveAt_eq_some_and_tr ih h₄
 
 theorem getMoveAt_eq_some_iff_exi_trs {s₀ s p} [sys.WF s] :
-s.getMoveAt s₀ = some p ↔ ∃ ps', ps' ++ [p] <+: s.hist.reverse ∧
-sys.trs (initState s.pw) ps' = (s₀, []) := by
+s.getMoveAt s₀ = some p ↔ ∃ ps', ps' ++ [p] <+: s.hist.reverse.tail ∧
+sys.trs (initState s.pw s.aPos₀) ps' = (s₀, []) := by
   rw [State.getMoveAt, getMoveFromHist_eq_some_iff_exi_trs]
   use λ h => h.2
   rintro ⟨ps', h₁, h₂⟩
@@ -730,9 +735,12 @@ s.d_wins ⟨a, d⟩ := by
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
 
 @[simp]
-theorem not_aHwsPw_iff {pw} : ¬aHwsPw pw ↔ dHwsPw pw :=
-  State.not_aHws_iff
+theorem not_aHwsPw_iff {pw} : ¬aHwsPw pw ↔ dHwsPw pw := by
+  simp [aHwsPw, dHwsPw]
+  symm; constructor; intro h; simp [h]
+  rintro ⟨p₀, h⟩ p
+  sorry -- Translational symmetry
 
 @[simp]
-theorem not_dHwsPw_iff {pw} : ¬dHwsPw pw ↔ aHwsPw pw :=
-  State.not_dHws_iff
+theorem not_dHwsPw_iff {pw} : ¬dHwsPw pw ↔ aHwsPw pw := by
+  rw [←not_aHwsPw_iff, not_not]
