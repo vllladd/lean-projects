@@ -69,7 +69,7 @@ theorem sorted_lt_getBorderPoints {p d} (h : d ≠ 0) :
   simp [getBorderPoints, getBorderPoint]
   split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
 
-def defenseFn (e : Edge) (s : State) : Option PointZ :=
+def f (e : Edge) (s : State) : Option PointZ :=
   let pa := s.aPos
   let p₀ := e.getBorderPoint₀ pa
   let pick := λ (xs : List PointZ) => xs.find? (· ∉ s.taken)
@@ -91,8 +91,42 @@ def defenseFn (e : Edge) (s : State) : Option PointZ :=
 def defense (e : Edge) : Defense :=
   { cnd := λ s => 6 ≤ e.dist s.aPos
   , ps := e.points
-  , f := e.defenseFn
+  , f := e.f
   }
+
+@[simp] theorem ps_defense : e.defense.ps = e.points := rfl
+
+theorem of_eq_some {s p} (h : e.defense.f s = some p) :
+e.dist s.aPos ≤ 5 ∧ p ∉ s.taken ∧
+∃ (z : ℤ), |z| ≤ 2 ∧ e.getBorderPoint s.aPos z = p := by
+  simp [defense, f] at h
+  split at h <;> nm d hd
+  any_goals simp at h
+  · simp [hd, getBorderPoint, getBorderPoint₀] at h ⊢
+    split_ifs at h ⊢ <;> simp [←h]
+    · sorry
+    · sorry
+  · simp [hd, getBorderPoints, getBorderPoint, getBorderPoint₀] at h ⊢
+    split_ifs at h ⊢ with H
+    · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, ⟨h₂, h₃⟩ | ⟨h₂, h₃, h₄⟩⟩
+      · simp [←h₂]
+        sorry
+      · simp [←h₃]
+        sorry
+      · simp [←h₄]
+        sorry
+    sorry
+  · sorry
+  · sorry
+  · sorry
+
+-- #check 0 #exit
+
+theorem validTr_defense : e.defense.ValidTr := by
+  constructor; intro s hs p h
+  sorry
+
+-- #check 0 #exit
 
 def cnd (e : Edge) (s : State) : Prop :=
   let pa := s.aPos
@@ -105,14 +139,6 @@ def cnd (e : Edge) (s : State) : Prop :=
   | 2 => sorry
   | 1 => (p₀ :: get 1).all (· ∈ s.taken)
   | d => 0 < d
-
-@[simp] theorem ps_defense : e.defense.ps = e.points := rfl
-
--- #check 0 #exit
-
-theorem validTr_defense : e.defense.ValidTr := by
-  constructor
-  sorry
 
 theorem wf_defense : e.defense.WF := by
   have H := e.validTr_defense

@@ -1,5 +1,17 @@
 import AP.AP.Defense.Edge
 
+section min
+
+variable {α : Type*} [ha₁ : LinearOrder α]
+
+theorem le_of_le_min_left {a b c : α} (h : a ≤ min b c) : a ≤ b := by
+  rw [le_inf_iff] at h; exact h.1
+
+theorem le_of_le_min_right {a b c : α} (h : a ≤ min b c) : a ≤ c := by
+  rw [le_inf_iff] at h; exact h.2
+
+end min
+
 namespace AP
 
 @[ext]
@@ -59,45 +71,80 @@ theorem memPoints_eq {p} : c.memPoints p = decide (p ∈ c.points) := by
 def dist (c : Corner) (p : PointZ) : ℤ :=
   min (c.edge₁.dist p) (c.edge₂.dist p)
 
-def defenseCnd (c : Corner) (s : State) : Prop :=
-  6 ≤ c.dist s.aPos ∧ ∀ (p : PointZ), c.dist p = 0 →
-  7 ≤ p.dist c.offset → p ∈ s.taken
+def cnd' (c : Corner) (s : State) : Prop :=
+  ∀ (p : PointZ), c.dist p = 0 → 7 ≤ p.dist c.offset → p ∈ s.taken
 
-def defenseFn (c : Corner) (s : State) : Option PointZ :=
+def cnd (c : Corner) (s : State) : Prop :=
+  6 ≤ c.dist s.aPos ∧ c.cnd' s
+
+def f (c : Corner) (s : State) : Option PointZ :=
   c.edge₁.defense.f s <|> c.edge₂.defense.f s
 
 def defense (c : Corner) : Defense :=
-  { cnd := c.defenseCnd
+  { cnd := c.cnd
   , ps := c.points
-  , f := c.defenseFn
+  , f := c.f
   }
 
-section min
-
-variable {α : Type*} [ha₁ : LinearOrder α]
-
-theorem _root_.le_of_le_min_left {a b c : α} (h : a ≤ min b c) : a ≤ b := by
-  rw [le_inf_iff] at h; exact h.1
-
-theorem _root_.le_of_le_min_right {a b c : α} (h : a ≤ min b c) : a ≤ c := by
-  rw [le_inf_iff] at h; exact h.2
-
-end min
-
-theorem cnd_defense_edge₁ {s} (h : c.defenseCnd s) : c.edge₁.defense.cnd s :=
+theorem cnd_defense_edge₁ {s} (h : c.cnd s) : c.edge₁.defense.cnd s :=
   le_of_le_min_left h.1
 
-theorem cnd_defense_edge₂ {s} (h : c.defenseCnd s) : c.edge₂.defense.cnd s :=
+theorem cnd_defense_edge₂ {s} (h : c.cnd s) : c.edge₂.defense.cnd s :=
   le_of_le_min_right h.1
 
 @[simp] theorem ps_defense : c.defense.ps = c.points := rfl
-@[simp] theorem f_defense : c.defense.f = c.defenseFn := rfl
+@[simp] theorem f_defense : c.defense.f = c.f := rfl
+
+theorem edge₁_hor_iff : c.edge₁.dir.hor ↔ c.edge₂.dir.vert := by
+  simp [edge₁, edge₂]; split <;> simp_all
+
+theorem edge₂_hor_iff : c.edge₂.dir.hor ↔ c.edge₁.dir.vert := by
+  simp [edge₁, edge₂]; split <;> simp_all
+
+theorem edge₁_vert_iff : c.edge₁.dir.vert ↔ c.edge₂.dir.hor := by
+  simp [edge₁, edge₂]; split <;> simp_all
+
+theorem edge₂_vert_iff : c.edge₂.dir.vert ↔ c.edge₁.dir.hor := by
+  simp [edge₁, edge₂]; split <;> simp_all
+
+theorem cnd'_of_reachable {s s'} [hs : sys.WF s]
+(h₁ : sys.Reachable s s') (h₂ : c.cnd' s) : c.cnd' s' :=
+  λ p hp h => s.mem_taken_of_reachable h₁ # h₂ p hp h
+
+theorem dist_eq_zero_of_edge₁_eq_some {s p}
+(h : c.edge₁.defense.f s = some p) : c.dist p = 0 := by
+  sorry
+
+theorem dist_eq_zero_of_edge₂_eq_some {s p}
+(h : c.edge₂.defense.f s = some p) : c.dist p = 0 := by
+  sorry
+
+-- #check 0 #exit
+
+theorem edge₂_eq_none_of_edge₁_eq_some {s p} (H : c.cnd' s)
+(h : c.edge₁.defense.f s = some p) : c.edge₂.defense.f s = none := by
+  rename' h => h₁, p => p₁
+  by_contra h₂
+  replace h₂ := Option.exists_eq_some_of_ne_none h₂
+  obtain ⟨p₂, h₂⟩ := h₂
+  have hp₁ := dist_eq_zero_of_edge₁_eq_some h₁
+  have hp₂ := dist_eq_zero_of_edge₂_eq_some h₂
+  replace h₁ := Edge.of_eq_some h₁
+  replace h₂ := Edge.of_eq_some h₂
+  rcases h₁ with ⟨h₁, H₁, d₁, h₃, h₄⟩
+  rcases h₂ with ⟨h₂, H₂, d₂, h₅, h₆⟩
+  simp [Edge.getBorderPoint] at h₄ h₆
+  simp_rw [←Dir.not_hor, ite_not] at h₄
+  simp_rw [c.edge₂_vert_iff] at h₆
+  split_ifs at h₄ h₆ with h₇ <;> simp [edge₁] at h₇
+  · sorry
+  · sorry
 
 -- #check 0 #exit
 
 theorem validTr_defense : c.defense.ValidTr := by
-  constructor
-  sorry
+  constructor; intro s hs p h; simp [f] at h; rcases h with h | ⟨h₁, h₂⟩
+  exact Defense.valid_tr h; exact Defense.valid_tr h₂
 
 theorem wf_defense : c.defense.WF := by
   have H := c.validTr_defense
@@ -110,27 +157,17 @@ theorem wf_defense : c.defense.WF := by
   generalize he₂ : c.edge₂.defense = e₂ at h₂ He₂
   have H₁ := He₁.2 h₁ a (e₂.st d) n
   have H₂ := He₂.2 h₂ a (e₁.st d) n
-  
   generalize hr : sys.simulate (Strat.f ⟨a, e₁.st # e₂.st d⟩) s n = r at H₁
-  
   have h₃ : sys.simulate (Strat.f ⟨a, e₂.st # e₁.st d⟩) s n = r
-  · rw [←hr]
-    -- apply simulate_congr <;> intro k hk b hb h₃ h₄ h₅ <;> simp
-    sorry
-  
+  · rw [←hr, ←Defense.simulate_st_comm]; subst he₁ he₂
+    intro s' h₃ p₁ p₂ h₄; have h₅ := c.cnd'_of_reachable h₃ h.2
+    simp [edge₂_eq_none_of_edge₁_eq_some h₅ h₄]
   rw [h₃] at H₂; clear h₃
-  
   have h₄ : sys.simulate (Strat.f ⟨a, c.defense.st d⟩) s n = r
-  · rw [←hr]
-    apply simulate_congr <;> intro k hk b hb h₃ h₄ h₅ <;> simp
-    sorry
-  
-  rw [h₄]
-  subst he₁ he₂
-  simp at H₁ H₂
-  simp [points, H₁, H₂]
-
--- #check 0 #exit
+  · convert hr using 2; ext1 s
+    unfold Strat.f; split_ifs with ht <;> simp
+    simp [defense, f, Defense.st, he₁, he₂]
+  rw [h₄]; subst he₁ he₂; simp at H₁ H₂; simp [points, H₁, H₂]
 
 @[simp]
 instance : c.defense.WF := wf_defense
