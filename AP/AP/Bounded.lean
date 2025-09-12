@@ -2,12 +2,12 @@ import AP.AP.PW
 
 namespace AP
 
-theorem State.forall_d_wins_bounded_of_forall_d_wins {s} [hs : sys.WF s]
-{d : DStrat} [Hd : d.WF] (h : ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩) :
+theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
+{d : DStrat} [Hd : d.WF] (h : ∀ (a : AStrat), a.WF → s.dWins ⟨a, d⟩) :
 ∃ (n : ℕ), ∀ (a : AStrat), a.WF → (sys.simulate (Strat.mk a d).f s n).2 ≠ 0 := by
   contrapose! h
-  simp only [not_d_wins_iff]
-  apply exi_a_wins_of_ind (p := λ s => ∀ (n : ℕ), ∃ (a : AStrat), a.WF ∧
+  simp only [not_dWins_iff]
+  apply exi_aWins_of_ind (p := λ s => ∀ (n : ℕ), ∃ (a : AStrat), a.WF ∧
     (sys.simulate (Strat.mk a d).f s n).2 = 0) h <;> clear! s; rotate_left
   · intro sd hd sa ih h₁ n
     specialize ih (n + 1)
@@ -72,10 +72,10 @@ theorem State.forall_d_wins_bounded_of_forall_d_wins {s} [hs : sys.WF s]
   simp [h₄] at hk
   exact hk
 
-theorem State.forall_d_wins_iff_forall_d_wins_bounded {s} [hs : sys.WF s]
-{d : DStrat} [Hd : d.WF] : (∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩) ↔
+theorem State.forall_dWins_iff_forall_dWins_bounded {s} [hs : sys.WF s]
+{d : DStrat} [Hd : d.WF] : (∀ (a : AStrat), a.WF → s.dWins ⟨a, d⟩) ↔
 ∃ (n : ℕ), ∀ (a : AStrat), a.WF → (sys.simulate (Strat.mk a d).f s n).2 ≠ 0 := by
-  use forall_d_wins_bounded_of_forall_d_wins
+  use forall_dWins_bounded_of_forall_dWins
   rintro ⟨n, h₁⟩
   intro a Ha
   specialize h₁ a Ha
@@ -85,7 +85,7 @@ theorem State.dHws_bounded_of_dHws {s} [hs : sys.WF s]
 (h : s.dHws) : ∃ (n : ℕ) (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF →
 (sys.simulate (Strat.mk a d).f s n).2 ≠ 0 := by
   obtain ⟨d, Hd, h⟩ := h
-  rw [forall_d_wins_iff_forall_d_wins_bounded] at h
+  rw [forall_dWins_iff_forall_dWins_bounded] at h
   obtain ⟨n, h₁⟩ := h
   use n, d
 
@@ -150,10 +150,10 @@ theorem aPos_dist_le_of_simulate {s r f n} [hs : sys.WF s]
   rw [Point.dist_comm]
   linarith
 
-theorem State.dEntrapsAIn_of_forall_d_wins {s} [hs : sys.WF s] {d : DStrat} [Hd : d.WF]
-(h : ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩) :
+theorem State.dEntrapsAIn_of_forall_dWins {s} [hs : sys.WF s] {d : DStrat} [Hd : d.WF]
+(h : ∀ (a : AStrat), a.WF → s.dWins ⟨a, d⟩) :
 ∃ (N : ℕ), ∀ (a : AStrat), a.WF → s.dEntrapsAIn ⟨a, d⟩ {p | p ∈ (0 : PointZ).nbhd N} := by
-  rw [forall_d_wins_iff_forall_d_wins_bounded] at h
+  rw [forall_dWins_iff_forall_dWins_bounded] at h
   obtain ⟨n, h⟩ := h
   use (Point.dist 0 s.aPos).toNat + n * s.pw
   intro a Ha
@@ -636,13 +636,13 @@ theorem aTrap_ncard_pos_of_aTrapped {s} [hs : sys.WF s]
 (h : s.aTrapped) : 0 < s.aTrap.ncard := by
   have h₁ := h.fintype; rw [Set.ncard_pos]; simp
 
-theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
-(h : s.aTrapped) : ∃ (d: DStrat), d.WF ∧ s.d_wins ⟨a, d⟩ := by
+theorem State.exi_dWins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
+(h : s.aTrapped) : ∃ (d: DStrat), d.WF ∧ s.dWins ⟨a, d⟩ := by
   classical
   generalize hd : DStrat.mk (λ s => choose? # λ p => p ∈ s.aTrap ∧ p ≠ s.aPos) = d
   have Hd : d.WF; rw [←hd]; infer_instance
   use d, Hd
-  apply d_wins_of_le_lt (p := λ s => s.aTrapped)
+  apply dWins_of_le_lt (p := λ s => s.aTrapped)
     (f := λ s => if sys.hasTr s then s.aTrap.ncard else 0)
     h <;> clear! s
   · rintro sa sd hsa hsd h₁ h₂
@@ -680,10 +680,10 @@ theorem State.exi_d_wins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF
   have hp₃ := not_mem_taken_of_aReachable hp₁
   simpa [h₆, hsd.validTr_iff, ne_symm' hp₂, hp₃]
 
-theorem State.exi_d_wins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
+theorem State.exi_dWins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF]
 (h : (sys.simulate (Strat.mk a d).f s n).1.aTrapped) :
-∃ (d : DStrat), d.WF ∧ s.d_wins ⟨a, d⟩ := by
+∃ (d : DStrat), d.WF ∧ s.dWins ⟨a, d⟩ := by
   classical
   generalize hr : sys.simulate (Strat.mk a d).f s n = r at h
   rcases r with ⟨s₁, r⟩
@@ -692,13 +692,13 @@ theorem State.exi_d_wins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
   · use d, Hd, n; simpa [hr]
   subst hr'
   have hs₁ : sys.WF s₁ := System.wf_of_simulate_eq hr
-  obtain ⟨d₁, Hd₁, h₁⟩ : ∃ d, d.WF ∧ s₁.d_wins ⟨a, d⟩
-  · exact exi_d_wins_of_aTrapped h
+  obtain ⟨d₁, Hd₁, h₁⟩ : ∃ d, d.WF ∧ s₁.dWins ⟨a, d⟩
+  · exact exi_dWins_of_aTrapped h
   generalize hD : DStrat.mk
     (λ sd => if sys.Reachable s₁ sd then d₁.f sd else d.f sd) = D
   have HD : D.WF; subst hD; infer_instance
   use D, HD
-  rw [d_wins_iff_add n]
+  rw [dWins_iff_add n]
   have h₂ : sys.simulate (Strat.mk a D).f s n = (s₁, 0)
   · rw [←hr]
     apply simulate_congr # by simp
@@ -722,12 +722,12 @@ theorem State.exi_d_wins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
   rw [←hD]
   simp [mk_strat_fn, h₄, Hd₁.1 h₃]
 
-theorem State.exi_d_wins_iff_exi_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF] :
-(∃ (d : DStrat), d.WF ∧ s.d_wins ⟨a, d⟩) ↔
+theorem State.exi_dWins_iff_exi_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF] :
+(∃ (d : DStrat), d.WF ∧ s.dWins ⟨a, d⟩) ↔
 ∃ (n : ℕ) (d : DStrat), d.WF ∧ (sys.simulate (Strat.mk a d).f s n).1.aTrapped := by
   symm; constructor
   · rintro ⟨n, d, Hd, h⟩
-    exact exi_d_wins_of_simulate_aTrapped h
+    exact exi_dWins_of_simulate_aTrapped h
   rintro ⟨d, Hd, n, h⟩
   use n, d, Hd
   generalize hr : sys.simulate (Strat.mk a d).f s n = r at h ⊢
@@ -750,10 +750,10 @@ s.dEntrapsAIn ⟨a, d⟩ {p | p ∈ (0 : PointZ).nbhd N} := by
     replace h := aTrapped_of_aTrappedIn_and_finite h
     specialize h _
     · apply Set.finite_of_subset_finset # (0 : PointZ).nbhd N |>.toFinset; simp
-    exact exi_d_wins_of_simulate_aTrapped h
+    exact exi_dWins_of_simulate_aTrapped h
   rw [dHws_iff_dHws_bounded]
   rintro ⟨n, d, Hd, h⟩
-  have h₁ := @dEntrapsAIn_of_forall_d_wins s hs d Hd
+  have h₁ := @dEntrapsAIn_of_forall_dWins s hs d Hd
   specialize h₁ _
   · clear h₁
     intro a Ha
@@ -770,4 +770,4 @@ theorem State.dHws_of_exi_aTrapped {s} [hs : sys.WF s]
   intro a Ha
   specialize h a Ha
   rcases h with ⟨n, h⟩
-  exact exi_d_wins_of_simulate_aTrapped h
+  exact exi_dWins_of_simulate_aTrapped h

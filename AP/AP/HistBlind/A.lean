@@ -5,7 +5,7 @@ namespace AP
 open Classical in noncomputable
 def aHistBlind : AStrat := .mk # λ s => do
   let s' ← choose? # λ (s' : State) => sys.WF s' ∧ s'.setHist s.hist = s
-  let a ← choose? # λ (a : AStrat) => a.WF ∧ ∀ (d : DStrat), d.WF → s'.a_wins ⟨a, d⟩
+  let a ← choose? # λ (a : AStrat) => a.WF ∧ ∀ (d : DStrat), d.WF → s'.aWins ⟨a, d⟩
   return a.f s'
 
 instance : aHistBlind.WF := by unfold aHistBlind; infer_instance
@@ -274,7 +274,7 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
   have h₇ : s'.aHws; rw [←h₆']; simpa
   unfold State.aHws at h₇
   generalize h₈ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
-    ∀ (d : DStrat), d.WF → s'.a_wins ⟨a, d⟩) = a
+    ∀ (d : DStrat), d.WF → s'.aWins ⟨a, d⟩) = a
   have h₉ := Classical.epsilon_spec h₇
   rw [h₈] at h₉
   rcases h₉ with ⟨H₁, H₂⟩
@@ -308,10 +308,10 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
   exact hist_eq_of_tr H₈
 
 theorem State.aHws_histBlind_of_aHws {s} [hs : sys.WF s] (h : s.aHws) :
-∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ := by
+∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ := by
   use aHistBlind, inferInstance
   intro d Hd
-  apply a_wins_of_ind h <;> clear! s
+  apply aWins_of_ind h <;> clear! s
   · exact @AState.aHistBlind_tr_aHws
   intro sd hd sa h₁ h₂
   dsimp at h₂
@@ -319,7 +319,7 @@ theorem State.aHws_histBlind_of_aHws {s} [hs : sys.WF s] (h : s.aHws) :
   apply h₁; exact h₂
 
 theorem State.aHws_iff_aHws_histBlind {s} [hs : sys.WF s] : s.aHws ↔
-∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩ :=
+∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ :=
   ⟨aHws_histBlind_of_aHws, λ ⟨a, Ha, h₁⟩ => by use a, Ha.wf⟩
 
 @[simp]

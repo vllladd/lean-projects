@@ -388,15 +388,15 @@ sa.dHws ∧ sa.dwn < sd.dwn := by
     exact H
 
 theorem State.dHws_histBlind_of_dHws {s} [hs : sys.WF s] (h : s.dHws) :
-∃ (d : DStrat), d.HistBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ := by
+∃ (d : DStrat), d.HistBlind ∧ ∀ (a : AStrat), a.WF → s.dWins ⟨a, d⟩ := by
   use dHistBlind, inferInstance
   intro a Ha
-  apply d_wins_of_lt_lt (p := (·.dHws)) (f := (·.dwn)) h <;> clear! s
+  apply dWins_of_lt_lt (p := (·.dHws)) (f := (·.dwn)) h <;> clear! s
   · intro sa sd hsa hsd h₁ h₂
     use hsa.dHws_of_tr h₂ h₁, hsa.dwn_lt_of_tr h₁ h₂
   · intro sd sa hsd hsa h₁ h₂
     exact dHws_and_dwn_lt_of_dHistBlind_tr h₂ h₁
 
 theorem State.dHws_iff_dHws_histBlind {s} [hs : sys.WF s] : s.dHws ↔
-∃ (d : DStrat), d.HistBlind ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩ :=
+∃ (d : DStrat), d.HistBlind ∧ ∀ (a : AStrat), a.WF → s.dWins ⟨a, d⟩ :=
   ⟨dHws_histBlind_of_dHws, λ ⟨d, Hd, h₁⟩ => by use d, Hd.wf⟩

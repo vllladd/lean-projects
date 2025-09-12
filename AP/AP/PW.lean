@@ -123,3 +123,9 @@ theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw
 
 theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' := by
   contrapose h₂; simp at h₂ ⊢; exact aHwsPw_of_le h₁ h₂
+
+-----
+
+-- example {s} {p : DStrat → Prop}
+-- [hs : sys.WF s]
+-- (h : ∀ (d : DStrat), d.WF → p d → ∃ (a : AStrat), a.WF ∧ s.aWins)

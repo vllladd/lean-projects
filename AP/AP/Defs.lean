@@ -67,17 +67,17 @@ def Strat.f (st : Strat) (s : State) : PointZ :=
 class Strat.WF (st : Strat) : Prop where
   h : ∀ {s} [sys.WF s], sys.hasTr s → sys.validTr s (st.f s)
 
-def State.a_wins (s : State) (st : Strat) : Prop :=
+def State.aWins (s : State) (st : Strat) : Prop :=
   ∀ n, (sys.simulate st.f s n).2 = 0
 
-def State.d_wins (s : State) (st : Strat) : Prop :=
+def State.dWins (s : State) (st : Strat) : Prop :=
   ∃ n, (sys.simulate st.f s n).2 ≠ 0
 
 def State.aHws (s : State) : Prop :=
-  ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.a_wins ⟨a, d⟩
+  ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩
 
 def State.dHws (s : State) : Prop :=
-  ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → s.d_wins ⟨a, d⟩
+  ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → s.dWins ⟨a, d⟩
 
 def aHwsPw (pw : ℕ) : Prop :=
   ∀ p, (initState pw p).aHws

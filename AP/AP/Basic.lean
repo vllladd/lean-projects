@@ -236,12 +236,12 @@ theorem AState.hasTr_of_le {s : State} [hs : AState s] {pw}
   obtain ⟨p, h₃⟩ := h₂; use p; exact hs.validTr_of_le h₁ h₃
 
 @[simp]
-theorem State.not_a_wins_iff {s : State} {st : Strat} : ¬s.a_wins st ↔ s.d_wins st := by
-  simp [a_wins, d_wins]
+theorem State.not_aWins_iff {s : State} {st : Strat} : ¬s.aWins st ↔ s.dWins st := by
+  simp [aWins, dWins]
 
 @[simp]
-theorem State.not_d_wins_iff {s : State} {st : Strat} : ¬s.d_wins st ↔ s.a_wins st := by
-  simp [a_wins, d_wins]
+theorem State.not_dWins_iff {s : State} {st : Strat} : ¬s.dWins st ↔ s.aWins st := by
+  simp [aWins, dWins]
 
 theorem AStrat.wf_iff {a : AStrat} : a.WF ↔ ∀ {s} [AState s],
 sys.hasTr s → sys.validTr s (a.f s) := by
@@ -286,8 +286,8 @@ st.f sa = st.a.f sa := by simp [Strat.f]
 theorem DState.strat_f_eq {sd} {st : Strat} [hd : DState sd] :
 st.f sd = st.d.f sd := by simp [Strat.f]
 
-theorem State.a_wins_iff_mul_two {s : State} {st : Strat} :
-s.a_wins st ↔ ∀ n, (sys.simulate st.f s # n * 2).2 = 0 := by
+theorem State.aWins_iff_mul_two {s : State} {st : Strat} :
+s.aWins st ↔ ∀ n, (sys.simulate st.f s # n * 2).2 = 0 := by
   constructor <;> intro h n; apply h
   apply System.simulate_snd_eq_zero_of_le_and_eq_zero # h n; simp
 
@@ -764,17 +764,17 @@ theorem State.not_aState {s} [hs : sys.WF s] : ¬AState s ↔ DState s := by
 theorem State.not_dState {s} [hs : sys.WF s] : ¬DState s ↔ AState s := by
   simp [AState.iff, DState.iff]; aesop
 
-theorem AState.validTr_of_a_wins {s} {st : Strat} [hs : AState s]
-(h : s.a_wins st) : sys.validTr s (st.a.f s) := by
+theorem AState.validTr_of_aWins {s} {st : Strat} [hs : AState s]
+(h : s.aWins st) : sys.validTr s (st.a.f s) := by
   specialize h 1
   simp at h
   split at h; simp at h
   nm x s' h₁; clear x
   exact System.validTr_of_eq_some h₁
 
-theorem AState.hasTr_of_a_wins {s} {st : Strat} [hs : AState s]
-(h : s.a_wins st) : sys.hasTr s :=
-  System.hasTr_of_validTr # validTr_of_a_wins h
+theorem AState.hasTr_of_aWins {s} {st : Strat} [hs : AState s]
+(h : s.aWins st) : sys.hasTr s :=
+  System.hasTr_of_validTr # validTr_of_aWins h
 
 theorem setPw_eq_comm {s₁ s₂ : State} :
 s₁.setPw s₂.pw = s₂ ↔ s₂.setPw s₁.pw = s₁ := by

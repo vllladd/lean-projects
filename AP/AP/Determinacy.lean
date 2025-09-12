@@ -25,12 +25,12 @@ theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
 instance {sa} [ha : AState sa] {st : Strat} [hst : st.WF] {n} :
 AState (sys.simulate st.f sa # n * 2).1 := ha.of_simulate_mul_two
 
-theorem AState.a_wins_of_ind_two {sa} [ha : AState sa]
+theorem AState.aWins_of_ind_two {sa} [ha : AState sa]
 {st : Strat} [hst : st.WF] {p : State → Prop} (hp : p sa)
 (h : ∀ {sa} [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧
 ∀ sa', sys.tr sd (st.d.f sd) = some sa' → p sa') :
-sa.a_wins st := by
-  rw [sa.a_wins_iff_mul_two]
+sa.aWins st := by
+  rw [sa.aWins_iff_mul_two]
   intro n
   suffices h₁ : ∃ b, sys.simulate st.f sa (n * 2) = (b, 0) ∧ p b
   · obtain ⟨b, h₁, h₂⟩ := h₁; simp [h₁]
@@ -91,7 +91,7 @@ theorem AState.aHws_of_ind_two {sa : State} [ha : AState sa] {p : State → Prop
   classical
   use aStratChoose p, inferInstance
   intro d hd
-  apply ha.a_wins_of_ind_two h₁
+  apply ha.aWins_of_ind_two h₁
   clear! sa
   intro sa ha hp
   specialize h₂ sa hp
@@ -226,11 +226,11 @@ def dStratOfDWins (sa : State) : DStrat := .mk # λ sd => do
   let pa ← sd.getMoveAt sa
   let sd' ← sys.tr sa pa
   let pd ← choose? # λ pd => ∃ sa', sys.tr sd' pd = some sa' ∧
-    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩
+    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩
   if sd' = sd then some pd else do
     let sa' ← sys.tr sd' pd
     let d ← choose? # λ (d : DStrat) => d.WF ∧
-      ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩
+      ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩
     return d.f sd
 
 instance {sa} : (dStratOfDWins sa).WF := by unfold dStratOfDWins; infer_instance
@@ -294,11 +294,11 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   have hd := DState.of_tr h₁
   specialize h pa sd h₁
   generalize Hpd : Classical.epsilon (λ pd => ∃ sa', sys.tr sd pd = some sa' ∧
-    ∃ d, d.WF ∧ ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩) = pd
+    ∃ d, d.WF ∧ ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩) = pd
   have h₂ := Classical.epsilon_spec h; rw [Hpd] at h₂
   obtain ⟨sa', h₂, h₃⟩ := h₂
   generalize Hd : Classical.epsilon (λ (d : DStrat) => d.WF ∧
-    ∀ (a : AStrat), a.WF → sa'.d_wins ⟨a, d⟩) = d
+    ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩) = d
   have h₄ := Classical.epsilon_spec h₃; rw [Hd] at h₄
   obtain ⟨h₄, h₅⟩ := h₄
   specialize h₅ a hsa
@@ -351,7 +351,7 @@ def aStratOfAHws (sd : State) : AStrat := .mk # λ sa => do
   let pd ← sa.getMoveAt sd
   let sa' ← sys.tr sd pd
   let a ← choose? # λ (a : AStrat) => a.WF ∧
-    ∀ (d : DStrat), d.WF → sa'.a_wins ⟨a, d⟩
+    ∀ (d : DStrat), d.WF → sa'.aWins ⟨a, d⟩
   return a.f sa
 
 instance {s} : (aStratOfAHws s).WF := by unfold aStratOfAHws; infer_instance
@@ -426,7 +426,7 @@ theorem State.aHws_of_not_dHws {s : State} [hs : sys.WF s]
   replace h := ha.aHws_of_not_dHws h
   unfold State.aHws at h
   generalize h₂ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
-    ∀ (d : DStrat), d.WF → sa.a_wins { a := a, d := d }) = a
+    ∀ (d : DStrat), d.WF → sa.aWins { a := a, d := d }) = a
   have h₃ := Classical.epsilon_spec h; rw [h₂] at h₃
   rcases h₃ with ⟨h₃, h₄⟩
   specialize h₄ d hd n
@@ -518,12 +518,12 @@ theorem AState.aHws_of_ind {s} [ha : AState s]
   have h₈ := DState.of_tr h₂
   exact h₃ sd pd sa' h₆ h₇
 
-theorem AState.a_wins_of_ind {s} [ha : AState s]
+theorem AState.aWins_of_ind {s} [ha : AState s]
 {st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (st.d.f sd) = some sa → p sa) :
-s.a_wins st := by
-  apply ha.a_wins_of_ind_two h₁
+s.aWins st := by
+  apply ha.aWins_of_ind_two h₁
   intro sa h₄ h₅
   specialize h₂ sa h₅
   obtain ⟨sd, h₂, h₆⟩ := h₂
@@ -532,14 +532,14 @@ s.a_wins st := by
   have h₈ := DState.of_tr h₂
   exact h₃ sd sa' h₆ h₇
 
-theorem State.a_wins_of_ind {s} [hs : sys.WF s]
+theorem State.aWins_of_ind {s} [hs : sys.WF s]
 {st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], p sa → ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (st.d.f sd) = some sa → p sa) :
-s.a_wins st := by
+s.aWins st := by
   replace hs := s.aState_or_dState
   rcases hs with ha | hd
-  · exact ha.a_wins_of_ind h₁ h₂ h₃
+  · exact ha.aWins_of_ind h₁ h₂ h₃
   intro n
   cases n; rfl; nm n
   simp
@@ -547,7 +547,7 @@ s.a_wins st := by
   simp [h₄]
   have h₅ := AState.of_tr h₄
   have h₆ := h₃ s sa h₁ h₄
-  apply h₅.a_wins_of_ind h₆ h₂ h₃
+  apply h₅.aWins_of_ind h₆ h₂ h₃
 
 theorem State.aHws_of_ind {s} [hs : sys.WF s]
 {p : State → Prop} (h₁ : p s)
@@ -568,13 +568,13 @@ def aSeek (p : State → Prop) : AStrat := .mk # λ sa =>
 
 instance {p} : (aSeek p).WF := by unfold aSeek; infer_instance
 
-theorem State.exi_a_wins_of_ind {s} [hs : sys.WF s]
+theorem State.exi_aWins_of_ind {s} [hs : sys.WF s]
 {d : DStrat} [Hd : d.WF] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (d.f sd) = some sa → p sa) :
-∃ (a : AStrat), a.WF ∧ s.a_wins ⟨a, d⟩ := by
+∃ (a : AStrat), a.WF ∧ s.aWins ⟨a, d⟩ := by
   use aSeek p, inferInstance
-  apply a_wins_of_ind h₁; clear! s
+  apply aWins_of_ind h₁; clear! s
   · intro sa ha ih; dsimp
     specialize h₂ sa ih
     simp [-AState.tr_eq_some_iff, aSeek, mk_strat_fn, choose?_eq_ite, h₂]
@@ -589,15 +589,15 @@ theorem State.exi_a_wins_of_ind {s} [hs : sys.WF s]
     have ha := AState.of_tr h₄
     exact h₃ sd sa ih h₄
 
-theorem State.a_wins_iff_add {s st} (k : ℕ) :
-s.a_wins st ↔ ∀ n, (sys.simulate st.f s # k + n).2 = 0 := by
+theorem State.aWins_iff_add {s st} (k : ℕ) :
+s.aWins st ↔ ∀ n, (sys.simulate st.f s # k + n).2 = 0 := by
   constructor <;> intro h₁ n
   · exact h₁ # k + n
   · apply System.simulate_snd_eq_zero_of_le_and_eq_zero # h₁ n
     linarith
 
-theorem State.d_wins_iff_add {s st} (k : ℕ) :
-s.d_wins st ↔ ∃ n, (sys.simulate st.f s # k + n).2 ≠ 0 := by
+theorem State.dWins_iff_add {s st} (k : ℕ) :
+s.dWins st ↔ ∃ n, (sys.simulate st.f s # k + n).2 ≠ 0 := by
   constructor <;> rintro ⟨n, h₁⟩
   · use n
     contrapose! h₁
@@ -639,12 +639,12 @@ theorem DState.aHws_of_tr {sd sa p} [hd : DState sd]
 (h₁ : sys.tr sd p = some sa) (h₂ : sd.aHws) : sa.aHws :=
   aHws_iff_tr.mp h₂ _ _ h₁
 
-theorem State.d_wins_of_lt_lt {s} [hs : sys.WF s]
+theorem State.dWins_of_lt_lt {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {p : State → Prop} {f : State → ℕ}
 (h₁ : p s) (h₂ : ∀ sa sd [AState sa] [DState sd], p sa →
 sys.tr sa (a.f sa) = some sd → p sd ∧ f sd < f sa)
 (h₃ : ∀ sd sa [DState sd] [AState sa], p sd →
-sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.d_wins ⟨a, d⟩ := by
+sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.dWins ⟨a, d⟩ := by
   generalize hn : f s = n
   induction n using Nat.strong_induction_on generalizing s
   nm n ih
@@ -672,13 +672,13 @@ sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.d_wins ⟨a, d⟩ := 
     use n + 1
     simpa [h₄]
 
-theorem State.d_wins_of_le_lt {s} [hs : sys.WF s]
+theorem State.dWins_of_le_lt {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {p : State → Prop} {f : State → ℕ}
 (h₁ : p s) (h₂ : ∀ sa sd [AState sa] [DState sd], p sa →
 sys.tr sa (a.f sa) = some sd → p sd ∧ f sd ≤ f sa)
 (h₃ : ∀ sd sa [DState sd] [AState sa], p sd →
-sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.d_wins ⟨a, d⟩ := by
-  apply s.d_wins_of_lt_lt (a := a) (d := d) (p := p)
+sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.dWins ⟨a, d⟩ := by
+  apply s.dWins_of_lt_lt (a := a) (d := d) (p := p)
     (f := λ s => f s * 2 + if s.aTurn then 1 else 0) h₁
   · intro sa sd hsa hsd h₄ h₅
     simp
@@ -691,13 +691,13 @@ sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.d_wins ⟨a, d⟩ := 
     use h₃.1; replace h₃ := h₃.2
     linarith
 
-theorem State.d_wins_of_lt_le {s} [hs : sys.WF s]
+theorem State.dWins_of_lt_le {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {p : State → Prop} {f : State → ℕ}
 (h₁ : p s) (h₂ : ∀ sa sd [AState sa] [DState sd], p sa →
 sys.tr sa (a.f sa) = some sd → p sd ∧ f sd < f sa)
 (h₃ : ∀ sd sa [DState sd] [AState sa], p sd →
-sys.tr sd (d.f sd) = some sa → p sa ∧ f sa ≤ f sd) : s.d_wins ⟨a, d⟩ := by
-  apply s.d_wins_of_lt_lt (a := a) (d := d) (p := p)
+sys.tr sd (d.f sd) = some sa → p sa ∧ f sa ≤ f sd) : s.dWins ⟨a, d⟩ := by
+  apply s.dWins_of_lt_lt (a := a) (d := d) (p := p)
     (f := λ s => f s * 2 + if s.aTurn then 0 else 1) h₁
   · intro sa sd hsa hsd h₄ h₅
     simp
@@ -710,26 +710,26 @@ sys.tr sd (d.f sd) = some sa → p sa ∧ f sa ≤ f sd) : s.d_wins ⟨a, d⟩ :
     use h₃.1; replace h₃ := h₃.2
     linarith
 
-theorem State.d_wins_of_lt_lt_uncond {s} [hs : sys.WF s]
+theorem State.dWins_of_lt_lt_uncond {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {f : State → ℕ}
 (h₁ : ∀ sa sd [AState sa] [DState sd], sys.tr sa (a.f sa) = some sd → f sd < f sa)
 (h₂ : ∀ sd sa [DState sd] [AState sa], sys.tr sd (d.f sd) = some sa → f sa < f sd) :
-s.d_wins ⟨a, d⟩ := by
-  have h₃ := s.d_wins_of_lt_lt (a := a) (d := d) (p := λ _ => True) (f := f)
+s.dWins ⟨a, d⟩ := by
+  have h₃ := s.dWins_of_lt_lt (a := a) (d := d) (p := λ _ => True) (f := f)
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
 
-theorem State.d_wins_of_le_lt_uncond {s} [hs : sys.WF s]
+theorem State.dWins_of_le_lt_uncond {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {f : State → ℕ}
 (h₁ : ∀ sa sd [AState sa] [DState sd], sys.tr sa (a.f sa) = some sd → f sd ≤ f sa)
 (h₂ : ∀ sd sa [DState sd] [AState sa], sys.tr sd (d.f sd) = some sa → f sa < f sd) :
-s.d_wins ⟨a, d⟩ := by
-  have h₃ := s.d_wins_of_le_lt (a := a) (d := d) (p := λ _ => True) (f := f)
+s.dWins ⟨a, d⟩ := by
+  have h₃ := s.dWins_of_le_lt (a := a) (d := d) (p := λ _ => True) (f := f)
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
 
-theorem State.d_wins_of_lt_le_uncond {s} [hs : sys.WF s]
+theorem State.dWins_of_lt_le_uncond {s} [hs : sys.WF s]
 {a : AStrat} [Ha : a.WF] {d : DStrat} [Hd : d.WF] {f : State → ℕ}
 (h₁ : ∀ sa sd [AState sa] [DState sd], sys.tr sa (a.f sa) = some sd → f sd < f sa)
 (h₂ : ∀ sd sa [DState sd] [AState sa], sys.tr sd (d.f sd) = some sa → f sa ≤ f sd) :
-s.d_wins ⟨a, d⟩ := by
-  have h₃ := s.d_wins_of_lt_le (a := a) (d := d) (p := λ _ => True) (f := f)
+s.dWins ⟨a, d⟩ := by
+  have h₃ := s.dWins_of_lt_le (a := a) (d := d) (p := λ _ => True) (f := f)
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
