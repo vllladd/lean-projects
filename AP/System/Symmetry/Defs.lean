@@ -27,7 +27,7 @@ instance : One sys.Symmetry := ⟨one⟩
 theorem one_def : (1 : sys.Symmetry) = one := rfl
 
 instance : Inhabited sys.Symmetry := ⟨1⟩
-theorem default_eq : (default : sys.Symmetry) = 1 := rfl
+theorem default_def : (default : sys.Symmetry) = 1 := rfl
 
 @[simp]
 def simFn (sym : sys.Symmetry) (f : S → T) (s : S) : T :=

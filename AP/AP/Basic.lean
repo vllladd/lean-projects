@@ -39,7 +39,7 @@ theorem Strat.WF.wf_d {st : Strat} [hst : st.WF] : st.d.WF := by
 
 instance : Inhabited State := ⟨initState 0 0⟩
 
-@[simp] theorem State.default_eq : (default : State) = initState 0 0 := rfl
+@[simp] theorem State.default_def : (default : State) = initState 0 0 := rfl
 
 @[simp] instance : sys.WF default := by
   simp [System.wf_def, System.initial_def]; use default; simp [sys]
@@ -417,10 +417,10 @@ instance : Inhabited AStrat := ⟨⟨State.chooseAMove⟩⟩
 instance : Inhabited DStrat := ⟨⟨State.chooseDMove⟩⟩
 instance : Inhabited Strat := ⟨default, default⟩
 
-@[simp] theorem AStrat.default_eq : (default : AStrat) = ⟨State.chooseAMove⟩ := rfl
-@[simp] theorem DStrat.default_eq : (default : DStrat) = ⟨State.chooseDMove⟩ := rfl
+@[simp] theorem AStrat.default_def : (default : AStrat) = ⟨State.chooseAMove⟩ := rfl
+@[simp] theorem DStrat.default_def : (default : DStrat) = ⟨State.chooseDMove⟩ := rfl
 
-@[simp] theorem Strat.default_eq : (default : Strat) =
+@[simp] theorem Strat.default_def : (default : Strat) =
 ⟨⟨State.chooseAMove⟩, ⟨State.chooseDMove⟩⟩ := rfl
 
 instance : AStrat.WF ⟨State.chooseAMove⟩ := by

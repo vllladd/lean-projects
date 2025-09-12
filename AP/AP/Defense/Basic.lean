@@ -10,7 +10,7 @@ instance : Inhabited Defense :=
   ⟨{cnd := λ _ => True, ps := ∅, f := λ _ => none}⟩
 
 @[simp]
-theorem default_eq : (default : Defense) =
+theorem default_def : (default : Defense) =
 {cnd := λ _ => True, ps := ∅, f := λ _ => none} := rfl
 
 instance : WF default := ⟨by simp⟩
