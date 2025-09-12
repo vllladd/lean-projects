@@ -123,33 +123,3 @@ theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw
 
 theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' := by
   contrapose h₂; simp at h₂ ⊢; exact aHwsPw_of_le h₁ h₂
-
------
-
--- open Classical in noncomputable
--- def D (P : DStrat → Prop) (s₀ : State) : DStrat := .mk # λ s => do
---   let p ← s₀.getMoveAt s
---   let s' ← sys.tr s₀ p
---   let d ← choose? # λ (d : DStrat) =>
---     d.WF ∧ P d ∧ ∀ a, a.WF → s'.dWins ⟨a, d⟩
---   d.f s
--- 
--- @[simp] instance {P s₀} : (D P s₀).WF := by unfold D; infer_instance
--- 
--- example {s} {P : DStrat → Prop} [hs : AState s]
--- (h₁ : ∃ (d : DStrat), d.WF ∧ P d)
--- (h₂ : ∀ (d : DStrat), d.WF → P d → ∃ (a : AStrat), a.WF ∧ s.aWins ⟨a, d⟩) :
--- ∃ p s', sys.tr s p = some s' ∧ ∀ (d : DStrat), d.WF →
--- P d → ∃ (a : AStrat), a.WF ∧ s'.aWins ⟨a, d⟩ := by
---   have h₃ : sys.hasTr s
---   · obtain ⟨d₀, Hd₀, hd₀⟩ := h₁
---     specialize h₂ d₀ Hd₀ hd₀
---     obtain ⟨a, Ha, h₂⟩ := h₂
---     exact AState.hasTr_of_aWins h₂
---   contrapose! h₂
---   simp only [State.not_aWins_iff] at h₂ ⊢
---   use D P s, inferInstance, sorry
---   intro a Ha
---   obtain ⟨s', h₄⟩ := a.validTr h₃
---   specialize h₂ _ _ h₄
---   sorry
