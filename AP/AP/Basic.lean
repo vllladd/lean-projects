@@ -247,9 +247,14 @@ theorem AStrat.wf_iff {a : AStrat} : a.WF ↔ ∀ {s} [AState s],
 sys.hasTr s → sys.validTr s (a.f s) := by
   simp [AState.iff, AStrat.wf_def]; tauto
 
-theorem DStrat.wf_iff {d : DStrat} : d.WF ↔ ∀ {s} [DState s],
-sys.hasTr s → sys.validTr s (d.f s) := by
-  simp [DState.iff, DStrat.wf_def]; tauto
+theorem DStrat.wf_iff {d : DStrat} : d.WF ↔ ∀ s [DState s], sys.validTr s (d.f s) := by
+  simp [DState.iff, DStrat.wf_def]
+  apply forall_iff_of; intro s
+  apply forall_iff_of; intro hs
+  simp; rw [or_iff_not_imp_left]
+  intro h₁ h₂
+  replace hs : DState s; use hs
+  simp at h₁
 
 theorem State.tr_eq_some_iff_of_aTurn {s : State} {s' p} (ht : s.aTurn) :
 sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw) ∧
@@ -291,7 +296,7 @@ theorem DState.tr_ne_none {sd} [hd : DState sd] {st : DStrat} [hst : st.WF] :
 sys.tr sd (st.f sd) ≠ none := by
   have h₁ := hd.hasTr
   rw [DStrat.wf_iff] at hst
-  obtain ⟨sa, h₂⟩ := hst h₁
+  obtain ⟨sa, h₂⟩ := @hst sd _
   simp [h₂]
 
 @[simp]
@@ -340,6 +345,8 @@ instance {f} [hf : sys.SimFn f] : AStrat.WF ⟨f⟩ := by
 instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
   rw [DStrat.wf_iff]; rw [System.simFn_def] at hf
   rintro s ⟨hs, ht⟩; apply hf
+  replace hs : DState s; use hs
+  simp
 
 theorem State.aState_or_dState {s} [hs : sys.WF s] : AState s ∨ DState s := by
   simp [AState.iff, DState.iff, hs]
@@ -351,7 +358,7 @@ theorem AStrat.WF.validTr {s} [hs : AState s] {st : AStrat} [hst : st.WF]
 @[simp]
 theorem DStrat.WF.validTr (s : State) [hs : DState s] {st : DStrat} [hst : st.WF] :
 sys.validTr s (st.f s) := by
-  rw [DStrat.wf_iff] at hst; apply hst; simp
+  rw [DStrat.wf_iff] at hst; apply hst
 
 theorem AStrat.validTr {s} [hs : AState s] {st : AStrat} [hst : st.WF]
 (h : sys.hasTr s) : sys.validTr s (st.f s) := hst.validTr h

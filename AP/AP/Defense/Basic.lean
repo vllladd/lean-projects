@@ -18,3 +18,4 @@ theorem default_def : (default : Defense) =
 {cnd := λ _ => True, ps := ∅, f := λ _ => none} := rfl
 
 @[simp] instance : WF default := ⟨by simp⟩
+@[simp] instance {d} : (dse.st d).WF := by unfold st; infer_instance

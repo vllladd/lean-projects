@@ -287,7 +287,7 @@ instance {f} [hf : sys.SimFn f] : AStrat.WF ⟨f⟩ := by
   rw [AStrat.wf_iff]; intro s hs h₁; exact hf.1 h₁
 
 instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
-  rw [DStrat.wf_iff]; intro s hs h₁; exact hf.1 h₁
+  rw [DStrat.wf_iff]; intro s hs; apply hf.1; simp
 
 theorem exi_strat_of_simFn f [hf : sys.SimFn f] :
 ∃ (a : AStrat) (d : DStrat), a.WF ∧ d.WF ∧ f = Strat.f ⟨a, d⟩ := by

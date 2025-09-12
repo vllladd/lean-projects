@@ -78,8 +78,8 @@ instance {d : DStrat} {hist₁ hist₂} [hd : d.WF] :
 DStrat.WF # .mk' # λ s => d.f # s.setHistAt hist₁ hist₂ := by
   have hd' := hd
   rw [DStrat.wf_iff] at hd ⊢
-  intro s hs h₁
-  specialize hd h₁
+  intro s hs
+  specialize @hd s _
   dsimp
   generalize hs' : s.setHistAt hist₁ hist₂ = s'
   simp [State.setHistAt] at hs'

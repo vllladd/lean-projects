@@ -12,11 +12,13 @@ deriving Inhabited, DecidableEq
 
 namespace Edge
 
+variable {e e₁ e₂ : Edge}
+
 @[simp] def hor (e : Edge) : Prop := e.dir.vert
 @[simp] def vert (e : Edge) : Prop := e.dir.hor
 
-instance {e : Edge} : Decidable e.hor := by unfold hor; infer_instance
-instance {e : Edge} : Decidable e.vert := by unfold vert; infer_instance
+instance : Decidable e.hor := by unfold hor; infer_instance
+instance : Decidable e.vert := by unfold vert; infer_instance
 
 def memPoints (e : Edge) (p : PointZ) : Bool :=
   match e.dir with
@@ -28,23 +30,22 @@ def memPoints (e : Edge) (p : PointZ) : Bool :=
 def points (e : Edge) : Set PointZ :=
   {p | e.memPoints p}
 
-theorem mem_points_iff_memPoints {e : Edge} {p} :
-p ∈ e.points ↔ e.memPoints p := by rfl
+theorem mem_points_iff_memPoints {p} : p ∈ e.points ↔ e.memPoints p := by rfl
 
-instance {e : Edge} {p} : Decidable # p ∈ e.points :=
+instance {p} : Decidable # p ∈ e.points :=
   match h : e.memPoints p with
   | true => .isTrue # by simp [mem_points_iff_memPoints, h]
   | false => .isFalse # by simp [mem_points_iff_memPoints, h]
 
-theorem memPoints_eq {e : Edge} {p} : e.memPoints p = decide (p ∈ e.points) := by
+theorem memPoints_eq {p} : e.memPoints p = decide (p ∈ e.points) := by
   simp [mem_points_iff_memPoints]
 
-theorem points_inj {e₁ e₂ : Edge} (h : e₁.points = e₂.points) : e₁ = e₂ := by
+theorem points_inj (h : e₁.points = e₂.points) : e₁ = e₂ := by
   rw [Set.ext_iff] at h; rcases e₁, e₂ with ⟨⟨d₁, n₁⟩, ⟨d₂, n₂⟩⟩; simp
   cases d₁ <;> cases d₂ <;> simp <;> simp [points, memPoints] at h <;> exact h
 
 @[simp]
-theorem points_eq_points_iff {e₁ e₂ : Edge} : e₁.points = e₂.points ↔ e₁ = e₂ :=
+theorem points_eq_points_iff : e₁.points = e₂.points ↔ e₁ = e₂ :=
   ⟨points_inj, λ h => by rw [h]⟩
 
 def dist (e : Edge) (p : PointZ) : ℤ :=
@@ -63,7 +64,7 @@ def getBorderPoint₀ (e : Edge) (p : PointZ) : PointZ :=
 def getBorderPoints (e : Edge) (p : PointZ) (d : ℕ) : List PointZ :=
   [e.getBorderPoint p (-d : ℤ), e.getBorderPoint p d]
 
-theorem sorted_lt_getBorderPoints {e : Edge} {p d} (h : d ≠ 0) :
+theorem sorted_lt_getBorderPoints {p d} (h : d ≠ 0) :
 (e.getBorderPoints p d).Sorted (· < ·) := by
   simp [getBorderPoints, getBorderPoint]
   split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
@@ -105,4 +106,16 @@ def cnd (e : Edge) (s : State) : Prop :=
   | 1 => (p₀ :: get 1).all (· ∈ s.taken)
   | d => 0 < d
 
+@[simp] theorem ps_defense : e.defense.ps = e.points := rfl
+
 -- #check 0 #exit
+
+theorem wf_defense : e.defense.WF := by
+  constructor
+  intro s hs h a Ha d Hd n
+  sorry
+
+-- #check 0 #exit
+
+@[simp]
+instance : e.defense.WF := wf_defense

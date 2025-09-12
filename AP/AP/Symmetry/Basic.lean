@@ -91,8 +91,7 @@ instance {a : AStrat} {sym : sys.Symmetry} [ha : a.WF] [H : sym.WF] : (a.sym sym
 @[simp]
 instance {d : DStrat} {sym : sys.Symmetry} [hd : d.WF] [H : sym.WF] : (d.sym sym).WF := by
   rw [DStrat.wf_iff]
-  intro s hs h
-  rw [sym.hasTr_iff'] at h
+  intro s hs
   simp [DStrat.sym]
   rw [sym.validTr_iff']
   simp

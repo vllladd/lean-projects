@@ -251,7 +251,7 @@ theorem AStrat.wf_set_of_validTr {a : AStrat} {s p} [ha : a.WF]
 
 theorem DStrat.wf_set_of_validTr {d : DStrat} {s p} [hd : d.WF]
 (h : sys.validTr s p) : (d.set s p).WF := by
-  simp [set, wf_iff]; intro s₁ hs₁ h₁; unfold fn_set; split_ifs with h₂
+  simp [set, wf_iff]; intro s₁ hs₁; unfold fn_set; split_ifs with h₂
   subst h₂; exact h; simp
 
 theorem AStrat.wf_set_of_tr {a : AStrat} {s s' p} [ha : a.WF]
