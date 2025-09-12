@@ -95,37 +95,40 @@ theorem cnd_defense_edge₂ {s} (h : c.defenseCnd s) : c.edge₂.defense.cnd s :
 
 -- #check 0 #exit
 
-theorem wf_defense : c.defense.WF := by
+theorem validTr_defense : c.defense.ValidTr := by
   constructor
-  intro s hs h a Ha d Hd n
+  sorry
+
+theorem wf_defense : c.defense.WF := by
+  have H := c.validTr_defense
+  constructor; intro s hs h a Ha d Hd n
   have h₁ := cnd_defense_edge₁ h
   have h₂ := cnd_defense_edge₂ h
   have He₁ : c.edge₁.defense.WF; infer_instance
   have He₂ : c.edge₂.defense.WF; infer_instance
   generalize he₁ : c.edge₁.defense = e₁ at h₁ He₁
   generalize he₂ : c.edge₂.defense = e₂ at h₂ He₂
-  rw [Defense.wf_def] at He₁ He₂
-  specialize He₁ s h₁ a (e₂.st d) n
-  specialize He₂ s h₂ a (e₁.st d) n
+  have H₁ := He₁.2 h₁ a (e₂.st d) n
+  have H₂ := He₂.2 h₂ a (e₁.st d) n
   
-  generalize hr : sys.simulate (Strat.f ⟨a, e₁.st # e₂.st d⟩) s n = r at He₁
+  generalize hr : sys.simulate (Strat.f ⟨a, e₁.st # e₂.st d⟩) s n = r at H₁
   
   have h₃ : sys.simulate (Strat.f ⟨a, e₂.st # e₁.st d⟩) s n = r
   · rw [←hr]
-    apply sys.simulate_congr
+    -- apply simulate_congr <;> intro k hk b hb h₃ h₄ h₅ <;> simp
     sorry
   
-  rw [h₃] at He₂; clear h₃
+  rw [h₃] at H₂; clear h₃
   
   have h₄ : sys.simulate (Strat.f ⟨a, c.defense.st d⟩) s n = r
   · rw [←hr]
-    apply sys.simulate_congr
+    apply simulate_congr <;> intro k hk b hb h₃ h₄ h₅ <;> simp
     sorry
   
   rw [h₄]
   subst he₁ he₂
-  simp at He₁ He₂
-  simp [points, He₁, He₂]
+  simp at H₁ H₂
+  simp [points, H₁, H₂]
 
 -- #check 0 #exit
 

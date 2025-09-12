@@ -110,9 +110,13 @@ def cnd (e : Edge) (s : State) : Prop :=
 
 -- #check 0 #exit
 
-theorem wf_defense : e.defense.WF := by
+theorem validTr_defense : e.defense.ValidTr := by
   constructor
-  intro s hs h a Ha d Hd n
+  sorry
+
+theorem wf_defense : e.defense.WF := by
+  have H := e.validTr_defense
+  constructor; intro s hs h a Ha d Hd n
   sorry
 
 -- #check 0 #exit
