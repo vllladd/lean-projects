@@ -65,7 +65,7 @@ def defenseFn (cor : Corner) (s : State) : Option PointZ :=
   cor.edge₁.defense.f s <|> cor.edge₂.defense.f s
 
 def defense (cor : Corner) : Defense :=
-  { cnd := λ s => 6 ≤ cor.dist s.aPos
+  { cnd := cor.defenseCnd
   , ps := cor.points
   , f := cor.defenseFn
   }
