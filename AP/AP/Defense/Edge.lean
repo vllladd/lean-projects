@@ -21,9 +21,9 @@ instance {e : Edge} : Decidable e.vert := by unfold vert; infer_instance
 def memPoints (e : Edge) (p : PointZ) : Bool :=
   match e.dir with
   | .up => p.y ≤ e.offset
+  | .right => e.offset ≤ p.x
   | .down => e.offset ≤ p.y
   | .left => p.x ≤ e.offset
-  | .right => e.offset ≤ p.x
 
 def points (e : Edge) : Set PointZ :=
   {p | e.memPoints p}
@@ -36,7 +36,6 @@ instance {e : Edge} {p} : Decidable # p ∈ e.points :=
   | true => .isTrue # by simp [mem_points_iff_memPoints, h]
   | false => .isFalse # by simp [mem_points_iff_memPoints, h]
 
-@[simp]
 theorem memPoints_eq {e : Edge} {p} : e.memPoints p = decide (p ∈ e.points) := by
   simp [mem_points_iff_memPoints]
 

@@ -11,6 +11,8 @@ namespace Dir
 
 open Dir
 
+variable {d : Dir}
+
 def point : Dir → PointZ
 | up => ⟨0, -1⟩
 | down => ⟨0, 1⟩
@@ -23,8 +25,8 @@ def point : Dir → PointZ
 @[simp] theorem point_right : right.point = ⟨1, 0⟩ := rfl
 
 @[simp]
-theorem point_ne_zero {t : Dir} : t.point ≠ 0 := by
-  cases t <;> decide
+theorem point_ne_zero : d.point ≠ 0 := by
+  cases d <;> decide
 
 def hor : Dir → Prop
 | left => True
@@ -46,19 +48,69 @@ def vert : Dir → Prop
 @[simp] theorem not_vert_left : ¬left.vert := λ h => h
 @[simp] theorem not_vert_right : ¬right.vert := λ h => h
 
-@[simp] theorem not_hor {d : Dir} : ¬d.hor ↔ d.vert := by cases d <;> simp
-@[simp] theorem not_vert {d : Dir} : ¬d.vert ↔ d.hor := by cases d <;> simp
+@[simp] theorem not_hor : ¬d.hor ↔ d.vert := by cases d <;> simp
+@[simp] theorem not_vert : ¬d.vert ↔ d.hor := by cases d <;> simp
 
-instance {d : Dir} : Decidable d.hor :=
+instance : Decidable d.hor :=
   match d with
   | up => .isFalse # λ h => h
   | down => .isFalse # λ h => h
   | left => .isTrue trivial
   | right => .isTrue trivial
 
-instance {d : Dir} : Decidable d.vert :=
+instance : Decidable d.vert :=
   match d with
   | up => .isTrue trivial
   | down => .isTrue trivial
   | left => .isFalse # λ h => h
   | right => .isFalse # λ h => h
+
+@[simp]
+def rotRight : Dir → Dir
+| up => right
+| right => down
+| down => left
+| left => up
+
+@[simp]
+def rotLeft : Dir → Dir
+| up => left
+| right => up
+| down => right
+| left => down
+
+@[simp]
+def inv : Dir → Dir
+| up => down
+| right => left
+| down => up
+| left => right
+
+instance : Inv Dir := ⟨inv⟩
+theorem inv_def : d⁻¹ = d.inv := rfl
+
+@[simp] theorem rotRight_rotRight : d.rotRight.rotRight = d⁻¹ := by cases d <;> rfl
+@[simp] theorem rotLeft_rotLeft : d.rotLeft.rotLeft = d.inv := by cases d <;> rfl
+@[simp] theorem rotLeft_rotRight : d.rotLeft.rotRight = d := by cases d <;> rfl
+@[simp] theorem rotRight_rotLeft : d.rotRight.rotLeft = d := by cases d <;> rfl
+@[simp] theorem rotLeft_inv : d.rotLeft⁻¹ = d.rotRight := by cases d <;> rfl
+@[simp] theorem rotRIght_inv : d.rotRight⁻¹ = d.rotLeft := by cases d <;> rfl
+@[simp] theorem inv_rotLeft : d⁻¹.rotLeft = d.rotRight := by cases d <;> rfl
+@[simp] theorem inv_rotRIght : d⁻¹.rotRight = d.rotLeft := by cases d <;> rfl
+@[simp] theorem inv_inv : d⁻¹⁻¹ = d := by cases d <;> rfl
+
+end Dir
+
+namespace Point
+
+variable {α : Type*} {p : Point α}
+
+def coord (p : Point α) (d : Dir) : α :=
+  if d.hor then p.x else p.y
+
+@[simp] theorem coord_up : p.coord .up = p.y := rfl
+@[simp] theorem coord_down : p.coord .down = p.y := rfl
+@[simp] theorem coord_left : p.coord .left = p.x := rfl
+@[simp] theorem coord_right : p.coord .right = p.x := rfl
+
+end Point

@@ -16,3 +16,8 @@ def st (dse : Defense) (d : DStrat) : DStrat :=
 class WF (dse : Defense) : Prop where
   h : ∀ s [sys.WF s], dse.cnd s → ∀ (a : AStrat) [a.WF], ∀ (d : DStrat) [d.WF] n,
     (sys.simulate (Strat.f ⟨a, dse.st d⟩) s n).1.aPos ∉ dse.ps
+
+def sym (dse : Defense) (sym : sys.Symmetry) : Defense where
+  cnd := λ s => dse.cnd # sym.fs s
+  ps := sym.ft '' dse.ps
+  f := λ s => dse.f # sym.fs s
