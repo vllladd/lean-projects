@@ -115,6 +115,8 @@ theorem dist_eq_zero_of_edge₁_eq_some {s p}
 (h : c.edge₁.defense.f s = some p) : c.dist p = 0 := by
   sorry
 
+-- #check 0 #exit
+
 theorem dist_eq_zero_of_edge₂_eq_some {s p}
 (h : c.edge₂.defense.f s = some p) : c.dist p = 0 := by
   sorry

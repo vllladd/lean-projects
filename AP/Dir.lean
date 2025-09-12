@@ -99,6 +99,9 @@ theorem inv_def : d⁻¹ = d.inv := rfl
 @[simp] theorem inv_rotRIght : d⁻¹.rotRight = d.rotLeft := by cases d <;> rfl
 @[simp] theorem inv_inv : d⁻¹⁻¹ = d := by cases d <;> rfl
 
+theorem hor_iff : d.hor ↔ d = left ∨ d = right := by cases d <;> simp
+theorem vert_iff : d.vert ↔ d = up ∨ d = down := by cases d <;> simp
+
 end Dir
 
 namespace Point
