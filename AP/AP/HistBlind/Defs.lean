@@ -1,4 +1,4 @@
-import AP.AP.Bounded
+import AP.AP.Trap
 
 namespace AP
 
