@@ -450,8 +450,7 @@ theorem State.not_aHws_iff {s : State} [hs : sys.WF s] : ¬s.aHws ↔ s.dHws := 
 theorem State.not_dHws_iff {s : State} [hs : sys.WF s] : ¬s.dHws ↔ s.aHws := by
   simp [not_iff_comm']
 
-theorem AState.hasTr_of_aHws {sa} [hs : AState sa]
-(h : sa.aHws) : sys.hasTr sa := by
+theorem State.hasTr_of_aHws {s} (h : s.aHws) : sys.hasTr s := by
   obtain ⟨a, h₁, h₂⟩ := h
   specialize h₂ (.mk # λ _ => none) inferInstance 1
   simp at h₂
@@ -463,7 +462,7 @@ theorem AState.aHws_iff_tr {sa} [hs : AState sa] :
 sa.aHws ↔ ∃ p sd, sys.tr sa p = some sd ∧ sd.aHws := by
   constructor
   · intro h
-    obtain h₁ := hs.hasTr_of_aHws h
+    obtain h₁ := State.hasTr_of_aHws h
     obtain ⟨a, ha, h⟩ := h
     obtain ⟨sd, h₂⟩ := ha.validTr h₁
     use a.f sa, sd, h₂, a, ha

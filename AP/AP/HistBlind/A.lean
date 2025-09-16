@@ -259,7 +259,7 @@ theorem State.dHws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHis
 
 theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
 (h₁ : sa.aHws) : ∃ sd, sys.tr sa (aHistBlind.f sa) = some sd ∧ sd.aHws := by
-  have h₂ := ha.hasTr_of_aHws h₁
+  have h₂ := sa.hasTr_of_aHws h₁
   obtain ⟨sd, hd⟩ := aHistBlind.validTr h₂
   use sd, hd
   have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sa.hist = sa

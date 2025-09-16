@@ -323,7 +323,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
   generalize hS : (Finset.Icc 0 n).map' (λ k =>
     sys.simulate (Strat.f ⟨a, d⟩) s₀ k |>.1.aPos) = S
   generalize hp' : (ps ∪ s.taken ∪ S : Set' _) = ps'
-  generalize ha' : aMimic ⟨a, d⟩ s₀ = a'
+  generalize ha' : aMimic ⟨a, d⟩ s₀ s₀ = a'
   generalize hd' : DStrat.mk (λ sd => some # (sd.taken ∪ ps').max! + ⟨1, 0⟩) = d'
   have Ha : a'.WF; subst ha'; infer_instance
   have Hd : d'.WF; subst hd'; infer_instance
