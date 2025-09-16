@@ -120,6 +120,14 @@ e.dist s.aPos ≤ 5 ∧ p ∉ s.taken ∧
   · sorry
   · sorry
 
+theorem dist_eq_zero_of_eq_some {s p} (h : e.defense.f s = some p) : e.dist p = 0 := by
+  obtain ⟨h₁, h₂, z, h₃, rfl⟩ := of_eq_some h; simp [getBorderPoint]; split_ifs with h₄
+  · rw [Dir.vert_iff] at h₄; rcases h₄ with h₄ | h₄ <;> simp [dist, h₄]
+  · simp [Dir.hor_iff] at h₄; rcases h₄ with h₄ | h₄ <;> simp [dist, h₄]
+
+theorem not_mem_taken_of_eq_some {s p} (h : e.defense.f s = some p) : p ∉ s.taken := by
+  obtain ⟨h₁, h₂, z, h₃, h₄⟩ := of_eq_some h; exact h₂
+
 -- #check 0 #exit
 
 theorem validTr_defense : e.defense.ValidTr := by

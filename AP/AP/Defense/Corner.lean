@@ -111,16 +111,6 @@ theorem cnd'_of_reachable {s s'} [hs : sys.WF s]
 (h₁ : sys.Reachable s s') (h₂ : c.cnd' s) : c.cnd' s' :=
   λ p hp h => s.mem_taken_of_reachable h₁ # h₂ p hp h
 
-theorem dist_eq_zero_of_edge₁_eq_some {s p}
-(h : c.edge₁.defense.f s = some p) : c.dist p = 0 := by
-  sorry
-
--- #check 0 #exit
-
-theorem dist_eq_zero_of_edge₂_eq_some {s p}
-(h : c.edge₂.defense.f s = some p) : c.dist p = 0 := by
-  sorry
-
 -- #check 0 #exit
 
 theorem edge₂_eq_none_of_edge₁_eq_some {s p} (H : c.cnd' s)
@@ -129,16 +119,35 @@ theorem edge₂_eq_none_of_edge₁_eq_some {s p} (H : c.cnd' s)
   by_contra h₂
   replace h₂ := Option.exists_eq_some_of_ne_none h₂
   obtain ⟨p₂, h₂⟩ := h₂
-  have hp₁ := dist_eq_zero_of_edge₁_eq_some h₁
-  have hp₂ := dist_eq_zero_of_edge₂_eq_some h₂
+  
   replace h₁ := Edge.of_eq_some h₁
   replace h₂ := Edge.of_eq_some h₂
-  rcases h₁ with ⟨h₁, H₁, d₁, h₃, h₄⟩
-  rcases h₂ with ⟨h₂, H₂, d₂, h₅, h₆⟩
-  simp [Edge.getBorderPoint] at h₄ h₆
-  simp_rw [←Dir.not_hor, ite_not] at h₄
-  simp_rw [c.edge₂_vert_iff] at h₆
-  split_ifs at h₄ h₆ with h₇ <;> simp [edge₁] at h₇
+  
+  rcases h₁ with ⟨h₁, h₃, z₁, h₄, h₅⟩
+  rcases h₂ with ⟨h₂, h₆, z₂, h₇, h₈⟩
+  
+  simp [cnd'] at H
+  simp [Edge.getBorderPoint] at h₅ h₈
+  subst h₅ h₈
+  
+  cases h₉ : c.dir
+  simp_all [dist, Edge.dist, Point.dist, edge₁, edge₂, abs_le]; clear h₉
+  · rcases h₄ with ⟨h₄, H₄⟩
+    rcases h₇ with ⟨h₇, H₇⟩
+    apply h₃
+    clear h₃
+    apply H
+    · simp
+      by_contra! h₈
+      apply h₆
+      clear h₆
+      apply H
+      · simp
+        by_contra! h₉
+        sorry
+      sorry
+    sorry
+  · sorry
   · sorry
   · sorry
 
