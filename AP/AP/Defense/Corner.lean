@@ -131,7 +131,7 @@ theorem edge₂_eq_none_of_edge₁_eq_some {s p} (H : c.cnd' s)
   subst h₅ h₈
   
   cases h₉ : c.dir
-  simp_all [dist, Edge.dist, Point.dist, edge₁, edge₂, abs_le]; clear h₉
+  all_goals simp_all [dist, Edge.dist, Point.dist, edge₁, edge₂, abs_le]; clear h₉
   · rcases h₄ with ⟨h₄, H₄⟩
     rcases h₇ with ⟨h₇, H₇⟩
     apply h₃

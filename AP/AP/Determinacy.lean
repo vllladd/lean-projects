@@ -305,7 +305,7 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   obtain ⟨n, h₅⟩ := h₅
   use n + 2
   simp [hpa, h₁]
-  have h₆ : sys.tr sd ((dStratOfDWins sa).f sd) = some sa'
+  have h₆ : sys.tr sd (dStratOfDWins sa |>.f sd) = some sa'
   · have h₆ : sd.getMoveAt sa = some pa
     · apply getMoveAt_eq_some_of_tr_and_reachable h₁; rfl
     simp [-DState.tr_eq_some_iff, dStratOfDWins, mk_strat_fn, h₆, h₁]

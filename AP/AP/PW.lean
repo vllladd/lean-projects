@@ -52,47 +52,14 @@ sys.validTr (s.setPw pw) p = sys.validTr s p := by
 
 theorem State.aHws_setPw_of_le {s pw} [hs : sys.WF s]
 (h₁ : s.pw ≤ pw) (h₂ : s.aHws) : (s.setPw pw).aHws := by
-  have hs' := wf_setPw_of_le h₁
-  obtain ⟨a, Ha, h₂⟩ := h₂
-  use .mk (a.f # ·.setPw s.pw), inferInstance
-  intro d Hd n
-  specialize h₂ (.mk (d.f # ·.setPw pw)) inferInstance n
-  apply simulate_congr_rel_full (r := λ s₁ s₂ => s₁.pw = s.pw ∧ s₁.setPw pw = s₂)
-    h₂ (by simp) (by simp)
-  · rintro sa sa' sd hsa hsa' hsd h₃ ⟨h₀, h₄⟩
-    use sd.setPw pw
-    simp [-AState.tr_eq_some_iff] at h₃
-    have h₄' : sa'.setPw s.pw = sa; simpa [←h₄]
-    have h₅ : sys.tr sa' (a.f sa) = sd.setPw pw
-    · simp [-AState.tr_eq_some_iff, ←h₄]
-      rw [tr_setPw_eq_some_of (by linarith) h₃]
-    have h₆ : sys.validTr sa' (a.f sa) := ⟨_, h₅⟩
-    simp [-AState.tr_eq_some_iff, h₄', h₆]
-    use h₅; rwa [pw_eq_of_tr h₃]
-  · rintro sd sd' sa hsd hsd' hsa h₃ ⟨h₀, h₄⟩
-    have h₄' : sd'.setPw s.pw = sd; simpa [←h₄]
-    have h₅ : sd'.setPw pw = sd'; simp [←h₄]
-    simp [-DState.tr_eq_some_iff, ←h₄', h₅] at h₃
-    obtain ⟨sa', h₃, rfl⟩ := h₃
-    simp [-DState.tr_eq_some_iff]
-    rwa [setPw_eq_self_of]
-    simp [pw_eq_of_tr h₃, ←h₄]
-  -- rename' s => s₀, hs => hs₀; have hs' := wf_setPw_of_le h₁
-  -- apply aHws_of_mimic (r := λ s s' => s.pw = s₀.pw ∧ s.setPw pw = s' ∧ sys.hasTr s)
-  --   h₂ (by simp) (by simp [hasTr_of_aHws h₂])
-  -- · rintro sa sa' sd p hsa hsa' hsd ⟨H, h₃, H₁⟩ h₄; simp [-AState.tr_eq_some_iff]
-  --   subst h₃; simp at h₄ ⊢; rcases h₄ with ⟨⟨h₄, h₅, h₆⟩, rfl⟩
-  --   simp [h₄, h₅, setPw]; simp [H] at h₆ ⊢; trans ↑s₀.pw; exact h₆; simpa
-  -- · rintro sd sd' sa' p hsd hsd' hsa' ⟨H, h₃, H₁⟩ h₄
-  --   subst h₃
-  --   use sa'.setPw s₀.pw
-  --   simp [-DState.tr_eq_some_iff, pw_eq_of_tr h₄]
-  --   constructor
-  --   · simp at h₄ ⊢
-  --     rcases h₄ with ⟨⟨h₄, h₅⟩, rfl⟩
-  --     simp [h₄, h₅, H]
-
--- #check 0 #exit
+  have h₃ := wf_setPw_of_le h₁
+  apply aHws_of_rel (r := λ s₁ s₁' => s₁.pw = s.pw ∧ s₁.setPw pw = s₁') h₂ (by simp) (by simp)
+  · rintro sa sa' sd p hsa hsa' hsd ⟨h₄, rfl⟩ h₅; use sd.setPw pw
+    simp [-AState.tr_eq_some_iff, pw_eq_of_tr h₅, h₄]
+    exact tr_setPw_eq_some_of (by rwa [h₄]) h₅
+  · rintro sd sd' sa' p hsd hsd' hsa' ⟨h₄, rfl⟩ h₅; use sa'.setPw s.pw
+    simp [-DState.tr_eq_some_iff, pw_eq_of_tr h₅] at h₅ ⊢; obtain ⟨sa, h₅, rfl⟩ := h₅
+    simp [-DState.tr_eq_some_iff]; convert h₅; simpa [pw_eq_of_tr h₅]
 
 theorem State.dHws_of_setPw_le {s : State} {pw} [hs : sys.WF s]
 (h₁ : s.pw ≤ pw) (h₂ : (s.setPw pw).dHws) : s.dHws := by

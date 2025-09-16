@@ -25,33 +25,54 @@ theorem dMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s
 (h₃ : sys.validTr s₂ (st.d.f s₁)) : (dMimic st s₀ s₀).f s₂ = st.d.f s₁ := by
   simp [dMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
 
--- theorem State.aHws_of_mimic {s s'} {r : State → State → Prop}
--- [hs : sys.WF s] [hs' : sys.WF s'] (h₁ : s.aHws) (ht : s.aTurn = s'.aTurn) (h₂ : r s s')
--- (h₃ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd], sa.aHws → sa'.aHws → r sa sa' →
--- sys.tr sa p = some sd → ∃ sd', sys.tr sa' p = some sd' ∧ r sd sd')
--- (h₄ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'], sa'.aHws → r sd sd' →
--- sys.tr sd' p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ sys.hasTr sa ∧ r sa sa') : s'.aHws := by
---   apply aHws_of_ind (p := (λ s' => ∃ s, sys.WF s ∧ s.aHws ∧
---     s.aTurn = s'.aTurn ∧ sys.hasTr s ∧ r s s'))
---   · use s, hs, h₁, ht, hasTr_of_aHws h₁
---   · clear! s s'
---     rintro sa hsa ⟨s, hs, H, H₁, H₂, H₃⟩
---     simp at H₁
---     replace hs : AState s; use hs
---     obtain ⟨p, sd, H₂⟩ := H₂
---     have H₄ := DState.of_tr H₂
---     specialize h₃ H₃ H₂
---     obtain ⟨sd', H₅, H₆⟩ := h₃
---     use p, sd', H₅
---     have H₇ := DState.of_tr H₅
---     use sd; simpa
---   · clear! s s'
---     rintro sd' hsd' pd sa' ⟨sd, h₁, h₂, h₅, h₆⟩ h₇
---     have hsa' := AState.of_tr h₇
---     simp at h₂ ⊢
---     replace h₁ : DState sd; use h₁
---     specialize h₄ h₆ h₇
---     obtain ⟨sa, H₁, H₂⟩ := h₄
---     have H₃ := AState.of_tr H₁
---     use sa
---     simp [-AState.hasTr_iff, H₂]
+theorem State.aHws_of_rel {s s'} {r : State → State → Prop}
+[hs : sys.WF s] [hs' : sys.WF s'] (h₁ : s.aHws) (ht : s.aTurn = s'.aTurn) (h₂ : r s s')
+(h₃ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd], r sa sa' →
+sys.tr sa p = some sd → ∃ sd', sys.tr sa' p = some sd' ∧ r sd sd')
+(h₄ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'], r sd sd' →
+sys.tr sd' p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ r sa sa') : s'.aHws := by
+  apply aHws_of_ind (p := (λ s' => ∃ s,
+    sys.WF s ∧ s.aHws ∧ s.aTurn = s'.aTurn ∧ r s s'))
+  · use s
+  · clear! s s'
+    rintro sa hsa ⟨s, hs, H, H₁, H₃⟩
+    simp at H₁
+    replace hs : AState s; use hs
+    obtain ⟨p, sd, H₂, Hs⟩ := hs.aHws_iff_tr.mp H
+    have H₄ := DState.of_tr H₂
+    specialize h₃ H₃ H₂
+    obtain ⟨sd', H₅, H₆⟩ := h₃
+    use p, sd', H₅
+    have H₇ := DState.of_tr H₅
+    use sd
+    simp [Hs, H₆]
+  · clear! s s'
+    rintro sd' hsd' pd sa' ⟨sd, h₁, h₂, h₅, h₆⟩ h₇
+    have hsa' := AState.of_tr h₇
+    simp at h₅ ⊢
+    replace h₁ : DState sd; use h₁
+    specialize h₄ h₆ h₇
+    obtain ⟨sa, H₁, H₂⟩ := h₄
+    have H₃ := AState.of_tr H₁
+    use sa
+    rw [h₁.aHws_iff_tr] at h₂
+    specialize h₂ _ _ H₁
+    simpa [-AState.hasTr_iff, H₂]
+
+theorem State.aHws_of_fn' {s} {f : State → State}
+[hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
+(h₂ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd], f sa = sa' →
+sys.tr sa p = some sd → ∃ sd', sys.tr sa' p = some sd' ∧ f sd = sd')
+(h₃ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'], f sd = sd' →
+sys.tr sd' p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ f sa = sa') : (f s).aHws :=
+  aHws_of_rel (r := (f · = ·)) h₁ ht rfl h₂ h₃
+
+theorem State.aHws_of_fn {s} {f : State → State}
+[hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
+(h₂ : ∀ {sa sd p} [AState sa] [AState (f sa)] [DState sd],
+sys.tr sa p = some sd → sys.tr (f sa) p = some (f sd))
+(h₃ : ∀ {sd sa' p} [DState sd] [DState (f sd)] [AState sa'],
+sys.tr (f sd) p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ f sa = sa') : (f s).aHws := by
+  apply s.aHws_of_fn' h₁ ht
+  · rintro sa sa' sd p hsa hsa' hsd rfl h₄; simp [-AState.tr_eq_some_iff]; exact h₂ h₄
+  · rintro sd sd' sa' p hsd hsd' hsa' rfl h₄; exact h₃ h₄
