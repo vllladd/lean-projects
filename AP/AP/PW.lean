@@ -77,6 +77,22 @@ theorem State.aHws_setPw_of_le {s pw} [hs : sys.WF s]
     simp [-DState.tr_eq_some_iff]
     rwa [setPw_eq_self_of]
     simp [pw_eq_of_tr h₃, ←h₄]
+  -- rename' s => s₀, hs => hs₀; have hs' := wf_setPw_of_le h₁
+  -- apply aHws_of_mimic (r := λ s s' => s.pw = s₀.pw ∧ s.setPw pw = s' ∧ sys.hasTr s)
+  --   h₂ (by simp) (by simp [hasTr_of_aHws h₂])
+  -- · rintro sa sa' sd p hsa hsa' hsd ⟨H, h₃, H₁⟩ h₄; simp [-AState.tr_eq_some_iff]
+  --   subst h₃; simp at h₄ ⊢; rcases h₄ with ⟨⟨h₄, h₅, h₆⟩, rfl⟩
+  --   simp [h₄, h₅, setPw]; simp [H] at h₆ ⊢; trans ↑s₀.pw; exact h₆; simpa
+  -- · rintro sd sd' sa' p hsd hsd' hsa' ⟨H, h₃, H₁⟩ h₄
+  --   subst h₃
+  --   use sa'.setPw s₀.pw
+  --   simp [-DState.tr_eq_some_iff, pw_eq_of_tr h₄]
+  --   constructor
+  --   · simp at h₄ ⊢
+  --     rcases h₄ with ⟨⟨h₄, h₅⟩, rfl⟩
+  --     simp [h₄, h₅, H]
+
+-- #check 0 #exit
 
 theorem State.dHws_of_setPw_le {s : State} {pw} [hs : sys.WF s]
 (h₁ : s.pw ≤ pw) (h₂ : (s.setPw pw).dHws) : s.dHws := by
