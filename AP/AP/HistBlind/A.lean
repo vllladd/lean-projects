@@ -259,7 +259,7 @@ theorem State.aHws_setHist_of_aHws {s hist} [hs : sys.WF s]
   · simp at h₁; exact h₁
   apply aHws_of_rel (r := λ s₁ s₂ => sys.Reachable s s₁ ∧
     s₁.setHistAt s.hist hist = s₂) h (by simp) (by simp)
-  · rintro sa sa' sd p hsa hsa' hsd ⟨h₁, rfl⟩ h₂
+  · rintro sa sa' sd p hsa hsa' hsd H₁ H₂ ⟨h₁, rfl⟩ h₂
     have hr := h₁.trans # sys.reachable_of_tr h₂
     have h₃ := hist_suffix_of_reachable h₁
     have h₄ := hist_suffix_of_reachable hr
@@ -271,7 +271,7 @@ theorem State.aHws_setHist_of_aHws {s hist} [hs : sys.WF s]
     simp [-AState.tr_eq_some_iff, setHistAt']; refine ⟨?_, hr⟩
     use sd, h₂; simp [hist_eq_of_tr h₂]
     rw [Nat.succ_sub # length_hist_le_of_reachable h₁]; rfl
-  · rintro sd sd' sa' p hsd hsd' hsa' ⟨h₁, rfl⟩ h₂
+  · rintro sd sd' sa' p hsd hsd' hsa' H₁ H₂ ⟨h₁, rfl⟩ h₂
     -- have hr := h₁.trans # sys.reachable_of_tr h₂
     -- have h₃ := hist_suffix_of_reachable h₁
     -- have h₄ := hist_suffix_of_reachable hr
@@ -353,9 +353,9 @@ theorem State.aHws_histBlind_of_aHws {s} [hs : sys.WF s] (h : s.aHws) :
 ∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ := by
   use aHistBlind, inferInstance
   intro d Hd
-  apply aWins_of_ind h <;> clear! s
-  · exact @AState.aHistBlind_tr_aHws
-  intro sd hd sa h₁ h₂
+  apply aWins_of_ind h
+  · intro sa hsa H; apply AState.aHistBlind_tr_aHws
+  intro sd hd sa H h₁ h₂
   dsimp at h₂
   rw [DState.aHws_iff_tr] at h₁
   apply h₁; exact h₂

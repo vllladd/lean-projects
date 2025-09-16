@@ -27,52 +27,75 @@ theorem dMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s
 
 theorem State.aHws_of_rel {s s'} {r : State → State → Prop}
 [hs : sys.WF s] [hs' : sys.WF s'] (h₁ : s.aHws) (ht : s.aTurn = s'.aTurn) (h₂ : r s s')
-(h₃ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd], r sa sa' →
+(h₃ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd],
+sys.Reachable s sa → sys.Reachable s' sa' → r sa sa' →
 sys.tr sa p = some sd → ∃ sd', sys.tr sa' p = some sd' ∧ r sd sd')
-(h₄ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'], r sd sd' →
+(h₄ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'],
+sys.Reachable s sd → sys.Reachable s' sd' → r sd sd' →
 sys.tr sd' p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ r sa sa') : s'.aHws := by
-  apply aHws_of_ind (p := (λ s' => ∃ s,
-    sys.WF s ∧ s.aHws ∧ s.aTurn = s'.aTurn ∧ r s s'))
+  apply aHws_of_ind (p := (λ s₂ => ∃ s₁,
+    sys.Reachable s s₁ ∧ sys.WF s₁ ∧ s₁.aHws ∧ s₁.aTurn = s₂.aTurn ∧ r s₁ s₂))
   · use s
-  · clear! s s'
-    rintro sa hsa ⟨s, hs, H, H₁, H₃⟩
+  · rintro sa' hsa' HR' ⟨sa, HR, hsa, H, H₁, H₃⟩
     simp at H₁
-    replace hs : AState s; use hs
-    obtain ⟨p, sd, H₂, Hs⟩ := hs.aHws_iff_tr.mp H
+    replace hsa : AState sa; use hsa
+    obtain ⟨p, sd, H₂, Hs⟩ := hsa.aHws_iff_tr.mp H
     have H₄ := DState.of_tr H₂
-    specialize h₃ H₃ H₂
+    specialize h₃ HR HR' H₃ H₂
     obtain ⟨sd', H₅, H₆⟩ := h₃
     use p, sd', H₅
     have H₇ := DState.of_tr H₅
     use sd
     simp [Hs, H₆]
-  · clear! s s'
-    rintro sd' hsd' pd sa' ⟨sd, h₁, h₂, h₅, h₆⟩ h₇
+    exact sys.reachable_right HR H₂
+  · rintro sd' hsd' pd sa' HR' ⟨sd, HR, h₁, h₂, h₅, h₆⟩ h₇
     have hsa' := AState.of_tr h₇
     simp at h₅ ⊢
     replace h₁ : DState sd; use h₁
-    specialize h₄ h₆ h₇
+    specialize h₄ HR HR' h₆ h₇
     obtain ⟨sa, H₁, H₂⟩ := h₄
     have H₃ := AState.of_tr H₁
     use sa
     rw [h₁.aHws_iff_tr] at h₂
     specialize h₂ _ _ H₁
-    simpa [-AState.hasTr_iff, H₂]
+    simp [-AState.hasTr_iff, H₂, h₂]
+    exact sys.reachable_right HR H₁
 
 theorem State.aHws_of_fn' {s} {f : State → State}
 [hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
-(h₂ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd], f sa = sa' →
+(h₂ : ∀ {sa sa' sd p} [AState sa] [AState sa'] [DState sd],
+sys.Reachable s sa → sys.Reachable (f s) sa' → f sa = sa' →
 sys.tr sa p = some sd → ∃ sd', sys.tr sa' p = some sd' ∧ f sd = sd')
-(h₃ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'], f sd = sd' →
+(h₃ : ∀ {sd sd' sa' p} [DState sd] [DState sd'] [AState sa'],
+sys.Reachable s sd → sys.Reachable (f s) sd' → f sd = sd' →
 sys.tr sd' p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ f sa = sa') : (f s).aHws :=
   aHws_of_rel (r := (f · = ·)) h₁ ht rfl h₂ h₃
 
 theorem State.aHws_of_fn {s} {f : State → State}
 [hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
 (h₂ : ∀ {sa sd p} [AState sa] [AState (f sa)] [DState sd],
+sys.Reachable s sa → sys.Reachable (f s) (f sa) →
 sys.tr sa p = some sd → sys.tr (f sa) p = some (f sd))
 (h₃ : ∀ {sd sa' p} [DState sd] [DState (f sd)] [AState sa'],
+sys.Reachable s sd → sys.Reachable (f s) (f sd) →
 sys.tr (f sd) p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ f sa = sa') : (f s).aHws := by
   apply s.aHws_of_fn' h₁ ht
-  · rintro sa sa' sd p hsa hsa' hsd rfl h₄; simp [-AState.tr_eq_some_iff]; exact h₂ h₄
-  · rintro sd sd' sa' p hsd hsd' hsa' rfl h₄; exact h₃ h₄
+  · rintro sa sa' sd p hsa hsa' hsd H₁ H₂ rfl h₄
+    simp [-AState.tr_eq_some_iff]; exact h₂ H₁ H₂ h₄
+  · rintro sd sd' sa' p hsd hsd' hsa' H₁ H₂ rfl h₄; exact h₃ H₁ H₂ h₄
+
+theorem State.aHws_of_fn₂ {s} {f f' : State → State}
+[hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
+(hf₁ : ∀ {s₁} [sys.WF s₁], sys.Reachable s s₁ → f' (f s₁) = s₁)
+(hf₂ : ∀ {s₁ p} [sys.WF s₁], sys.Reachable s s₁ →
+sys.tr (f s₁) p = (sys.tr s₁ p).map f)
+(h₂ : ∀ {sa sd p} [AState sa] [AState (f sa)] [DState sd],
+sys.Reachable s sa → sys.Reachable (f s) (f sa) →
+sys.tr sa p = some sd → sys.tr (f sa) p = some (f sd))
+(h₃ : ∀ {sd' sa' p} [DState sd'] [DState sd'] [AState sa'],
+sys.Reachable s (f' sd') → sys.Reachable (f s) sd' →
+sys.tr sd' p = some sa' → ∃ sa, sys.tr (f' sd') p = some sa) : (f s).aHws := by
+  apply aHws_of_fn (f := f) h₁ ht h₂; intro sd sa' p hsd hsd' hsa' H₁ H₂ H₃
+  specialize @h₃ (f sd) sa' p; specialize h₃ (by rwa [hf₁ H₁]) H₂ H₃
+  obtain ⟨sa, h₃⟩ := h₃; rw [hf₁ H₁] at h₃; use sa, h₃
+  simp [-DState.tr_eq_some_iff, hf₂ H₁, h₃] at H₃; exact H₃
