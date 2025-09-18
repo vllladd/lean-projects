@@ -1,6 +1,7 @@
 import AP.AP
 import AP.Misc
 import AP.Sokoban
+import AP.Analysis
 
 namespace AP
 
