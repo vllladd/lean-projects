@@ -160,11 +160,3 @@ theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 theorem tendsTo_mul_two {a L} (h : tendsTo a L) :
 tendsTo (a * 2) (L * 2) := by
   simp only [mul_two]; exact tendsTo_add h h
-
-example {a b : ℕ → ℝ} {L : ℝ} (h₁ : tendsTo a L)
-(h₂ : ∀ (n : ℕ), b n = 2 * a n) : tendsTo b (2 * L) := by
-  have h₃ : b = 2 * a
-  · ext n; simp [h₂]
-  subst h₃; clear h₂
-  repeat rw [mul_comm 2]
-  exact tendsTo_mul_two h₁
