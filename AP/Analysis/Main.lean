@@ -8,6 +8,7 @@ def converges (a : ℕ → ℝ) : Prop :=
 
 -----
 
+@[simp]
 theorem tendsTo_const {L} : tendsTo (λ _ => L) L := by
   intro e he; use 0; simpa
 
@@ -105,3 +106,65 @@ theorem not_converges_alternating {x y : ℝ} (h : x ≠ y) :
 theorem not_converges_minus_one_pow : ¬converges ((-1 : ℝ) ^ ·) := by
   convert not_converges_alternating (x := 1) (y := -1) (by norm_num)
   nm n; induction n using Nat.mod_2_ind <;> simp
+
+theorem tendsTo_sub {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
+(h₂ : tendsTo a₂ L₂) : tendsTo (a₁ - a₂) (L₁ - L₂) := by
+  intro e he
+  dsimp
+  specialize h₁ (e / 2) (by simpa)
+  specialize h₂ (e / 2) (by simpa)
+  obtain ⟨N₁, h₁⟩ := h₁
+  obtain ⟨N₂, h₂⟩ := h₂
+  use max N₁ N₂
+  intro n hn
+  specialize h₁ n # le_of_max_le_left hn
+  specialize h₂ n # le_of_max_le_right hn
+  calc
+    _ = |(a₁ n - L₁) - (a₂ n - L₂)| := by ring_nf
+    _ ≤ |a₁ n - L₁| + |a₂ n - L₂| := by apply abs_sub
+  linarith
+
+theorem ofNat_seq_eq {n : ℕ} : (OfNat.ofNat n : ℕ → ℝ) = λ _ => ↑n := by
+  ext i; iterate 2 cases n; simp; nm n
+  change ((n + 2 : ℕ) : ℝ) = _; ring_nf
+
+theorem cast_seq_eq {n : ℕ} : (n : ℕ → ℝ) = λ _ => ↑n := by
+  ext i; iterate 2 cases n; simp; nm n
+  change ((n + 2 : ℕ) : ℝ) = _; ring_nf
+
+@[simp]
+theorem tendsTo_const_ofNat {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
+  simp [ofNat_seq_eq]
+
+@[simp]
+theorem tendsTo_const_cast {n : ℕ} : tendsTo n n := by
+  simp [cast_seq_eq]
+
+@[simp]
+theorem tendsTo_const_ofNat_lit {n : ℕ} :
+tendsTo (OfNat.ofNat n) (OfNat.ofNat n) := by
+  simp [Real.ofNat_eq]
+
+theorem tendsTo_neg {a L} (h : tendsTo a L) :
+tendsTo (-a) (-L) := by
+  have h₁ := @tendsTo_sub 0 a 0 L tendsTo_const_ofNat_lit h
+  simp at h₁; exact h₁
+
+theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
+(h₂ : tendsTo a₂ L₂) : tendsTo (a₁ + a₂) (L₁ + L₂) := by
+  have h₃ := tendsTo_neg h₂
+  convert_to tendsTo (a₁ - (0 - a₂)) (L₁ - (0 - L₂))
+  iterate 2 ring_nf
+  apply tendsTo_sub h₁; simpa
+
+theorem tendsTo_mul_two {a L} (h : tendsTo a L) :
+tendsTo (a * 2) (L * 2) := by
+  simp only [mul_two]; exact tendsTo_add h h
+
+example {a b : ℕ → ℝ} {L : ℝ} (h₁ : tendsTo a L)
+(h₂ : ∀ (n : ℕ), b n = 2 * a n) : tendsTo b (2 * L) := by
+  have h₃ : b = 2 * a
+  · ext n; simp [h₂]
+  subst h₃; clear h₂
+  repeat rw [mul_comm 2]
+  exact tendsTo_mul_two h₁
