@@ -8,7 +8,6 @@ def converges (a : ℕ → ℝ) : Prop :=
 
 -----
 
-@[simp]
 theorem tendsTo_const {L} : tendsTo (λ _ => L) L := by
   intro e he; use 0; simpa
 
@@ -132,22 +131,22 @@ theorem cast_seq_eq {n : ℕ} : (n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
 
-@[simp]
 theorem tendsTo_const_ofNat {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
-  simp [ofNat_seq_eq]
+  simp [ofNat_seq_eq, tendsTo_const]
 
-@[simp]
 theorem tendsTo_const_cast {n : ℕ} : tendsTo n n := by
-  simp [cast_seq_eq]
+  simp [cast_seq_eq, tendsTo_const]
 
-@[simp]
-theorem tendsTo_const_ofNat_lit {n : ℕ} :
-tendsTo (OfNat.ofNat n) (OfNat.ofNat n) := by
-  simp [Real.ofNat_eq]
+theorem tendsTo_const_ofNat_iff {n : ℕ} {L : ℝ} :
+tendsTo (OfNat.ofNat n) L ↔ L = n := by
+  have h := @tendsTo_const_ofNat n
+  use λ h₁ => tendsTo_unique h₁ h
+  rintro rfl; exact h
 
 theorem tendsTo_neg {a L} (h : tendsTo a L) :
 tendsTo (-a) (-L) := by
-  have h₁ := @tendsTo_sub 0 a 0 L tendsTo_const_ofNat_lit h
+  have h₁ := @tendsTo_sub; specialize @h₁ 0 a 0 L _ h
+  · rw [tendsTo_const_ofNat_iff]; simp
   simp at h₁; exact h₁
 
 theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
