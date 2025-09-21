@@ -5,3 +5,4 @@ import AP.AP.Trap
 import AP.AP.HistBlind
 import AP.AP.Defense
 import AP.AP.King
+import AP.AP.FreshA
