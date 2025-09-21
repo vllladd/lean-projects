@@ -901,3 +901,33 @@ theorem Perm.linearIndep_iff (h : xs ~ ys) : linearIndep xs ↔ linearIndep ys :
   simp [linearIndep_iff_toSet, h.toSet_eq]
 
 end linearIndep
+
+theorem min?_eq_some_iff_1 {ha : LinearOrder α} {x} :
+xs.min? = some x ↔ (x ∈ xs ∧ ∀ y ∈ xs, x ≤ y) := by
+  induction xs generalizing x; simp; clear! xs; nm z xs ih
+  simp; cases h : xs.min?; aesop; nm m; dsimp; simp [ih] at h
+  rcases h with ⟨h₁, h₂⟩; constructor
+  · rintro rfl; simp; constructor
+    · rw [or_iff_not_imp_left]; intro h₃
+      simp at h₃; rwa [min_eq_right_of_lt h₃]
+    · intro b hb; specialize h₂ b hb; simp [h₂]
+  rintro ⟨rfl | h₃, h₄, h₅⟩
+  · simp; exact h₅ _ h₁
+  · have h₆ := h₂ _ h₃; have h₇ := h₆.trans h₄
+    rw [min_eq_right h₇]; have h₈ := h₅ _ h₁
+    exact le_antisymm h₆ h₈
+
+theorem max?_eq_some_iff_1 {ha : LinearOrder α} {x} :
+xs.max? = some x ↔ (x ∈ xs ∧ ∀ y ∈ xs, y ≤ x) := by
+  induction xs generalizing x; simp; clear! xs; nm z xs ih
+  simp; cases h : xs.max?; aesop; nm m; dsimp; simp [ih] at h
+  rcases h with ⟨h₁, h₂⟩; constructor
+  · rintro rfl; simp; constructor
+    · rw [or_iff_not_imp_left]; intro h₃
+      simp at h₃; rwa [max_eq_right_of_lt h₃]
+    · intro b hb; specialize h₂ b hb; simp [h₂]
+  rintro ⟨rfl | h₃, h₄, h₅⟩
+  · simp; exact h₅ _ h₁
+  · have h₆ := h₂ _ h₃; have h₇ := h₄.trans h₆
+    rw [max_eq_right h₇]; have h₈ := h₅ _ h₁
+    exact le_antisymm h₈ h₆

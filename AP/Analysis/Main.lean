@@ -166,13 +166,75 @@ tendsTo a L ↔ ∀ (ε : ℝ), 0 < ε → ε < 1 → ∃ (N : ℕ),
   simp at h
   exact h.1
 
--- #check 0 #exit
+theorem tendsTo_inv_aux₁ {x y : ℝ} (h : |x - y| < |y| / 2) : |y| / 2 < |x| := by
+  suffices h₆ : 2 * |y| < 3 / 2 * |y| + |x|; linarith; calc
+    _ = |x - y - x - y| := by
+      simp; ring_nf; simp [abs_neg, abs_mul]
+    _ = |(x - y) - (x + y)| := by ring_nf
+    _ ≤ |x - y| + |x + y| := by apply abs_sub
+    _ < |y| / 2 + |x + y| := by simpa
+    _ ≤ |y| / 2 + |x| + |y| := by
+      simp only [add_assoc, add_le_add_iff_left]
+      apply abs_add
+    _ = _ := by ring_nf
+
+theorem tendsTo_inv_aux₂ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
+(h₃ : tendsTo a L) : ∃ (x : ℝ), 0 < x ∧ ∀ n, x ≤ |a n| := by
+  specialize h₃ (|L| / 2) (by positivity)
+  obtain ⟨N, h⟩ := h₃
+  generalize hx : (List.range N |>.map (|a ·|)
+    |>.cons (|L| / 2) |>.min?) = x
+  cases x; simp at hx
+  nm x
+  use x
+  rw [List.min?_eq_some_iff_1] at hx
+  simp at hx
+  rcases hx with ⟨rfl | ⟨k, hk, rfl⟩, h₃, h₄⟩
+  · clear h₃
+    simp [h₂]
+    intro n
+    by_cases h₅ : n < N
+    · exact h₄ _ h₅
+    · push_neg at h₅
+      exact le_of_lt # tendsTo_inv_aux₁ # h _ h₅
+  use by simp [h₁]
+  intro n
+  by_cases h₅ : n < N
+  · exact h₄ _ h₅
+  push_neg at h₅
+  specialize h _ h₅
+  by_contra! h₆
+  have h₇ : |a n| < |L| / 2; linarith
+  contrapose! h₇; exact le_of_lt # tendsTo_inv_aux₁ h
 
 theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
 (h₃ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
-  sorry
-
--- #check 0 #exit
+  intro e he
+  obtain ⟨x, hx, h₄⟩ := tendsTo_inv_aux₂ h₁ h₂ h₃
+  specialize h₃ (x * e * |L|) (by positivity)
+  obtain ⟨N, h₃⟩ := h₃
+  use N
+  intro n hn
+  specialize h₃ n hn
+  have H : 0 < |a n * L|
+  · simp [h₁, h₂]
+  apply lt_of_lt_of_le (b := x * e * |L| / |a n * L|)
+  · calc
+    _ = |1 / a n - 1 / L| := by simp
+    _ = |(L - a n) / (a n * L)| := by
+      rw [div_sub_div _ _ (h₁ _) h₂]; simp
+    _ = |L - a n| / |a n * L| := by apply abs_div
+    _ = |a n - L| / |a n * L| := by rw [abs_sub_comm]
+    _ < x * e * |L| / |a n * L| := by
+      rwa [div_lt_div_iff_of_pos_right H]
+  calc
+    _ = x * e * |L| / (|a n| * |L|) := by rw [abs_mul]
+    _ = x * e / |a n| := mul_div_mul_right _ _ # by positivity
+    _ ≤ |a n| * e / |a n| := by
+      rw [div_le_div_iff_of_pos_right # by simp [h₁]]
+      rw [mul_le_mul_iff_of_pos_right he]; apply h₄
+    _ = e := by
+      rw [mul_div_cancel_left₀ _ # by simp [h₁]]
 
 theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
