@@ -106,23 +106,6 @@ theorem not_converges_minus_one_pow : ¬converges ((-1 : ℝ) ^ ·) := by
   convert not_converges_alternating (x := 1) (y := -1) (by norm_num)
   nm n; induction n using Nat.mod_2_ind <;> simp
 
-theorem tendsTo_sub {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
-(h₂ : tendsTo a₂ L₂) : tendsTo (a₁ - a₂) (L₁ - L₂) := by
-  intro e he
-  dsimp
-  specialize h₁ (e / 2) (by simpa)
-  specialize h₂ (e / 2) (by simpa)
-  obtain ⟨N₁, h₁⟩ := h₁
-  obtain ⟨N₂, h₂⟩ := h₂
-  use max N₁ N₂
-  intro n hn
-  specialize h₁ n # le_of_max_le_left hn
-  specialize h₂ n # le_of_max_le_right hn
-  calc
-    _ = |(a₁ n - L₁) - (a₂ n - L₂)| := by ring_nf
-    _ ≤ |a₁ n - L₁| + |a₂ n - L₂| := by apply abs_sub
-  linarith
-
 theorem ofNat_seq_eq {n : ℕ} : (OfNat.ofNat n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
@@ -143,19 +126,52 @@ tendsTo (OfNat.ofNat n) L ↔ L = n := by
   use λ h₁ => tendsTo_unique h₁ h
   rintro rfl; exact h
 
-theorem tendsTo_neg {a L} (h : tendsTo a L) :
-tendsTo (-a) (-L) := by
-  have h₁ := @tendsTo_sub; specialize @h₁ 0 a 0 L _ h
-  · rw [tendsTo_const_ofNat_iff]; simp
-  simp at h₁; exact h₁
-
 theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ + a₂) (L₁ + L₂) := by
-  have h₃ := tendsTo_neg h₂
-  convert_to tendsTo (a₁ - (0 - a₂)) (L₁ - (0 - L₂))
-  iterate 2 ring_nf
-  apply tendsTo_sub h₁; simpa
+  intro e he
+  dsimp
+  specialize h₁ (e / 2) (by simpa)
+  specialize h₂ (e / 2) (by simpa)
+  obtain ⟨N₁, h₁⟩ := h₁
+  obtain ⟨N₂, h₂⟩ := h₂
+  use max N₁ N₂
+  intro n hn
+  specialize h₁ n # le_of_max_le_left hn
+  specialize h₂ n # le_of_max_le_right hn
+  calc
+    _ = |(a₁ n - L₁) + (a₂ n - L₂)| := by ring_nf
+    _ ≤ |a₁ n - L₁| + |a₂ n - L₂| := by apply abs_add
+  linarith
+
+theorem tendsTo_neg {a L} (h : tendsTo a L) : tendsTo (-a) (-L) := by
+  intro e he; specialize h e he; obtain ⟨N, h⟩ := h
+  use N; intro n hn; specialize h n hn; simp
+  convert h using 1; rw [←abs_neg, add_comm]; simp; rfl
+
+theorem tendsTo_sub {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
+(h₂ : tendsTo a₂ L₂) : tendsTo (a₁ - a₂) (L₁ - L₂) :=
+  tendsTo_add h₁ # tendsTo_neg h₂
+
+-- #check 0 #exit
+
+theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
+(h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
+  intro e he
+  sorry
+
+#check 0 #exit
+
+theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
+(h₃ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
+  sorry
+
+-- #check 0 #exit
+
+theorem tendsTo_div {a₁ a₂ L₁ L₂}
+(h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0) (h₃ : tendsTo a₁ L₁)
+(h₄ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
+  tendsTo_mul h₃ # tendsTo_inv h₁ h₂ h₄
 
 theorem tendsTo_mul_two {a L} (h : tendsTo a L) :
-tendsTo (a * 2) (L * 2) := by
-  simp only [mul_two]; exact tendsTo_add h h
+tendsTo (a * 2) (L * 2) :=
+  tendsTo_mul h tendsTo_const
