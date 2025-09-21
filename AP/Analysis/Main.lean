@@ -126,6 +126,11 @@ tendsTo (OfNat.ofNat n) L ↔ L = n := by
   use λ h₁ => tendsTo_unique h₁ h
   rintro rfl; exact h
 
+theorem tendsTo_neg {a L} (h : tendsTo a L) : tendsTo (-a) (-L) := by
+  intro e he; specialize h e he; obtain ⟨N, h⟩ := h
+  use N; intro n hn; specialize h n hn; simp
+  convert h using 1; rw [←abs_neg, add_comm]; simp; rfl
+
 theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ + a₂) (L₁ + L₂) := by
   intro e he
@@ -143,26 +148,44 @@ theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
     _ ≤ |a₁ n - L₁| + |a₂ n - L₂| := by apply abs_add
   linarith
 
-theorem tendsTo_neg {a L} (h : tendsTo a L) : tendsTo (-a) (-L) := by
-  intro e he; specialize h e he; obtain ⟨N, h⟩ := h
-  use N; intro n hn; specialize h n hn; simp
-  convert h using 1; rw [←abs_neg, add_comm]; simp; rfl
-
 theorem tendsTo_sub {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ - a₂) (L₁ - L₂) :=
   tendsTo_add h₁ # tendsTo_neg h₂
+
+theorem tendsTo_iff_eps_lt_one {a L} :
+tendsTo a L ↔ ∀ (ε : ℝ), 0 < ε → ε < 1 → ∃ (N : ℕ),
+∀ (n : ℕ), N ≤ n → |a n - L| < ε := by
+  use λ h e h₁ _ => h e h₁
+  intro h
+  intro e he
+  specialize h (min e # 1 / 2) (by simpa) (by norm_num)
+  obtain ⟨N, h⟩ := h
+  use N
+  intro n hn
+  specialize h n hn
+  simp at h
+  exact h.1
+
+-- #check 0 #exit
+
+theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
+(h₃ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
+  sorry
 
 -- #check 0 #exit
 
 theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
   intro e he
-  sorry
-
-#check 0 #exit
-
-theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
-(h₃ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
+  specialize h₁ √e (by simpa)
+  specialize h₂ √e (by simpa)
+  obtain ⟨N₁, h₁⟩ := h₁
+  obtain ⟨N₂, h₂⟩ := h₂
+  use max N₁ N₂
+  intro n hn
+  specialize h₁ n # le_of_max_le_left hn
+  specialize h₂ n # le_of_max_le_right hn
+  dsimp
   sorry
 
 -- #check 0 #exit
@@ -171,7 +194,3 @@ theorem tendsTo_div {a₁ a₂ L₁ L₂}
 (h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0) (h₃ : tendsTo a₁ L₁)
 (h₄ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
   tendsTo_mul h₃ # tendsTo_inv h₁ h₂ h₄
-
-theorem tendsTo_mul_two {a L} (h : tendsTo a L) :
-tendsTo (a * 2) (L * 2) :=
-  tendsTo_mul h tendsTo_const
