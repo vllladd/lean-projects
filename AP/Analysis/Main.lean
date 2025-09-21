@@ -233,8 +233,7 @@ theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
     _ ≤ |a n| * e / |a n| := by
       rw [div_le_div_iff_of_pos_right # by simp [h₁]]
       rw [mul_le_mul_iff_of_pos_right he]; apply h₄
-    _ = e := by
-      rw [mul_div_cancel_left₀ _ # by simp [h₁]]
+    _ = e := by rw [mul_div_cancel_left₀ _ # by simp [h₁]]
 
 theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
