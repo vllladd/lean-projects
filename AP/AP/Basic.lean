@@ -601,6 +601,10 @@ theorem State.wf_setPw_of_le {s pw} [hs : sys.WF s]
   simp at h₃
   exact h₃
 
+theorem DState.tr_setPw_eq {s p pw} [hs : DState s] :
+sys.tr (s.setPw pw) p = (sys.tr s p).map (·.setPw pw) := by
+  ext s' :1; simp [State.tr_eq_some_iff_of_not_aTurn]; intros; rfl
+
 @[simp]
 theorem hist_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.hist =
 (ps.take # ps.length - (sys.trs s ps).2.length).reverse ++ s.hist := by
@@ -1028,3 +1032,8 @@ s.hist = s.hist.dropLast ++ [s.aPos₀] := by
 theorem State.exi_hist_eq_snoc {s} [hs : sys.WF s] :
 ∃ (ps : List PointZ), s.hist = ps ++ [s.aPos₀] :=
   ⟨_, s.hist_eq_snoc⟩
+
+instance {s : State} {hist₁ hist₂} [hs : sys.WF # s.setHist hist₂] :
+sys.WF # s.setHist hist₁ |>.setHist hist₂ := by simpa
+
+instance {s : State} [hs : sys.WF s] : sys.WF # s.setHist s.hist := by simpa

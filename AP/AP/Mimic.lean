@@ -87,15 +87,15 @@ sys.tr (f sd) p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ f sa = sa') : (
 theorem State.aHws_of_fn₂ {s} {f f' : State → State}
 [hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
 (hf₁ : ∀ {s₁} [sys.WF s₁], sys.Reachable s s₁ → f' (f s₁) = s₁)
-(hf₂ : ∀ {s₁ p} [sys.WF s₁], sys.Reachable s s₁ →
-sys.tr (f s₁) p = (sys.tr s₁ p).map f)
+(hf₂ : ∀ {s₁ s₂' p} [DState s₁] [AState s₂'], sys.Reachable s s₁ →
+sys.tr (f s₁) p = some s₂' → ∃ s₂, sys.tr s₁ p = some s₂ ∧ f s₂ = s₂')
 (h₂ : ∀ {sa sd p} [AState sa] [AState (f sa)] [DState sd],
 sys.Reachable s sa → sys.Reachable (f s) (f sa) →
 sys.tr sa p = some sd → sys.tr (f sa) p = some (f sd))
-(h₃ : ∀ {sd' sa' p} [DState sd'] [DState sd'] [AState sa'],
+(h₃ : ∀ {sd' sa' p} [DState sd'] [AState sa'],
 sys.Reachable s (f' sd') → sys.Reachable (f s) sd' →
 sys.tr sd' p = some sa' → ∃ sa, sys.tr (f' sd') p = some sa) : (f s).aHws := by
   apply aHws_of_fn (f := f) h₁ ht h₂; intro sd sa' p hsd hsd' hsa' H₁ H₂ H₃
   specialize @h₃ (f sd) sa' p; specialize h₃ (by rwa [hf₁ H₁]) H₂ H₃
   obtain ⟨sa, h₃⟩ := h₃; rw [hf₁ H₁] at h₃; use sa, h₃
-  simp [-DState.tr_eq_some_iff, hf₂ H₁, h₃] at H₃; exact H₃
+  obtain ⟨x, hx, rfl⟩ := hf₂ H₁ H₃; simp [h₃] at hx; rw [hx]
