@@ -302,10 +302,6 @@ a.WF ∧ d.WF ∧ sys.simulate (Strat.f ⟨a, d⟩) s n = (s', 0) := by
   obtain ⟨a, d, ha, hd, rfl⟩ := exi_strat_of_simFn f
   use a, d, n
 
-theorem DState.aPos_eq_of_tr {s s' p} [hs : DState s]
-(h : sys.tr s p = some s') : s'.aPos = s.aPos := by
-  simp at h; rw [←h.2]
-
 theorem taken_subset_of_tr {s s' p} [hs : sys.WF s]
 (h : sys.tr s p = some s') : s.taken ⊆ s'.taken :=
   λ _ => State.mem_taken_of_tr h

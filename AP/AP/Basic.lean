@@ -1037,3 +1037,27 @@ instance {s : State} {hist₁ hist₂} [hs : sys.WF # s.setHist hist₂] :
 sys.WF # s.setHist hist₁ |>.setHist hist₂ := by simpa
 
 instance {s : State} [hs : sys.WF s] : sys.WF # s.setHist s.hist := by simpa
+
+theorem AState.aPos_eq_of_tr {s s' p} [hs : AState s]
+(h : sys.tr s p = some s') : s'.aPos = p := by
+  simp at h; rw [←h.2]
+
+theorem DState.aPos_eq_of_tr {s s' p} [hs : DState s]
+(h : sys.tr s p = some s') : s'.aPos = s.aPos := by
+  simp at h; rw [←h.2]
+
+theorem AState.taken_eq_of_tr {s s' p} [hs : AState s]
+(h : sys.tr s p = some s') : s'.taken = s.taken := by
+  simp at h; rw [←h.2]
+
+theorem DState.taken_eq_of_tr {s s' p} [hs : DState s]
+(h : sys.tr s p = some s') : s'.taken = s.taken.insert p := by
+  simp at h; rw [←h.2]
+
+@[simp]
+theorem State.aPos_ne_chooseDMove {s} [hs : DState s] : s.aPos ≠ s.chooseDMove := by
+  have h := hs.validTr_chooseDMove; rw [DState.validTr_iff] at h; exact h.1
+
+@[simp]
+theorem State.chooseDMove_not_mem_taken {s} [hs : DState s] : s.chooseDMove ∉ s.taken := by
+  have h := hs.validTr_chooseDMove; rw [DState.validTr_iff] at h; exact h.2
