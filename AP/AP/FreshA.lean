@@ -2,17 +2,6 @@ import AP.AP.King
 
 namespace AP
 
-class AStrat.Fresh (a : AStrat) (s : State) extends wf : a.WF where
-  h₁ : ∀ {d : DStrat} [d.WF] {s₁ s₂ : State} [AState s₁] [AState s₂]
-    {k n : ℕ}, k < n → sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
-    sys.simulate (Strat.f ⟨a, d⟩) s n = (s₂, 0) →
-    sys.hasTr s₂ → s.pw < (a.f s₂).dist s₁.aPos
-
--- open Classical in noncomputable
--- def aFresh : AStrat :=
---   .mk # λ s => choose? # λ p => ∃ s', sys.tr s p = some s' ∧
---   s'.aHws ∧ ∀ p₁ s₁, sys.tr s p₁ = some s₁ → s₁.aHws → s'.taken ⊆ s₁.taken
-
 theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h₁ : s.aHws) (hpw : s.pw = s'.pw) (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos)
 (h₄ : s'.taken ⊆ s.taken) : s'.aHws := by
@@ -70,7 +59,18 @@ theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
       · exact hp
       exact H₃ p₁ H₆
 
+class AStrat.Fresh (a : AStrat) (s : State) extends wf : a.WF where
+  h₁ : ∀ {d : DStrat} [d.WF] {s₁ s₂ : State} [AState s₁] [AState s₂]
+    {k n : ℕ}, k < n → sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
+    sys.simulate (Strat.f ⟨a, d⟩) s n = (s₂, 0) →
+    sys.hasTr s₂ → s.pw < (a.f s₂).dist s₁.aPos
+
 #check 0 #exit
+
+-- open Classical in noncomputable
+-- def aFresh : AStrat :=
+--   .mk # λ s => choose? # λ p => ∃ s', sys.tr s p = some s' ∧
+--   s'.aHws ∧ ∀ p₁ s₁, sys.tr s p₁ = some s₁ → s₁.aHws → s'.taken ⊆ s₁.taken
 
 instance : aFresh.WF := by unfold aFresh; infer_instance
 
