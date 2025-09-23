@@ -1,17 +1,5 @@
 import AP.AP.Defense.Edge
 
-section min
-
-variable {α : Type*} [ha₁ : LinearOrder α]
-
-theorem le_of_le_min_left {a b c : α} (h : a ≤ min b c) : a ≤ b := by
-  rw [le_inf_iff] at h; exact h.1
-
-theorem le_of_le_min_right {a b c : α} (h : a ≤ min b c) : a ≤ c := by
-  rw [le_inf_iff] at h; exact h.2
-
-end min
-
 namespace AP
 
 @[ext]

@@ -1,53 +1,5 @@
 import AP.Util
 
-section util
-
-theorem min_eq_ite {α : Type*} [ha : LinearOrder α] {x y : α} :
-min x y = if x ≤ y then x else y := by
-  split_ifs with h₁; exact min_eq_left h₁; push_neg at h₁; exact min_eq_right_of_lt h₁
-
-theorem abs_eq_ite {α : Type*} [ha₁ : LinearOrder α]
-[hs₂ : AddGroup α] [ha₃ : AddLeftMono α] {x : α} :
-|x| = if 0 ≤ x then x else -x := by
-  split_ifs with h; exact abs_of_nonneg h; simp at h; exact abs_of_neg h
-
-theorem bddBelow_range_of_forall_le {ι α : Type*} [ha : LinearOrder α]
-{f : ι → α} (x) (h : ∀ i, x ≤ f i) : BddBelow (Set.range f) := by
-  use x; simpa [lowerBounds]
-
-theorem bddAbove_range_of_forall_le {ι α : Type*} [ha : LinearOrder α]
-{f : ι → α} (x) (h : ∀ i, f i ≤ x) : BddAbove (Set.range f) := by
-  use x; simpa [upperBounds]
-
-theorem bddBelow_range {ι α : Type*} [ha : LinearOrder α] {f : ι → α} :
-BddBelow (Set.range f) ↔ ∃ x, ∀ i, x ≤ f i := by
-  constructor
-  · intro h; rcases h with ⟨x, h⟩; simp [lowerBounds] at h; use x
-  · rintro ⟨x, h⟩; exact bddBelow_range_of_forall_le x h
-
-theorem bddAbove_range {ι α : Type*} [ha : LinearOrder α] {f : ι → α} :
-BddAbove (Set.range f) ↔ ∃ x, ∀ i, f i ≤ x := by
-  constructor
-  · intro h; rcases h with ⟨x, h⟩; simp [upperBounds] at h; use x
-  · rintro ⟨x, h⟩; exact bddAbove_range_of_forall_le x h
-
-theorem bddBelow_range_neg {ι α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α]
-[ha₃ : AddLeftMono α] [ha₄ : AddRightMono α] {f : ι → α} :
-BddBelow (Set.range (-f)) ↔ BddAbove (Set.range f) := by
-  simp [bddBelow_range, bddAbove_range]
-  constructor <;> rintro ⟨x, hx⟩ <;> use -x <;> intro i <;> specialize hx i
-  · rwa [←neg_neg # f i, neg_le_neg_iff]
-  · rwa [neg_le_neg_iff]
-
-theorem bddAbove_range_neg {ι α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α]
-[ha₃ : AddLeftMono α] [ha₄ : AddRightMono α] {f : ι → α} :
-BddAbove (Set.range (-f)) ↔ BddBelow (Set.range f) := by
-  nth_rw 2 [←neg_neg f]; rw [bddBelow_range_neg]
-
--- #check 0 #exit
-
-end util
-
 namespace RealAnalysis
 
 def tendsTo (a : ℕ → ℝ) (L : ℝ) : Prop :=
