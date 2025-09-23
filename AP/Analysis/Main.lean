@@ -26,8 +26,6 @@ noncomputable def lb (a : ℕ → ℝ) : ℝ :=
 noncomputable def ub (a : ℕ → ℝ) : ℝ :=
   someGt # lub a
 
--- #check 0 #exit
-
 -----
 
 theorem tendsTo_const {L} : tendsTo (λ _ => L) L := by
@@ -348,8 +346,7 @@ glb (-a) = -lub a := by
   · rw [←neg_le_neg_iff]; simp; apply lub_le_of_le; intro i; specialize h₅ i; linarith
   · apply le_glb_of_le; intro i; specialize h₃ i; simp; linarith
 
-theorem lub_neg {a : ℕ → ℝ} (h : converges a) :
-lub (-a) = -glb a := by
+theorem lub_neg {a : ℕ → ℝ} (h : converges a) : lub (-a) = -glb a := by
   nth_rw 2 [←neg_neg a]; rw [glb_neg] <;> simp [h]
 
 @[simp] theorem lb_lt_glb {a} : lb a < glb a := by simp [lb]
@@ -500,7 +497,6 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
       linarith
   apply tendsTo_mul_aux₁ h₅ h₆ H₂ H₄ H₅
 
-theorem tendsTo_div {a₁ a₂ L₁ L₂}
-(h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0) (h₃ : tendsTo a₁ L₁)
-(h₄ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
+theorem tendsTo_div {a₁ a₂ L₁ L₂} (h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0)
+(h₃ : tendsTo a₁ L₁) (h₄ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
   tendsTo_mul h₃ # tendsTo_inv h₁ h₂ h₄
