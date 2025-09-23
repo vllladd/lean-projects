@@ -71,8 +71,10 @@ theorem memPoints_eq {p} : c.memPoints p = decide (p ∈ c.points) := by
 def dist (c : Corner) (p : PointZ) : ℤ :=
   min (c.edge₁.dist p) (c.edge₂.dist p)
 
-def cnd' (c : Corner) (s : State) : Prop :=
-  ∀ (p : PointZ), c.dist p = 0 → 7 ≤ p.dist c.offset → p ∈ s.taken
+def cnd' (c : Corner) (s : State) : Prop := ∀ (p : PointZ),
+  let d₁ := c.edge₁.dist p
+  let d₂ := c.edge₂.dist p
+  0 < d₁ → 0 < d₂ → d₁ ≤ 5 → d₂ ≤ 5 → p ∈ s.taken
 
 def cnd (c : Corner) (s : State) : Prop :=
   6 ≤ c.dist s.aPos ∧ c.cnd' s
@@ -109,49 +111,22 @@ theorem edge₂_vert_iff : c.edge₂.dir.vert ↔ c.edge₁.dir.hor := by
 
 theorem cnd'_of_reachable {s s'} [hs : sys.WF s]
 (h₁ : sys.Reachable s s') (h₂ : c.cnd' s) : c.cnd' s' :=
-  λ p hp h => s.mem_taken_of_reachable h₁ # h₂ p hp h
+  λ p h₃ h₄ h₅ h₆ => s.mem_taken_of_reachable h₁ # h₂ p h₃ h₄ h₅ h₆
 
--- #check 0 #exit
-
-theorem edge₂_eq_none_of_edge₁_eq_some {s p} (H : c.cnd' s)
+theorem edge₂_eq_none_of_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd' s)
 (h : c.edge₁.defense.f s = some p) : c.edge₂.defense.f s = none := by
   rename' h => h₁, p => p₁
   by_contra h₂
   replace h₂ := Option.exists_eq_some_of_ne_none h₂
   obtain ⟨p₂, h₂⟩ := h₂
-  
+  simp [cnd'] at H
   replace h₁ := Edge.of_eq_some h₁
   replace h₂ := Edge.of_eq_some h₂
-  
-  rcases h₁ with ⟨h₁, h₃, z₁, h₄, h₅⟩
-  rcases h₂ with ⟨h₂, h₆, z₂, h₇, h₈⟩
-  
-  simp [cnd'] at H
-  simp [Edge.getBorderPoint] at h₅ h₈
-  subst h₅ h₈
-  
-  cases h₉ : c.dir
-  all_goals simp_all [dist, Edge.dist, Point.dist, edge₁, edge₂, abs_le]; clear h₉
-  · rcases h₄ with ⟨h₄, H₄⟩
-    rcases h₇ with ⟨h₇, H₇⟩
-    apply h₃
-    clear h₃
-    apply H
-    · simp
-      by_contra! h₈
-      apply h₆
-      clear h₆
-      apply H
-      · simp
-        by_contra! h₉
-        sorry
-      sorry
-    sorry
-  · sorry
-  · sorry
-  · sorry
-
--- #check 0 #exit
+  rcases h₁ with ⟨h₁, h₃, -⟩
+  rcases h₂ with ⟨h₂, h₄, -⟩
+  specialize H s.aPos
+  specialize H h₁ h₂ h₃ h₄
+  simp at H
 
 theorem validTr_defense : c.defense.ValidTr := by
   constructor; intro s hs p h; simp [f] at h; rcases h with h | ⟨h₁, h₂⟩
@@ -172,6 +147,7 @@ theorem wf_defense : c.defense.WF := by
   have h₃ : sys.simulate (Strat.f ⟨a, e₂.st # e₁.st d⟩) s n = r
   · rw [←hr, ←Defense.simulate_st_comm]; subst he₁ he₂
     intro s' h₃ p₁ p₂ h₄; have h₅ := c.cnd'_of_reachable h₃ h.2
+    have hs' := sys.wf_of_reachable h₃
     simp [edge₂_eq_none_of_edge₁_eq_some h₅ h₄]
   rw [h₃] at H₂; clear h₃
   have h₄ : sys.simulate (Strat.f ⟨a, c.defense.st d⟩) s n = r

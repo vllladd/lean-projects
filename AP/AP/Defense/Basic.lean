@@ -15,7 +15,7 @@ theorem default_def : (default : Defense) =
   valid_tr := by simp
   not_mem_ps := by simp
 
-theorem valid_tr [H : dse.ValidTr] {s} [sys.WF s] {p} :
+theorem valid_tr [H : dse.ValidTr] {s} [DState s] {p} :
 dse.f s = some p → sys.validTr s p := H.1
 
 @[simp]

@@ -202,3 +202,20 @@ theorem forall_eq_right_iff_eq_iff {α : Type*} {x y : α} :
 
 theorem and_iff_and_of {P Q R S : Prop}
 (h₁ : P ↔ R) (h₂ : Q ↔ S) : P ∧ Q ↔ R ∧ S := by tauto
+
+@[simp]
+theorem match_decide_eq_dite {α : Type*} {P} [H : Decidable P]
+{f : decide P = true → α} {g : decide P = false → α} :
+(match h : decide P with
+| true => f h
+| false => g h
+) = if h : P then f (by simpa) else g (by simpa) := by
+  split <;> nm h₁ <;> simp at h₁ <;> simp [h₁]
+
+@[simp]
+theorem match_decide_eq_ite {α : Type*} {P} [H : Decidable P] {x y : α} :
+(match decide P with
+| true => x
+| false => y
+) = if P then x else y := by
+  split <;> nm h₁ <;> simp at h₁ <;> simp [h₁]

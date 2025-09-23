@@ -69,7 +69,7 @@ theorem sorted_lt_getBorderPoints {p d} (h : d ≠ 0) :
   simp [getBorderPoints, getBorderPoint]
   split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
 
-def f (e : Edge) (s : State) : Option PointZ :=
+def f' (e : Edge) (s : State) : Option PointZ :=
   let pa := s.aPos
   let p₀ := e.getBorderPoint₀ pa
   let pick := λ (xs : List PointZ) => xs.find? (· ∉ s.taken)
@@ -88,6 +88,12 @@ def f (e : Edge) (s : State) : Option PointZ :=
   | 1 => pick # p₀ :: get 1
   | _ => none
 
+def f (e : Edge) (s : State) : Option PointZ := do
+  let p ← e.f' s
+  guard # p ≠ s.aPos
+  guard # p ∉ s.taken
+  return p
+
 def defense (e : Edge) : Defense :=
   { cnd := λ s => 6 ≤ e.dist s.aPos
   , ps := e.points
@@ -96,45 +102,33 @@ def defense (e : Edge) : Defense :=
 
 @[simp] theorem ps_defense : e.defense.ps = e.points := rfl
 
+set_option maxHeartbeats 1000000 in
 theorem of_eq_some {s p} (h : e.defense.f s = some p) :
-e.dist s.aPos ≤ 5 ∧ p ∉ s.taken ∧
+0 < e.dist s.aPos ∧ e.dist s.aPos ≤ 5 ∧ p ∉ s.taken ∧
 ∃ (z : ℤ), |z| ≤ 2 ∧ e.getBorderPoint s.aPos z = p := by
-  simp [defense, f] at h
-  split at h <;> nm d hd
-  any_goals simp at h
-  · simp [hd, getBorderPoint, getBorderPoint₀] at h ⊢
-    split_ifs at h ⊢ <;> simp [←h]
-    · sorry
-    · sorry
-  · simp [hd, getBorderPoints, getBorderPoint, getBorderPoint₀] at h ⊢
-    split_ifs at h ⊢ with H
-    · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, ⟨h₂, h₃⟩ | ⟨h₂, h₃, h₄⟩⟩
-      · simp [←h₂]
-        sorry
-      · simp [←h₃]
-        sorry
-      · simp [←h₄]
-        sorry
-    sorry
-  · sorry
-  · sorry
-  · sorry
+  simp [defense, f, f', getBorderPoints, getBorderPoint₀, List.find?_cons] at h
+  split at h <;> aesop'
 
 theorem dist_eq_zero_of_eq_some {s p} (h : e.defense.f s = some p) : e.dist p = 0 := by
-  obtain ⟨h₁, h₂, z, h₃, rfl⟩ := of_eq_some h; simp [getBorderPoint]; split_ifs with h₄
+  obtain ⟨-, h₁, h₂, z, h₃, rfl⟩ := of_eq_some h; simp [getBorderPoint]; split_ifs with h₄
   · rw [Dir.vert_iff] at h₄; rcases h₄ with h₄ | h₄ <;> simp [dist, h₄]
   · simp [Dir.hor_iff] at h₄; rcases h₄ with h₄ | h₄ <;> simp [dist, h₄]
 
 theorem not_mem_taken_of_eq_some {s p} (h : e.defense.f s = some p) : p ∉ s.taken := by
-  obtain ⟨h₁, h₂, z, h₃, h₄⟩ := of_eq_some h; exact h₂
-
--- #check 0 #exit
+  obtain ⟨-, h₁, h₂, z, h₃, h₄⟩ := of_eq_some h; exact h₂
 
 theorem validTr_defense : e.defense.ValidTr := by
   constructor; intro s hs p h
-  sorry
-
--- #check 0 #exit
+  replace h := of_eq_some h
+  simp [getBorderPoint, dist] at h
+  cases hd : e.dir
+  all_goals
+    obtain ⟨h₁, h₂, h₃, z, h₄, rfl⟩ := h
+    simp [hd] at h₁ h₂ h₃ ⊢
+    simp [DState.validTr_iff]
+    refine ⟨?_, h₃⟩
+    simp [Point.ext_iff]
+    aesop'
 
 def cnd (e : Edge) (s : State) : Prop :=
   let pa := s.aPos

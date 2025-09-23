@@ -14,7 +14,7 @@ def st (dse : Defense) (d : DStrat) : DStrat :=
   .mk' # λ s => dse.f s |>.getD (d.f s)
 
 class ValidTr (dse : Defense) : Prop where
-  valid_tr : ∀ {s} [sys.WF s] {p}, dse.f s = some p → sys.validTr s p
+  valid_tr : ∀ {s} [DState s] {p}, dse.f s = some p → sys.validTr s p
 
 class WF (dse : Defense) extends dse.ValidTr where
   not_mem_ps : ∀ {s} [sys.WF s], dse.cnd s → ∀ (a : AStrat) [a.WF],

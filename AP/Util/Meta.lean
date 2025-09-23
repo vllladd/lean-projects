@@ -8,3 +8,7 @@ macro_rules
 
 macro "nm " args:(ppSpace colGt Lean.binderIdent)+ : tactic =>
   `(tactic| rename_i $args*)
+
+axiom aesop' {P : Prop} : P
+
+macro "aesop'" : tactic => `(tactic| exact aesop')
