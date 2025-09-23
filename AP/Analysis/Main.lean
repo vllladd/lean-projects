@@ -26,7 +26,7 @@ BddAbove (Set.range f) ↔ ∃ x, ∀ i, f i ≤ x := by
   · intro h; rcases h with ⟨x, h⟩; simp [upperBounds] at h; use x
   · rintro ⟨x, h⟩; exact bddAbove_range_of_forall_le x h
 
-theorem bddBelow_range_neg {ι α : Type} [ha₁ : LinearOrder α] [ha₂ : Ring α]
+theorem bddBelow_range_neg {ι α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α]
 [ha₃ : AddLeftMono α] [ha₄ : AddRightMono α] {f : ι → α} :
 BddBelow (Set.range (-f)) ↔ BddAbove (Set.range f) := by
   simp [bddBelow_range, bddAbove_range]
@@ -34,7 +34,7 @@ BddBelow (Set.range (-f)) ↔ BddAbove (Set.range f) := by
   · rwa [←neg_neg # f i, neg_le_neg_iff]
   · rwa [neg_le_neg_iff]
 
-theorem bddAbove_range_neg {ι α : Type} [ha₁ : LinearOrder α] [ha₂ : Ring α]
+theorem bddAbove_range_neg {ι α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α]
 [ha₃ : AddLeftMono α] [ha₄ : AddRightMono α] {f : ι → α} :
 BddAbove (Set.range (-f)) ↔ BddBelow (Set.range f) := by
   nth_rw 2 [←neg_neg f]; rw [bddBelow_range_neg]
@@ -410,10 +410,97 @@ theorem lt_ub_of_tendsTo {a L} (h : tendsTo a L) :
   · intro i; apply lt_of_le_of_lt (h₁ i) lub_lt_ub
   · apply lt_of_le_of_lt h₂ lub_lt_ub
 
+theorem tendsTo_mul_aux₁ {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
+(h₂ : tendsTo a₂ L₂) (h₄' : ∀ i, 1 < a₂ i)
+(h₅' : 1 < L₁) (h₆' : 1 < L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
+  have h₁' := h₁
+  have h₂' := h₂
+  have h₄ : ∀ i, 0 < a₂ i; intro i; specialize h₄' i; linarith
+  have h₅ : 0 < L₁; linarith
+  have h₆ : 0 < L₂; linarith
+  intro e he
+  generalize hx : e / 2 / ub a₂ = x
+  generalize hy : e / 2 / L₁ = y
+  have hxp : 0 < x
+  · subst hx
+    apply div_pos; positivity
+    apply h₆.trans
+    exact lt_ub_of_tendsTo h₂ |>.2
+  have hyp : 0 < y
+  · subst hy; positivity
+  specialize h₁ x hxp
+  specialize h₂ y hyp
+  obtain ⟨N₁, h₁⟩ := h₁
+  obtain ⟨N₂, h₂⟩ := h₂
+  dsimp
+  use max N₁ N₂
+  intro n hn
+  simp at hn
+  rcases hn with ⟨hn₁, hn₂⟩
+  specialize h₁ n (by linarith)
+  specialize h₂ n (by linarith)
+  specialize h₄ n; specialize h₄' n
+  have h₇ : |a₁ n * a₂ n - L₁ * L₂| < a₂ n * x + L₁ * y
+  · calc
+    _ = |a₂ n * (a₁ n - L₁) + L₁ * (a₂ n - L₂)| := by ring_nf
+    _ ≤ |a₂ n * (a₁ n - L₁)| + |L₁ * (a₂ n - L₂)| := by apply abs_add
+    _ = |a₂ n| * |a₁ n - L₁| + |L₁| * |a₂ n - L₂| := by simp [abs_mul]
+    _ = a₂ n * |a₁ n - L₁| + L₁ * |a₂ n - L₂| := by
+      congr; exact abs_of_pos h₄; exact abs_of_pos h₅
+    _ < a₂ n * x + L₁ * |a₂ n - L₂| := by simpa [mul_lt_mul_left h₄]
+    _ < a₂ n * x + L₁ * y := by simpa [mul_lt_mul_left h₅]
+  apply h₇.trans; clear h₇
+  subst hx hy
+  calc
+    _ < e / 2 + L₁ * (e / 2 / L₁) := by
+      simp
+      rw [←mul_comm_div]
+      apply mul_lt_of_lt_one_left; positivity
+      rw [div_lt_one_iff]
+      left
+      use h₆.trans # lt_ub_of_tendsTo h₂' |>.2
+      exact lt_ub_of_tendsTo h₂' |>.1 n
+    _ = e / 2 + e / 2 := by
+      simp
+      rw [←mul_comm_div]
+      rw [div_self # by linarith]
+      simp
+    _ = e := by simp
+
 -- #check 0 #exit
 
 theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
+  generalize hm : max 2 (-max (lb a₁) (lb a₂)) = m
+  have h₃ := @tendsTo_add a₁ (λ _ => m) L₁ m h₁ tendsTo_const
+  have h₄ := @tendsTo_add a₂ (λ _ => m) L₂ m h₂ tendsTo_const
+  generalize hb₁ : a₁ + (λ _ => m) = b₁
+  generalize hb₂ : a₂ + (λ _ => m) = b₂
+  have h₅ : a₁ * a₂ = b₁ * b₂ - (λ _ => m) * (b₁ + b₂) + (λ _ => m ^ 2)
+  · calc
+    _ = (b₁ - (λ _ => m)) * (b₂ - (λ _ => m)) := by subst hb₁ hb₂; ring_nf
+    _ = b₁ * b₂ - (λ _ => m) * (b₁ + b₂) + (λ _ => m) ^ 2 := by ring_nf
+    _ = _ := by ext x; simp
+  rw [h₅]; clear h₅
+  have h₅ : L₁ * L₂ = (L₁ + m) * (L₂ + m) -
+    m * ((L₁ + m) + (L₂ + m)) + m ^ 2; ring_nf
+  rw [h₅]; clear h₅
+  have h₅ : tendsTo b₁ (L₁ + m); subst hb₁; exact tendsTo_add h₁ tendsTo_const
+  have h₆ : tendsTo b₂ (L₂ + m); subst hb₂; exact tendsTo_add h₂ tendsTo_const
+  have H₁ : 1 < m; simp [←hm]
+  have H₂ : ∀ i, 1 < b₁ i
+  · intro i
+    simp [←hb₁]
+    sorry
+  apply tendsTo_add _ tendsTo_const
+  apply tendsTo_sub
+  rotate_left
+  · apply tendsTo_mul_aux₁ tendsTo_const # tendsTo_add h₅ h₆
+    · intro i
+      simp [←hb₁]
+      sorry
+    · sorry
+    · sorry
   sorry
 
 -- #check 0 #exit
