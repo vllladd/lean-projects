@@ -1,10 +1,75 @@
 import AP.Util
 
+section util
+
+theorem min_eq_ite {α : Type*} [ha : LinearOrder α] {x y : α} :
+min x y = if x ≤ y then x else y := by
+  split_ifs with h₁; exact min_eq_left h₁; push_neg at h₁; exact min_eq_right_of_lt h₁
+
+theorem bddBelow_range_of_forall_le {ι α : Type*} [ha : LinearOrder α]
+{f : ι → α} (x) (h : ∀ i, x ≤ f i) : BddBelow (Set.range f) := by
+  use x; simpa [lowerBounds]
+
+theorem bddAbove_range_of_forall_le {ι α : Type*} [ha : LinearOrder α]
+{f : ι → α} (x) (h : ∀ i, f i ≤ x) : BddAbove (Set.range f) := by
+  use x; simpa [upperBounds]
+
+theorem bddBelow_range {ι α : Type*} [ha : LinearOrder α] {f : ι → α} :
+BddBelow (Set.range f) ↔ ∃ x, ∀ i, x ≤ f i := by
+  constructor
+  · intro h; rcases h with ⟨x, h⟩; simp [lowerBounds] at h; use x
+  · rintro ⟨x, h⟩; exact bddBelow_range_of_forall_le x h
+
+theorem bddAbove_range {ι α : Type*} [ha : LinearOrder α] {f : ι → α} :
+BddAbove (Set.range f) ↔ ∃ x, ∀ i, f i ≤ x := by
+  constructor
+  · intro h; rcases h with ⟨x, h⟩; simp [upperBounds] at h; use x
+  · rintro ⟨x, h⟩; exact bddAbove_range_of_forall_le x h
+
+theorem bddBelow_range_neg {ι α : Type} [ha₁ : LinearOrder α] [ha₂ : Ring α]
+[ha₃ : AddLeftMono α] [ha₄ : AddRightMono α] {f : ι → α} :
+BddBelow (Set.range (-f)) ↔ BddAbove (Set.range f) := by
+  simp [bddBelow_range, bddAbove_range]
+  constructor <;> rintro ⟨x, hx⟩ <;> use -x <;> intro i <;> specialize hx i
+  · rwa [←neg_neg # f i, neg_le_neg_iff]
+  · rwa [neg_le_neg_iff]
+
+theorem bddAbove_range_neg {ι α : Type} [ha₁ : LinearOrder α] [ha₂ : Ring α]
+[ha₃ : AddLeftMono α] [ha₄ : AddRightMono α] {f : ι → α} :
+BddAbove (Set.range (-f)) ↔ BddBelow (Set.range f) := by
+  nth_rw 2 [←neg_neg f]; rw [bddBelow_range_neg]
+
+-- #check 0 #exit
+
+end util
+
+namespace RealAnalysis
+
 def tendsTo (a : ℕ → ℝ) (L : ℝ) : Prop :=
   ∀ ε, 0 < ε → ∃ N, ∀ n, N ≤ n → |a n - L| < ε
 
 def converges (a : ℕ → ℝ) : Prop :=
   ∃ L, tendsTo a L
+
+noncomputable def someLt (x : ℝ) : ℝ :=
+  Classical.epsilon (· < x)
+
+noncomputable def someGt (x : ℝ) : ℝ :=
+  Classical.epsilon (x < ·)
+
+noncomputable def glb (a : ℕ → ℝ) : ℝ :=
+  ⨅ i, a i
+
+noncomputable def lub (a : ℕ → ℝ) : ℝ :=
+  ⨆ i, a i
+
+noncomputable def lb (a : ℕ → ℝ) : ℝ :=
+  someLt # glb a
+
+noncomputable def ub (a : ℕ → ℝ) : ℝ :=
+  someGt # lub a
+
+-- #check 0 #exit
 
 -----
 
@@ -234,6 +299,118 @@ theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
       rw [div_le_div_iff_of_pos_right # by simp [h₁]]
       rw [mul_le_mul_iff_of_pos_right he]; apply h₄
     _ = e := by rw [mul_div_cancel_left₀ _ # by simp [h₁]]
+
+@[simp]
+theorem someLt_lt {x} : someLt x < x :=
+  Classical.epsilon_spec (p := (· < x)) # exists_lt _
+
+@[simp]
+theorem lt_someGt {x} : x < someGt x :=
+  Classical.epsilon_spec (p := (x < ·)) # exists_gt _
+
+theorem converges_of_tendsTo {a L} (h : tendsTo a L) : converges a := ⟨_, h⟩
+
+theorem bddBelow_of_converges {a} (h : converges a) : BddBelow (Set.range a) := by
+  obtain ⟨L, h⟩ := h
+  specialize h 1 (by norm_num)
+  simp [bddBelow_range]
+  obtain ⟨N, h⟩ := h
+  generalize hm : (List.range N |>.map a |>.cons (L - 1) |>.min?.get!) = m
+  simp at hm
+  use m
+  intro i
+  cases h₁ : List.map a (List.range N) |>.min? <;> simp [h₁] at hm
+  · simp at h₁
+    subst h₁ hm
+    specialize h i (by simp)
+    rw [abs_lt] at h
+    linarith
+  nm m; subst hm
+  simp [List.min?_eq_some_iff_1] at h₁
+  rcases h₁ with ⟨⟨j, h₁, rfl⟩, h₂⟩
+  by_cases h₃ : i < N
+  · exact inf_le_of_right_le # h₂ i h₃
+  push_neg at h₃
+  specialize h i h₃
+  apply inf_le_of_left_le
+  rw [abs_lt] at h
+  linarith
+
+@[simp]
+theorem converges_neg {a} : converges (-a) ↔ converges a := by
+  constructor <;> rintro ⟨L, h⟩ <;> use -L <;> convert tendsTo_neg h; simp
+
+theorem bddAbove_of_converges {a} (h : converges a) : BddAbove (Set.range a) := by
+  replace h : converges (-a); simpa
+  replace h := bddBelow_of_converges h
+  rwa [←bddBelow_range_neg]
+
+theorem glb_le_of_tendsTo {a L} (h : tendsTo a L) :
+(∀ i, glb a ≤ a i) ∧ glb a ≤ L := by
+  apply and_of
+  · intro i; unfold glb
+    apply ciInf_le_of_le _ i (by rfl)
+    apply bddBelow_of_converges # converges_of_tendsTo h
+  intro h₁
+  by_contra! h₂
+  generalize glb a = m at h₁ h₂
+  specialize h (m - L) (by linarith)
+  obtain ⟨N, h⟩ := h
+  specialize h N (by rfl)
+  specialize h₁ N
+  rw [abs_lt] at h
+  linarith
+
+theorem le_lub_of_tendsTo {a L} (h : tendsTo a L) :
+(∀ i, a i ≤ lub a) ∧ L ≤ lub a := by
+  apply and_of
+  · intro i; unfold lub
+    apply le_ciSup_of_le _ i (by rfl)
+    apply bddAbove_of_converges # converges_of_tendsTo h
+  intro h₁
+  by_contra! h₂
+  generalize lub a = m at h₁ h₂
+  specialize h (L - m) (by linarith)
+  obtain ⟨N, h⟩ := h
+  specialize h N (by rfl)
+  specialize h₁ N
+  rw [abs_lt] at h
+  linarith
+
+theorem le_glb_of_le {a m} (h : ∀ i, m ≤ a i) : m ≤ glb a := le_ciInf h
+theorem lub_le_of_le {a m} (h : ∀ i, a i ≤ m) : lub a ≤ m := ciSup_le h
+
+theorem glb_neg {a : ℕ → ℝ} (h : converges a) :
+glb (-a) = -lub a := by
+  obtain ⟨L, h₁⟩ := h
+  have h₂ := tendsTo_neg h₁
+  obtain ⟨h₃, h₄⟩ := le_lub_of_tendsTo h₁
+  obtain ⟨h₅, h₆⟩ := glb_le_of_tendsTo h₂
+  simp at h₅
+  apply le_antisymm
+  · rw [←neg_le_neg_iff]; simp; apply lub_le_of_le; intro i; specialize h₅ i; linarith
+  · apply le_glb_of_le; intro i; specialize h₃ i; simp; linarith
+
+theorem lub_neg {a : ℕ → ℝ} (h : converges a) :
+lub (-a) = -glb a := by
+  nth_rw 2 [←neg_neg a]; rw [glb_neg] <;> simp [h]
+
+@[simp] theorem lb_lt_glb {a} : lb a < glb a := by simp [lb]
+@[simp] theorem lub_lt_ub {a} : lub a < ub a := by simp [ub]
+
+theorem lb_lt_of_tendsTo {a L} (h : tendsTo a L) :
+(∀ i, lb a < a i) ∧ lb a < L := by
+  obtain ⟨h₁, h₂⟩ := glb_le_of_tendsTo h; constructor
+  · intro i; apply lt_of_lt_of_le lb_lt_glb # h₁ i
+  · apply lt_of_lt_of_le lb_lt_glb h₂
+
+theorem lt_ub_of_tendsTo {a L} (h : tendsTo a L) :
+(∀ i, a i < ub a) ∧ L < ub a := by
+  obtain ⟨h₁, h₂⟩ := le_lub_of_tendsTo h; constructor
+  · intro i; apply lt_of_le_of_lt (h₁ i) lub_lt_ub
+  · apply lt_of_le_of_lt h₂ lub_lt_ub
+
+-- #check 0 #exit
 
 theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
