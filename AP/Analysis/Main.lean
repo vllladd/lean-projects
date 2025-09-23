@@ -6,6 +6,11 @@ theorem min_eq_ite {α : Type*} [ha : LinearOrder α] {x y : α} :
 min x y = if x ≤ y then x else y := by
   split_ifs with h₁; exact min_eq_left h₁; push_neg at h₁; exact min_eq_right_of_lt h₁
 
+theorem abs_eq_ite {α : Type*} [ha₁ : LinearOrder α]
+[hs₂ : AddGroup α] [ha₃ : AddLeftMono α] {x : α} :
+|x| = if 0 ≤ x then x else -x := by
+  split_ifs with h; exact abs_of_nonneg h; simp at h; exact abs_of_neg h
+
 theorem bddBelow_range_of_forall_le {ι α : Type*} [ha : LinearOrder α]
 {f : ι → α} (x) (h : ∀ i, x ≤ f i) : BddBelow (Set.range f) := by
   use x; simpa [lowerBounds]
@@ -233,15 +238,15 @@ tendsTo a L ↔ ∀ (ε : ℝ), 0 < ε → ε < 1 → ∃ (N : ℕ),
 
 theorem tendsTo_inv_aux₁ {x y : ℝ} (h : |x - y| < |y| / 2) : |y| / 2 < |x| := by
   suffices h₆ : 2 * |y| < 3 / 2 * |y| + |x|; linarith; calc
-    _ = |x - y - x - y| := by
-      simp; ring_nf; simp [abs_neg, abs_mul]
-    _ = |(x - y) - (x + y)| := by ring_nf
-    _ ≤ |x - y| + |x + y| := by apply abs_sub
-    _ < |y| / 2 + |x + y| := by simpa
-    _ ≤ |y| / 2 + |x| + |y| := by
-      simp only [add_assoc, add_le_add_iff_left]
-      apply abs_add
-    _ = _ := by ring_nf
+  _ = |x - y - x - y| := by
+    simp; ring_nf; simp [abs_neg, abs_mul]
+  _ = |(x - y) - (x + y)| := by ring_nf
+  _ ≤ |x - y| + |x + y| := by apply abs_sub
+  _ < |y| / 2 + |x + y| := by simpa
+  _ ≤ |y| / 2 + |x| + |y| := by
+    simp only [add_assoc, add_le_add_iff_left]
+    apply abs_add
+  _ = _ := by ring_nf
 
 theorem tendsTo_inv_aux₂ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
 (h₃ : tendsTo a L) : ∃ (x : ℝ), 0 < x ∧ ∀ n, x ≤ |a n| := by
@@ -293,12 +298,12 @@ theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
     _ < x * e * |L| / |a n * L| := by
       rwa [div_lt_div_iff_of_pos_right H]
   calc
-    _ = x * e * |L| / (|a n| * |L|) := by rw [abs_mul]
-    _ = x * e / |a n| := mul_div_mul_right _ _ # by positivity
-    _ ≤ |a n| * e / |a n| := by
-      rw [div_le_div_iff_of_pos_right # by simp [h₁]]
-      rw [mul_le_mul_iff_of_pos_right he]; apply h₄
-    _ = e := by rw [mul_div_cancel_left₀ _ # by simp [h₁]]
+  _ = x * e * |L| / (|a n| * |L|) := by rw [abs_mul]
+  _ = x * e / |a n| := mul_div_mul_right _ _ # by positivity
+  _ ≤ |a n| * e / |a n| := by
+    rw [div_le_div_iff_of_pos_right # by simp [h₁]]
+    rw [mul_le_mul_iff_of_pos_right he]; apply h₄
+  _ = e := by rw [mul_div_cancel_left₀ _ # by simp [h₁]]
 
 @[simp]
 theorem someLt_lt {x} : someLt x < x :=
@@ -452,30 +457,74 @@ theorem tendsTo_mul_aux₁ {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
   apply h₇.trans; clear h₇
   subst hx hy
   calc
-    _ < e / 2 + L₁ * (e / 2 / L₁) := by
-      simp
-      rw [←mul_comm_div]
-      apply mul_lt_of_lt_one_left; positivity
-      rw [div_lt_one_iff]
-      left
-      use h₆.trans # lt_ub_of_tendsTo h₂' |>.2
-      exact lt_ub_of_tendsTo h₂' |>.1 n
-    _ = e / 2 + e / 2 := by
-      simp
-      rw [←mul_comm_div]
-      rw [div_self # by linarith]
-      simp
-    _ = e := by simp
-
--- #check 0 #exit
+  _ < e / 2 + L₁ * (e / 2 / L₁) := by
+    simp
+    rw [←mul_comm_div]
+    apply mul_lt_of_lt_one_left; positivity
+    rw [div_lt_one_iff]
+    left
+    use h₆.trans # lt_ub_of_tendsTo h₂' |>.2
+    exact lt_ub_of_tendsTo h₂' |>.1 n
+  _ = e / 2 + e / 2 := by
+    simp
+    rw [←mul_comm_div]
+    rw [div_self # by linarith]
+    simp
+  _ = e := by simp
 
 theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 (h₂ : tendsTo a₂ L₂) : tendsTo (a₁ * a₂) (L₁ * L₂) := by
-  generalize hm : max 2 (-max (lb a₁) (lb a₂)) = m
-  have h₃ := @tendsTo_add a₁ (λ _ => m) L₁ m h₁ tendsTo_const
-  have h₄ := @tendsTo_add a₂ (λ _ => m) L₂ m h₂ tendsTo_const
+  generalize hm : 3 + max |lb a₁| |lb a₂| = m
   generalize hb₁ : a₁ + (λ _ => m) = b₁
   generalize hb₂ : a₂ + (λ _ => m) = b₂
+  have H₁ : ∀ i, 2 < b₁ i
+  · intro i; simp [←hb₁, ←hm]
+    have H := lb_lt_of_tendsTo h₁ |>.1 i
+    simp [max_eq_ite]; split_ifs with h₃
+    · rw [abs_eq_ite]; split_ifs <;> linarith
+    · push_neg at h₃
+      have H₃ := abs_nonneg # lb a₂
+      suffices H₁ : 0 < a₁ i + |lb a₁| + 1; linarith
+      rw [abs_eq_ite]; split_ifs <;> linarith
+  have H₂ : ∀ i, 2 < b₂ i
+  · intro i; simp [←hb₂, ←hm]
+    have H := lb_lt_of_tendsTo h₂ |>.1 i
+    simp [max_eq_ite]; split_ifs with h₃
+    · push_neg at h₃
+      have H₃ := abs_nonneg # lb a₁
+      suffices H₁ : 0 < a₂ i + |lb a₂| + 1; linarith
+      rw [abs_eq_ite]; split_ifs <;> linarith
+    · rw [abs_eq_ite]; split_ifs <;> linarith
+  have H₃ : 2 < m
+  · rw [←hm]
+    suffices : 0 < 1 + max |lb a₁| |lb a₂|; linarith
+    suffices : 0 ≤ max |lb a₁| |lb a₂|; linarith
+    simp
+  have h₃ := @tendsTo_add a₁ (λ _ => m) L₁ m h₁ tendsTo_const
+  have h₄ := @tendsTo_add a₂ (λ _ => m) L₂ m h₂ tendsTo_const
+  rw [hb₁] at h₃
+  rw [hb₂] at h₄
+  have H₄ : 1 < L₁ + m
+  · by_contra! h₅
+    specialize h₃ (1 / 2) (by positivity)
+    obtain ⟨N, h₃⟩ := h₃
+    specialize h₃ N (by rfl)
+    specialize H₁ N
+    rw [abs_lt] at h₃
+    rcases h₃ with ⟨h₃, h₆⟩
+    linarith
+  have H₅ : 1 < L₂ + m
+  · by_contra! h₅
+    specialize h₄ (1 / 2) (by positivity)
+    obtain ⟨N, h₄⟩ := h₄
+    specialize h₄ N (by rfl)
+    specialize H₂ N
+    rw [abs_lt] at h₄
+    rcases h₄ with ⟨h₄, h₆⟩
+    linarith
+  replace H₁ : ∀ i, 1 < b₁ i; intro i; specialize H₁ i; linarith
+  replace H₂ : ∀ i, 1 < b₂ i; intro i; specialize H₂ i; linarith
+  replace H₃ : 1 < m; linarith
   have h₅ : a₁ * a₂ = b₁ * b₂ - (λ _ => m) * (b₁ + b₂) + (λ _ => m ^ 2)
   · calc
     _ = (b₁ - (λ _ => m)) * (b₂ - (λ _ => m)) := by subst hb₁ hb₂; ring_nf
@@ -487,23 +536,17 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
   rw [h₅]; clear h₅
   have h₅ : tendsTo b₁ (L₁ + m); subst hb₁; exact tendsTo_add h₁ tendsTo_const
   have h₆ : tendsTo b₂ (L₂ + m); subst hb₂; exact tendsTo_add h₂ tendsTo_const
-  have H₁ : 1 < m; simp [←hm]
-  have H₂ : ∀ i, 1 < b₁ i
-  · intro i
-    simp [←hb₁]
-    sorry
   apply tendsTo_add _ tendsTo_const
   apply tendsTo_sub
   rotate_left
-  · apply tendsTo_mul_aux₁ tendsTo_const # tendsTo_add h₅ h₆
+  · apply tendsTo_mul_aux₁ tendsTo_const (tendsTo_add h₅ h₆) _ H₃
+    · linarith
     · intro i
-      simp [←hb₁]
-      sorry
-    · sorry
-    · sorry
-  sorry
-
--- #check 0 #exit
+      specialize H₁ i
+      specialize H₂ i
+      simp [←hb₁, ←hb₂] at H₁ H₂ ⊢
+      linarith
+  apply tendsTo_mul_aux₁ h₅ h₆ H₂ H₄ H₅
 
 theorem tendsTo_div {a₁ a₂ L₁ L₂}
 (h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0) (h₃ : tendsTo a₁ L₁)
