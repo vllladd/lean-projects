@@ -18,12 +18,12 @@ class AStrat.Fresh (a : AStrat) (s : State) extends wf : a.WF where
 -- #check 0 #exit
 
 theorem State.aHws_disjoint_of_taken_subset {s s' k} {set : Set PointZ}
-[hs : sys.WF s] [hs' : sys.WF s'] (hpw : s.pw = s'.pw)
-(h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos) (h₄ : s'.taken ⊆ s.taken)
+[hs : sys.WF s] [hs' : sys.WF s'] (hpw : s'.pw = s.pw)
+(h₂ : s'.aTurn = s.aTurn) (h₃ : s'.aPos = s.aPos) (h₄ : s'.taken ⊆ s.taken)
 (h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁,
-sys.simulate (Strat.f ⟨a, d⟩) s (n + k) = (s₁, 0) ∧ s₁.aPos ∉ set) :
+sys.simulate (Strat.f ⟨a, d⟩) s (k + n) = (s₁, 0) ∧ s₁.aPos ∉ set) :
 ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁,
-sys.simulate (Strat.f ⟨a, d⟩) s' (n + k) = (s₁, 0) ∧ s₁.aPos ∉ set := by
+sys.simulate (Strat.f ⟨a, d⟩) s' (k + n) = (s₁, 0) ∧ s₁.aPos ∉ set := by
   sorry
 
 -- #check 0 #exit
@@ -151,7 +151,7 @@ sys.simulate (Strat.f ⟨a, d⟩) s' (n + k) = (s₁, 0) ∧ s₁.aPos ∉ set :
 -- #check 0 #exit
 
 theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
-(h₁ : s.aHws) (hpw : s.pw = s'.pw) (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos)
+(h₁ : s.aHws) (hpw : s'.pw = s.pw) (h₂ : s'.aTurn = s.aTurn) (h₃ : s'.aPos = s.aPos)
 (h₄ : s'.taken ⊆ s.taken) : s'.aHws := by
   have H := @aHws_disjoint_of_taken_subset
   specialize @H s s' 0 ∅ _ _ hpw h₂ h₃ h₄ _
@@ -163,7 +163,7 @@ theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
 -- #check 0 #exit
 
 theorem State.dHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
-(h₁ : s.dHws) (hpw : s.pw = s'.pw) (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos)
+(h₁ : s.dHws) (hpw : s'.pw = s.pw) (h₂ : s'.aTurn = s.aTurn) (h₃ : s'.aPos = s.aPos)
 (h₄ : s.taken ⊆ s'.taken) : s'.dHws := by
   contrapose h₁; simp at h₁ ⊢; symm at hpw h₂ h₃
   exact s'.aHws_of_taken_subset h₁ hpw h₂ h₃ h₄
