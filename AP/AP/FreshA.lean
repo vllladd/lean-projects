@@ -2,6 +2,12 @@ import AP.AP.King
 
 namespace AP
 
+class AStrat.Fresh (a : AStrat) (s : State) extends wf : a.WF where
+  h₁ : ∀ {d : DStrat} [d.WF] {s₁ s₂ : State} [AState s₁] [AState s₂]
+    {k n : ℕ}, k < n → sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
+    sys.simulate (Strat.f ⟨a, d⟩) s n = (s₂, 0) →
+    sys.hasTr s₂ → s.pw < (a.f s₂).dist s₁.aPos
+
 theorem State.aHws_disjoint_of_taken_subset {s s'} {set : Set' PointZ}
 [hs : sys.WF s] [hs' : sys.WF s'] (hpw : s.pw = s'.pw)
 (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos) (h₄ : s'.taken ⊆ s.taken)
@@ -130,14 +136,8 @@ theorem State.dHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
   contrapose h₁; simp at h₁ ⊢; symm at hpw h₂ h₃
   exact s'.aHws_of_taken_subset h₁ hpw h₂ h₃ h₄
 
-class AStrat.Fresh (a : AStrat) (s : State) extends wf : a.WF where
-  h₁ : ∀ {d : DStrat} [d.WF] {s₁ s₂ : State} [AState s₁] [AState s₂]
-    {k n : ℕ}, k < n → sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
-    sys.simulate (Strat.f ⟨a, d⟩) s n = (s₂, 0) →
-    sys.hasTr s₂ → s.pw < (a.f s₂).dist s₁.aPos
-
-theorem State.bounded_reenter_nbhd_pw_of_forall_aWins
-{s} {a : AStrat} [hs : sys.WF s] [Ha : a.WF] (h : ∀ (d : DStrat) [d.WF], s.aWins ⟨a, d⟩) :
+theorem State.bounded_reenter_nbhd_pw_of_forall_aWins {s} {a : AStrat}
+[hs : sys.WF s] [Ha : a.WF] (h : ∀ (d : DStrat) [d.WF], s.aWins ⟨a, d⟩) :
 ∃ (n : ℕ), ∀ (d : DStrat) [d.WF] (set : Set ℕ), {k | ∃ sa, AState sa ∧
 sys.simulate (Strat.f ⟨a, d⟩) s k = (sa, 0) ∧ s.pw ≤ sa.aPos.dist s.aPos} = set →
 set.Finite ∧ set.ncard ≤ n := by
