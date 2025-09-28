@@ -543,3 +543,13 @@ theorem map_map {f : α → β} {g : β → γ} : (s.map f).map g = s.map (g # f
 
 @[simp] theorem map_id : s.map id = s := by ext; simp
 @[simp] theorem map_id' : s.map (·) = s := map_id
+
+def erase (s : Set' α) (x : α) : Set' α :=
+  ⟨s.1.erase x⟩
+
+@[simp]
+theorem mem_erase {x y} : y ∈ s.erase x ↔ x ≠ y ∧ y ∈ s := by
+  convert s.1.mem_erase; simp
+
+theorem erase_eq_of_not_mem {x} (h : x ∉ s) : s.erase x = s := by
+  aesop
