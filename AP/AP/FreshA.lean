@@ -13,13 +13,21 @@ theorem State.aHws_disjoint_of_taken_subset {s s'} {set : Set' PointZ}
 (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos) (h₄ : s'.taken ⊆ s.taken)
 (h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ ∧
 ∀ n, sys.simulate (Strat.f ⟨a, d⟩) s (n + 1) |>.1.aPos ∉ set) :
--- ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ ∧
--- ∀ n, sys.simulate (Strat.f ⟨a, d⟩) s (n + 1) |>.1.aPos ∉ set
-s'.aHws := by
-  apply aHws_of_ind (p := λ s₂ => ∃ (s₁ : State), sys.Reachable s s₁ ∧
+∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s'.aWins ⟨a, d⟩ ∧
+∀ n, sys.simulate (Strat.f ⟨a, d⟩) s' (n + 1) |>.1.aPos ∉ set := by
+  have H := aHws_of_ind' (p := λ s₂ => ∃ (s₁ : State), sys.Reachable s s₁ ∧
     (∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s₁.aWins ⟨a, d⟩ ∧
     ∀ n, sys.simulate (Strat.f ⟨a, d⟩) s₁ (n + 1) |>.1.aPos ∉ set) ∧
     s₁.aTurn = s₂.aTurn ∧ s₁.aPos = s₂.aPos ∧ s₂.taken ⊆ s₁.taken) (by use s)
+  specialize H _ _; rotate_right
+  · dsimp only at H
+    replace H := H.2
+    obtain ⟨s₁, H₁, ⟨a, Ha, H₂⟩, H₃⟩ := H
+    use a, Ha
+    intro d Hd
+    specialize H₂ d Hd
+    obtain ⟨H₂, H₄⟩ := H₂
+    sorry
   all_goals clear h₁
   · rintro sa' hsa' H₁ ⟨sa, hr, ⟨a, Ha, Hx⟩, ht, ha, H₃⟩
     simp at ht; have hsa : AState sa; use sys.wf_of_reachable hr
@@ -127,13 +135,14 @@ s'.aHws := by
       · exact hp
       exact H₃ p₁ H₆
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h₁ : s.aHws) (hpw : s.pw = s'.pw) (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos)
 (h₄ : s'.taken ⊆ s.taken) : s'.aHws := by
-  apply @aHws_disjoint_of_taken_subset s s' ∅ _ _ hpw h₂ h₃ h₄
-  obtain ⟨a, Ha, h₁⟩ := h₁; use a, Ha; simpa
+  have H := @aHws_disjoint_of_taken_subset s s' ∅ _ _ hpw h₂ h₃ h₄
+  specialize H _; obtain ⟨a, Ha, h₁⟩ := h₁; use a, Ha; simpa
+  obtain ⟨a, Ha, H⟩ := H; use a, Ha, λ d Hd => H d Hd |>.1
 
 theorem State.dHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h₁ : s.dHws) (hpw : s.pw = s'.pw) (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos)

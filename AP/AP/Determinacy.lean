@@ -25,16 +25,17 @@ theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
 instance {sa} [ha : AState sa] {st : Strat} [hst : st.WF] {n} :
 AState (sys.simulate st.f sa # n * 2).1 := ha.of_simulate_mul_two
 
-theorem AState.aWins_of_ind_two {sa₀} [ha₀ : AState sa₀]
+theorem AState.aWins_of_ind_two' {sa₀} [ha₀ : AState sa₀]
 {st : Strat} [hst : st.WF] {p : State → Prop} (hp : p sa₀)
 (h : ∀ {sa} [AState sa], sys.Reachable sa₀ sa → p sa →
-∃ sd, sys.tr sa (st.a.f sa) = some sd ∧
-∀ sa', sys.tr sd (st.d.f sd) = some sa' → p sa') :
-sa₀.aWins st := by
+∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ ∀ sa',
+sys.tr sd (st.d.f sd) = some sa' → p sa') : sa₀.aWins st ∧ p sa₀ := by
   rw [sa₀.aWins_iff_mul_two]
+  suffices h₁ : ∀ n, ∃ b, sys.simulate st.f sa₀ (n * 2) = (b, 0) ∧ p b
+  · constructor
+    · intro n; specialize h₁ n; obtain ⟨b, h₁, h₂⟩ := h₁; simp [h₁]
+    · specialize h₁ 0; simp at h₁; exact h₁
   intro n
-  suffices h₁ : ∃ b, sys.simulate st.f sa₀ (n * 2) = (b, 0) ∧ p b
-  · obtain ⟨b, h₁, h₂⟩ := h₁; simp [h₁]
   induction n
   · use sa₀; simpa
   nm n ih
@@ -51,6 +52,13 @@ sa₀.aWins st := by
   obtain ⟨sa', h₃⟩ := hst.wf_d.1 hd.hasTr hd.turn
   simp [h₃]
   exact h₂ _ h₃
+
+theorem AState.aWins_of_ind_two {sa₀} [ha₀ : AState sa₀]
+{st : Strat} [hst : st.WF] {p : State → Prop} (hp : p sa₀)
+(h : ∀ {sa} [AState sa], sys.Reachable sa₀ sa → p sa →
+∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ ∀ sa',
+sys.tr sd (st.d.f sd) = some sa' → p sa') : sa₀.aWins st :=
+  ha₀.aWins_of_ind_two' hp h |>.1
 
 theorem AState.ind_two {sa sa'} [ha : AState sa] [ha' : AState sa']
 {p : State → Prop} (h₁ : p sa) (h₂ : ∀ sa [AState sa] pa sd pd sa',
@@ -85,14 +93,16 @@ theorem wf_aStratChoose {p} : (aStratChoose p).WF := by
 
 instance {p} : (aStratChoose p).WF := wf_aStratChoose
 
-theorem AState.aHws_of_ind_two {sa₀ : State} [ha₀ : AState sa₀] {p : State → Prop}
+theorem AState.aHws_of_ind_two' {sa₀ : State} [ha₀ : AState sa₀] {p : State → Prop}
 (h₁ : p sa₀) (h₂ : ∀ sa [AState sa], sys.Reachable sa₀ sa → p sa →
 ∃ pa sd, sys.tr sa pa = some sd ∧ ∀ pd sa',
-sys.tr sd pd = some sa' → p sa') : sa₀.aHws := by
+sys.tr sd pd = some sa' → p sa') : sa₀.aHws ∧ p sa₀ := by
   classical
+  convert_to ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → sa₀.aWins ⟨a, d⟩ ∧ p sa₀
+  · simp_all only [State.aHws, and_true]
   use aStratChoose p, inferInstance
   intro d hd
-  apply ha₀.aWins_of_ind_two h₁
+  apply ha₀.aWins_of_ind_two' h₁
   intro sa ha hp H
   specialize h₂ sa hp H
   simp only [aStratChoose, choose?_eq_ite]
@@ -103,6 +113,12 @@ sys.tr sd pd = some sa' → p sa') : sa₀.aHws := by
   obtain ⟨sd, h₃, h₄⟩ := h₃; use sd
   simp [-tr_eq_some_iff, mk_strat_fn, h₂, h₁,
     System.validTr_iff_isSome, h₃]; apply h₄
+
+theorem AState.aHws_of_ind_two {sa₀ : State} [ha₀ : AState sa₀] {p : State → Prop}
+(h₁ : p sa₀) (h₂ : ∀ sa [AState sa], sys.Reachable sa₀ sa → p sa →
+∃ pa sd, sys.tr sa pa = some sd ∧ ∀ pd sa',
+sys.tr sd pd = some sa' → p sa') : sa₀.aHws :=
+  ha₀.aHws_of_ind_two' h₁ h₂ |>.1
 
 instance {s} [hs : sys.WF s] : sys.Tree s := by
   rw [System.tree_iff_full_trs]
@@ -504,12 +520,12 @@ sd.aHws ↔ ∀ p sa, sys.tr sd p = some sa → sa.aHws := by
   rw [and_congr_right_iff]; intro h
   have h₁ := AState.of_tr h; simp
 
-theorem AState.aHws_of_ind {s} [ha : AState s] {p : State → Prop} (h₁ : p s)
+theorem AState.aHws_of_ind' {s} [ha : AState s] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
 ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] pd sa, sys.Reachable s sd → p sd →
-sys.tr sd pd = some sa → p sa) : s.aHws := by
-  apply ha.aHws_of_ind_two h₁
+sys.tr sd pd = some sa → p sa) : s.aHws ∧ p s := by
+  apply ha.aHws_of_ind_two' h₁
   intro sa h₄ H h₅
   specialize h₂ sa H h₅
   obtain ⟨pa, sd, h₂, h₆⟩ := h₂
@@ -518,14 +534,20 @@ sys.tr sd pd = some sa → p sa) : s.aHws := by
   have h₈ := DState.of_tr h₂
   exact h₃ sd pd sa' (sys.reachable_right H h₂) h₆ h₇
 
-theorem AState.aWins_of_ind {s} [ha : AState s]
+theorem AState.aHws_of_ind {s} [ha : AState s] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
+∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] pd sa, sys.Reachable s sd → p sd →
+sys.tr sd pd = some sa → p sa) : s.aHws :=
+  ha.aHws_of_ind' h₁ h₂ h₃ |>.1
+
+theorem AState.aWins_of_ind' {s} [ha : AState s]
 {st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
 ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] sa, sys.Reachable s sd → p sd →
-sys.tr sd (st.d.f sd) = some sa → p sa) :
-s.aWins st := by
-  apply ha.aWins_of_ind_two h₁
+sys.tr sd (st.d.f sd) = some sa → p sa) : s.aWins st ∧ p s := by
+  apply ha.aWins_of_ind_two' h₁
   intro sa h₄ H h₅
   specialize h₂ sa H h₅
   obtain ⟨sd, h₂, h₆⟩ := h₂
@@ -534,42 +556,74 @@ s.aWins st := by
   have h₈ := DState.of_tr h₂
   exact h₃ sd sa' (sys.reachable_right H h₂) h₆ h₇
 
-theorem State.aWins_of_ind {s} [hs : sys.WF s]
+theorem AState.aWins_of_ind {s} [ha : AState s]
 {st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
 ∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] sa, sys.Reachable s sd → p sd →
-sys.tr sd (st.d.f sd) = some sa → p sa) :
-s.aWins st := by
+sys.tr sd (st.d.f sd) = some sa → p sa) : s.aWins st :=
+  ha.aWins_of_ind' h₁ h₂ h₃ |>.1
+
+theorem State.aWins_of_ind' {s} [hs : sys.WF s]
+{st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
+∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, sys.Reachable s sd → p sd →
+sys.tr sd (st.d.f sd) = some sa → p sa) : s.aWins st ∧ p s := by
   replace hs := s.aState_or_dState
   rcases hs with ha | hd
-  · exact ha.aWins_of_ind h₁ h₂ h₃
+  · exact ha.aWins_of_ind' h₁ h₂ h₃
+  convert_to ∀ n, (sys.simulate st.f s n).2 = 0 ∧ p s
+  · unfold State.aWins
+    clear h₂ h₃
+    use by tauto
+    intro h
+    use λ n => h n |>.1
   intro n
-  cases n; rfl; nm n
+  cases n; simpa; nm n
   simp
   obtain ⟨sa, h₄⟩ := hst.wf_d.validTr s
   simp [h₄]
   have h₅ := AState.of_tr h₄
   have h₆ := h₃ s sa (by rfl) h₁ h₄
+  refine ⟨?_, h₁⟩
   apply h₅.aWins_of_ind h₆
   · intro sa₁ hsa₁ H₁ H₂; exact h₂ _ (H₁.step h₄) H₂
   · intro sd₁ hsd₁ H₁ H₂; apply h₃; exact H₂.step h₄
+
+theorem State.aWins_of_ind {s} [hs : sys.WF s]
+{st : Strat} [hst : st.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
+∃ sd, sys.tr sa (st.a.f sa) = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, sys.Reachable s sd → p sd →
+sys.tr sd (st.d.f sd) = some sa → p sa) : s.aWins st :=
+  s.aWins_of_ind' h₁ h₂ h₃ |>.1
+
+theorem State.aHws_of_ind' {s} [hs : sys.WF s] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
+∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] pd sa, sys.Reachable s sd → p sd →
+sys.tr sd pd = some sa → p sa) : s.aHws ∧ p s := by
+  replace hs := s.aState_or_dState
+  rcases hs with ha | hd
+  · exact ha.aHws_of_ind' h₁ h₂ h₃
+  rw [hd.aHws_iff_tr]
+  convert_to ∀ p₁ sa, sys.tr s p₁ = some sa → sa.aHws ∧ p s
+  · simp_all only [and_true]
+  intro pd sa h₅
+  have h₆ := AState.of_tr h₅
+  have h₇ := h₃ s pd sa (by rfl) h₁ h₅
+  refine ⟨?_, h₁⟩
+  apply h₆.aHws_of_ind h₇
+  · intro sa₁ hsa₁ H₁ H₂; exact h₂ _ (H₁.step h₅) H₂
+  · intro sd₁ hsd₁ H₁ H₂ H₃; apply h₃; exact H₃.step h₅
 
 theorem State.aHws_of_ind {s} [hs : sys.WF s] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], sys.Reachable s sa → p sa →
 ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] pd sa, sys.Reachable s sd → p sd →
-sys.tr sd pd = some sa → p sa) : s.aHws := by
-  replace hs := s.aState_or_dState
-  rcases hs with ha | hd
-  · exact ha.aHws_of_ind h₁ h₂ h₃
-  rw [hd.aHws_iff_tr]
-  intro pd sa h₅
-  have h₆ := AState.of_tr h₅
-  have h₇ := h₃ s pd sa (by rfl) h₁ h₅
-  apply h₆.aHws_of_ind h₇
-  · intro sa₁ hsa₁ H₁ H₂; exact h₂ _ (H₁.step h₅) H₂
-  · intro sd₁ hsd₁ H₁ H₂ H₃; apply h₃; exact H₃.step h₅
+sys.tr sd pd = some sa → p sa) : s.aHws :=
+  s.aHws_of_ind' h₁ h₂ h₃ |>.1
 
 open Classical in noncomputable
 def aSeek (p : State → Prop) : AStrat := .mk # λ sa =>
@@ -577,13 +631,14 @@ def aSeek (p : State → Prop) : AStrat := .mk # λ sa =>
 
 instance {p} : (aSeek p).WF := by unfold aSeek; infer_instance
 
-theorem State.exi_aWins_of_ind {s} [hs : sys.WF s]
+theorem State.exi_aWins_of_ind' {s} [hs : sys.WF s]
 {d : DStrat} [Hd : d.WF] {p : State → Prop} (h₁ : p s)
 (h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
 (h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (d.f sd) = some sa → p sa) :
-∃ (a : AStrat), a.WF ∧ s.aWins ⟨a, d⟩ := by
+(∃ (a : AStrat), a.WF ∧ s.aWins ⟨a, d⟩) ∧ p s := by
+  suffices h₄ : ∃ (a : AStrat), a.WF ∧ s.aWins ⟨a, d⟩ ∧ p s; tauto
   use aSeek p, inferInstance
-  apply aWins_of_ind h₁; clear! s
+  apply aWins_of_ind' h₁; clear! s
   · intro sa ha H ih; dsimp
     specialize h₂ sa ih
     simp [-AState.tr_eq_some_iff, aSeek, mk_strat_fn, choose?_eq_ite, h₂]
@@ -597,6 +652,13 @@ theorem State.exi_aWins_of_ind {s} [hs : sys.WF s]
   · intro sd hd sa H ih h₄; dsimp at h₄
     have ha := AState.of_tr h₄
     exact h₃ sd sa ih h₄
+
+theorem State.exi_aWins_of_ind {s} [hs : sys.WF s]
+{d : DStrat} [Hd : d.WF] {p : State → Prop} (h₁ : p s)
+(h₂ : ∀ sa [AState sa], p sa → ∃ pa sd, sys.tr sa pa = some sd ∧ p sd)
+(h₃ : ∀ sd [DState sd] sa, p sd → sys.tr sd (d.f sd) = some sa → p sa) :
+∃ (a : AStrat), a.WF ∧ s.aWins ⟨a, d⟩ :=
+  s.exi_aWins_of_ind' h₁ h₂ h₃ |>.1
 
 theorem State.aWins_iff_add {s st} (k : ℕ) :
 s.aWins st ↔ ∀ n, (sys.simulate st.f s # k + n).2 = 0 := by
