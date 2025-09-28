@@ -12,7 +12,10 @@ theorem State.aHws_disjoint_of_taken_subset {s s'} {set : Set' PointZ}
 [hs : sys.WF s] [hs' : sys.WF s'] (hpw : s.pw = s'.pw)
 (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos) (h₄ : s'.taken ⊆ s.taken)
 (h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ ∧
-∀ n, sys.simulate (Strat.f ⟨a, d⟩) s (n + 1) |>.1.aPos ∉ set) : s'.aHws := by
+∀ n, sys.simulate (Strat.f ⟨a, d⟩) s (n + 1) |>.1.aPos ∉ set) :
+-- ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ ∧
+-- ∀ n, sys.simulate (Strat.f ⟨a, d⟩) s (n + 1) |>.1.aPos ∉ set
+s'.aHws := by
   apply aHws_of_ind (p := λ s₂ => ∃ (s₁ : State), sys.Reachable s s₁ ∧
     (∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s₁.aWins ⟨a, d⟩ ∧
     ∀ n, sys.simulate (Strat.f ⟨a, d⟩) s₁ (n + 1) |>.1.aPos ∉ set) ∧
@@ -123,6 +126,8 @@ theorem State.aHws_disjoint_of_taken_subset {s s'} {set : Set' PointZ}
       rintro (rfl | H₆) <;> right
       · exact hp
       exact H₃ p₁ H₆
+
+#check 0 #exit
 
 theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h₁ : s.aHws) (hpw : s.pw = s'.pw) (h₂ : s.aTurn = s'.aTurn) (h₃ : s.aPos = s'.aPos)
