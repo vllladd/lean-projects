@@ -500,3 +500,22 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
 theorem tendsTo_div {a₁ a₂ L₁ L₂} (h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0)
 (h₃ : tendsTo a₁ L₁) (h₄ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
   tendsTo_mul h₃ # tendsTo_inv h₁ h₂ h₄
+
+theorem squeeze {a b c : ℕ → ℝ} {L} (h₁ : ∀ n, a n ≤ b n) (h₂ : ∀ n, b n ≤ c n)
+(h₃ : tendsTo a L) (h₄ : tendsTo c L) : tendsTo b L := by
+  intro e he
+  have he' : 0 < e / 2; positivity
+  specialize h₃ (e / 2) he'
+  specialize h₄ (e / 2) he'
+  obtain ⟨N₁, h₃⟩ := h₃
+  obtain ⟨N₂, h₄⟩ := h₄
+  use max N₁ N₂
+  intro n hn
+  simp at hn
+  rcases hn with ⟨hn₁, hn₂⟩
+  specialize h₁ n
+  specialize h₂ n
+  specialize h₃ n # by linarith
+  specialize h₄ n # by linarith
+  rw [abs_lt] at h₃ h₄ ⊢
+  constructor <;> linarith
