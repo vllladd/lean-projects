@@ -505,14 +505,12 @@ theorem squeeze {a b c : ℕ → ℝ} {L} (h₁ : ∀ n, a n ≤ b n) (h₂ : �
 (h₃ : tendsTo a L) (h₄ : tendsTo c L) : tendsTo b L := by
   intro e he
   have he' : 0 < e / 2; positivity
-  specialize h₃ (e / 2) he'
-  specialize h₄ (e / 2) he'
+  specialize h₃ _ he'
+  specialize h₄ _ he'
   obtain ⟨N₁, h₃⟩ := h₃
   obtain ⟨N₂, h₄⟩ := h₄
-  use max N₁ N₂
+  use N₁ + N₂
   intro n hn
-  simp at hn
-  rcases hn with ⟨hn₁, hn₂⟩
   specialize h₁ n
   specialize h₂ n
   specialize h₃ n # by linarith
