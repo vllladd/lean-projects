@@ -504,9 +504,8 @@ theorem tendsTo_div {a₁ a₂ L₁ L₂} (h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L
 theorem squeeze {a b c : ℕ → ℝ} {L} (h₁ : ∀ n, a n ≤ b n) (h₂ : ∀ n, b n ≤ c n)
 (h₃ : tendsTo a L) (h₄ : tendsTo c L) : tendsTo b L := by
   intro e he
-  have he' : 0 < e / 2; positivity
-  specialize h₃ _ he'
-  specialize h₄ _ he'
+  specialize h₃ e he
+  specialize h₄ e he
   obtain ⟨N₁, h₃⟩ := h₃
   obtain ⟨N₂, h₄⟩ := h₄
   use N₁ + N₂
