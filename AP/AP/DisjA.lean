@@ -93,30 +93,47 @@ theorem State.aHwsDisj_insert_of_mem_taken {s fsp p} [hs : sys.WF s]
 
 -- #check 0 #exit
 
+theorem State.exi_aHwsDisj_insert_of_forall_aWinsDisj {s} {fsp : FSP} {p}
+[hs : sys.WF s] (h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF →
+∃ n, s.aWinsDisj (fsp.insert n p) ⟨a, d⟩) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
+  sorry
+
+-- #check 0 #exit
+
 theorem State.aHwsDisj_insert_of_not_mem_taken {s fsp p} [hs : sys.WF s]
 (h₁ : s.aHwsDisj fsp) (h₂ : p ∉ s.taken) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  unfold aHwsDisj at h₁ ⊢
+  unfold aHwsDisj at h₁
+  apply exi_aHwsDisj_insert_of_forall_aWinsDisj
   
   replace h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF →
     ∀ k, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) ∧ ¬fsp.hasLe k s₁.aPos
   · exact h₁
   
   by_contra h₃
-  replace h₃ : ∀ (n : ℕ) (a : AStrat), a.WF → ∃ (d : DStrat), d.WF ∧
-    ∃ k, ∀ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
+  replace h₃ : ∀ (a : AStrat), a.WF → ∃ (d : DStrat), d.WF ∧
+    ∀ n, ∃ k, ∀ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
     (fsp.insert n p).hasLe k s₁.aPos
   · contrapose! h₃; exact h₃
   
+  have h₃' : ∀ n (a : AStrat), a.WF → ∃ (d : DStrat), d.WF ∧
+    ∃ k, ∀ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
+    (fsp.insert n p).hasLe k s₁.aPos
+  · intro n a Ha
+    specialize h₃ a Ha
+    obtain ⟨d, Hd, h₃⟩ := h₃
+    specialize h₃ n
+    use d
+  
   have h₄ : ∀ n, p ∉ fsp.get n
   · intro n h₄
-    specialize h₃ n
-    rw [fsp.insert_eq_of_mem h₄] at h₃
-    contrapose! h₃
+    specialize h₃' n
+    rw [fsp.insert_eq_of_mem h₄] at h₃'
+    contrapose! h₃'
     exact h₁
   
   sorry
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.aHwsDisj_insert {s fsp p} [hs : sys.WF s]
 (h₁ : s.aHwsDisj fsp) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
