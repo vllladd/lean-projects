@@ -1,8 +1,10 @@
 import AP.Util
 import AP.Misc
-import AP.Sokoban
-import AP.Analysis
 import AP.AP
+import AP.Sokoban
+import AP.RatRect
+import AP.Analysis
+import AP.DigitalRoot
 
 namespace AP
 
