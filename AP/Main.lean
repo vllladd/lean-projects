@@ -9,21 +9,8 @@ namespace AP
 def getPs (d : ℕ) : List PointZ :=
   (⟨0, 0⟩ : PointZ).nbhd d
 
-def aStrat : AStrat := .mk' # λ s =>
-  let ⟨x, y⟩ := s.aPos
-  ⟨1 - x, y⟩
-
-def dStrat : DStrat := .mk # λ s =>
-  let xs := do
-    let p ← getPs 7
-    guard # s.dMove p |>.isSome
-    return p
-  xs.head?
-
-def strat : Strat := ⟨aStrat, dStrat⟩
-
 def State.toStr (s : State) : String := String.mk # do
-  let d := 10
+  let d := 5
   let p ← getPs d
   let ⟨x, y⟩ := p
   let sp := do
@@ -41,15 +28,31 @@ def logb : IO Unit := do
   IO.println # String.mk # List.replicate 100 '='
   IO.println ""
 
-def n : ℕ := 1000
+def state₀ : State :=
+  initState 1 0
 
-def result : State × ℕ :=
-  sys.simulate strat.f (initState 1 0) n
+def aStrat : AStrat := .mkFold (α := Dir)
+  state₀ Dir.up (fd := λ _ _ z => z) # λ s d =>
+  (s.aPos + d.point, d.rotRight)
 
-example : result.2 ≠ 0 := by native_decide
+def dStrat : DStrat := .mkFold (α := PointZ × Dir)
+  state₀ (⟨-2, -2⟩, Dir.up) (fa := λ _ _ z => z) # λ _ ⟨p, d⟩ =>
+  let cnd := |p.coord d| = 2
+  let d₁ := if cnd then d.rotRight else d
+  let p₁ := p + d₁.point
+  (p, (p₁, d₁))
+
+def strat : Strat := ⟨aStrat, dStrat⟩
+
+def run (s : State) (n : ℕ) : IO Unit := do
+  IO.println s.toStr
+  match n with
+  | 0 => pure ()
+  | n + 1 => match sys.tr s (strat.f s) with
+    | none => pure ()
+    | some s₁ => do
+      IO.println ""
+      run s₁ n
 
 def _root_.main : IO Unit := do
-  let (s, k) := result
-  IO.println # toString n ++ " ---> " ++ toString k
-  logb
-  IO.println s
+  run state₀ 100
