@@ -90,6 +90,10 @@ theorem hasLe_insertSet_of_le {m n k ps p} (h₁ : (fsp.insertSet m ps).hasLe k 
   simp [insertSet] at h₁ ⊢
   aesop
 
+theorem hasLe_insert_of_le {m n k p p₁} (h₁ : (fsp.insert m p).hasLe k p₁)
+(h₂ : m ≤ k) (h₃ : n ≤ k) : (fsp.insert n p).hasLe k p₁ :=
+  hasLe_insertSet_of_le h₁ h₂ h₃
+
 theorem insertSet_comm {n m ps₁ ps₂} : (fsp.insertSet n ps₁).insertSet m ps₂ =
 (fsp.insertSet m ps₂).insertSet n ps₁ := by
   unfold insertSet; aesop
@@ -114,6 +118,10 @@ theorem hasLe_insertSet_of_le_and_le {m n k ps p} (h₁ : (fsp.insertSet n ps).h
   push_neg at h₃
   rw [hasLe_insertSet_eq_of_lt h₃] at h₁
   exact hasLe_insertSet_of_hasLe h₁
+
+theorem hasLe_insert_of_le_and_le {m n k p p₁} (h₁ : (fsp.insert n p).hasLe k p₁)
+(h₂ : m ≤ n) : (fsp.insert m p).hasLe k p₁ :=
+  hasLe_insertSet_of_le_and_le h₁ h₂
 
 @[simp]
 theorem get_insertSet_of_ne {n k ps} (h : k ≠ n) : (fsp.insertSet n ps).get k = fsp.get k := by

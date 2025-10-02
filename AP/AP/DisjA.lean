@@ -5,8 +5,11 @@ namespace AP
 def State.aWinsDisj (s : State) (fsp : FSP) (st : Strat) : Prop :=
   ∀ n, ∃ s₁, sys.simulate st.f s n = (s₁, 0) ∧ ¬fsp.hasLe n s₁.aPos
 
+def State.aForallWinsDisj (s : State) (fsp : FSP) (a : AStrat) : Prop :=
+  ∀ (d : DStrat), d.WF → s.aWinsDisj fsp ⟨a, d⟩
+
 def State.aHwsDisj (s : State) (fsp : FSP) : Prop :=
-  ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF → s.aWinsDisj fsp ⟨a, d⟩
+  ∃ (a : AStrat), a.WF ∧ s.aForallWinsDisj fsp a
 
 theorem AState.tr_of_aHwsDisj {s fsp} [hs : AState s] (h : s.aHwsDisj fsp) :
 ∃ p s', sys.tr s p = some s' ∧ s'.aHwsDisj fsp.next := by
@@ -71,11 +74,42 @@ theorem State.aWinsDisj_of_congr {s : State} {fsp₁ fsp₂ : FSP} {st : Strat}
   specialize h₂ n h₃
   exact h₂
 
-theorem State.aHwsDisj_insert_of_mem_taken {s fsp p} [hs : sys.WF s]
-(h₁ : s.aHwsDisj fsp) (h₂ : p ∈ s.taken) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  unfold aHwsDisj at h₁ ⊢
-  obtain ⟨a, Ha, h₁⟩ := h₁
-  use 0, a, Ha
+theorem State.aWinsDisj_insertSet_of_le {s : State} {fsp : FSP} {st ps m n}
+(h₁ : s.aWinsDisj (fsp.insertSet m ps) st) (h₂ : m ≤ n) :
+s.aWinsDisj (fsp.insertSet n ps) st := by
+  intro k
+  specialize h₁ k
+  obtain ⟨s₁, h₁, h₃⟩ := h₁
+  use s₁, h₁
+  contrapose! h₃
+  exact fsp.hasLe_insertSet_of_le_and_le h₃ h₂
+
+theorem State.aWinsDisj_insert_of_le {s : State} {fsp : FSP} {st p m n}
+(h₁ : s.aWinsDisj (fsp.insert m p) st) (h₂ : m ≤ n) :
+s.aWinsDisj (fsp.insert n p) st := s.aWinsDisj_insertSet_of_le h₁ h₂
+
+theorem State.aForallWinsDisj_insertSet_of_le {s : State} {fsp : FSP} {a ps m n}
+(h₁ : s.aForallWinsDisj (fsp.insertSet m ps) a) (h₂ : m ≤ n) :
+s.aForallWinsDisj (fsp.insertSet n ps) a :=
+  λ d hd => aWinsDisj_insertSet_of_le (h₁ d hd) h₂
+
+theorem State.aForallWinsDisj_insert_of_le {s : State} {fsp : FSP} {a p m n}
+(h₁ : s.aForallWinsDisj (fsp.insert m p) a) (h₂ : m ≤ n) :
+s.aForallWinsDisj (fsp.insert n p) a := s.aForallWinsDisj_insertSet_of_le h₁ h₂
+
+theorem State.aHwsDisj_insertSet_of_le {s : State} {fsp : FSP} {ps m n}
+(h₁ : s.aHwsDisj (fsp.insertSet m ps)) (h₂ : m ≤ n) :
+s.aHwsDisj (fsp.insertSet n ps) := by
+  obtain ⟨a, ha, h₁⟩ := h₁; exact ⟨a, ha, aForallWinsDisj_insertSet_of_le h₁ h₂⟩
+
+theorem State.aHwsDisj_insert_of_le {s : State} {fsp : FSP} {p m n}
+(h₁ : s.aHwsDisj (fsp.insert m p)) (h₂ : m ≤ n) :
+s.aHwsDisj (fsp.insert n p) := s.aHwsDisj_insertSet_of_le h₁ h₂
+
+theorem State.aForallWinsDisj_insert_of_mem_taken {s fsp p} {a : AStrat}
+[hs : sys.WF s] (h₁ : s.aForallWinsDisj fsp a) (h₂ : p ∈ s.taken) :
+s.aForallWinsDisj (fsp.insert 0 p) a := by
+  unfold aForallWinsDisj at h₁ ⊢
   intro d Hd
   specialize h₁ d Hd
   apply aWinsDisj_of_congr h₁; clear h₁
@@ -93,81 +127,41 @@ theorem State.aHwsDisj_insert_of_mem_taken {s fsp p} [hs : sys.WF s]
 
 -- #check 0 #exit
 
-theorem State.exi_aHwsDisj_insert_of_forall_aWinsDisj {s} {fsp : FSP} {p}
-[hs : sys.WF s] (h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF →
-∃ n, s.aWinsDisj (fsp.insert n p) ⟨a, d⟩) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
+theorem State.aForallWinsDisj_insert_of_not_mem_taken {s fsp p} {a : AStrat}
+[hs : sys.WF s] [ha : a.WF] (h₁ : s.aForallWinsDisj fsp a) (h₂ : p ∉ s.taken)
+(h₃ : p.dist s.aPos ≤ s.pw) : ∃ n, s.aForallWinsDisj (fsp.insert n p) a := by
   sorry
 
 -- #check 0 #exit
 
-theorem State.aHwsDisj_insert_of_not_mem_taken {s fsp p} [hs : sys.WF s]
-(h₁ : s.aHwsDisj fsp) (h₂ : p ∉ s.taken) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  unfold aHwsDisj at h₁
-  apply exi_aHwsDisj_insert_of_forall_aWinsDisj
-  
-  replace h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF →
-    ∀ k, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) ∧ ¬fsp.hasLe k s₁.aPos
-  · exact h₁
-  
-  by_contra h₃
-  replace h₃ : ∀ (a : AStrat), a.WF → ∃ (d : DStrat), d.WF ∧
-    ∀ n, ∃ k, ∀ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
-    (fsp.insert n p).hasLe k s₁.aPos
-  · contrapose! h₃; exact h₃
-  
-  have h₃' : ∀ n (a : AStrat), a.WF → ∃ (d : DStrat), d.WF ∧
-    ∃ k, ∀ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
-    (fsp.insert n p).hasLe k s₁.aPos
-  · intro n a Ha
-    specialize h₃ a Ha
-    obtain ⟨d, Hd, h₃⟩ := h₃
-    specialize h₃ n
-    use d
-  
-  have h₄ : ∀ n, p ∉ fsp.get n
-  · intro n h₄
-    specialize h₃' n
-    rw [fsp.insert_eq_of_mem h₄] at h₃'
-    contrapose! h₃'
-    exact h₁
-  
-  sorry
+theorem State.aForallWinsDisj_insert {s fsp} {p : PointZ} {a : AStrat}
+[hs : sys.WF s] [ha : a.WF] (h₁ : s.aForallWinsDisj fsp a) (h₂ : p.dist s.aPos ≤ s.pw) :
+∃ n, s.aForallWinsDisj (fsp.insert n p) a := by
+  by_cases h₃ : p ∈ s.taken
+  · exact ⟨0, s.aForallWinsDisj_insert_of_mem_taken h₁ h₃⟩
+  · exact aForallWinsDisj_insert_of_not_mem_taken h₁ h₃ h₂
 
-#check 0 #exit
-
-theorem State.aHwsDisj_insert {s fsp p} [hs : sys.WF s]
-(h₁ : s.aHwsDisj fsp) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  by_cases h₂ : p ∈ s.taken
-  · exact aHwsDisj_insert_of_mem_taken h₁ h₂
-  · exact aHwsDisj_insert_of_not_mem_taken h₁ h₂
-
-theorem State.aHwsDosj_insertSet_of_le {s : State} {fsp : FSP} {m n ps}
-(h₁ : s.aHwsDisj (fsp.insertSet m ps)) (h₂ : m ≤ n) : s.aHwsDisj (fsp.insertSet n ps) := by
-  obtain ⟨a, Ha, h₁⟩ := h₁
-  use a, Ha
-  intro d Hd
-  specialize h₁ d Hd
-  apply aWinsDisj_of_congr h₁; clear h₁
-  intro k h₁; use k
-  exact fsp.hasLe_insertSet_of_le_and_le h₁ h₂
-
-theorem State.aHwsDosj_insert_of_le {s : State} {fsp : FSP} {m n p}
-(h₁ : s.aHwsDisj (fsp.insert m p)) (h₂ : m ≤ n) : s.aHwsDisj (fsp.insert n p) :=
-  aHwsDosj_insertSet_of_le h₁ h₂
-
-theorem State.aHwsDisj_insertSet' {s fsp}  {ps : Set' PointZ} [hs : sys.WF s]
-(h₁ : s.aHwsDisj fsp) : ∃ n, s.aHwsDisj (fsp.insertSet n ps.toSet) := by
+theorem State.aForallWinsDisj_insertSet' {s fsp}  {ps : Set' PointZ} {a : AStrat}
+[hs : sys.WF s] [ha : a.WF] (h₁ : s.aForallWinsDisj fsp a)
+(h₂ : ∀ p ∈ ps, p.dist s.aPos ≤ s.pw) :
+∃ n, s.aForallWinsDisj (fsp.insertSet n ps.toSet) a := by
   induction ps using Set'.ind; simpa; clear h₁
   nm ps p hp ih
+  specialize ih _
+  · simp_all only [Set'.mem_insert, or_true, implies_true, forall_const, forall_eq_or_imp]
   obtain ⟨n, ih⟩ := ih
-  obtain ⟨m, h₂⟩ := s.aHwsDisj_insert ih (p := p)
+  obtain ⟨m, h₂⟩ := s.aForallWinsDisj_insert ih (p := p) #
+    by simp_all only [Set'.mem_insert, forall_eq_or_imp]
   use max n m; simp
   rw [fsp.insertSet_set_insert]
-  apply aHwsDosj_insert_of_le _ # Nat.le_max_right n m
+  apply aForallWinsDisj_insert_of_le _ # Nat.le_max_right n m
   rw [fsp.insertSet_insert_comm] at h₂ ⊢
-  exact aHwsDosj_insertSet_of_le h₂ # Nat.le_max_left n m
+  exact aForallWinsDisj_insertSet_of_le h₂ # Nat.le_max_left n m
 
-theorem State.aHwsDisj_insertSet_of_finite {s fsp ps} [hs : sys.WF s]
-(h₁ : s.aHwsDisj fsp) (h₂ : ps.Finite) : ∃ n, s.aHwsDisj (fsp.insertSet n ps) := by
-  have h₃ := s.aHwsDisj_insertSet' (ps := Set'.ofSet ps) h₁
-  rwa [Set'.toSet_ofSet h₂] at h₃
+theorem State.aForallWinsDisj_insertSet_of_finite {s fsp} {ps : Set PointZ} {a : AStrat}
+[hs : sys.WF s] [ha : a.WF] (h₁ : s.aForallWinsDisj fsp a) (h₂ : ps.Finite)
+(h₃ : ∀ p ∈ ps, p.dist s.aPos ≤ s.pw) :
+∃ n, s.aForallWinsDisj (fsp.insertSet n ps) a := by
+  have h₄ := s.aForallWinsDisj_insertSet' (ps := Set'.ofSet ps) h₁ #
+    by simpa [Set'.mem_ofSet h₂]
+  rwa [Set'.toSet_ofSet h₂] at h₄
