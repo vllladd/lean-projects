@@ -2,8 +2,12 @@ import AP.Util
 
 namespace RealAnalysis
 
+@[simp]
+def eventually (p : ℕ → Prop) : Prop :=
+  ∃ N, ∀ n, N ≤ n → p n
+
 def tendsTo (a : ℕ → ℝ) (L : ℝ) : Prop :=
-  ∀ ε, 0 < ε → ∃ N, ∀ n, N ≤ n → |a n - L| < ε
+  ∀ ε, 0 < ε → eventually (|a · - L| < ε)
 
 def converges (a : ℕ → ℝ) : Prop :=
   ∃ L, tendsTo a L
@@ -100,7 +104,7 @@ theorem tendsTo_one_div_succ : tendsTo (λ n => 1 / (n + 1)) 0 := by
 
 theorem not_converges_alternating {x y : ℝ} (h : x ≠ y) :
 ¬converges (if Even · then x else y) := by
-  simp only [converges, tendsTo, not_exists, not_forall, not_lt]
+  simp only [eventually, converges, tendsTo, not_exists, not_forall, not_lt]
   intro L
   wlog h₁ : L ≠ x with ih
   · apply ne_symm' at h
@@ -509,31 +513,31 @@ theorem squeeze {a b c : ℕ → ℝ} {L} (h₁ : ∀ n, a n ≤ b n) (h₂ : �
   specialize h₃ n (by linarith); specialize h₄ n (by linarith)
   rw [abs_lt] at h₃ h₄ ⊢; constructor <;> linarith
 
-theorem pos_of_limit_pos {a L} (h₁ : 0 < L) (h₂ : tendsTo a L) :
-∃ N, ∀ n, N ≤ n → 0 < a n := by
+theorem eventually_pos_of_limit_pos {a L} (h₁ : 0 < L) (h₂ : tendsTo a L) :
+eventually (0 < a ·) := by
   specialize h₂ (L / 2) # by linarith
   obtain ⟨N, h₂⟩ := h₂; use N; intro n hn
   specialize h₂ n hn; replace h₂ := abs_lt.mp h₂; linarith
 
-theorem neg_of_limit_neg {a L} (h₁ : L < 0) (h₂ : tendsTo a L) :
-∃ N, ∀ n, N ≤ n → a n < 0 := by
+theorem eventually_neg_of_limit_neg {a L} (h₁ : L < 0) (h₂ : tendsTo a L) :
+eventually (a · < 0) := by
   specialize h₂ (-L / 2) # by linarith
   obtain ⟨N, h₂⟩ := h₂; use N; intro n hn
   specialize h₂ n hn; replace h₂ := abs_lt.mp h₂; linarith
 
-theorem abs_limit_div_two_lt_aux₁ {a L} (h₁ : 0 < L) (h₂ : ∀ n, 0 < a n)
-(h₃ : tendsTo a L) : ∃ N, ∀ n, N ≤ n → |L| / 2 < |a n| := by
+theorem eventually_abs_limit_div_two_lt_aux₁ {a L} (h₁ : 0 < L) (h₂ : ∀ n, 0 < a n)
+(h₃ : tendsTo a L) : eventually (|L| / 2 < |a ·|) := by
   specialize h₃ (L / 2) # by positivity
   obtain ⟨N, h₃⟩ := h₃; use N; intro n hn
   specialize h₂ n; specialize h₃ n hn
   rw [abs_of_pos h₁, abs_of_pos h₂]; rw [abs_lt] at h₃; linarith
 
-theorem abs_limit_div_two_lt_aux₂ {a L} (h₁ : 0 < L) (h₂ : tendsTo a L) :
-∃ N, ∀ n, N ≤ n → |L| / 2 < |a n| := by
-  obtain ⟨N, h₃⟩ := pos_of_limit_pos h₁ h₂
+theorem eventually_abs_limit_div_two_lt_aux₂ {a L} (h₁ : 0 < L) (h₂ : tendsTo a L) :
+eventually (|L| / 2 < |a ·|) := by
+  obtain ⟨N, h₃⟩ := eventually_pos_of_limit_pos h₁ h₂
   rw [←tendsTo_drop_iff (k := N)] at h₂
   replace h₃ : ∀ n, 0 < a (n + N); aesop
-  obtain ⟨N₁, h₄⟩ := abs_limit_div_two_lt_aux₁ h₁ h₃ h₂
+  obtain ⟨N₁, h₄⟩ := eventually_abs_limit_div_two_lt_aux₁ h₁ h₃ h₂
   use N + N₁; intro n hn
   replace h₄ : ∀ n, |L| / 2 < |a # n + N + N₁|
   · intro k; specialize h₄ (k + N₁) # by simp
@@ -541,9 +545,16 @@ theorem abs_limit_div_two_lt_aux₂ {a L} (h₁ : 0 < L) (h₂ : tendsTo a L) :
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn
   specialize h₄ n; ring_nf at h₄ ⊢; exact h₄
 
-theorem abs_limit_div_two_lt {a L} (h₁ : L ≠ 0) (h₂ : tendsTo a L) :
-∃ N, ∀ n, N ≤ n → |L| / 2 < |a n| := by
+theorem eventually_abs_limit_div_two_lt {a L} (h₁ : L ≠ 0) (h₂ : tendsTo a L) :
+eventually (|L| / 2 < |a ·|) := by
   replace h₁ := lt_or_gt_of_ne # ne_symm' h₁
-  rcases h₁ with h₁ | h₁; exact abs_limit_div_two_lt_aux₂ h₁ h₂
+  rcases h₁ with h₁ | h₁; exact eventually_abs_limit_div_two_lt_aux₂ h₁ h₂
   replace h₁ : 0 < -L; linarith; replace h₂ := tendsTo_neg h₂
-  have h₃ := abs_limit_div_two_lt_aux₂ h₁ h₂; simp at h₃; exact h₃
+  have h₃ := eventually_abs_limit_div_two_lt_aux₂ h₁ h₂; simp at h₃; exact h₃
+
+theorem eventually_abs_limit_div_two_le {a L} (h : tendsTo a L) :
+eventually (|L| / 2 ≤ |a ·|) := by
+  by_cases h₁ : L = 0; simp [h₁]
+  obtain ⟨N, h₂⟩ := eventually_abs_limit_div_two_lt h₁ h
+  use N; dsimp at h₂ ⊢; intro n hn
+  specialize h₂ n hn; exact le_of_lt h₂
