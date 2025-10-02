@@ -136,3 +136,7 @@ s.aForallWinsDisj (fsp.insert 0 p) a := by
 theorem State.aHwsDisj_insert_of_mem_taken {s fsp p} [hs : sys.WF s]
 (h₁ : s.aHwsDisj fsp) (h₂ : p ∈ s.taken) : s.aHwsDisj (fsp.insert 0 p) := by
   obtain ⟨a, ha, h₁⟩ := h₁; use a, ha, aForallWinsDisj_insert_of_mem_taken h₁ h₂
+
+theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
+(h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 3 # s.aPos.nbhd s.pw |>.toSet := by
+  sorry
