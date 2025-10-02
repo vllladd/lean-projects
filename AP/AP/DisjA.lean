@@ -133,57 +133,6 @@ s.aForallWinsDisj (fsp.insert 0 p) a := by
   rw [fsp.get_insert_of_ne # by simp] at h₁
   exact h₁
 
-theorem State.aHwsDisj_insert_of_mem_taken {s fsp p}
-[hs : sys.WF s] (h₁ : s.aHwsDisj fsp) (h₂ : p ∈ s.taken) :
-s.aHwsDisj (fsp.insert 0 p) := by
+theorem State.aHwsDisj_insert_of_mem_taken {s fsp p} [hs : sys.WF s]
+(h₁ : s.aHwsDisj fsp) (h₂ : p ∈ s.taken) : s.aHwsDisj (fsp.insert 0 p) := by
   obtain ⟨a, ha, h₁⟩ := h₁; use a, ha, aForallWinsDisj_insert_of_mem_taken h₁ h₂
-
--- #check 0 #exit
-
-theorem AState.aHwsDisj_insert_of_not_mem_taken {s fsp p}
-[hs : AState s] (h₁ : s.aHwsDisj fsp) (h₂ : p ∉ s.taken)
-(h₃ : p.dist s.aPos ≤ s.pw) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  sorry
-
--- #check 0 #exit
-
-theorem State.aHwsDisj_insert_of_not_mem_taken {s fsp p}
-[hs : sys.WF s] (h₁ : s.aHwsDisj fsp) (h₂ : p ∉ s.taken)
-(h₃ : p.dist s.aPos ≤ s.pw) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  replace hs := s.aState_or_dState
-  rcases hs with hs | hs
-  · exact hs.aHwsDisj_insert_of_not_mem_taken h₁ h₂ h₃
-  -- obtain ⟨p, s', h₄⟩ := hs.tr_of_aHwsDisj h₁
-  sorry
-
-#check 0 #exit
-
-theorem State.aHwsDisj_insert {s fsp} {p : PointZ}
-[hs : sys.WF s] (h₁ : s.aHwsDisj fsp) (h₂ : p.dist s.aPos ≤ s.pw) :
-∃ n, s.aHwsDisj (fsp.insert n p) := by
-  by_cases h₃ : p ∈ s.taken
-  · use 0; exact aHwsDisj_insert_of_mem_taken h₁ h₃
-  · exact aHwsDisj_insert_of_not_mem_taken h₁ h₃ h₂
-
-theorem State.aHwsDisj_insertSet' {s fsp} {ps : Set' PointZ}
-[hs : sys.WF s] (h₁ : s.aHwsDisj fsp) (h₂ : ∀ p ∈ ps, p.dist s.aPos ≤ s.pw) :
-∃ n, s.aHwsDisj (fsp.insertSet n ps.toSet) := by
-  induction ps using Set'.ind; simpa; clear h₁
-  nm ps p hp ih
-  specialize ih _
-  · simp_all only [Set'.mem_insert, or_true, implies_true, forall_const, forall_eq_or_imp]
-  obtain ⟨n, ih⟩ := ih
-  obtain ⟨m, h₂⟩ := s.aHwsDisj_insert ih (p := p) #
-    by simp_all only [Set'.mem_insert, forall_eq_or_imp]
-  use max n m; simp
-  rw [fsp.insertSet_set_insert]
-  apply aHwsDisj_insert_of_le _ # Nat.le_max_right n m
-  rw [fsp.insertSet_insert_comm] at h₂ ⊢
-  exact aHwsDisj_insertSet_of_le h₂ # Nat.le_max_left n m
-
-theorem State.aHwsDisj_insertSet_of_finite {s fsp} {ps : Set PointZ}
-[hs : sys.WF s] (h₁ : s.aHwsDisj fsp) (h₂ : ps.Finite)
-(h₃ : ∀ p ∈ ps, p.dist s.aPos ≤ s.pw) : ∃ n, s.aHwsDisj (fsp.insertSet n ps) := by
-  have h₄ := s.aHwsDisj_insertSet' (ps := Set'.ofSet ps) h₁ #
-    by simpa [Set'.mem_ofSet h₂]
-  rwa [Set'.toSet_ofSet h₂] at h₄
