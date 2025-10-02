@@ -60,20 +60,69 @@ s.aWinsDisj fsp st ↔ s.aWins st ∧ ∀ n, ¬fsp.hasLe n (sys.simulate st.f s 
   specialize h₁ n
   aesop
 
+theorem State.aWinsDisj_of_congr {s : State} {fsp₁ fsp₂ : FSP} {st : Strat}
+(h₁ : s.aWinsDisj fsp₁ st) (h₂ : ∀ n, fsp₂.hasLe n (sys.simulate st.f s n).1.aPos →
+∃ k, fsp₁.hasLe k (sys.simulate st.f s k).1.aPos) : s.aWinsDisj fsp₂ st := by
+  rw [aWinsDisj_iff] at h₁ ⊢
+  rcases h₁ with ⟨h₁, h₃⟩
+  use h₁; clear h₁
+  intro n
+  contrapose! h₃
+  specialize h₂ n h₃
+  exact h₂
+
+theorem State.aHwsDisj_insert_of_mem_taken {s fsp p} [hs : sys.WF s]
+(h₁ : s.aHwsDisj fsp) (h₂ : p ∈ s.taken) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
+  unfold aHwsDisj at h₁ ⊢
+  obtain ⟨a, Ha, h₁⟩ := h₁
+  use 0, a, Ha
+  intro d Hd
+  specialize h₁ d Hd
+  apply aWinsDisj_of_congr h₁; clear h₁
+  intro n h₁
+  obtain ⟨k, hk, h₁⟩ := h₁
+  use n, k, hk
+  generalize h₃ : (sys.simulate (Strat.f ⟨a, d⟩) s n).1 = s₁ at h₁ ⊢
+  replace h₃ : sys.Reachable s s₁; subst h₃; exact sys.reachable_simulate
+  have hs₁ := sys.wf_of_reachable h₃
+  have h₄ := mem_taken_of_reachable h₃ h₂
+  clear h₃
+  cases k; simp at h₁; aesop; nm k
+  rw [fsp.get_insert_of_ne # by simp] at h₁
+  exact h₁
+
+-- #check 0 #exit
+
+theorem State.aHwsDisj_insert_of_not_mem_taken {s fsp p} [hs : sys.WF s]
+(h₁ : s.aHwsDisj fsp) (h₂ : p ∉ s.taken) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
+  unfold aHwsDisj at h₁ ⊢
+  
+  replace h₁ : ∃ (a : AStrat), a.WF ∧ ∀ (d : DStrat), d.WF →
+    ∀ k, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) ∧ ¬fsp.hasLe k s₁.aPos
+  · exact h₁
+  
+  by_contra h₃
+  replace h₃ : ∀ (n : ℕ) (a : AStrat), a.WF → ∃ (d : DStrat), d.WF ∧
+    ∃ k, ∀ s₁, sys.simulate (Strat.f ⟨a, d⟩) s k = (s₁, 0) →
+    (fsp.insert n p).hasLe k s₁.aPos
+  · contrapose! h₃; exact h₃
+  
+  have h₄ : ∀ n, p ∉ fsp.get n
+  · intro n h₄
+    specialize h₃ n
+    rw [fsp.insert_eq_of_mem h₄] at h₃
+    contrapose! h₃
+    exact h₁
+  
+  sorry
+
 -- #check 0 #exit
 
 theorem State.aHwsDisj_insert {s fsp p} [hs : sys.WF s]
 (h₁ : s.aHwsDisj fsp) : ∃ n, s.aHwsDisj (fsp.insert n p) := by
-  unfold aHwsDisj aWinsDisj at h₁ ⊢
-  by_contra! h₃
-  replace h₃ : ∀ (a : AStrat) [a.WF] n, ∃ (d : DStrat), d.WF ∧ ∃ k, n ≤ k ∧
-    ∀ s₁ r, sys.simulate (Strat.f ⟨a, d⟩) s k = ⟨s₁, r⟩ →
-    r ≠ 0 ∨ ¬(fsp.insert n p).hasLe k s₁.aPos
-  · intro a Ha n
-    sorry
-  sorry
-
--- #check 0 #exit
+  by_cases h₂ : p ∈ s.taken
+  · exact aHwsDisj_insert_of_mem_taken h₁ h₂
+  · exact aHwsDisj_insert_of_not_mem_taken h₁ h₂
 
 theorem State.aHwsDosj_insertSet_of_le {s : State} {fsp : FSP} {m n ps}
 (h₁ : s.aHwsDisj (fsp.insertSet m ps)) (h₂ : m ≤ n) : s.aHwsDisj (fsp.insertSet n ps) := by
@@ -81,14 +130,9 @@ theorem State.aHwsDosj_insertSet_of_le {s : State} {fsp : FSP} {m n ps}
   use a, Ha
   intro d Hd
   specialize h₁ d Hd
-  rw [aWinsDisj_iff] at h₁ ⊢
-  rcases h₁ with ⟨h₁, h₃⟩
-  use h₁; clear h₁
-  intro k
-  specialize h₃ k
-  generalize (sys.simulate (Strat.f ⟨a, d⟩) s k).1 = s₁ at h₃ ⊢
-  contrapose! h₃
-  exact fsp.hasLe_insertSet_of_le_and_le h₃ h₂
+  apply aWinsDisj_of_congr h₁; clear h₁
+  intro k h₁; use k
+  exact fsp.hasLe_insertSet_of_le_and_le h₁ h₂
 
 theorem State.aHwsDosj_insert_of_le {s : State} {fsp : FSP} {m n p}
 (h₁ : s.aHwsDisj (fsp.insert m p)) (h₂ : m ≤ n) : s.aHwsDisj (fsp.insert n p) :=

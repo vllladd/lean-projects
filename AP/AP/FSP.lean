@@ -78,8 +78,8 @@ theorem get_insertSet_of_eq {n ps} : (fsp.insertSet n ps).get n = ps ∪ fsp.get
   simp [insertSet]
 
 @[simp]
-theorem get_insert_of_eq {n p} : (fsp.insert n p).get n = insert p (fsp.get n) := by
-  simp [FSP.insert]
+theorem get_insert_of_eq {n p} : (fsp.insert n p).get n = insert p (fsp.get n) :=
+  get_insertSet_of_eq
 
 theorem hasLe_insertSet_of_le {m n k ps p} (h₁ : (fsp.insertSet m ps).hasLe k p)
 (h₂ : m ≤ k) (h₃ : n ≤ k) : (fsp.insertSet n ps).hasLe k p := by
@@ -114,3 +114,14 @@ theorem hasLe_insertSet_of_le_and_le {m n k ps p} (h₁ : (fsp.insertSet n ps).h
   push_neg at h₃
   rw [hasLe_insertSet_eq_of_lt h₃] at h₁
   exact hasLe_insertSet_of_hasLe h₁
+
+@[simp]
+theorem get_insertSet_of_ne {n k ps} (h : k ≠ n) : (fsp.insertSet n ps).get k = fsp.get k := by
+  simp [insertSet, h]
+
+@[simp]
+theorem get_insert_of_ne {n k p} (h : k ≠ n) : (fsp.insert n p).get k = fsp.get k :=
+  get_insertSet_of_ne h
+
+theorem insert_eq_of_mem {n p} (h : p ∈ fsp.get n) : fsp.insert n p = fsp := by
+  ext k p₁; simp [FSP.insert, insertSet]; aesop
