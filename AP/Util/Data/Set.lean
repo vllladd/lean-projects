@@ -378,7 +378,7 @@ theorem insert_comm {x y : α} : (s.insert x).insert y = (s.insert y).insert x :
   ext z; simp; tauto
 
 theorem ind {p : Set' α → Prop} (h₁ : p ∅)
-(h₂ : ∀ (s : Set' α) x, p s → x ∉ s → p (s.insert x)) (s : Set' α) : p s := by
+(h₂ : ∀ (s : Set' α) x, x ∉ s → p s → p (s.insert x)) (s : Set' α) : p s := by
   rcases s with ⟨mp⟩; induction mp using Std.ExtDHashMap.ind
   exact h₁; apply h₂ <;> assumption
 
@@ -403,7 +403,7 @@ theorem mem_union {x : α} : x ∈ s₁ ∪ s₂ ↔ x ∈ s₁ ∨ x ∈ s₂ :
   simp [union_def, union]
   induction s₂ using ind generalizing s₁
   · simp
-  nm s₂ y ih h₁
+  nm s₂ y h₁ ih
   generalize_proofs h₂
   unfold fold Set'.insert
   rw [Std.ExtDHashMap.fold_insert h₁]
@@ -503,7 +503,7 @@ theorem map_insert {f : α → β} {x : α} : (s.insert x).map f = (s.map f).ins
   dsimp at hh
   induction s using Set'.ind generalizing z
   · rw [fold_insert # by simp]; simp
-  clear! s; nm s y ih h
+  clear! s; nm s y h ih
   by_cases h₁ : x ∈ s.insert y
   · simp at h₁
     rcases h₁ with rfl | h₁
@@ -553,3 +553,19 @@ theorem mem_erase {x y} : y ∈ s.erase x ↔ x ≠ y ∧ y ∈ s := by
 
 theorem erase_eq_of_not_mem {x} (h : x ∉ s) : s.erase x = s := by
   aesop
+
+def toSet (s : Set' α) : Set α :=
+  {x | x ∈ s}
+
+@[simp]
+theorem mem_toSet {x} : x ∈ s.toSet ↔ x ∈ s := by simp [toSet]
+
+@[simp]
+theorem toSet_empty : (∅ : Set' α).toSet = ∅ := by ext; simp
+
+@[simp]
+theorem toSet_insert {x} : (s.insert x).toSet = insert x s.toSet := by ext; simp
+
+theorem toSet_ofSet {s : Set α} (h : s.Finite) :
+(Set'.ofSet s).toSet = s := by
+  ext x; simp [mem_ofSet h]
