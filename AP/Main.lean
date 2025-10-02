@@ -35,9 +35,11 @@ def aStrat : AStrat := .mkFold (α := Dir)
   state₀ Dir.up (fd := λ _ _ z => z) # λ s d =>
   (s.aPos + d.point, d.rotRight)
 
-def dStrat : DStrat := .mkFold (α := PointZ × Dir)
-  state₀ (⟨-2, -2⟩, Dir.up) (fa := λ _ _ z => z) # λ _ ⟨p, d⟩ =>
-  let cnd := |p.coord d| = 2
+def dStrat : DStrat :=
+  let n := 1
+  .mkFold (α := PointZ × Dir) state₀ (⟨-n, -n⟩, Dir.up)
+  (fa := λ _ _ z => z) # λ _ ⟨p, d⟩ =>
+  let cnd := |p.coord d| = n
   let d₁ := if cnd then d.rotRight else d
   let p₁ := p + d₁.point
   (p, (p₁, d₁))
