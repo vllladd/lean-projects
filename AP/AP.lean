@@ -4,6 +4,8 @@ import AP.AP.Determinacy
 import AP.AP.Trap
 import AP.AP.HistBlind
 import AP.AP.Defense
-import AP.AP.MkFold
 import AP.AP.King
+import AP.AP.MkFold
+import AP.AP.FSP
+import AP.AP.DisjA
 import AP.AP.FreshA
