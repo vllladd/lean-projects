@@ -511,3 +511,14 @@ theorem count_empty {p} : (∅ : Map α β).count p = 0 :=
 theorem count_insert {p i x} (h : i ∉ mp) :
 (mp.insert i x).count p = mp.count p + if p i x then 1 else 0 :=
   mp.1.count_insert h
+
+def push (mp : Map α ℕ) (i : α) : Map α ℕ :=
+  mp.insert i # (mp.get? i).getD 0 + 1
+
+theorem get?_insert {i j x} :
+(mp.insert j x).get? i = if j = i then some x else mp.get? i := by
+  convert mp.1.get?_insert; simp; rfl
+
+theorem push_push_comm {i j} {mp : Map α ℕ} :
+(mp.push i).push j = (mp.push j).push i := by
+  ext; simp [push, get?_insert]; aesop

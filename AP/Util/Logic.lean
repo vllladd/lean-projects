@@ -219,3 +219,25 @@ theorem match_decide_eq_ite {α : Type*} {P} [H : Decidable P] {x y : α} :
 | false => y
 ) = if P then x else y := by
   split <;> nm h₁ <;> simp at h₁ <;> simp [h₁]
+
+@[simp]
+theorem choose?_eq_some_iff {α : Type*} {p : α → Prop} {x}
+[hp : Decidable # ∃ x, p x] : choose? p = some x ↔ p x ∧
+haveI : Inhabited α := ⟨x⟩; Classical.epsilon p = x := by
+  have h₁ : Inhabited α := ⟨x⟩; simp [choose?]; constructor
+  · rintro ⟨h₂, rfl⟩; use h₂.choose_spec, choose_eq_epsilon h₂ |>.symm
+  · rintro ⟨h₂, h₃⟩; use ⟨_, h₂⟩; rwa [choose_eq_epsilon ⟨_, h₂⟩]
+
+theorem epsilon_eq_of_exiu {α : Type*} [ha : Inhabited α] {p : α → Prop} {x}
+(h₁ : p x) (h₂ : ∃! x, p x) : Classical.epsilon p = x := by
+  have hp : p = λ y => x = y
+  · ext y; obtain ⟨z, h₂, h₃⟩ := h₂
+    constructor <;> intro h₄
+    · rw [h₃ _ h₁, h₃ _ h₄]
+    · rwa [←h₄]
+  have h₃ := Classical.epsilon_spec h₂
+  dsimp at h₃; subst hp; simp at h₃; exact h₃.symm
+
+theorem epsilon_eq_of {α : Type*} [ha : Inhabited α] {p : α → Prop} {x}
+(h₁ : p x) (h₂ : ∀ y, p y → y = x) : Classical.epsilon p = x := by
+  apply epsilon_eq_of_exiu h₁; use x

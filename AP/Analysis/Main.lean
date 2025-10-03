@@ -558,3 +558,8 @@ eventually (|L| / 2 ≤ |a ·|) := by
   obtain ⟨N, h₂⟩ := eventually_abs_limit_div_two_lt h₁ h
   use N; dsimp at h₂ ⊢; intro n hn
   specialize h₂ n hn; exact le_of_lt h₂
+
+theorem tendsTo_abs {a L} (h : tendsTo a L) : tendsTo (|a ·|) |L| := by
+  intro e he; specialize h e he; obtain ⟨N, h⟩ := h
+  use N; intro n hn; specialize h n hn; dsimp
+  apply lt_of_le_of_lt _ h; apply abs_abs_sub_abs_le

@@ -402,3 +402,29 @@ theorem le_of_le_min_left {α : Type*} [ha₁ : LinearOrder α]
 theorem le_of_le_min_right {α : Type*} [ha₁ : LinearOrder α]
 {a b c : α} (h : a ≤ min b c) : a ≤ c := by
   rw [le_inf_iff] at h; exact h.2
+
+section
+
+variable {α : Type*} [ha₁ : DecidableEq α] [ha₂ : Fintype α]
+
+noncomputable
+def fintypeIdx (x : α) : ℕ :=
+  Finset.univ.toList.idxOf x
+
+@[simp]
+theorem fintypeIdx_eq_iff {x y : α} : fintypeIdx x = fintypeIdx y ↔ x = y := by
+  symm; constructor; rintro rfl; rfl; intro h; unfold fintypeIdx at h
+  rwa [List.idxOf_inj] at h <;> simp
+
+open Classical in noncomputable
+def fintypeToLinearOrder : LinearOrder α where
+  le a b := fintypeIdx a ≤ fintypeIdx b
+  le_refl a := by rfl
+  le_trans a b c h₁ h₂ := h₁.trans h₂
+  le_antisymm a b h₁ h₂ := by
+    have h₃ := le_antisymm h₁ h₂
+    simp at h₃; exact h₃
+  le_total a b := by apply le_total
+  toDecidableLE := by infer_instance
+
+end
