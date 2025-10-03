@@ -406,3 +406,35 @@ theorem insert_comm {i x j y} (h : i ≠ j ∨ HEq x y) :
 @[simp]
 theorem insert_idemp {i x} : (mp.insert i x).insert i x = mp.insert i x := by
   simp [DMap.insert]
+
+def size (mp : DMap α β) : ℕ :=
+  mp.1.size
+
+def filter (mp : DMap α β) (p : (i : α) → β i → Bool) : DMap α β :=
+  ⟨mp.1.filter p⟩
+
+def count (mp : DMap α β) (p : (i : α) → β i → Bool) : ℕ :=
+  mp.1.count p
+
+@[simp]
+theorem size_filter_eq_count {p} : (mp.filter p).size = mp.count p :=
+  mp.1.size_filter_eq_count
+
+theorem count_eq_size_filter {p} : mp.count p = (mp.filter p).size :=
+  size_filter_eq_count.symm
+
+@[simp]
+theorem count_le_size {p} : mp.count p ≤ mp.size :=
+  mp.1.count_le_size
+
+theorem count_eq_zero_iff {p} :
+mp.count p = 0 ↔ ∀ i x, mp.get? i = some x → ¬p i x :=
+  mp.1.count_eq_zero_iff
+
+@[simp]
+theorem count_empty {p} : (∅ : DMap α β).count p = 0 :=
+  Std.ExtDHashMap.count_empty
+
+theorem count_insert {p i x} (h : i ∉ mp) :
+(mp.insert i x).count p = mp.count p + if p i x then 1 else 0 :=
+  mp.1.count_insert h

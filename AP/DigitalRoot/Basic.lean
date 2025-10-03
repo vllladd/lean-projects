@@ -1,36 +1,6 @@
 import AP.Util
 
-namespace Nat
-
-@[simp]
-theorem div_mul_sub_one_le {n k} : n / k * (k - 1) ≤ n / k * k := by
-  rw [Nat.mul_sub]; simp
-
-@[simp] theorem div_mul_le_self' {m n : ℕ} : m / n * n ≤ m := div_mul_le_self _ _
-@[simp] theorem mod_add_div₁ {m k : ℕ} : m % k + k * (m / k) = m := mod_add_div _ _
-@[simp] theorem mod_add_div₂ {m k : ℕ} : m % k + (m / k) * k = m := mod_add_div' _ _
-@[simp] theorem div_add_mod₁ {m k : ℕ} : k * (m / k) + m % k = m := div_add_mod _ _
-@[simp] theorem div_add_mod₂ {m k : ℕ} : (m / k) * k + m % k = m := div_add_mod' _ _
-
-theorem div_mul_le_of_le {a b c : ℕ} (h : c ≤ b) : a / b * c ≤ a := by
-  by_cases hc : c = 0; simp [hc]
-  rw [←le_div_iff_mul_le # zero_lt_of_ne_zero hc]
-  exact Nat.div_le_div (by rfl) h hc
-
-theorem add_sub_lt_add_of_sub_lt {a b c d : ℕ} (h : b - c < d) : a + b - c < a + d := by
-  omega
-
-theorem mod_self_sub_one_eq_one {n} (h : 3 ≤ n) : n % (n - 1) = 1 := by
-  cases n; simp at h; nm n; simp at h ⊢; apply Nat.mod_eq_of_lt; linarith
-
-theorem ne_zero_of_mod_ne_zero {n k} (h : n % k ≠ 0) : n ≠ 0 := by
-  contrapose! h; simp [h]
-
--- #check 0 #exit
-
-end Nat
-
-section DigitalRoot
+namespace DigitalRoot
 
 class Base (b : ℕ) : Prop where
   h : 2 ≤ b
@@ -306,3 +276,5 @@ digRoot b (k * (b - 1) + n) = digRoot b n := by
 @[simp]
 theorem digRoot_digSum {n} : digRoot b (digSum b n) = digRoot b n := by
   simp [digRoot_eq_digRoot']
+
+instance : Base 10 := ⟨by norm_num⟩

@@ -570,7 +570,7 @@ theorem keys_empty [LinearOrder α] : (∅ : ExtDHashMap α β).keys = [] := by
   simp
 
 theorem ind {p : ExtDHashMap α β → Prop} (h₁ : p ∅)
-(h₂ : ∀ (mp : ExtDHashMap α β) i x, p mp → i ∉ mp → p (mp.insert i x)) mp : p mp := by
+(h₂ : ∀ (mp : ExtDHashMap α β) i x, i ∉ mp → p mp → p (mp.insert i x)) mp : p mp := by
   rcases mp with ⟨mp⟩
   apply mp.ind; clear! mp; intro mp
   induction mp using DHashMap.ind
@@ -581,8 +581,8 @@ theorem ind {p : ExtDHashMap α β → Prop} (h₁ : p ∅)
     simp
     change mp.Equiv ∅
     simpa
-  nm mp₁ mp₂ i x ih h₃ h₄
-  specialize h₂ ⟨Quotient.mk _ mp₁⟩ i x ih h₃
+  nm mp₁ mp₂ i x h₃ h₄ ih
+  specialize h₂ ⟨Quotient.mk _ mp₁⟩ i x h₃ ih
   convert h₂
   change _ = ⟦_⟧
   simp
@@ -624,3 +624,33 @@ theorem insert_comm {i x j y} (h : i ≠ j ∨ HEq x y) :
 @[simp]
 theorem insert_idemp {i x} : (mp.insert i x).insert i x = mp.insert i x := by
   ext; simp [get?_insert]; aesop
+
+def count (mp : ExtDHashMap α β) (p : (i : α) → β i → Bool) : ℕ :=
+  mp.1.lift (·.count p) # λ _ _ => DHashMap.count_eq_of_perm
+
+@[simp]
+theorem size_filter_eq_count {p} : (mp.filter p).size = mp.count p := by
+  rcases mp with ⟨mp⟩; apply mp.ind; intro m
+  simp [filter, lift, size, count]
+
+theorem count_eq_size_filter {p} : mp.count p = (mp.filter p).size :=
+  size_filter_eq_count.symm
+
+@[simp]
+theorem count_le_size {p} : mp.count p ≤ mp.size := by
+  rcases mp with ⟨mp⟩; apply mp.ind; intro m
+  simp [lift, size, count]
+
+theorem count_eq_zero_iff {p} :
+mp.count p = 0 ↔ ∀ i x, mp.get? i = some x → ¬p i x := by
+  rcases mp with ⟨mp⟩; apply mp.ind; intro m
+  simp [count, get?, lift, m.count_eq_zero_iff]
+
+@[simp]
+theorem count_empty {p} : (∅ : ExtDHashMap α β).count p = 0 := by
+  simp [count_eq_zero_iff]
+
+theorem count_insert {p i x} (h : i ∉ mp) :
+(mp.insert i x).count p = mp.count p + if p i x then 1 else 0 := by
+  revert h; rcases mp with ⟨mp⟩; apply mp.ind; intro m
+  simp [count, insert, lift]; exact m.count_insert

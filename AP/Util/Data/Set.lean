@@ -569,3 +569,34 @@ theorem toSet_insert {x} : (s.insert x).toSet = insert x s.toSet := by ext; simp
 theorem toSet_ofSet {s : Set α} (h : s.Finite) :
 (Set'.ofSet s).toSet = s := by
   ext x; simp [mem_ofSet h]
+
+def size (s : Set' α) : ℕ :=
+  s.1.size
+
+def count (s : Set' α) (p : α → Bool) : ℕ :=
+  s.1.count # λ x _ => p x
+
+@[simp]
+theorem size_filter_eq_count {p} : (s.filter p).size = s.count p :=
+  s.1.size_filter_eq_count
+
+theorem count_eq_size_filter {p} : s.count p = (s.filter p).size :=
+  size_filter_eq_count.symm
+
+@[simp]
+theorem count_le_size {p} : s.count p ≤ s.size :=
+  s.1.count_le_size
+
+theorem count_eq_zero_iff {p} : s.count p = 0 ↔ ∀ x, x ∈ s → ¬p x := by
+  convert s.1.count_eq_zero_iff; nm x; simp
+  use λ h₁ h₂ => h₁ # s.1.mem_of_get?_eq_some h₂
+  intro h₁ h₂; apply h₁; have h₃ := s.1.get?_eq_some_of_mem h₂
+  simp at h₃; exact h₃
+
+@[simp]
+theorem count_empty {p} : (∅ : Set' α).count p = 0 :=
+  Std.ExtDHashMap.count_empty
+
+theorem count_insert {p i} (h : i ∉ s) :
+(s.insert i).count p = s.count p + if p i then 1 else 0 :=
+  s.1.count_insert h

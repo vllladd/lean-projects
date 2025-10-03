@@ -29,7 +29,6 @@ instance : Insert (α × β) (Map α β) := ⟨insertP⟩
 theorem insert_def {x : α × β} {mp : Map α β} :
 insert x mp = ⟨insert x.toSigma mp.inner⟩ := rfl
 
-@[simp]
 protected def insert (mp : Map α β) (i : α) (x : β) : Map α β :=
   ⟨mp.inner.insert i x⟩
 
@@ -106,13 +105,11 @@ i ∈ mp.insertP x ↔ i = x.1 ∨ i ∈ mp :=
   Std.ExtDHashMap.mem_insert'
 
 @[simp]
-theorem mem_insert' {i x j} :
-j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by
-  simp [mem_def]; tauto
+theorem mem_insert' {i x j} : j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by
+  simp [mem_def, Map.insert]; tauto
 
 @[simp]
-theorem mem_insert {x i} :
-i ∈ Insert.insert x mp ↔ i = x.1 ∨ i ∈ mp :=
+theorem mem_insert {x i} : i ∈ Insert.insert x mp ↔ i = x.1 ∨ i ∈ mp :=
   mem_insert'
 
 @[simp]
@@ -287,7 +284,7 @@ theorem insertMany_nil : mp.insertMany [] = mp := by
 @[simp]
 theorem insertMany_cons {i x xs} :
 mp.insertMany ((i, x) :: xs) = (mp.insert i x).insertMany xs := by
-  simp [insertMany, Std.ExtDHashMap.insertMany_cons, Std.ExtDHashMap.insert]
+  simp [insertMany, Std.ExtDHashMap.insertMany_cons, Std.ExtDHashMap.insert, Map.insert]
 
 theorem get?_eq_ite [hb : Inhabited β] {i} :
 mp.get? i = if i ∈ mp then some # mp.get! i else none :=
@@ -482,3 +479,35 @@ theorem insert_comm {i x j y} (h : i ≠ j ∨ x = y) :
 @[simp]
 theorem insert_idemp {i x} : (mp.insert i x).insert i x = mp.insert i x := by
   simp [Map.insert]
+
+def size (mp : Map α β) : ℕ :=
+  mp.1.size
+
+def filter (mp : Map α β) (p : α → β → Bool) : Map α β :=
+  ⟨mp.1.filter p⟩
+
+def count (mp : Map α β) (p : α → β → Bool) : ℕ :=
+  mp.1.count p
+
+@[simp]
+theorem size_filter_eq_count {p} : (mp.filter p).size = mp.count p :=
+  mp.1.size_filter_eq_count
+
+theorem count_eq_size_filter {p} : mp.count p = (mp.filter p).size :=
+  size_filter_eq_count.symm
+
+@[simp]
+theorem count_le_size {p} : mp.count p ≤ mp.size :=
+  mp.1.count_le_size
+
+theorem count_eq_zero_iff {p} :
+mp.count p = 0 ↔ ∀ i x, mp.get? i = some x → ¬p i x :=
+  mp.1.count_eq_zero_iff
+
+@[simp]
+theorem count_empty {p} : (∅ : Map α β).count p = 0 :=
+  Std.ExtDHashMap.count_empty
+
+theorem count_insert {p i x} (h : i ∉ mp) :
+(mp.insert i x).count p = mp.count p + if p i x then 1 else 0 :=
+  mp.1.count_insert h

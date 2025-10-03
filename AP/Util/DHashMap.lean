@@ -10,7 +10,7 @@ import AP.Util.Multiset
 
 variable {α : Type*} {β : α → Type*} {γ : α → Type*}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
-variable {mp : Std.DHashMap α β}
+variable {mp mp₁ mp₂ : Std.DHashMap α β}
 
 namespace Std.DHashMap
 
@@ -782,15 +782,31 @@ theorem keys_eq_map_fst_toList : mp.keys = mp.toList.map (·.1) :=
 
 theorem ind {p : DHashMap α β → Prop}
 (h₁ : ∀ (mp : DHashMap α β), mp.isEmpty → p mp)
-(h₂ : ∀ (mp₁ mp₂ : DHashMap α β) i x, p mp₁ → i ∉ mp₁ →
-mp₁.insert i x ~m mp₂ → p mp₂) mp : p mp := by
+(h₂ : ∀ (mp₁ mp₂ : DHashMap α β) i x, i ∉ mp₁ →
+mp₁.insert i x ~m mp₂ → p mp₁ → p mp₂) mp : p mp := by
   generalize hx : mp.toList = xs
   replace hx : mp.toList.Perm xs; simp [hx]
   induction xs generalizing mp
   · simp at hx; exact h₁ _ hx
   nm x xs ih
   rcases x with ⟨i, x⟩
-  apply h₂ (mp.erase i) mp i x
+  apply h₂ (mp.erase i) mp i x; simp
+  · rw [equiv_iff_mem_toList]
+    rintro ⟨j, y⟩
+    rw [mem_toList_insert_erase]
+    simp
+    rintro rfl
+    simp
+    rw [←mem_toList_iff_get?_eq_some]
+    rw [hx.mem_iff]; simp
+    intro h
+    have h₃ := mp.nodup_keys
+    rw [keys_eq_map_fst_toList] at h₃
+    rw [List.nodup_map_iff_inj_on # by simp] at h₃
+    simp_rw [hx.mem_iff] at h₃
+    specialize h₃ ⟨j, x⟩ (by simp) ⟨j, y⟩ (by simp [h]) rfl
+    simp at h₃
+    rw [h₃]
   · apply ih
     rw [List.perm_ext_iff_of_nodup # by simp]
     rotate_left
@@ -822,23 +838,6 @@ mp₁.insert i x ~m mp₂ → p mp₂) mp : p mp := by
     have h₆ : ⟨j, x⟩ :: xs |>.Nodup
     · simp [←hx.nodup_iff]
     simp [h₅] at h₆
-  · simp
-  · rw [equiv_iff_mem_toList]
-    rintro ⟨j, y⟩
-    rw [mem_toList_insert_erase]
-    simp
-    rintro rfl
-    simp
-    rw [←mem_toList_iff_get?_eq_some]
-    rw [hx.mem_iff]; simp
-    intro h
-    have h₃ := mp.nodup_keys
-    rw [keys_eq_map_fst_toList] at h₃
-    rw [List.nodup_map_iff_inj_on # by simp] at h₃
-    simp_rw [hx.mem_iff] at h₃
-    specialize h₃ ⟨j, x⟩ (by simp) ⟨j, y⟩ (by simp [h]) rfl
-    simp at h₃
-    rw [h₃]
 
 theorem isEmpty_iff_equiv_empty : mp.isEmpty ↔ mp ~m ∅ :=
   equiv_empty_iff_isEmpty.symm
@@ -911,3 +910,145 @@ theorem keys_eq_nil_iff : mp.keys = [] ↔ mp.isEmpty := by
 
 theorem keys_empty : (∅ : DHashMap α β).keys = [] := by
   simp
+
+def count (mp : DHashMap α β) (p : (i : α) → β i → Bool) : ℕ :=
+  mp.fold (init := 0) # λ acc i x => if p i x then acc + 1 else acc
+
+theorem isEmpty_filter_of_isEmpty {p} (h : mp.isEmpty) : (mp.filter p).isEmpty := by
+  rw [←size_eq_zero_iff_isEmpty] at h ⊢
+  linarith [mp.size_filter_le_size (f := p)]
+
+theorem count_eq_zero_of_isEmpty {p} (h : mp.isEmpty) : mp.count p = 0 :=
+  fold_eq_of_isEmpty h
+
+theorem insert_erase_equiv {i x} (h : mp.get? i = some x) :
+(mp.erase i).insert i x ~m mp := by
+  rw [equiv_iff_get?]; intro j
+  simp [get?_insert]
+  split_ifs with h₁
+  · subst h₁; simp [h]
+  simp [get?_erase, h₁]
+
+theorem equiv_of_insert_equiv {i x} (h₁ : mp₁.insert i x ~m mp₂.insert i x)
+(h₂ : i ∉ mp₁) (h₃ : i ∉ mp₂) : mp₁ ~m mp₂ := by
+  rw [equiv_iff_get?] at h₁ ⊢
+  intro j
+  specialize h₁ j
+  simp [get?_insert] at h₁
+  split_ifs at h₁ with h₄
+  · subst h₄; rw [get?_eq_none h₂, get?_eq_none h₃]
+  exact h₁
+
+theorem size_filter_congr_of_equiv {p} (h : mp₁ ~m mp₂) :
+(mp₁.filter p).size = (mp₂.filter p).size := by
+  apply Equiv.size_eq; apply h.filter
+
+theorem filter_insert_equiv_of_not_mem {p i x} (h : i ∉ mp) :
+(mp.insert i x).filter p ~m if (p i x)
+then (mp.filter p).insert i x else mp.filter p := by
+  split_ifs with hp
+  all_goals
+    rw [equiv_iff_get?]
+    intro j
+    simp [get?_insert]
+    split_ifs with h₁
+  any_goals subst h₁;; any_goals rfl;; simpa
+  simp [get?_eq_none h, hp]
+
+theorem size_filter_insert_of_not_mem {p i x} (h : i ∉ mp) :
+((mp.insert i x).filter p).size = (mp.filter p).size + ite (p i x) 1 0 := by
+  apply Equiv.size_eq (filter_insert_equiv_of_not_mem h) |>.trans
+  split_ifs with hp; simp [size_insert, mem_filter, h]; rfl
+
+theorem get?_eq_some_iff_mem_toList {i x} : mp.get? i = some x ↔ ⟨i, x⟩ ∈ mp.toList :=
+  mem_toList_iff_get?_eq_some.symm
+
+theorem get?_eq_some_iff_toList_eq_append {i x} :
+mp.get? i = some x ↔ ∃ xs ys, ⟨i, x⟩ ∉ xs ∧ ⟨i, x⟩ ∉ ys ∧
+mp.toList = xs ++ ⟨i, x⟩ :: ys := by
+  rw [get?_eq_some_iff_mem_toList, List.mem_iff_append_of_nodup]; simp
+
+theorem count_eq_sum_map_toList {p} :
+mp.count p = (mp.toList.map # λ x => ite (p x.1 x.2) 1 0).sum := by
+  unfold count; rw [fold_eq_foldl_toList]; generalize mp.toList = xs
+  induction xs using List.reverseRecOn; rfl
+  simp_all only [List.foldl_append, List.foldl_cons, List.foldl_nil, List.map_append,
+    List.map_cons, List.map_nil, List.sum_append, List.sum_cons, List.sum_nil, add_zero]
+  split <;> simp_all only [Bool.not_eq_true, add_zero]
+
+theorem equiv_erase_of_insert_equiv {i x}
+(h₁ : mp₁.insert i x ~m mp₂) (h₂ : i ∉ mp₁) : mp₁ ~m mp₂.erase i := by
+  rw [equiv_iff_get?] at h₁ ⊢
+  intro j
+  specialize h₁ j
+  simp [get?_insert, get?_erase] at h₁ ⊢
+  split_ifs at h₁ ⊢ with hp
+  · subst hp; exact get?_eq_none h₂
+  exact h₁
+
+theorem toList_erase_perm [hb : ∀ i, DecidableEq # β i] {i x}
+(h : mp.get? i = some x) : (mp.erase i).toList.Perm # mp.toList.erase ⟨i, x⟩ := by
+  rw [List.perm_iff_mem_iff_of_nodup # by simp]
+  rotate_left; apply List.Nodup.erase; simp; rintro ⟨j, y⟩
+  rw [mem_toList_erase, List.mem_erase_iff_of_nodup # by simp]; aesop
+
+@[simp]
+theorem size_filter_eq_count {p} : (mp.filter p).size = mp.count p := by
+  classical
+  apply mp.ind <;> clear! mp
+  · intro mp h₁
+    convert @rfl _ 0
+    · simp; exact isEmpty_filter_of_isEmpty h₁
+    · exact count_eq_zero_of_isEmpty h₁
+  intro mp₁ mp₂ i x h₁ h₂ ih
+  trans mp₁.insert i x |>.filter p |>.size
+  · exact size_filter_congr_of_equiv h₂.symm
+  rw [size_filter_insert_of_not_mem h₁, ih]; clear ih
+  have h₃ : mp₂.get? i = some x; simp [←h₂.get?_eq]
+  have h₃' := h₃
+  rw [get?_eq_some_iff_toList_eq_append] at h₃
+  obtain ⟨xs, ys, H₁, H₂, H₃⟩ := h₃
+  simp_rw [count_eq_sum_map_toList]
+  rw [H₃]
+  have h₄ : (mp₁.insert i x).toList.Perm # ⟨i, x⟩ :: mp₁.toList
+  · exact toList_insert_perm_cons_of_not_mem h₁
+  have h₅ := equiv_erase_of_insert_equiv h₂ h₁
+  have h₆ : (mp₂.erase i).toList.Perm # xs ++ ys
+  · apply toList_erase_perm h₃' |>.trans
+    rw [H₃, List.erase_append_cons_eq_of_not_mem H₁]
+  replace h₆ : mp₁.toList.Perm # xs ++ ys
+  · trans (mp₂.erase i).toList; rotate_left; exact h₆
+    rwa [←equiv_iff_toList_perm]
+  simp; rw [h₆.map _ |>.sum_eq]; simp; ring_nf
+
+theorem count_eq_size_filter {p} : mp.count p = (mp.filter p).size :=
+  size_filter_eq_count.symm
+
+@[simp]
+theorem count_le_size {p} : mp.count p ≤ mp.size := by
+  rw [count_eq_size_filter]; exact size_filter_le_size
+
+theorem count_eq_zero_iff {p} :
+mp.count p = 0 ↔ ∀ i x, mp.get? i = some x → ¬p i x := by
+  rw [count_eq_size_filter]
+  simp [-size_filter_eq_count,isEmpty_filter_iff]
+  apply forall_congr'; intro i
+  constructor
+  · intro h₁ x h₂
+    specialize h₁ # mem_of_get?_eq_some h₂
+    simp [get_eq_get_get?, h₂] at h₁; exact h₁
+  · intro h₁ h₂
+    obtain ⟨x, hx⟩ := mem_iff_get?_eq_some.mp h₂
+    specialize h₁ _ hx
+    simpa [get_eq_get_get?, hx]
+
+@[simp]
+theorem count_empty {p} : (∅ : DHashMap α β).count p = 0 := by
+  simp [count_eq_zero_iff]
+
+theorem count_insert {p i x} (h : i ∉ mp) :
+(mp.insert i x).count p = mp.count p + if p i x then 1 else 0 := by
+  simp [count_eq_size_filter, -size_filter_eq_count, size_filter_insert_of_not_mem h]
+
+theorem count_eq_of_perm {p} (h : mp₁ ~m mp₂) : mp₁.count p = mp₂.count p := by
+  simp [count_eq_size_filter, -size_filter_eq_count, size_filter_congr_of_equiv h]

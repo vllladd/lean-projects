@@ -931,3 +931,38 @@ xs.max? = some x ↔ (x ∈ xs ∧ ∀ y ∈ xs, y ≤ x) := by
   · have h₆ := h₂ _ h₃; have h₇ := h₄.trans h₆
     rw [max_eq_right h₇]; have h₈ := h₅ _ h₁
     exact le_antisymm h₈ h₆
+
+theorem mem_iff_append_of_nodup {x} (h : xs.Nodup) :
+x ∈ xs ↔ ∃ ys zs, x ∉ ys ∧ x ∉ zs ∧ xs = ys ++ x :: zs := by
+  rw [mem_iff_append]
+  apply exists_congr; intro ys
+  apply exists_congr; intro zs
+  symm; constructor; simp
+  rintro rfl; simp
+  simp [nodup_append] at h
+  rcases h with ⟨-, ⟨h₁, -⟩, h₂⟩
+  refine ⟨?_, h₁⟩
+  intro h₃
+  specialize h₂ _ h₃
+  simp at h₂
+
+theorem mem_erase_iff_of_nodup [ha : DecidableEq α] {x y}
+(h : xs.Nodup) : y ∈ xs.erase x ↔ y ≠ x ∧ y ∈ xs := by
+  induction xs; simp
+  clear! xs; nm z xs ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  simp [erase_cons]
+  split_ifs with hp
+  · subst hp; aesop
+  · simp [ih]; clear ih; aesop
+
+theorem erase_append_cons_eq_of_not_mem [ha : DecidableEq α] {x}
+(h : x ∉ xs) : (xs ++ x :: ys).erase x = xs ++ ys := by
+  induction xs; simp
+  clear! xs; nm z xs ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  simp [ne_symm' h₁]
+  exact ih h₂
