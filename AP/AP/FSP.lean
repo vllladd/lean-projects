@@ -22,10 +22,13 @@ theorem union_def : a ∪ b = ⟨λ i => a.get i ∪ b.get i⟩ := rfl
 instance : Inter FSP := ⟨λ a b => ⟨λ i => a.get i ∩ b.get i⟩⟩
 theorem inter_def : a ∩ b = ⟨λ i => a.get i ∩ b.get i⟩ := rfl
 
-def next (a : FSP) : FSP where
+def next (fsp : FSP) : FSP where
   get i := match i with
-  | 0 => a.get 0 ∪ a.get 1
-  | n + 1 => a.get # n + 2
+  | 0 => fsp.get 0 ∪ fsp.get 1
+  | n + 1 => fsp.get # n + 2
+
+def offset (fsp : FSP) (n : ℕ) : FSP :=
+  next^[n] fsp
 
 def hasLe (a : FSP) (n : ℕ) (p : PointZ) : Prop :=
   ∃ k ≤ n, p ∈ a.get k
@@ -133,3 +136,48 @@ theorem get_insert_of_ne {n k p} (h : k ≠ n) : (fsp.insert n p).get k = fsp.ge
 
 theorem insert_eq_of_mem {n p} (h : p ∈ fsp.get n) : fsp.insert n p = fsp := by
   ext k p₁; simp [FSP.insert, insertSet]; aesop
+
+@[simp] theorem offset_zero : fsp.offset 0 = fsp := rfl
+@[simp] theorem offset_one : fsp.offset 1 = fsp.next := rfl
+
+theorem offset_succ {n} : fsp.offset (n + 1) = fsp.next.offset n :=
+  next.iterate_succ_apply n fsp
+
+theorem offset_succ' {n} : fsp.offset (n + 1) = (fsp.offset n).next :=
+  next.iterate_succ_apply' n fsp
+
+@[simp]
+theorem mem_get_zero_next_iff {p} : p ∈ fsp.next.get 0 ↔ p ∈ fsp.get 0 ∨ p ∈ fsp.get 1 := by
+  simp [next]
+
+@[simp]
+theorem mem_get_zero_offset_iff {n p} : p ∈ (fsp.offset n).get 0 ↔ ∃ k ≤ n, p ∈ fsp.get k := by
+  induction n generalizing fsp; simp; nm n ih
+  rw [offset_succ, ih]; clear ih
+  constructor <;> rintro ⟨k, hk, h⟩
+  · cases k
+    · simp at h
+      rcases h with h | h
+      · use 0; simpa
+      · use 1; simpa
+    nm k; simp [next] at h
+    use k + 2, by linarith
+  · cases k; use 0; simp [h]
+    nm k; use k, by linarith
+    simp [next]; split
+    · simp_all only [zero_add, le_add_iff_nonneg_left, zero_le, Set.mem_union, or_true]
+    · simp_all only [Nat.succ_eq_add_one, add_le_add_iff_right]
+
+@[simp]
+theorem hasLe_offset {n k p} : (fsp.offset n).hasLe k p ↔ fsp.hasLe (k + n) p := by
+  induction n generalizing fsp; simp; nm n ih
+  simp [offset_succ, ih, Nat.add_assoc]
+
+theorem hasLe_of_le {n k p} (h₁ : fsp.hasLe k p) (h₂ : k ≤ n) : fsp.hasLe n p := by
+  obtain ⟨r, hr, h₁⟩ := h₁; use r, by linarith
+
+theorem hasLe_of_add_left {n k p} (h : fsp.hasLe n p) : fsp.hasLe (k + n) p := by
+  apply hasLe_of_le h; simp
+
+theorem hasLe_of_add_right {n k p} (h : fsp.hasLe n p) : fsp.hasLe (n + k) p := by
+  apply hasLe_of_le h; simp

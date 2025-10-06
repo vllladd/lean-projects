@@ -2,7 +2,7 @@ import AP.AP.King
 
 namespace AP
 
-variable {α : Type}
+variable {α : Type*}
 
 def AStrat.mkFold' (s : State) (z : α) (fa : State → α → PointZ × α)
 (fd : State → PointZ → α → α) : List PointZ → Option PointZ
@@ -27,3 +27,13 @@ def DStrat.mkFold' (s : State) (z : α) (fa : State → PointZ → α → α)
 def DStrat.mkFold (s₀ : State) (z : α) (fa : State → PointZ → α → α)
 (fd : State → α → PointZ × α) : DStrat := mk # λ s =>
   DStrat.mkFold' s₀ z fa fd # s.hist.reverse.drop s₀.hist.length
+
+-----
+
+@[simp]
+instance {z : α} {s₀ fa fd} : AStrat.mkFold s₀ z fa fd |>.WF := by
+  unfold AStrat.mkFold; infer_instance
+
+@[simp]
+instance {z : α} {s₀ fa fd} : DStrat.mkFold s₀ z fa fd |>.WF := by
+  unfold DStrat.mkFold; infer_instance
