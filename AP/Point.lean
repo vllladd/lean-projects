@@ -14,157 +14,121 @@ abbrev PointR := Point ℝ
 
 namespace Point
 
-section LinearOrder
-
-variable [ha : LinearOrder α]
-
-instance : DecidableEq (Point α) := λ a b =>
-match h : decide # a.x = b.x ∧ a.y = b.y with
-| true => isTrue # by ext <;> simp_all
-| false => isFalse # by rintro rfl; simp at h
+@[simp] def ofProd (p : α × α) : Point α := ⟨p.1, p.2⟩
+@[simp] def toProd (p : Point α) : α × α := ⟨p.1, p.2⟩
 
 instance [ha : Repr α] : Repr (Point α) := by
   constructor
   rintro ⟨x, y⟩ prec
   exact (x, y).repr prec
 
-@[simp]
-def lt (a b : Point α) : Prop :=
-  if a.y = b.y then a.x < b.x else a.y < b.y
+instance [Hashable α] : Hashable (Point α) :=
+  ⟨λ p => hash p.toProd⟩
+
+section LinearOrder
+
+variable [ha : LinearOrder α]
 
 @[simp]
 def le (a b : Point α) : Prop :=
-  a = b ∨ a.lt b
+  a.y < b.y ∨ (a.y = b.y ∧ a.x ≤ b.x)
 
-instance : LT (Point α) := ⟨Point.lt⟩
-instance : LE (Point α) := ⟨Point.le⟩
+@[simp]
+def lt (a b : Point α) : Prop :=
+  a.y < b.y ∨ (a.y = b.y ∧ a.x < b.x)
 
-instance : Preorder (Point α) := by
-  apply Preorder.mk
+instance {a b : Point α} : Decidable # le a b :=
+  match h : compare a.y b.y with
+  | .lt => .isTrue # by rw [compare_lt_iff_lt] at h; left; exact h
+  | .gt => .isFalse # by
+    rw [compare_gt_iff_gt] at h; simp
+    use le_of_lt h; intro h₁; simp [h₁] at h
+  | .eq => match h₁ : decide # a.x ≤ b.x with
+    | true => .isTrue # by
+      simp at h₁; rw [compare_eq_iff_eq] at h
+      right; simp_all only [and_self]
+    | false => .isFalse # by
+      simp at h₁; rw [compare_eq_iff_eq] at h
+      simp_all only [le, lt_self_iff_false, true_and, false_or, not_le]
+
+instance : LinearOrder # Point α where
+  le := le
+  le_refl a := by aesop
+  le_trans a b c h₁ h₂ := by
+    rcases h₁ with h₁ | ⟨h₁, h₃⟩ <;> rcases h₂ with h₂ | ⟨h₂, h₄⟩
+    · left; exact h₁.trans h₂
+    · left; exact lt_of_lt_of_eq h₁ h₂
+    · simp_all only [le, true_or]
+    · right; simp [h₁, h₂]; exact h₃.trans h₄
+  le_antisymm a b h₁ h₂ := by
+    rcases h₁ with h₁ | ⟨h₁, h₃⟩ <;> rcases h₂ with h₂ | ⟨h₂, h₄⟩
+    · cases false_of_lt_and_lt h₁ h₂
+    · simp_all only [lt_self_iff_false]
+    · simp_all only [lt_self_iff_false]
+    · ext; exact le_antisymm h₃ h₄; exact h₁
+  le_total a b := by
+    rcases a, b with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩
+    simp [or_iff_not_imp_left]
+    intro h₁ h₂ h₃
+    have h₄ := le_antisymm h₃ h₁
+    specialize h₂ h₄
+    use h₄.symm, le_of_lt h₂
+  toDecidableLE a b := (inferInstance : Decidable # le a b)
+
+theorem le_def {a b : Point α} : a ≤ b ↔ le a b := by rfl
+
+theorem lt_def {a b : Point α} : a < b ↔ lt a b := by
+  rw [lt_iff_le_and_ne]
+  simp [le_def]
+  rcases a, b with ⟨⟨x₁, y₁⟩, x₂, y₂⟩
+  have := @lt_of_le_of_ne α _
+  have := @le_of_lt α _
+  simp_all only [ne_eq, mk.injEq, not_and]
+  apply Iff.intro
   · intro a
-    simp [instLE]
-  · rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩ ⟨c₁, c₂⟩ h₁ h₂
-    simp [instLE] at h₁ h₂ ⊢
-    split_ifs at * <;> try simp_all
-    · nm h₃ h₄
-      subst h₃ h₄
-      rcases h₁ with h₁ | h₁ <;> rcases h₂ with rfl | h₂ <;> try simp_all
-      right
-      exact h₁.trans h₂
-    · nm h₃ h₄ h₅
-      subst h₃
-      contrapose! h₂
-      exact le_of_lt h₁
-    · nm h₃ h₄ h₅
-      exact h₁.trans h₂
-  · rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
-    simp [instLE, instLT]
-    split_ifs <;> try simp_all
-    · constructor
-      · intro h
-        simp [h]
-        rw [lt_iff_le_and_ne] at h
-        simp [h]
-        exact h.2.symm
-      · nm x; clear x
-        rintro ⟨rfl | h₁, h₂, h₃⟩
-        · simp at h₂
-        · rw [lt_iff_le_and_ne]; tauto
-    · nm h₁ h₂
-      intro h₃
-      exact le_of_lt h₃
-
-instance : DecidableLT (Point α) := by
-  intro a b
-  simp [instLT]
-  infer_instance
-
-instance : DecidableLE (Point α) := by
-  intro a b
-  simp [instLE]
-  infer_instance
-
-@[simp] def compare (a b : Point α) :=
-  if a = b then Ordering.eq
-  else if a < b then Ordering.lt
-  else Ordering.gt
-
-instance : Ord (Point α) := ⟨Point.compare⟩
-
-@[simp]
-theorem mk_ord {x₁ y₁ x₂ y₂} :
-Ord.compare (⟨x₁, y₁⟩ : Point α) ⟨x₂, y₂⟩ =
-Point.compare ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := by rfl
-
-@[simp]
-protected def min (a b : Point α) :=
-  if a ≤ b then a else b
-
-@[simp]
-protected def max (a b : Point α) :=
-  if a ≤ b then b else a
-
-instance : Min (Point α) := ⟨Point.min⟩
-instance : Max (Point α) := ⟨Point.max⟩
-
-@[simp]
-theorem mk_lt {x₁ y₁ x₂ y₂} :
-(⟨x₁, y₁⟩ : Point α) < ⟨x₂, y₂⟩ ↔ Point.lt ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := by rfl
+    obtain ⟨left, right⟩ := a
+    cases left with
+    | inl h => simp_all only [true_or]
+    | inr h_1 => simp_all only [not_true_eq_false, imp_false, lt_self_iff_false,
+      not_false_eq_true, and_self, or_true]
+  · intro a
+    cases a with
+    | inl h =>
+      simp_all only [true_or, true_and]
+      intro a
+      subst a
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      subst a
+      simp_all only [lt_self_iff_false]
+    | inr h_1 =>
+      simp_all only [lt_self_iff_false, and_self, or_true, not_true_eq_false,
+        imp_false, true_and]
+      obtain ⟨left, right⟩ := h_1
+      subst left
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      subst a
+      simp_all only [lt_self_iff_false]
 
 @[simp]
 theorem mk_le {x₁ y₁ x₂ y₂} :
 (⟨x₁, y₁⟩ : Point α) ≤ ⟨x₂, y₂⟩ ↔ Point.le ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := by rfl
 
 @[simp]
-theorem mk_min {x₁ y₁ x₂ y₂} :
-(⟨x₁, y₁⟩ : Point α) ⊓ ⟨x₂, y₂⟩ = Point.min ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := rfl
+theorem mk_lt {x₁ y₁ x₂ y₂} :
+(⟨x₁, y₁⟩ : Point α) < ⟨x₂, y₂⟩ ↔ Point.lt ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := by
+  simp [lt_def]
 
-@[simp]
-theorem mk_max {x₁ y₁ x₂ y₂} :
-(⟨x₁, y₁⟩ : Point α) ⊔ ⟨x₂, y₂⟩ = Point.max ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := rfl
+-- @[simp]
+-- theorem mk_min {x₁ y₁ x₂ y₂} :
+-- (⟨x₁, y₁⟩ : Point α) ⊓ ⟨x₂, y₂⟩ = Point.min ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := rfl
+-- 
+-- @[simp]
+-- theorem mk_max {x₁ y₁ x₂ y₂} :
+-- (⟨x₁, y₁⟩ : Point α) ⊔ ⟨x₂, y₂⟩ = Point.max ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ := rfl
 
-instance : PartialOrder (Point α) := by
-  constructor
-  rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩ h₁ h₂
-  simp at h₁ h₂ ⊢
-  split_ifs at * <;> simp_all
-  · rcases h₁ with rfl | h₁
-    · rfl
-    rcases h₂ with rfl | h₂
-    · rfl
-    contrapose! h₂; exact le_of_lt h₁
-  · contrapose! h₂; exact le_of_lt h₁
-
-instance : LinearOrder (Point α) := by
-  constructor
-  · rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
-    simp
-    split_ifs <;> simp_all
-    nm x; clear x
-    simp only [or_iff_not_imp_left]
-    intro h₁ h₂
-    simp at h₁
-    rw [eq_comm] at h₁
-    simp [h₂] at h₁
-    contrapose! h₂
-    apply le_antisymm h₁ h₂
-  · rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
-    simp
-  · rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
-    simp
-  · rintro ⟨a₁, a₂⟩ ⟨b₁, b₂⟩
-    simp
-    change _ = ite _ _ _
-    simp
-    split_ifs <;> simp_all
-  · infer_instance
-  · infer_instance
-
-@[simp] def ofProd (p : α × α) : Point α := ⟨p.1, p.2⟩
-@[simp] def toProd (p : Point α) : α × α := ⟨p.1, p.2⟩
-
-instance [Hashable α] : Hashable (Point α) :=
-  ⟨λ p => hash p.toProd⟩
+-- #check 0 #exit
 
 end LinearOrder
 
@@ -344,56 +308,21 @@ section StrictMono
 variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
 
 instance [ha : AddLeftStrictMono α] : AddLeftStrictMono (Point α) := by
-  constructor
-  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
-  simp only [mk_lt, lt, mk_add_mk]
-  intro h
-  split_ifs at h with h₁
-  · subst h₁
-    simp only [↓reduceIte]
-    apply add_lt_add_left h
-  rw [if_neg]; apply add_lt_add_left h
-  apply ne_of_lt
-  apply add_lt_add_left h
+  constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp
 
 instance [ha : AddRightStrictMono α] : AddRightStrictMono (Point α) := by
-  constructor
-  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
-  simp only [mk_lt, lt, mk_add_mk, Function.swap]
-  intro h
-  split_ifs at h with h₁
-  · subst h₁
-    simp only [↓reduceIte]
-    apply add_lt_add_right h
-  rw [if_neg]; apply add_lt_add_right h
-  apply ne_of_lt
-  apply add_lt_add_right h
+  constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp [Function.swap]
 
 instance [ha : MulLeftStrictMono α] : MulLeftStrictMono (Point α) := by
-  constructor
-  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
-  simp only [mk_lt, lt, mk_mul_mk]
-  intro h
-  split_ifs at h with h₁
-  · subst h₁
-    simp only [↓reduceIte]
-    apply mul_lt_mul_left' h
-  rw [if_neg]; apply mul_lt_mul_left' h
-  apply ne_of_lt
-  apply mul_lt_mul_left' h
+  constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp; rintro (h | ⟨rfl, h⟩)
+  · left; exact mul_lt_mul_left' h y₁
+  · right; use rfl; exact mul_lt_mul_left' h x₁
 
 instance [ha : MulRightStrictMono α] : MulRightStrictMono (Point α) := by
-  constructor
-  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩
-  simp only [mk_lt, lt, mk_mul_mk, Function.swap]
-  intro h
-  split_ifs at h with h₁
-  · subst h₁
-    simp only [↓reduceIte]
-    apply mul_lt_mul_right' h
-  rw [if_neg]; apply mul_lt_mul_right' h
-  apply ne_of_lt
-  apply mul_lt_mul_right' h
+  constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp [Function.swap]
+  rintro (h | ⟨rfl, h⟩)
+  · left; exact mul_lt_mul_right' h y₁
+  · right; use rfl; exact mul_lt_mul_right' h x₁
 
 end StrictMono
 
@@ -406,12 +335,9 @@ end StrictMono
 
 theorem ofNat_def [ha : Ring α] {n} :
 (OfNat.ofNat n : Point α) = ⟨OfNat.ofNat n, OfNat.ofNat n⟩ := by
-  induction n; simp
-  nm n ih
+  induction n; simp; nm n ih
   rw [Lean.Grind.Semiring.ofNat_succ, ih]
-  nth_rw 2 [Lean.Grind.Semiring.ofNat_succ]
-  nth_rw 3 [Lean.Grind.Semiring.ofNat_succ]
-  rfl
+  nth_rw 2 3 [Lean.Grind.Semiring.ofNat_succ]; rfl
 
 @[simp]
 theorem add_self_eq_zero_iff
