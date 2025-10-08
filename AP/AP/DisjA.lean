@@ -162,23 +162,12 @@ theorem State.aHwsDisj_of_aHwsDisj_next {s : State} {fsp : FSP}
 (h : s.aHwsDisj fsp.next) : s.aHwsDisj fsp :=
   aHwsDisj_of_aHwsDisj_offset (n := 1) h
 
--- #check 0 #exit
-
 theorem State.aHwsDisj_setHist_of_aHwsDisj {s fsp hist} [hs : sys.WF s]
 [hs' : sys.WF # s.setHist hist] (h : s.aHwsDisj fsp) : (s.setHist hist).aHwsDisj fsp := by
   obtain ⟨a, ha, h⟩ := h
-  use .mk # λ sa => a.f # sa.setHistAt s.hist hist
-  use inferInstance
-  intro d hd n
-  specialize h # .mk # λ sd' => d.f # sd'.setHistAt hist s.hist
-  specialize h inferInstance n
-  obtain ⟨s₁, h₁, h₂⟩ := h
-  use s₁.setHistAt s.hist hist
-  constructor
-  · sorry
-  · sorry
-
--- #check 0 #exit
+  have H := s.exi_aWins_cnd_setHist_of (p := λ f => ∀ n, ¬fsp.hasLe n (f n).aPos)
+    (a := a) (hist := hist) (by simp) (λ d hd => aWinsDisj_iff.mp (h d hd) |>.symm)
+  obtain ⟨a', ha', h₁⟩ := H; use a', ha', λ d hd => aWinsDisj_iff.mpr (h₁ d hd).symm
 
 @[simp]
 theorem State.aHwsDisj_setHist_iff {s fsp hist} [hs : sys.WF s]

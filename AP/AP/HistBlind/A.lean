@@ -222,18 +222,40 @@ theorem eq_iff_eq_right_of {α : Type*} {x y z : α} (h : x = y) : z = x ↔ z =
   subst h; rfl
 
 @[simp]
-theorem pw_setHistAt' {s : State} {hist₁ hist₂} :
+theorem State.pw_setHistAt' {s : State} {hist₁ hist₂} :
 (s.setHistAt' hist₁ hist₂).pw = s.pw := rfl
 
 @[simp]
-theorem aTurn_setHistAt' {s : State} {hist₁ hist₂} :
+theorem State.aTurn_setHistAt' {s : State} {hist₁ hist₂} :
 (s.setHistAt' hist₁ hist₂).aTurn = s.aTurn := rfl
 
 @[simp]
-theorem aPos_setHistAt' {s : State} {hist₁ hist₂} :
+theorem State.aPos_setHistAt' {s : State} {hist₁ hist₂} :
 (s.setHistAt' hist₁ hist₂).aPos = s.aPos := rfl
 
--- #check 0 #exit
+@[simp]
+theorem State.taken_setHistAt' {s : State} {hist₁ hist₂} :
+(s.setHistAt' hist₁ hist₂).taken = s.taken := rfl
+
+@[simp]
+theorem State.pw_setHistAt {s : State} {hist₁ hist₂} :
+(s.setHistAt hist₁ hist₂).pw = s.pw := by
+  simp [setHistAt]; split_ifs <;> simp
+
+@[simp]
+theorem State.aTurn_setHistAt {s : State} {hist₁ hist₂} :
+(s.setHistAt hist₁ hist₂).aTurn = s.aTurn := by
+  simp [setHistAt]; split_ifs <;> simp
+
+@[simp]
+theorem State.aPos_setHistAt {s : State} {hist₁ hist₂} :
+(s.setHistAt hist₁ hist₂).aPos = s.aPos := by
+  simp [setHistAt]; split_ifs <;> simp
+
+@[simp]
+theorem State.taken_setHistAt {s : State} {hist₁ hist₂} :
+(s.setHistAt hist₁ hist₂).taken = s.taken := by
+  simp [setHistAt]; split_ifs <;> simp
 
 @[simp]
 theorem State.aMove_setHistAt' {s : State} {hist₁ hist₂ p} :
