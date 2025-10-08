@@ -2,10 +2,6 @@ import AP.Util
 
 namespace RealAnalysis
 
-@[simp]
-def eventually (p : ℕ → Prop) : Prop :=
-  ∃ N, ∀ n, N ≤ n → p n
-
 def tendsTo (a : ℕ → ℝ) (L : ℝ) : Prop :=
   ∀ ε, 0 < ε → eventually (|a · - L| < ε)
 
@@ -554,7 +550,7 @@ eventually (|L| / 2 < |a ·|) := by
 
 theorem eventually_abs_limit_div_two_le {a L} (h : tendsTo a L) :
 eventually (|L| / 2 ≤ |a ·|) := by
-  by_cases h₁ : L = 0; simp [h₁]
+  by_cases h₁ : L = 0; simp [eventually, h₁]
   obtain ⟨N, h₂⟩ := eventually_abs_limit_div_two_lt h₁ h
   use N; dsimp at h₂ ⊢; intro n hn
   specialize h₂ n hn; exact le_of_lt h₂
@@ -563,3 +559,10 @@ theorem tendsTo_abs {a L} (h : tendsTo a L) : tendsTo (|a ·|) |L| := by
   intro e he; specialize h e he; obtain ⟨N, h⟩ := h
   use N; intro n hn; specialize h n hn; dsimp
   apply lt_of_le_of_lt _ h; apply abs_abs_sub_abs_le
+
+open Finset in
+theorem le_sum_range {a : ℕ → ℝ} {N n : ℕ} (h : n < N) :
+|a n| ≤ ∑ i ∈ range N, |a i| := by
+  obtain ⟨s, h₁, h₂⟩ : ∃ (s : Finset ℕ), n ∉ s ∧ range N = insert n s
+  · use range N |>.erase n; simp; rw [insert_erase]; simpa
+  simp [h₂, sum_insert h₁]; apply sum_nonneg; simp
