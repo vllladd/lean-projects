@@ -1413,3 +1413,7 @@ sys.tr s' t = some s₁ := by
     obtain ⟨w, h⟩ := a
     obtain ⟨left, right⟩ := h
     simp_all only [↓reduceIte]
+
+theorem false_of_acyclic_and_reachable_and_tr {a b t} [ha : sys.Acyclic a]
+(h₁ : sys.Reachable a b) (h₂ : sys.tr b t = some a) : False := by
+  rcases ha with ⟨ha, h₃⟩; exact h₃ h₁ h₂ h₁

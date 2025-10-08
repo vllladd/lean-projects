@@ -1061,3 +1061,14 @@ theorem State.aPos_ne_chooseDMove {s} [hs : DState s] : s.aPos ≠ s.chooseDMove
 @[simp]
 theorem State.chooseDMove_not_mem_taken {s} [hs : DState s] : s.chooseDMove ∉ s.taken := by
   have h := hs.validTr_chooseDMove; rw [DState.validTr_iff] at h; exact h.2
+
+theorem hist_eq_of_trs {s s₁ ps r} (h : sys.trs s ps = (s₁, r)) :
+s₁.hist = (ps.take # ps.length - r.length).reverse ++ s.hist := by
+  induction ps generalizing s r
+  · simp_all only [System.trs, Prod.mk.injEq, List.nil_eq, List.length_nil,
+    tsub_self, List.take_nil, List.reverse_nil, List.nil_append]
+  nm p ps ih; simp at h; split at h
+  · simp at h; rcases h with ⟨rfl, rfl⟩; simp
+  nm x s' h₁; simp only [ih h, hist_eq_of_tr h₁, List.length_cons, Nat.succ_sub #
+    sys.trs_snd_length_le_of_eq h, Nat.succ_eq_add_one, List.take_succ_cons,
+    List.reverse_cons, List.append_assoc, List.cons_append, List.nil_append]

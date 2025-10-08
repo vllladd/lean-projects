@@ -966,3 +966,24 @@ theorem erase_append_cons_eq_of_not_mem [ha : DecidableEq α] {x}
   rcases h with ⟨h₁, h₂⟩
   simp [ne_symm' h₁]
   exact ih h₂
+
+@[simp]
+theorem drop_length_reverse : xs.reverse.drop xs.length = [] := by
+  simp [drop_reverse]
+
+@[simp]
+theorem drop_succ_length_reverse : xs.reverse.drop (xs.length + 1) = [] := by
+  simp [drop_reverse]
+
+@[simp]
+theorem drop_succ_length_reverse_snoc {x} :
+(xs.reverse ++ [x]).drop (xs.length + 1) = [] := by simp
+
+@[simp]
+theorem drop_reverse_append_cons_length_succ {x} :
+(xs.reverse ++ x :: ys).drop xs.length = x :: ys := by simp
+
+@[simp]
+theorem drop_reverse_append_cons_succ_length_succ {x} :
+(xs.reverse ++ x :: ys).drop (xs.length + 1) = ys := by
+  rw [←length_reverse, drop_add_one_eq_tail_drop, drop_append]; simp
