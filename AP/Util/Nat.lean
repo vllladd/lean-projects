@@ -401,9 +401,9 @@ theorem even_or_odd₁ {n : ℕ} : Even n ∨ Odd n :=
 theorem odd_or_even₁ {n : ℕ} : Odd n ∨ Even n :=
   even_or_odd₁.symm
 
-example : ¬∀{p q : ℕ → Prop},
+example : ¬∀ {p q : ℕ → Prop},
 eventually (λ n => p n ∨ q n) ↔ eventually p ∨ eventually q := by
-  push_neg; use Odd, Even; simp; use 0; simp
+  push_neg; use Even, Odd; simp; use 0; simp
 
 theorem eventually_or_of {p q : ℕ → Prop}
 (h : eventually p ∨ eventually q) : eventually (λ n => p n ∨ q n) := by
