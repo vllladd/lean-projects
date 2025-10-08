@@ -37,3 +37,16 @@ example : f 2003 < 2003 := by
   apply f_lt; simp
 
 end P1
+
+namespace P2
+
+def le (n m : ℕ) : Prop :=
+  ∃ (f : ℕ → ℕ) (k : ℕ), f 0 = n ∧ f k = m ∧ ∀ k, f k.succ = (f k).succ
+
+theorem le_iff_nat_le {n m} : le n m ↔ n ≤ m := by
+  constructor
+  · rintro ⟨f, k, rfl, rfl, h⟩; induction k; rfl; rw [h]; linarith
+  · intro h; obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
+    use (n + ·); simp [add_assoc]
+
+end P2
