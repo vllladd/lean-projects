@@ -181,3 +181,7 @@ theorem hasLe_of_add_left {n k p} (h : fsp.hasLe n p) : fsp.hasLe (k + n) p := b
 
 theorem hasLe_of_add_right {n k p} (h : fsp.hasLe n p) : fsp.hasLe (n + k) p := by
   apply hasLe_of_le h; simp
+
+@[simp]
+theorem hasLe_zero {p} : fsp.hasLe 0 p ↔ p ∈ fsp.get 0 := by
+  simp [hasLe]

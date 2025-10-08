@@ -176,17 +176,40 @@ theorem State.aHwsDisj_setHist_iff {s fsp hist} [hs : sys.WF s]
   intro h; change s.setHist hist |>.setHist s.hist |>.aHwsDisj fsp
   exact aHwsDisj_setHist_of_aHwsDisj h
 
--- #check 0 #exit
+theorem State.aPos_not_mem_fsp_get_zero_of_aWinsDisj {s : State} {fsp} {st : Strat}
+(h : s.aWinsDisj fsp st) : s.aPos ∉ fsp.get 0 := by
+  specialize h 0; simp at h; exact h
 
-def aDisjEraseTaken (s₀ s₀' : State) (p₀ : PointZ) (a : AStrat) : AStrat :=
-  .mkFold (α := State × PointZ × AStrat) s₀' ⟨s₀, p₀, a⟩
-  (λ _ ⟨s, p, a⟩ => ⟨a.f s, sys.tr s (a.f s) |>.get!, p, a⟩) #
-  λ _ p₁ ⟨s, p, a⟩ =>
-    if p₁ ≠ p then ⟨sys.tr s p₁ |>.get!, p, a⟩ else
-    ⟨sys.tr s s.chooseDMove |>.get!, s.chooseDMove, a⟩
+theorem State.aPos_not_mem_fsp_get_zero_of_aForallWinsDisj {s : State} {fsp} {a : AStrat}
+(h : s.aForallWinsDisj fsp a) : s.aPos ∉ fsp.get 0 :=
+  aPos_not_mem_fsp_get_zero_of_aWinsDisj # h default inferInstance
+
+theorem State.aPos_not_mem_fsp_get_zero_of_aHwsDisj {s : State} {fsp}
+(h : s.aHwsDisj fsp) : s.aPos ∉ fsp.get 0 := by
+  obtain ⟨a, ha, h⟩ := h; exact aPos_not_mem_fsp_get_zero_of_aForallWinsDisj h
+
+structure DisjEraseTaken : Type where
+  a : AStrat
+  s : State
+  p : PointZ
+  fsp : FSP
+  n : ℕ
+
+def aDisjEraseTaken_fa (acc : DisjEraseTaken) : PointZ × DisjEraseTaken :=
+  let ⟨a, s, p, fsp, n⟩ := acc
+  ⟨a.f s, a, sys.tr s (a.f s) |>.get!, p, fsp.next, n + 1⟩
+
+def aDisjEraseTaken_fd (p₁ : PointZ) (acc : DisjEraseTaken) : DisjEraseTaken :=
+  let ⟨a, s, p, fsp, n⟩ := acc
+  let p₂ := if p₁ ≠ p then p₁ else s.chooseDMove
+  ⟨a, sys.tr s p₂ |>.get!, p₂, fsp.next, n + 1⟩
+
+def aDisjEraseTaken (s s' : State) (p : PointZ) (a : AStrat) (fsp : FSP) : AStrat :=
+  .mkFold (α := DisjEraseTaken) s' ⟨a, s, p, fsp, 0⟩
+  (λ _ => aDisjEraseTaken_fa) (λ _ => aDisjEraseTaken_fd)
 
 @[simp]
-instance {s₀ s₀' p₀ a} : (aDisjEraseTaken s₀ s₀' p₀ a).WF := by
+instance {s s' p a fsp} : (aDisjEraseTaken s s' p a fsp).WF := by
   unfold aDisjEraseTaken; infer_instance
 
 -- #check 0 #exit
@@ -198,11 +221,77 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   · rw [Set'.erase_eq_of_not_mem h₁] at hp
     have h₂ : s' = s.setHist s'.hist
     · ext:1 <;> first | assumption | simp
-    rw [h₂] at hs' ⊢ ;exact aHwsDisj_setHist_of_aHwsDisj h
+    rw [h₂] at hs' ⊢; exact aHwsDisj_setHist_of_aHwsDisj h
   push_neg at h₁
   obtain ⟨a, ha, h⟩ := h
-  use aDisjEraseTaken s s' p a, inferInstance
+  use aDisjEraseTaken s s' p a fsp, inferInstance
   intro d hd n
+  have H := AStrat.mkFold_ind (α := DisjEraseTaken)
+    (z := ⟨a, s, p, fsp, 0⟩) (s := s') (d := d) (n := n)
+    (fa := λ _ => aDisjEraseTaken_fa) (fd := λ _ => aDisjEraseTaken_fd)
+    (p := λ s₁' ⟨a', s₁, p, fsp', n⟩ => a = a' ∧ fsp.offset n = fsp' ∧
+    s₁'.hist.length - s'.hist.length = n ∧ s₁'.aPos = s₁.aPos ∧
+    s₁.aForallWinsDisj fsp a ∧ s₁.aPos ∉ fsp'.get 0)
+  -- simp only [exists_and_right, exists_and_left] at H
+  dsimp at H
+  specialize H _ _ _
+  · clear H; simp_all only [tsub_self, true_and]
+    exact aPos_not_mem_fsp_get_zero_of_aWinsDisj (h d hd)
+  · clear H
+    rintro sa hsa ⟨a', s₁, p₁, fsp', n'⟩
+    dsimp
+    rintro ⟨rfl, rfl, H₁, H₂, H₃, H₄⟩
+    have H₅ := H₃ default inferInstance 1
+    obtain ⟨sd, H₅, H₆⟩ := H₅
+    simp at H₅; split at H₅; simp at H₅
+    nm x sd' H₇; clear x
+    simp at H₅; subst H₅
+    sorry
+  · clear H; clear! a fsp p
+    sorry
+  obtain ⟨s₁, ⟨a', s₁', p₁, fsp', n'⟩, H₁, H₂, H₃, H₄, H₅, H₆, H₇⟩ := H
+  dsimp at H₁ H₂ H₃ H₄ H₅ H₆ H₇
+  subst H₂ H₃ H₄
+  use s₁, H₁
+  simp at H₇
+  unfold FSP.hasLe
+  simp
+  rw [length_hist_sub_eq_of_simulate H₁] at H₇
+  simpa [H₅]
+
+-- #check 0 #exit
+
+theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
+(h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
+(hpa : s'.aPos = s.aPos) (h₁ : s'.taken ⊆ s.taken) : s'.aHwsDisj fsp := by
+  rw [Set'.subset_iff_exi_disj_union] at h₁
+  obtain ⟨ps, h₁', h₁⟩ := h₁
+  revert fsp s s'
+  apply ps.ind
+  · intro fsp s s' hs hs' h hpw ht hpa h₁' h₁
+    simp at h₁
+    have h₂ : s' = s.setHist s'.hist
+    · ext:1 <;> first | assumption | simp
+    rw [h₂] at hs' ⊢; exact aHwsDisj_setHist_of_aHwsDisj h
+  clear ps
+  intro ps p hp ih fsp s s' hs hs' h hpw ht hpa h₁' h₁
+  simp at h₁'
+  rcases h₁' with ⟨h₁', h₂'⟩
+  replace h₁ : s'.taken = s.taken.erase p
+  · rw [←h₁]
+    ext p₁
+    simp
+    constructor
+    · intro H
+      simp [H]
+      rintro rfl
+      contradiction
+    · rintro ⟨H₁, H₂⟩
+      simp [ne_symm' H₁] at H₂
+      by_contra H₃
+      simp [H₃] at H₂
+      sorry
+  -- apply s.aHwsDisj_erase_taken h hpw ht hpa
   sorry
 
 -- #check 0 #exit

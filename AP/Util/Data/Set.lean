@@ -600,3 +600,16 @@ theorem count_empty {p} : (∅ : Set' α).count p = 0 :=
 theorem count_insert {p i} (h : i ∉ s) :
 (s.insert i).count p = s.count p + if p i then 1 else 0 :=
   s.1.count_insert h
+
+theorem subset_iff_exi_disj_union : s₁ ⊆ s₂ ↔ ∃ s₃, (∀ x ∈ s₃, x ∉ s₁) ∧ s₁ ∪ s₃ = s₂ := by
+  constructor
+  · intro h; use s₂ \ s₁; simp; ext x; simp; tauto
+  · rintro ⟨s₃, h₁, rfl⟩; intro x hx; simp_all only [mem_union, true_or]
+
+theorem subset_iff_exi_union : s₁ ⊆ s₂ ↔ ∃ s₃, s₁ ∪ s₃ = s₂ := by
+  constructor
+  · intro h; use s₂ \ s₁; ext x; simp; tauto
+  · rintro ⟨s₃, h₁, rfl⟩; intro x hx; simp_all only [mem_union, true_or]
+
+@[simp] theorem empty_union : ∅ ∪ s = s := by ext; simp
+@[simp] theorem union_empty : s ∪ ∅ = s := by ext; simp
