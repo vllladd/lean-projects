@@ -40,17 +40,6 @@ example : f 2003 < 2003 := by
 
 end A1 namespace A2 -----
 
-def le (n m : ℕ) : Prop :=
-  ∃ (f : ℕ → ℕ) (k : ℕ), f 0 = n ∧ f k = m ∧ ∀ k, f k.succ = (f k).succ
-
-theorem le_iff_nat_le {n m} : le n m ↔ n ≤ m := by
-  constructor
-  · rintro ⟨f, k, rfl, rfl, h⟩; induction k; rfl; rw [h]; linarith
-  · intro h; obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
-    use (n + ·); simp [add_assoc]
-
-end A2 namespace A3 -----
-
 open Real
 
 theorem sum_mul_le_112_of_sum_eq_12 {a b c : ℝ}

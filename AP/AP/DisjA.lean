@@ -259,7 +259,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   rw [length_hist_sub_eq_of_simulate H₁] at H₇
   simpa [H₅]
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
