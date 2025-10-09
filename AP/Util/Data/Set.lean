@@ -613,3 +613,46 @@ theorem subset_iff_exi_union : s₁ ⊆ s₂ ↔ ∃ s₃, s₁ ∪ s₃ = s₂ 
 
 @[simp] theorem empty_union : ∅ ∪ s = s := by ext; simp
 @[simp] theorem union_empty : s ∪ ∅ = s := by ext; simp
+@[simp] theorem empty_diff : (∅ : Set' α) \ s = ∅ := by ext; simp
+@[simp] theorem diff_empty : s \ (∅ : Set' α) = s := by ext; simp
+@[simp] theorem size_empty : (∅ : Set' α).size = 0 := rfl
+
+@[simp]
+theorem size_eq_zero_iff : s.size = 0 ↔ s = ∅ := by
+  rw [size, ←Std.ExtDHashMap.eq_empty_iff_size_eq_zero, ←eq_iff_inner_eq, ←empty_def]
+
+theorem size_insert {x} (h : x ∉ s) : (s.insert x).size = s.size + 1 := by
+  rcases s with ⟨m⟩; simp [mem_def] at h
+  simp [Set'.insert, size, Std.ExtDHashMap.size_insert, h]
+
+theorem erase_eq_empty_iff {x} : s.erase x = ∅ ↔ ∀ y, y ∈ s → y = x := by
+  rw [ext_iff]; simp; constructor
+  · intro hy y hs; by_contra! h; exact hy _ h.symm hs 
+  · intro hy y hs; by_contra! h; specialize hy _ h; exact hs hy.symm
+
+theorem mem_iff_of_size_eq_one {x y} (h₁ : s.size = 1) (h₂ : x ∈ s) : y ∈ s ↔ y = x := by
+  symm; constructor; rintro rfl; exact h₂; intro h₃; symm; by_contra! h₄
+  revert x y h₁; apply s.ind; simp; clear! s; rintro s z hz - x y h₁ hx hy h₂
+  simp [size_insert hz] at h₁; subst h₁; simp at hx hy; simp [hx, hy] at h₂
+
+theorem eq_of_size_eq_one_and_mem {x y} (h₁ : s.size = 1)
+(h₂ : x ∈ s) (h₃ : y ∈ s) : x = y := by
+  rw [mem_iff_of_size_eq_one h₁ h₂] at h₃; exact h₃.symm
+
+theorem size_eq_one_of_size_le_one_and_mem {x}
+(h₁ : s.size ≤ 1) (h₂ : x ∈ s) : s.size = 1 := by
+  by_contra! h₃; simp [Nat.le_one_iff, h₃] at h₁; simp [h₁] at h₂
+
+theorem insert_erase_eq_of_mem {x} (h : x ∈ s) : (s.erase x).insert x = s := by
+  ext y; simp [eq_comm]; constructor
+  · rintro (⟨rfl, h₁⟩ | h₁); exact h; exact h₁.2
+  · intro h₁; simp [h₁, em]
+
+theorem eq_insert_erase_of_mem {x} (h : x ∈ s) : s = (s.erase x).insert x :=
+  insert_erase_eq_of_mem h |>.symm
+
+theorem size_erase_add_one {x} (h : x ∈ s) : (s.erase x).size + 1 = s.size := by
+  nth_rw 2 [s.eq_insert_erase_of_mem h]; rw [size_insert # by simp]
+
+theorem size_erase {x} (h : x ∈ s) : (s.erase x).size = s.size - 1 := by
+  simp [←size_erase_add_one h]

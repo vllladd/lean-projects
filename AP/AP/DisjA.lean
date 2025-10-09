@@ -212,8 +212,6 @@ def aDisjEraseTaken (s s' : State) (p : PointZ) (a : AStrat) (fsp : FSP) : AStra
 instance {s s' p a fsp} : (aDisjEraseTaken s s' p a fsp).WF := by
   unfold aDisjEraseTaken; infer_instance
 
--- #check 0 #exit
-
 theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
 (hpa : s'.aPos = s.aPos) (hp : s'.taken = s.taken.erase p) : s'.aHwsDisj fsp := by
@@ -259,7 +257,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   rw [length_hist_sub_eq_of_simulate H₁] at H₇
   simpa [H₅]
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
@@ -277,24 +275,32 @@ theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF 
   intro ps p hp ih fsp s s' hs hs' h hpw ht hpa h₁' h₁
   simp at h₁'
   rcases h₁' with ⟨h₁', h₂'⟩
-  replace h₁ : s'.taken = s.taken.erase p
-  · rw [←h₁]
+  have H := h₁
+  replace h₁ : s'.taken = (s.taken \ ps).erase p
+  · clear ih
     ext p₁
     simp
     constructor
-    · intro H
-      simp [H]
-      rintro rfl
+    · intro h₃
+      constructor
+      · rintro rfl; contradiction
+      simp [←h₁, h₃]
+      intro h₄
+      specialize h₂' _ h₄
       contradiction
-    · rintro ⟨H₁, H₂⟩
-      simp [ne_symm' H₁] at H₂
-      by_contra H₃
-      simp [H₃] at H₂
-      sorry
-  -- apply s.aHwsDisj_erase_taken h hpw ht hpa
-  sorry
+    · rintro ⟨h₃, h₄, h₅⟩
+      simp [←h₁, ne_symm' h₃, h₅] at h₄
+      exact h₄
+  obtain ⟨s₁, hs₁, hpw₁, ht₁, hpa₁, h₃⟩ := s.exi_taken_diff (ps := ps)
+  specialize @ih fsp s s₁ _ _ h hpw₁ ht₁ hpa₁ _ _
+  · simp [h₃]; tauto
+  · rw [h₃, ←H]; ext p₁; simp; constructor
+    · rintro (⟨h₄, h₅⟩ | h₄) <;> simp [h₄]
+    · rintro (h₄ | h₄ | h₄) <;> simp [h₄, Decidable.not_or_of_imp]
+  exact s₁.aHwsDisj_erase_taken ih (p := p) (by rw [hpw, hpw₁]) (by rw [ht, ht₁])
+    (by rw [hpa, hpa₁]) (by rwa [h₃])
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
 (h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 3 # s.aPos.nbhd s.pw |>.toSet := by

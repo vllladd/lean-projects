@@ -241,3 +241,11 @@ theorem epsilon_eq_of_exiu {α : Type*} [ha : Inhabited α] {p : α → Prop} {x
 theorem epsilon_eq_of {α : Type*} [ha : Inhabited α] {p : α → Prop} {x}
 (h₁ : p x) (h₂ : ∀ y, p y → y = x) : Classical.epsilon p = x := by
   apply epsilon_eq_of_exiu h₁; use x
+
+theorem Bool.dite_eq_false_iff {α : Type*} {b : Bool}
+{f : b = false → α} {g : ¬(b = false) → α} : (if h : b = false then f h else g h) =
+(if h : b then g (by simpa) else f (by simp_all)) := by aesop
+
+@[simp]
+theorem Bool.ite_eq_false_iff {α : Type*} {b : Bool} {x y : α} :
+(if b = false then x else y) = (if b then y else x) := dite_eq_false_iff

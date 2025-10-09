@@ -100,3 +100,91 @@ s n = (s₁, 0) ∧ p s₁ acc := by
     intro k hk b hb h₄ h₅ h₆
     apply hs.aStrat_mkFold_eq_of_tr h₃
     exact sys.reachable_of_simulate_full h₄
+
+theorem State.size_taken_eq_ite_of_tr {s s' p} [hs : sys.WF s] (h : sys.tr s p = some s') :
+s'.taken.size = s.taken.size + if s.aTurn then 0 else 1 := by
+  replace hs := s.aState_or_dState; rcases hs with hs | hs
+  · simp [hs.taken_eq_of_tr h]
+  simp; simp [hs.tr_eq_some_iff] at h
+  rcases h with ⟨⟨h₁, h₂⟩, rfl⟩
+  simp [Set'.size_insert h₂]
+
+theorem State.length_hist_eq_size_taken_mul_two_add_ite {s} [hs : sys.WF s] :
+s.hist.length = s.taken.size * 2 + if s.aTurn then 0 else 1 := by
+  obtain ⟨ps, h₁⟩ := wf_iff.mp hs
+  induction ps using List.reverseRecOn generalizing s
+  · simp at h₁; rw [←h₁]; simp
+  nm ps p ih
+  simp at h₁
+  obtain ⟨s', h₁, h₂⟩ := h₁
+  have h₃ := sys.reachable_of_trs h₁
+  dsimp at h₃
+  have hs' := sys.wf_of_reachable h₃
+  specialize @ih s' _
+  simp [pw_eq_of_reachable h₃, aPos₀_eq_of_reachable h₃] at ih
+  specialize ih h₁
+  simp [hist_eq_of_tr h₂, ih]; clear ih
+  rw [size_taken_eq_ite_of_tr h₂, aTurn_eq_of_tr h₂]
+  simp; split_ifs <;> ring_nf
+
+theorem State.length_hist_le_size_taken_mul_two_add_one {s} [hs : sys.WF s] :
+s.hist.length ≤ s.taken.size * 2 + 1 := by
+  simp [length_hist_eq_size_taken_mul_two_add_ite]
+
+theorem State.size_taken_mul_two_le_length_hist {s} [hs : sys.WF s] :
+s.taken.size * 2 ≤ s.hist.length := by
+  simp [length_hist_eq_size_taken_mul_two_add_ite]
+
+theorem State.length_hist_le_two_of_pw_eq_zero {s} [hs : sys.WF s]
+(h : s.pw = 0) : s.hist.length ≤ 2 := by
+  obtain ⟨ps, h₁⟩ := wf_iff.mp hs
+  cases ps; simp at h₁; rw [←h₁]; simp
+  nm p₁ ps; simp at h₁; split at h₁; simp at h₁; nm x s₁ h₂; clear x
+  cases ps; simp at h₁; subst h₁; simp [hist_eq_of_tr h₂]
+  nm p₂ ps; simp at h₁; split at h₁; simp at h₁; nm x s₂ h₃; clear x
+  have hs₁ : AState s₁; use sys.wf_of_tr h₂; simp [aTurn_eq_of_tr h₂]
+  simp [hs₁.tr_eq_some_iff] at h₃
+  rcases h₃ with ⟨⟨h₃, h₄, h₅⟩, rfl⟩
+  simp [pw_eq_of_tr h₂, h, ne_symm' h₃] at h₅
+
+theorem State.size_taken_le_one_of_pw_eq_zero {s} [hs : sys.WF s]
+(h : s.pw = 0) : s.taken.size ≤ 1 := by
+  by_contra! h₁; replace h₂ := s.size_taken_mul_two_le_length_hist
+  replace h₂ : 3 ≤ s.hist.length; linarith
+  linarith [length_hist_le_two_of_pw_eq_zero h]
+
+-- #check 0 #exit
+
+theorem State.exi_wf (pw : ℕ) (aTurn : Bool) (aPos : PointZ) (taken : Set' PointZ)
+(h : pw = 0 → taken.size ≤ 1) : ∃ s, sys.WF s ∧ s.pw = pw ∧
+s.aTurn = aTurn ∧ s.aPos = aPos ∧ s.taken = taken := by
+  rw [imp_iff_or_not] at h
+  -- rcases h with h | h
+  -- · rw [Nat.le_one_iff] at h
+  --   rcases h with h | h
+  --   · simp at h
+  sorry
+
+-- #check 0 #exit
+
+theorem State.exi_erase_taken {s p} [hs : sys.WF s] :
+∃ s', sys.WF s' ∧ s'.pw = s.pw ∧ s'.aTurn = s.aTurn ∧ s'.aPos = s.aPos ∧
+s'.taken = s.taken.erase p := by
+  by_cases hp : p ∉ s.taken
+  · rw [Set'.erase_eq_of_not_mem hp]; use s
+  push_neg at hp
+  by_cases h : s.pw = 0
+  · have h₁ := size_taken_le_one_of_pw_eq_zero h
+    apply exi_wf; rintro -; rw [Set'.size_erase hp]; omega
+  apply exi_wf; simp [h]
+
+theorem State.exi_taken_diff {s ps} [hs : sys.WF s] :
+∃ s', sys.WF s' ∧ s'.pw = s.pw ∧ s'.aTurn = s.aTurn ∧ s'.aPos = s.aPos ∧
+s'.taken = s.taken \ ps := by
+  revert s; apply ps.ind;
+  · intro s hs; simp; use s
+  clear ps; intro ps p hp ih s hs
+  specialize @ih s _; obtain ⟨s₁, hs₁, hpw, ht, hpa, ih⟩ := ih
+  have h₁ : s.taken \ ps.insert p = s₁.taken.erase p
+  · ext p₁; rw [ih]; simp; tauto
+  rw [←hpw, ←ht, ←hpa, h₁]; apply exi_erase_taken
