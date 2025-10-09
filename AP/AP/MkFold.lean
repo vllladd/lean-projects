@@ -156,13 +156,27 @@ theorem State.size_taken_le_one_of_pw_eq_zero {s} [hs : sys.WF s]
 -- #check 0 #exit
 
 theorem State.exi_wf (pw : ℕ) (aTurn : Bool) (aPos : PointZ) (taken : Set' PointZ)
-(h : pw = 0 → taken.size ≤ 1) : ∃ s, sys.WF s ∧ s.pw = pw ∧
-s.aTurn = aTurn ∧ s.aPos = aPos ∧ s.taken = taken := by
+(h₀ : taken = ∅ → aTurn = false) (h : pw = 0 → taken.size ≤ 1) (ha : aPos ∉ taken) :
+∃ s, sys.WF s ∧ s.pw = pw ∧ s.aTurn = aTurn ∧ s.aPos = aPos ∧ s.taken = taken := by
   rw [imp_iff_or_not] at h
-  -- rcases h with h | h
-  -- · rw [Nat.le_one_iff] at h
-  --   rcases h with h | h
-  --   · simp at h
+  rcases h with h | h
+  · rw [Nat.le_one_iff] at h
+    rcases h with h | h
+    · simp at h
+      subst h
+      specialize h₀ rfl
+      subst h₀
+      use initState pw aPos
+      simp
+    obtain ⟨p, hp⟩ : ∃ p, p ∈ taken
+    · by_contra! h₁
+      rw [←Set'.eq_empty_iff] at h₁
+      simp [h₁] at h
+    sorry
+  --   obtain ⟨s, h₁⟩ : ∃ s, sys.tr (initState pw aPos) p = some s
+  --   · simp [DState.tr_eq_some_iff]; rintro rfl; contradiction
+  --   use s, sys.wf_of_tr h₁, pw_eq_of_tr h₁
+  -- sorry
   sorry
 
 -- #check 0 #exit
@@ -170,21 +184,23 @@ s.aTurn = aTurn ∧ s.aPos = aPos ∧ s.taken = taken := by
 theorem State.exi_erase_taken {s p} [hs : sys.WF s] :
 ∃ s', sys.WF s' ∧ s'.pw = s.pw ∧ s'.aTurn = s.aTurn ∧ s'.aPos = s.aPos ∧
 s'.taken = s.taken.erase p := by
-  by_cases hp : p ∉ s.taken
-  · rw [Set'.erase_eq_of_not_mem hp]; use s
-  push_neg at hp
-  by_cases h : s.pw = 0
-  · have h₁ := size_taken_le_one_of_pw_eq_zero h
-    apply exi_wf; rintro -; rw [Set'.size_erase hp]; omega
-  apply exi_wf; simp [h]
+  -- by_cases hp : p ∉ s.taken
+  -- · rw [Set'.erase_eq_of_not_mem hp]; use s
+  -- push_neg at hp
+  -- by_cases h : s.pw = 0
+  -- · have h₁ := size_taken_le_one_of_pw_eq_zero h
+  --   apply exi_wf; rintro -; rw [Set'.size_erase hp]; omega
+  -- apply exi_wf; simp [h]
+  sorry
 
 theorem State.exi_taken_diff {s ps} [hs : sys.WF s] :
 ∃ s', sys.WF s' ∧ s'.pw = s.pw ∧ s'.aTurn = s.aTurn ∧ s'.aPos = s.aPos ∧
 s'.taken = s.taken \ ps := by
-  revert s; apply ps.ind;
-  · intro s hs; simp; use s
-  clear ps; intro ps p hp ih s hs
-  specialize @ih s _; obtain ⟨s₁, hs₁, hpw, ht, hpa, ih⟩ := ih
-  have h₁ : s.taken \ ps.insert p = s₁.taken.erase p
-  · ext p₁; rw [ih]; simp; tauto
-  rw [←hpw, ←ht, ←hpa, h₁]; apply exi_erase_taken
+  -- revert s; apply ps.ind;
+  -- · intro s hs; simp; use s
+  -- clear ps; intro ps p hp ih s hs
+  -- specialize @ih s _; obtain ⟨s₁, hs₁, hpw, ht, hpa, ih⟩ := ih
+  -- have h₁ : s.taken \ ps.insert p = s₁.taken.erase p
+  -- · ext p₁; rw [ih]; simp; tauto
+  -- rw [←hpw, ←ht, ←hpa, h₁]; apply exi_erase_taken
+  sorry
