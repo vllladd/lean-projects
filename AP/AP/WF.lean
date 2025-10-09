@@ -113,6 +113,7 @@ s'.taken = s.taken \ ps := by
   · contrapose! h₀; simp [Set'.diff_insert, h₀]
   · intro ht
     replace hs : DState s; use hs
+    sorry
   obtain ⟨s₁, hs₁, hpw, ht, hpa, ih⟩ := ih
   have h₁ : s.taken \ ps.insert p = s₁.taken.erase p
   · ext p₁; rw [ih]; simp; tauto
