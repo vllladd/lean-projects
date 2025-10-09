@@ -4,6 +4,8 @@ namespace Misc
 
 namespace A1
 
+open Real
+
 noncomputable
 def f (n : ℕ) : ℝ :=
   let r := (n : ℝ)
@@ -11,7 +13,7 @@ def f (n : ℕ) : ℝ :=
   (a ^ ·)^[n] 1
 
 example : f 2 = √2 ^ √2 := by
-  simp [f, Real.sqrt_eq_rpow]
+  simp [f, sqrt_eq_rpow]
 
 theorem f_lt {n} (h : 1 < n) : f n < n := by
   simp [f]
@@ -25,9 +27,9 @@ theorem f_lt {n} (h : 1 < n) : f n < n := by
   nm k ih
   rw [Function.iterate_succ']; simp
   generalize (λ x => (r ^ r⁻¹) ^ x)^[k] 1 = a at ih ⊢
-  rw [←Real.rpow_mul # by linarith]
+  rw [←rpow_mul # by linarith]
   convert_to _ < r ^ 1; simp
-  convert @Real.rpow_lt_rpow_left_iff r (r⁻¹ * a) 1 h₂
+  convert @rpow_lt_rpow_left_iff r (r⁻¹ * a) 1 h₂
     |>.mpr _; simp
   rw [mul_comm, ←div_eq_mul_inv]
   rw [div_lt_iff₀ # by linarith]
@@ -49,15 +51,13 @@ theorem le_iff_nat_le {n m} : le n m ↔ n ≤ m := by
 
 end A2 namespace A3 -----
 
--- Given non-negative real numbers `a, b, c` such that `a + b + c = 12`.
--- Prove that `abc + ab + bc + ca <= 112`.
+open Real
 
-open Real in
 theorem sum_mul_le_112_of_sum_eq_12 {a b c : ℝ}
-(ha : 0 < a) (hb : 0 < b) (hc : 0 < c) (h : a + b + c = 12) :
+(ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c) (h : a + b + c = 12) :
 a * b * c + a * b + b * c + c * a ≤ 112 := by
   have h₁ : (a * b * c) ^ (3⁻¹ : ℝ) ≤ (a + b + c) / 3
-  · apply gm_le_am_3 a b c <;> positivity
+  · apply gm_le_am_3 <;> positivity
   replace h₁ : a * b * c ≤ (a + b + c) ^ 3 / 27
   · rw [←rpow_le_rpow_iff (z := 3)] at h₁ <;> try positivity
     rw [rpow_inv_rpow] at h₁ <;> try positivity
@@ -74,7 +74,7 @@ a * b * c + a * b + b * c + c * a ≤ 112 := by
   · rw [←rpow_le_rpow_iff (z := 2)] at h₂ <;> try positivity
     rw [sqrt_eq_rpow, one_div, rpow_inv_rpow] at h₂ <;> try positivity
     field_simp at h₂; norm_num at h₂; simpa
-  generalize hx : a + b = x at h₁ h₂ ⊢
+  generalize a + b = x at h₁ h₂ ⊢
   suffices h₃ : x ^ (2 : ℝ) / 4 + x * (12 - x) ≤ 48; linarith
   suffices h₃ : 0 ≤ (x - 8) ^ 2; simp; linarith
   apply sq_nonneg
