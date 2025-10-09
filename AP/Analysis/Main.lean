@@ -584,3 +584,9 @@ theorem bounded_of_converges {a} (h : converges a) : bounded a := by
   · push_neg at h₁; rw [abs_of_neg h₁]; left
     have h₂ := lb_lt_of_converges h (n := n)
     rw [neg_le, abs_of_neg] <;> linarith
+
+theorem not_converges_of_not_bounded {a} (h : ¬bounded a) : ¬converges a := by
+  contrapose! h; exact bounded_of_converges h
+
+theorem not_bounded_id : ¬bounded (·) := by
+  simp [bounded]; intro m; use ⌈m⌉₊ + 1; simp; linarith [Nat.le_ceil m]
