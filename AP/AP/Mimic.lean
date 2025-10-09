@@ -58,8 +58,7 @@ sys.tr sd' p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ r sa sa') : s'.aHw
     use sa
     rw [h₁.aHws_iff_tr] at h₂
     specialize h₂ _ _ H₁
-    simp [-AState.hasTr_iff, H₂, h₂]
-    exact sys.reachable_right HR H₁
+    simp [H₂, h₂]; exact sys.reachable_right HR H₁
 
 theorem State.aHws_of_fn' {s} {f : State → State}
 [hs : sys.WF s] [hs' : sys.WF (f s)] (h₁ : s.aHws) (ht : s.aTurn = (f s).aTurn)
@@ -81,7 +80,7 @@ sys.Reachable s sd → sys.Reachable (f s) (f sd) →
 sys.tr (f sd) p = some sa' → ∃ sa, sys.tr sd p = some sa ∧ f sa = sa') : (f s).aHws := by
   apply s.aHws_of_fn' h₁ ht
   · rintro sa sa' sd p hsa hsa' hsd H₁ H₂ rfl h₄
-    simp [-AState.tr_eq_some_iff]; exact h₂ H₁ H₂ h₄
+    simp; exact h₂ H₁ H₂ h₄
   · rintro sd sd' sa' p hsd hsd' hsa' H₁ H₂ rfl h₄; exact h₃ H₁ H₂ h₄
 
 theorem State.aHws_of_fn₂ {s} {f f' : State → State}

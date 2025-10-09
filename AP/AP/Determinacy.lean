@@ -111,8 +111,7 @@ sys.tr sd pd = some sa' → p sa') : sa₀.aHws ∧ p sa₀ := by
   generalize h₁ : Classical.epsilon (aStratChooseCnd p sa) = pa at h₃ ⊢
   unfold aStratChooseCnd at h₃
   obtain ⟨sd, h₃, h₄⟩ := h₃; use sd
-  simp [-tr_eq_some_iff, mk_strat_fn, h₂, h₁,
-    System.validTr_iff_isSome, h₃]; apply h₄
+  simp [h₂, h₁, sys.validTr_iff_isSome, h₃]; apply h₄
 
 theorem AState.aHws_of_ind_two {sa₀ : State} [ha₀ : AState sa₀] {p : State → Prop}
 (h₁ : p sa₀) (h₂ : ∀ sa [AState sa], sys.Reachable sa₀ sa → p sa →
@@ -324,9 +323,9 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   have h₆ : sys.tr sd (dStratOfDWins sa |>.f sd) = some sa'
   · have h₆ : sd.getMoveAt sa = some pa
     · apply getMoveAt_eq_some_of_tr_and_reachable h₁; rfl
-    simp [-DState.tr_eq_some_iff, dStratOfDWins, mk_strat_fn, h₆, h₁]
+    simp [dStratOfDWins, mk_strat_fn, h₆, h₁]
     rw [choose?_eq_of_exi, Hpd]; rotate_left; exact h
-    simpa [-DState.tr_eq_some_iff, System.validTr_of_eq_some h₂]
+    simpa [System.validTr_of_eq_some h₂]
   have ha' := AState.of_tr h₆
   dsimp at h₅
   simp [h₆]
@@ -641,13 +640,13 @@ theorem State.exi_aWins_of_ind' {s} [hs : sys.WF s]
   apply aWins_of_ind' h₁; clear! s
   · intro sa ha H ih; dsimp
     specialize h₂ sa ih
-    simp [-AState.tr_eq_some_iff, aSeek, mk_strat_fn, choose?_eq_ite, h₂]
+    simp [aSeek, mk_strat_fn, choose?_eq_ite, h₂]
     generalize hp : Classical.epsilon
       (λ pa => ∃ sd, sys.tr sa pa = some sd ∧ p sd) = pa
     have h₄ := Classical.epsilon_spec h₂
     rw [hp] at h₄
     rcases h₄ with ⟨sd, h₄, h₅⟩
-    simp [-AState.tr_eq_some_iff, sys.validTr_of_eq_some h₄]
+    simp [sys.validTr_of_eq_some h₄]
     use sd
   · intro sd hd sa H ih h₄; dsimp at h₄
     have ha := AState.of_tr h₄

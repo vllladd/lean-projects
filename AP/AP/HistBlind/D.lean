@@ -82,31 +82,31 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
   rcases hs₁' with hs₁' | hs₁'
   · replace hs₁ : AState s₁
     · use hs₁; rw [←H₄]; simp
-    simp [-AState.tr_eq_some_iff] at H₅
+    simp at H₅
     use s₂'.setHistAt s'.hist s.hist
-    simp [-AState.tr_eq_some_iff, ←ha', H₄', guard]
+    simp [←ha', H₄', guard]
     simp [setHistAt, H₆, H₈'] at H₄
     have G₁ : sys.tr s₁ (a.f s₁') = some (s₂'.setHistAt' s'.hist s.hist)
-    · simp [-AState.tr_eq_some_iff, ←H₄, setHistAt']
+    · simp [←H₄, setHistAt']
       use s₂', H₅
       simp [hist_eq_of_tr H₅]
       rw [Nat.succ_sub]
       simp
       exact List.IsSuffix.length_le H₈'
     have G₁' : sys.validTr s₁ # a.f s₁' := ⟨_, G₁⟩
-    simp [-AState.tr_eq_some_iff, G₁']
+    simp [G₁']
     rw [←H₄]
-    simp [-AState.tr_eq_some_iff, setHistAt, H₄, H₉, G₂]
-    simp [-AState.tr_eq_some_iff, ←H₄, setHistAt']
+    simp [setHistAt, H₄, H₉, G₂]
+    simp [←H₄, setHistAt']
     use s₂', H₅
     simp [hist_eq_of_tr H₅]
     rw [Nat.succ_sub]
     simp; exact H₈'.length_le
   · replace hs₁ : DState s₁
     · use hs₁; rw [←H₄]; simp
-    simp [-DState.tr_eq_some_iff] at H₅
+    simp at H₅
     use s₂'.setHistAt s'.hist s.hist
-    simp [-DState.tr_eq_some_iff]
+    simp
     have G₄ : sys.WF # s.setHist s'.hist; simpa [h₄]
     have H₆' : sys.WF # s₁.setHistAt' s.hist s'.hist
     · unfold setHistAt'
@@ -114,12 +114,12 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
       exact System.reachable_of_simulate_full H₂
     simp [setHistAt, H₆, H₆', H₈, H₈'] at H₄ H₄'
     have G₁ : sys.tr s₁' (d.f s₁) = some s₂'
-    · simp [-DState.tr_eq_some_iff, ←hd', H₄, setHistAt, H₈', hs₁.wf] at H₅
+    · simp [←hd', H₄, setHistAt, H₈', hs₁.wf] at H₅
       replace H₅ : sys.tr s₁' (((guard (f := Option)
         (sys.validTr (s₁.setHistAt' s.hist s'.hist) (d.f s₁))).bind #
         λ x => some (d.f s₁)).getD s₁'.chooseDMove) = some s₂'
       · simp [←H₄'] at H₅ ⊢; exact H₅
-      simp [-DState.tr_eq_some_iff, setHistAt'] at H₅
+      simp [setHistAt'] at H₅
       exact H₅
     have G₁' : sys.validTr s₁' # d.f s₁ := ⟨_, G₁⟩
     have G₄ : sys.WF # s₂'.setHistAt' s'.hist s.hist
@@ -129,7 +129,7 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
       · exact System.reachable_of_simulate_full H₁
       · exact System.reachable_of_tr H₅
     nth_rw 1 [←H₄]
-    simp [-DState.tr_eq_some_iff, setHistAt']
+    simp [setHistAt']
     use s₂', G₁
     simp [setHistAt, H₉, G₄]
     simp [setHistAt', hist_eq_of_tr G₁]
@@ -267,7 +267,7 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
     simp at h₇
     rw [h₇]
     simp
-  simp [-DState.tr_eq_some_iff, dHistBlind, choose?_eq_ite, h₃, h₅, h₆]
+  simp [dHistBlind, choose?_eq_ite, h₃, h₅, h₆]
   have h₇' := setHist_eq_comm.mp h₇
   have H₃ : sd.setHist s.hist = s
   · apply congrArg (·.setHist s.hist) at h₄
@@ -284,16 +284,16 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
     ∃ sa, sys.tr sd' p = some sa ∧ sa.dHws ∧ sa.dwn < sd'.dwn
   · intro p
     rw [←h₇']
-    simp [-DState.tr_eq_some_iff]
+    simp
     constructor <;> rintro ⟨sa, H₁, H₂, H₂'⟩
     · use sa.setHist # p :: s.hist
       have H₅ : sys.tr sd' p = some (sa.setHist # p :: sd'.hist)
       · rw [←H₆]
-        simp [-DState.tr_eq_some_iff]
+        simp
         use sa
       apply and_of
       · rw [←h₇]
-        simp [-DState.tr_eq_some_iff]
+        simp
         use sa.setHist # p :: sd'.hist, H₅
         rfl
       intro H₄
@@ -309,9 +309,9 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
     · use sa.setHist # p :: sd.hist
       apply and_of
       · rw [←H₃']
-        simp [-DState.tr_eq_some_iff]
+        simp
         use sa.setHist # p :: s.hist
-        simp [-DState.tr_eq_some_iff]
+        simp
         rwa [State.setHist_eq_self_of # hist_eq_of_tr H₁]
       intro H₄
       have hsa := AState.of_tr H₁
@@ -322,7 +322,7 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
       have G₁ : sys.WF # sa.setHist # p :: sd'.hist
       · apply sys.wf_of_tr (a := sd') (t := p)
         rw [←H₆]
-        simp [-DState.tr_eq_some_iff]
+        simp
         exact ⟨_, H₄, rfl⟩
       rw [State.dwn_setHist] at H₂'
       simp at H₂; use H₂
@@ -331,11 +331,11 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
       · simp [H₃', hsd.wf]
       rwa [State.dwn_setHist]
   split_ifs with h₉
-  · have H₁ := h₉; simp [-DState.tr_eq_some_iff, ←h₈] at H₁
-    simp [-DState.tr_eq_some_iff, H₁]
-    simp [-DState.tr_eq_some_iff, h₈]
+  · have H₁ := h₉; simp [←h₈] at H₁
+    simp [H₁]
+    simp [h₈]
   · have H₁ := h₉; simp_rw [←h₈] at H₁
-    simp [-DState.tr_eq_some_iff, H₁]
+    simp [H₁]
 
 @[simp]
 instance : dHistBlind.HistBlind := histBlind_dHistBlind
@@ -343,7 +343,7 @@ instance : dHistBlind.HistBlind := histBlind_dHistBlind
 theorem dHws_and_dwn_lt_of_dHistBlind_tr {sd sa} [hsd : DState sd]
 (h₁ : sys.tr sd (dHistBlind.f sd) = some sa) (h₂ : sd.dHws) :
 sa.dHws ∧ sa.dwn < sd.dwn := by
-  simp [-DState.tr_eq_some_iff, dHistBlind, choose?_eq_ite] at h₁
+  simp [dHistBlind, choose?_eq_ite] at h₁
   have h₃ : ∃ (sd' : State), sys.WF sd' ∧ sd'.setHist sd.hist = sd
   · use sd; simp [hsd.wf]
   have h₅ := Classical.epsilon_spec h₃
@@ -368,13 +368,13 @@ sa.dHws ∧ sa.dwn < sd.dwn := by
   have H₁ : sys.tr sd p = sa'.setHist (p :: sd.hist)
   · clear h₁
     rw [←h₅'] at h₇
-    simp [-DState.tr_eq_some_iff] at h₇
+    simp at h₇
     obtain ⟨sa', h₇, rfl⟩ := h₇
-    simp [-DState.tr_eq_some_iff]
+    simp
     rwa [State.setHist_eq_self_of]
     exact hist_eq_of_tr h₇
   have H₁' : sys.validTr sd p := ⟨_, H₁⟩
-  simp [-DState.tr_eq_some_iff, h₃, h₆, h₈, H₁'] at h₁
+  simp [h₃, h₆, h₈, H₁'] at h₁
   have H₂ : sa.setHist sa'.hist = sa'
   · simp [H₁] at h₁; simp [←h₁]
   have H₃ := AState.of_tr h₁

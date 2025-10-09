@@ -22,7 +22,7 @@ theorem State.dHws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.dHws := by
     simp
     split; simp
     nm x s' h₁; clear x
-    simp [h] at h₁
+    simp [hs.tr_eq_some_iff, h] at h₁
     rcases h₁ with ⟨⟨h₁, h₂, h₃⟩, h₄⟩
     simp [h₃] at h₁
   · use 2
@@ -32,7 +32,7 @@ theorem State.dHws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.dHws := by
     nm x s₁ h₁; clear x
     split; simp; nm x s₂ h₂; clear x
     have hs₁ := AState.of_tr h₁
-    simp [pw_eq_of_tr h₁, h] at h₂
+    simp [hs₁.tr_eq_some_iff, pw_eq_of_tr h₁, h] at h₂
     rcases h₂ with ⟨⟨h₂, h₃, h₄⟩, h₅⟩
     simp [h₄] at h₂
 
@@ -48,7 +48,7 @@ sys.tr (s.setPw pw) p = (sys.tr s p).map (·.setPw pw) := by
 @[simp]
 theorem DState.validTr_setPw {s p pw} [hs : DState s] :
 sys.validTr (s.setPw pw) p = sys.validTr s p := by
-  simp [System.validTr]
+  simp [System.validTr, hs.tr_eq_some_iff]
 
 theorem State.aHws_setPw_of_le {s pw} [hs : sys.WF s]
 (h₁ : s.pw ≤ pw) (h₂ : s.aHws) : (s.setPw pw).aHws := by
@@ -57,12 +57,11 @@ theorem State.aHws_setPw_of_le {s pw} [hs : sys.WF s]
   · intro s₁ hs₁ h; simp [pw_eq_of_reachable h]
   · intro s₁ s₂' p hs₁ hs₂' H₁ H₂
     use s₂'.setPw s.pw
-    simp [-DState.tr_eq_some_iff, pw_eq_of_tr H₂]
+    simp [pw_eq_of_tr H₂]
     rw [DState.tr_setPw_eq] at H₂
-    simp [-DState.tr_eq_some_iff] at H₂
+    simp at H₂
     obtain ⟨s₁', H₃, rfl⟩ := H₂
-    simp [-DState.tr_eq_some_iff]
-    convert H₃; simp
+    simp; convert H₃; simp
     rw [pw_eq_of_tr H₃, pw_eq_of_reachable H₁]
   · intro sa sd p hsa hsa' hsd H₁ H₂ H₃
     apply tr_setPw_eq_some_of _ H₃
@@ -70,8 +69,7 @@ theorem State.aHws_setPw_of_le {s pw} [hs : sys.WF s]
   · intro sd' sa' p hsd' hsa' H₁ H₂ H₃
     use sa'.setPw s.pw
     rw [DState.tr_setPw_eq]
-    simp [-DState.tr_eq_some_iff] at H₃ ⊢
-    use sa'
+    simp [] at H₃ ⊢; use sa'
 
 theorem State.dHws_of_setPw_le {s : State} {pw} [hs : sys.WF s]
 (h₁ : s.pw ≤ pw) (h₂ : (s.setPw pw).dHws) : s.dHws := by

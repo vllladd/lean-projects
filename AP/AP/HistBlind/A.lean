@@ -194,7 +194,7 @@ instance {a : AStrat} {hist₁ hist₂} [ha : a.WF] : a.setHistAt hist₁ hist�
     exact h₄
   subst hs'
   apply ha'.validTr
-  simpa [State.setHistAt', -AState.hasTr_iff]
+  simpa [State.setHistAt']
 
 instance {d : DStrat} {hist₁ hist₂} [hd : d.WF] : d.setHistAt hist₁ hist₂ |>.WF := by
   unfold DStrat.setHistAt
@@ -390,14 +390,14 @@ p (sys.simulate (Strat.f ⟨a, d⟩) (s.setHist hist) · |>.1) ∧
   rcases hs₁ with hs₁ | hs₁
   · have H₆ : AState # s₁.setHistAt' s.hist hist
     · rwa [AState.setHistAt'_iff_of_reachable H₁]
-    simp [-AState.tr_eq_some_iff] at h₄ h₅
-    simp [-AState.tr_eq_some_iff, AStrat.setHistAt] at h₅
+    simp at h₄ h₅
+    simp [AStrat.setHistAt] at h₅
     rw [h₇, setHistAt'_cancel_of_reachable H₁, h₄] at h₅; clear h₇
     simp at h₅; subst h₅; exact h₆
   · have H₆ : DState # s₁.setHistAt' s.hist hist
     · rwa [DState.setHistAt'_iff_of_reachable H₁]
-    simp [-DState.tr_eq_some_iff] at h₄ h₅
-    simp [-DState.tr_eq_some_iff, DStrat.setHistAt, setHistAt_eq_of_reachable, h₅] at h₄
+    simp at h₄ h₅
+    simp [DStrat.setHistAt, setHistAt_eq_of_reachable, h₅] at h₄
     subst h₄; exact h₆
 
 theorem State.aHws_setHist_of {s hist} [hs : sys.WF s]
@@ -447,11 +447,11 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
     apply a.validTr
     rw [←h₆']
     rwa [State.hasTr_setHist]
-  simp [-AState.tr_eq_some_iff, aHistBlind, mk_strat_fn,
+  simp [aHistBlind, mk_strat_fn,
     choose?_eq_ite, h₃, h₄, h₇, h₈, H₄] at hd
   clear H₄
   rw [←h₆] at hd
-  simp [-AState.tr_eq_some_iff] at hd
+  simp at hd
   rcases hd with ⟨sd, H₈, rfl⟩
   have h₉ := DState.of_tr H₈
   have h' : sys.WF # sd.setHist # a.f s' :: s'.hist

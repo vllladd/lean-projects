@@ -53,8 +53,7 @@ theorem AState.aStrat_mkFold_eq_of_tr {s s' s₁} {z : α} {fa fd} [hs : AState 
   obtain ⟨ps, h₂⟩ := h₂
   have h₄ : s₁.hist = ps.reverse ++ (fa s z).1 :: s.hist
   · simp [hist_eq_of_trs h₂, hist_eq_of_tr h₁]
-  simp [-AState.tr_eq_some_iff, h₄]
-  simp_all only [Option.some.injEq, exists_eq_left']
+  simp [h₄]; simp_all only [Option.some.injEq, exists_eq_left']
 
 theorem DState.aStrat_mkFold_eq_of_tr {s s' s₁ p} {z : α} {fa fd} [hs : DState s]
 (h₁ : sys.tr s p = some s') (h₂ : sys.Reachable s' s₁) :
@@ -65,8 +64,7 @@ theorem DState.aStrat_mkFold_eq_of_tr {s s' s₁ p} {z : α} {fa fd} [hs : DStat
   obtain ⟨ps, h₂⟩ := h₂
   have h₄ : s₁.hist = ps.reverse ++ p :: s.hist
   · simp [hist_eq_of_trs h₂, hist_eq_of_tr h₁]
-  simp [-DState.tr_eq_some_iff, h₄]
-  simp_all only [Option.some.injEq, exists_eq_left']
+  simp [h₄]; simp_all only [Option.some.injEq, exists_eq_left']
 
 theorem AStrat.mkFold_ind {s z fa fd n} {d : DStrat} {p : State → α → Prop}
 [hs : sys.WF s] [hd : d.WF] (h₀ : p s z) (h₁ : ∀ sa [AState sa] acc, p sa acc →

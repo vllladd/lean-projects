@@ -126,7 +126,6 @@ theorem State.hasTr_iff_of_aTurn {s : State} (ht : s.aTurn) :
 sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   simp [sys, System.hasTr_iff, move, aMove, ht]
 
-@[simp]
 theorem AState.hasTr_iff {s : State} [hs : AState s] :
 sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   simp [s.hasTr_iff_of_aTurn]
@@ -266,13 +265,11 @@ sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken) ∧
 {s with taken := s.taken.insert p, aTurn := true, hist := p :: s.hist} = s' := by
   simp [sys, State.move, State.dMove, ht]
 
-@[simp]
 theorem AState.tr_eq_some_iff {s s' p} [hs : AState s] :
 sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw) ∧
 {s with aPos := p, aTurn := false, hist := p :: s.hist} = s' :=
   s.tr_eq_some_iff_of_aTurn turn
 
-@[simp]
 theorem DState.tr_eq_some_iff {s s' p} [hs : DState s] :
 sys.tr s p = some s' ↔ (s.aPos ≠ p ∧ p ∉ s.taken) ∧
 {s with taken := s.taken.insert p, aTurn := true, hist := p :: s.hist} = s' :=
@@ -305,11 +302,11 @@ instance {st : Strat} [hst : st.WF] : sys.SimFn st.f := by
 
 theorem AState.of_tr {sa sd p} [hd : DState sd]
 (h : sys.tr sd p = some sa) : AState sa := by
-  use System.wf_of_tr h; simp at h; simp [←h.2]
+  use System.wf_of_tr h; simp [hd.tr_eq_some_iff] at h; simp [←h.2]
 
 theorem DState.of_tr {sa sd p} [ha : AState sa]
 (h : sys.tr sa p = some sd) : DState sd := by
-  use System.wf_of_tr h; simp at h; simp [←h.2]
+  use System.wf_of_tr h; simp [ha.tr_eq_some_iff] at h; simp [←h.2]
 
 theorem AState.of_tr' {sa sd p} [ha : sys.WF sa] [hd : DState sd]
 (h : sys.tr sa p = some sd) : AState sa := by
@@ -502,7 +499,7 @@ m.getD x = m.iget ↔ m.isSome ∨ x = default := by
 
 theorem State.aPos₀_eq_of_tr {s s' t} [hs : sys.WF s]
 (h : sys.tr s t = some s') : s'.aPos₀ = s.aPos₀ := by
-  replace hs := s.aState_or_dState; rcases hs with hs | hs <;> simp at h
+  replace hs := s.aState_or_dState; rcases hs with hs | hs <;> simp [hs.tr_eq_some_iff] at h
   · rcases h with ⟨⟨h₁, h₂, h₃⟩, rfl⟩; simp [aPos₀, List.getLast?_cons]
   · rcases h with ⟨⟨h₁, h₂⟩, rfl⟩; simp [aPos₀, List.getLast?_cons]
 
@@ -568,7 +565,7 @@ theorem State.tr_setPw_eq_some_of {s s' pw p} [hs : sys.WF s]
 (h₁ : s.pw ≤ pw) (h₂ : sys.tr s p = some s') :
 sys.tr (s.setPw pw) p = some (s'.setPw pw) := by
   replace hs := s.aState_or_dState
-  rcases hs with hs | hs <;> simp at h₂
+  rcases hs with hs | hs <;> simp [hs.tr_eq_some_iff] at h₂
   · rcases h₂ with ⟨⟨h₂, h₃, h₄⟩, rfl⟩
     have h₅ : (s.setPw pw).aTurn; simp
     simp [tr_eq_some_iff_of_aTurn h₅, State.ext_iff, h₂, h₃]
@@ -911,13 +908,11 @@ sys.tr sd (st.d.f sd) = some sa → r sd sd' →
   have H₁ : b.aTurn = b'.aTurn
   · rw [aTurn_eq_of_simulate_full_eq h₅, aTurn_eq_of_simulate_full_eq h₆, ht]
   replace hb := b.aState_or_dState
-  rcases hb with hb | hb <;> simp [-AState.tr_eq_some_iff, -DState.tr_eq_some_iff] at h₈
+  rcases hb with hb | hb <;> simp at h₈
   · replace hb' : AState b' := ⟨hb', by simp [←H₁]⟩
-    have H₂ := DState.of_tr h₈; specialize h₃ b b' b₁ h₈ h₇
-    simpa [-AState.tr_eq_some_iff]
+    have H₂ := DState.of_tr h₈; specialize h₃ b b' b₁ h₈ h₇; simpa
   · replace hb' : DState b' := ⟨hb', by simp [←H₁]⟩
-    have H₂ := AState.of_tr h₈; specialize h₄ b b' b₁ h₈ h₇
-    simpa [-DState.tr_eq_some_iff]
+    have H₂ := AState.of_tr h₈; specialize h₄ b b' b₁ h₈ h₇; simpa
 
 theorem State.simulate_congr_rel_full
 {st st' : Strat} {r : State → State → Prop} {s s' n}
@@ -1040,19 +1035,19 @@ instance {s : State} [hs : sys.WF s] : sys.WF # s.setHist s.hist := by simpa
 
 theorem AState.aPos_eq_of_tr {s s' p} [hs : AState s]
 (h : sys.tr s p = some s') : s'.aPos = p := by
-  simp at h; rw [←h.2]
+  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
 theorem DState.aPos_eq_of_tr {s s' p} [hs : DState s]
 (h : sys.tr s p = some s') : s'.aPos = s.aPos := by
-  simp at h; rw [←h.2]
+  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
 theorem AState.taken_eq_of_tr {s s' p} [hs : AState s]
 (h : sys.tr s p = some s') : s'.taken = s.taken := by
-  simp at h; rw [←h.2]
+  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
 theorem DState.taken_eq_of_tr {s s' p} [hs : DState s]
 (h : sys.tr s p = some s') : s'.taken = s.taken.insert p := by
-  simp at h; rw [←h.2]
+  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
 @[simp]
 theorem State.aPos_ne_chooseDMove {s} [hs : DState s] : s.aPos ≠ s.chooseDMove := by
