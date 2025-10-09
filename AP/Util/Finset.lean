@@ -691,3 +691,15 @@ def map' [DecidableEq β] (s : Finset α) (f : α → β) : Finset β :=
 @[simp]
 theorem mem_map'' [hb : DecidableEq β] {f : α → β} {y : β} :
 y ∈ s.map' f ↔ ∃ x ∈ s, f x = y := by simp [map', eq_comm]
+
+theorem sum_range_list_get! {xs : List ℝ} {f : ℝ → ℝ} :
+∑ i ∈ range xs.length, f (xs[i]!) = (xs.map f).sum := by
+  induction xs using List.reverseRecOn; simp; nm xs x ih
+  simp [sum_range_succ]; convert ih; clear ih
+  nm k h; simp at h; simp [List.getElem?_append_left h]
+
+theorem prod_range_list_get! {xs : List ℝ} {f : ℝ → ℝ} :
+∏ i ∈ range xs.length, f (xs[i]!) = (xs.map f).prod := by
+  induction xs using List.reverseRecOn; simp; nm xs x ih
+  simp [prod_range_succ]; left; convert ih; clear ih
+  nm k h; simp at h; simp [List.getElem?_append_left h]
