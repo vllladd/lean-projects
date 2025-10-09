@@ -566,3 +566,21 @@ theorem le_sum_range {a : ℕ → ℝ} {N n : ℕ} (h : n < N) :
   obtain ⟨s, h₁, h₂⟩ : ∃ (s : Finset ℕ), n ∉ s ∧ range N = insert n s
   · use range N |>.erase n; simp; rw [insert_erase]; simpa
   simp [h₂, sum_insert h₁]; apply sum_nonneg; simp
+
+theorem lt_ub_of_converges {a n} (h : converges a) : a n < ub a := by
+  obtain ⟨L, h⟩ := h; exact lt_ub_of_tendsTo h |>.1 _
+
+theorem lb_lt_of_converges {a n} (h : converges a) : lb a < a n := by
+  obtain ⟨L, h⟩ := h; exact lb_lt_of_tendsTo h |>.1 _
+
+def bounded (a : ℕ → ℝ) : Prop :=
+  ∃ (m : ℝ), ∀ n, |a n| ≤ m
+
+theorem bounded_of_converges {a} (h : converges a) : bounded a := by
+  use max |lb a| |ub a|; intro n; simp; by_cases h₁ : 0 ≤ a n
+  · rw [abs_of_nonneg h₁]; right
+    trans ub a; rotate_left; apply le_abs_self
+    exact le_of_lt # lt_ub_of_converges h
+  · push_neg at h₁; rw [abs_of_neg h₁]; left
+    have h₂ := lb_lt_of_converges h (n := n)
+    rw [neg_le, abs_of_neg] <;> linarith

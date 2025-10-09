@@ -47,10 +47,11 @@ theorem sum_mul_le_112_of_sum_eq_12 {a b c : ℝ}
 a * b * c + a * b + b * c + c * a ≤ 112 := by
   have h₁ : (a * b * c) ^ (3⁻¹ : ℝ) ≤ (a + b + c) / 3
   · apply gm_le_am_3 <;> positivity
-  replace h₁ : a * b * c ≤ (a + b + c) ^ 3 / 27
+  replace h₁ : a * b * c ≤ (a + b + c) ^ (3 : ℝ) / 27
   · rw [←rpow_le_rpow_iff (z := 3)] at h₁ <;> try positivity
     rw [rpow_inv_rpow] at h₁ <;> try positivity
-    field_simp at h₁; norm_num at h₁; exact h₁
+    rw [div_rpow] at h₁ <;> try positivity
+    norm_num at h₁ ⊢; exact h₁
   replace h₁ : a * b * c ≤ 64
   · rw [h] at h₁; norm_num at h₁; exact h₁
   suffices h₂ : a * b + b * c + c * a <= 48; linarith
@@ -62,7 +63,8 @@ a * b * c + a * b + b * c + c * a ≤ 112 := by
   replace h₂ : a * b ≤ (a + b) ^ (2 : ℝ) / 4
   · rw [←rpow_le_rpow_iff (z := 2)] at h₂ <;> try positivity
     rw [sqrt_eq_rpow, one_div, rpow_inv_rpow] at h₂ <;> try positivity
-    field_simp at h₂; norm_num at h₂; simpa
+    rw [div_rpow] at h₂ <;> try positivity
+    norm_num at h₂ ⊢; simpa
   generalize a + b = x at h₁ h₂ ⊢
   suffices h₃ : x ^ (2 : ℝ) / 4 + x * (12 - x) ≤ 48; linarith
   suffices h₃ : 0 ≤ (x - 8) ^ 2; simp; linarith
