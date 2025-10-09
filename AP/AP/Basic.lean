@@ -837,8 +837,12 @@ theorem State.setHist_eq_self_of {s : State} {hist}
 (h : s.hist = hist) : s.setHist hist = s := by
   simp [←h]
 
+theorem State.aTurn_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.aTurn = !s.aTurn := by
+  simp [sys, move] at h; split_ifs at h with h₁
+  all_goals simp [h₁]; simp at h; obtain ⟨s₁, h₂, rfl⟩ := h; simp [h₁]
+
 theorem AState.exi_prev {sa} [ha : AState sa] :
-∃ sd p, sys.tr sd p = sa := by
+∃ sd p, DState sd ∧ sys.tr sd p = sa := by
   rcases ha with ⟨h₁, h₂⟩
   rw [State.wf_iff] at h₁
   obtain ⟨ps, h₁⟩ := h₁
@@ -861,11 +865,18 @@ theorem AState.exi_prev {sa} [ha : AState sa] :
   rcases r with ⟨s, r⟩
   simp at h₃ h₅
   subst h₃
-  use s, p
+  refine ⟨s, p, ?_, h₅⟩
+  use sys.wf_of_trs hr
+  simp [State.aTurn_eq_of_tr h₅] at h₂; exact h₂
 
-theorem State.aTurn_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.aTurn = !s.aTurn := by
-  simp [sys, move] at h; split_ifs at h with h₁
-  all_goals simp [h₁]; simp at h; obtain ⟨s₁, h₂, rfl⟩ := h; simp [h₁]
+-- #check 0 #exit
+
+theorem DState.exi_prev_of_mem_taken {sd p₀} [hsd : DState sd]
+(h : p₀ ∈ sd.taken) : ∃ sa p, AState sa ∧ sys.tr sa p = sd := by
+  have h₁ := @exi_prev_of_hist_eq_cons sd
+  sorry
+
+-- #check 0 #exit
 
 theorem State.aTurn_eq_of_simulate_eq {st : Strat} {s s₁ n r}
 [hs : sys.WF s] (h : sys.simulate st.f s n = (s₁, r)) :

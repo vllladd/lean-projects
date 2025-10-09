@@ -611,11 +611,13 @@ theorem subset_iff_exi_union : s₁ ⊆ s₂ ↔ ∃ s₃, s₁ ∪ s₃ = s₂ 
   · intro h; use s₂ \ s₁; ext x; simp; tauto
   · rintro ⟨s₃, h₁, rfl⟩; intro x hx; simp_all only [mem_union, true_or]
 
+@[simp] theorem size_empty : (∅ : Set' α).size = 0 := rfl
 @[simp] theorem empty_union : ∅ ∪ s = s := by ext; simp
 @[simp] theorem union_empty : s ∪ ∅ = s := by ext; simp
+@[simp] theorem empty_inter : ∅ ∩ s = ∅ := by ext; simp
+@[simp] theorem inter_empty : s ∩ ∅ = ∅ := by ext; simp
 @[simp] theorem empty_diff : (∅ : Set' α) \ s = ∅ := by ext; simp
 @[simp] theorem diff_empty : s \ (∅ : Set' α) = s := by ext; simp
-@[simp] theorem size_empty : (∅ : Set' α).size = 0 := rfl
 
 @[simp]
 theorem size_eq_zero_iff : s.size = 0 ↔ s = ∅ := by
@@ -656,3 +658,28 @@ theorem size_erase_add_one {x} (h : x ∈ s) : (s.erase x).size + 1 = s.size := 
 
 theorem size_erase {x} (h : x ∈ s) : (s.erase x).size = s.size - 1 := by
   simp [←size_erase_add_one h]
+
+theorem diff_insert {x} : s₁ \ s₂.insert x = (s₁ \ s₂).erase x := by
+  ext y; simp; tauto
+
+theorem erase_diff {x} : (s₁ \ s₂).erase x = s₁ \ s₂.insert x :=
+  diff_insert.symm
+
+@[simp]
+theorem union_eq_empty_iff : s₁ ∪ s₂ = ∅ ↔ s₁ = ∅ ∧ s₂ = ∅ := by
+  simp [ext_iff]; constructor <;> intros <;>
+  simp_all only [not_false_eq_true, implies_true, and_self]
+
+@[simp]
+theorem erase_empty {x} : (∅ : Set' α).erase x = ∅ := by
+  simp [erase_eq_empty_iff]
+
+theorem diff_eq_empty_iff_subset : s₁ \ s₂ = ∅ ↔ s₁ ⊆ s₂ := by
+  simp [ext_iff, subset_def]
+
+theorem subset_antisymm (h₁ : s₁ ⊆ s₂) (h₂ : s₂ ⊆ s₁) : s₁ = s₂ := by
+  ext x; constructor; apply h₁; apply h₂
+
+@[simp] theorem union_self : s ∪ s = s := by ext; simp
+@[simp] theorem inter_self : s ∩ s = s := by ext; simp
+@[simp] theorem diff_self : s \ s = ∅ := by ext; simp
