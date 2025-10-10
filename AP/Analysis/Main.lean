@@ -573,8 +573,21 @@ theorem lt_ub_of_converges {a n} (h : converges a) : a n < ub a := by
 theorem lb_lt_of_converges {a n} (h : converges a) : lb a < a n := by
   obtain ⟨L, h⟩ := h; exact lb_lt_of_tendsTo h |>.1 _
 
+def boundedBy (a : ℕ → ℝ) (m : ℝ) : Prop :=
+  ∀ n, |a n| ≤ m
+
 def bounded (a : ℕ → ℝ) : Prop :=
-  ∃ (m : ℝ), ∀ n, |a n| ≤ m
+  ∃ m, boundedBy a m
+
+def bounded' (a : ℕ → ℝ) : Prop :=
+  ∃ m, 0 < m ∧ boundedBy a m
+
+theorem bounded'_iff_bounded {a : ℕ → ℝ} : bounded' a ↔ bounded a := by
+  constructor
+  · rintro ⟨m, hm, h⟩; use m
+  · rintro ⟨m, h⟩; use m + 1; constructor
+    · suffices : 0 ≤ m; linarith; trans |a 0|; simp; exact h 0
+    · intro n; specialize h n; linarith
 
 theorem bounded_of_converges {a} (h : converges a) : bounded a := by
   use max |lb a| |ub a|; intro n; simp; by_cases h₁ : 0 ≤ a n
@@ -589,4 +602,8 @@ theorem not_converges_of_not_bounded {a} (h : ¬bounded a) : ¬converges a := by
   contrapose! h; exact bounded_of_converges h
 
 theorem not_bounded_id : ¬bounded (·) := by
-  simp [bounded]; intro m; use ⌈m⌉₊ + 1; simp; linarith [Nat.le_ceil m]
+  simp [bounded, boundedBy]; intro m; use ⌈m⌉₊ + 1; simp; linarith [Nat.le_ceil m]
+
+theorem boundedBy_zero_iff_const_zero {a : ℕ → ℝ} : boundedBy a 0 ↔ a = 0 := by
+  simp only [boundedBy, abs_nonpos_iff]; symm
+  constructor; rintro rfl; simp; intro h; ext; simp [h]
