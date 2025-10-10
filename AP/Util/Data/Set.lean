@@ -735,3 +735,8 @@ theorem size_eq_one_iff : s.size = 1 ↔ ∃ x ∈ s, ∀ y ∈ s, y = x := by
 
 theorem size_eq_one_of {x} (hx : x ∈ s) (h : ∀ y, y ∈ s → y = x) : s.size = 1 := by
   rw [size_eq_one_iff]; use x
+
+theorem eq_insert_empty_of_size_eq_one {x}
+(h : s.size = 1) (hx : x ∈ s) : s = (∅ : Set' α).insert x := by
+  ext y; simp; symm; constructor; rintro rfl; exact hx
+  intro hy; exact eq_of_size_eq_one_and_mem h hy hx

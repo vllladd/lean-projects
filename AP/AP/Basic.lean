@@ -1221,3 +1221,7 @@ theorem AState.size_taken_eq_one_of_pw_eq_zero {s} [hs : AState s]
   have h₁ := s.size_taken_le_one_of_pw_eq_zero h
   rw [Nat.le_one_iff] at h₁
   by_contra! h₂; simp [h₂] at h₁
+
+@[simp]
+theorem State.aPos₀_setHist {s : State} {hist} :
+(s.setHist hist).aPos₀ = hist.getLast?.iget := rfl
