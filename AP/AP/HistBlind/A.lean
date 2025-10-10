@@ -419,6 +419,21 @@ theorem State.aHws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHis
 theorem State.dHws_setHist_iff {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist] :
 (s.setHist hist).dHws ↔ s.dHws := by simp only [←not_aHws_iff, aHws_setHist_iff]
 
+@[simp]
+theorem State.setHistAt_setHist {s : State} {hist₁ hist₂} [hs : sys.WF # s.setHist hist₂] :
+(s.setHist hist₁).setHistAt hist₁ hist₂ = s.setHist hist₂ := by
+  simp [setHistAt, setHistAt', hs]
+
+instance {s} [hs : sys.WF s] : sys.WF (s.setHist s.hist) := by simpa
+
+theorem State.setHistAt_cancel_of_suffix {s : State} {hist₁ hist₂}
+[hs : sys.WF s] [hs' : sys.WF # s.setHistAt' hist₁ hist₂]
+(h : hist₁ <:+ s.hist) : (s.setHistAt hist₁ hist₂).setHistAt hist₂ hist₁ = s := by
+  simp [setHistAt, setHistAt'] at hs' ⊢
+  split_ifs at hs ⊢ with h₁ h₂ h₂ <;> simp [h] at h₁ h₂ ⊢
+  · rcases h₂ with ⟨h₂, h₃⟩; contradiction
+  · simp [List.take_length_sub_append_eq_of_suffix h, hs] at h₂
+
 theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
 (h₁ : sa.aHws) : ∃ sd, sys.tr sa (aHistBlind.f sa) = some sd ∧ sd.aHws := by
   have h₂ := sa.hasTr_of_aHws h₁
@@ -483,18 +498,3 @@ theorem State.aHws_histBlind_of_aHws {s} [hs : sys.WF s] (h : s.aHws) :
 theorem State.aHws_iff_aHws_histBlind {s} [hs : sys.WF s] : s.aHws ↔
 ∃ (a : AStrat), a.HistBlind ∧ ∀ (d : DStrat), d.WF → s.aWins ⟨a, d⟩ :=
   ⟨aHws_histBlind_of_aHws, λ ⟨a, Ha, h₁⟩ => by use a, Ha.wf⟩
-
-@[simp]
-theorem State.setHistAt_setHist {s : State} {hist₁ hist₂} [hs : sys.WF # s.setHist hist₂] :
-(s.setHist hist₁).setHistAt hist₁ hist₂ = s.setHist hist₂ := by
-  simp [setHistAt, setHistAt', hs]
-
-instance {s} [hs : sys.WF s] : sys.WF (s.setHist s.hist) := by simpa
-
-theorem State.setHistAt_cancel_of_suffix {s : State} {hist₁ hist₂}
-[hs : sys.WF s] [hs' : sys.WF # s.setHistAt' hist₁ hist₂]
-(h : hist₁ <:+ s.hist) : (s.setHistAt hist₁ hist₂).setHistAt hist₂ hist₁ = s := by
-  simp [setHistAt, setHistAt'] at hs' ⊢
-  split_ifs at hs ⊢ with h₁ h₂ h₂ <;> simp [h] at h₁ h₂ ⊢
-  · rcases h₂ with ⟨h₂, h₃⟩; contradiction
-  · simp [List.take_length_sub_append_eq_of_suffix h, hs] at h₂

@@ -699,3 +699,39 @@ theorem ne_empty_of_subset (h₁ : s₁ ⊆ s₂) (h₂ : s₁ ≠ ∅) : s₂ �
 @[simp]
 theorem insert_ne_empty {x} : s.insert x ≠ ∅ := by
   apply ne_empty_of_mem (x := x); simp
+
+theorem disjoint_comm : (∀ x ∈ s₁, x ∉ s₂) ↔ (∀ x ∈ s₂, x ∉ s₁) := by
+  tauto
+
+theorem diff_eq_left_iff : s₁ \ s₂ = s₁ ↔ ∀ x ∈ s₁, x ∉ s₂ := by
+  simp [ext_iff]
+
+theorem diff_eq_left_iff' : s₁ \ s₂ = s₁ ↔ ∀ x ∈ s₂, x ∉ s₁ := by
+  simp [ext_iff]; exact disjoint_comm
+
+@[simp]
+theorem diff_eq_right_iff : s₁ \ s₂ = s₂ ↔ s₁ = ∅ ∧ s₂ = ∅ := by
+  simp [ext_iff, forall_and]
+
+theorem mem_of_subset {x} (h : s₁ ⊆ s₂) (hx : x ∈ s₁) : x ∈ s₂ := h x hx
+theorem not_mem_of_subset {x} (h : s₁ ⊆ s₂) (hx : x ∉ s₂) : x ∉ s₁ := (hx # h x ·)
+
+theorem ne_empty_of_size_ne_zero (h : s.size ≠ 0) : s ≠ ∅ := by
+  simp at h; exact h
+
+theorem ne_empty_of_size_eq_add_one {n} (h : s.size = n + 1) : s ≠ ∅ := by
+  rintro rfl; simp at h
+
+theorem size_eq_one_iff : s.size = 1 ↔ ∃ x ∈ s, ∀ y ∈ s, y = x := by
+  constructor
+  · intro h
+    obtain ⟨x, hx⟩ := s.exi_mem_of_ne_empty # ne_empty_of_size_eq_add_one h
+    use x, hx; intro y hy; apply eq_of_size_eq_one_and_mem h hy hx
+  · rintro ⟨x, hx, h⟩
+    rw [eq_insert_erase_of_mem hx, size_insert # by simp]
+    simp [eq_empty_iff]
+    intro y h₁ hy
+    exact ne_symm' h₁ # h y hy
+
+theorem size_eq_one_of {x} (hx : x ∈ s) (h : ∀ y, y ∈ s → y = x) : s.size = 1 := by
+  rw [size_eq_one_iff]; use x

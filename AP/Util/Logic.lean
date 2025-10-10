@@ -249,3 +249,6 @@ theorem Bool.dite_eq_false_iff {α : Type*} {b : Bool}
 @[simp]
 theorem Bool.ite_eq_false_iff {α : Type*} {b : Bool} {x y : α} :
 (if b = false then x else y) = (if b then y else x) := dite_eq_false_iff
+
+@[simp]
+theorem and_not_iff_right_iff {P Q : Prop} : (P ∧ ¬Q ↔ Q) ↔ (¬P ∧ ¬Q) := by tauto

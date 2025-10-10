@@ -1215,3 +1215,9 @@ theorem DState.exi_aMove_of_taken_ne_empty {s} [hs : DState s]
   rcases h with ⟨⟨h₁, h₂, h₃⟩, rfl⟩
   rw [Point.dist_comm] at h₃
   simp [State.isSome_aMove_iff, ne_symm' h₁, h₃]
+
+theorem AState.size_taken_eq_one_of_pw_eq_zero {s} [hs : AState s]
+(h : s.pw = 0) : s.taken.size = 1 := by
+  have h₁ := s.size_taken_le_one_of_pw_eq_zero h
+  rw [Nat.le_one_iff] at h₁
+  by_contra! h₂; simp [h₂] at h₁

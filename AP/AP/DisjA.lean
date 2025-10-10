@@ -257,7 +257,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   rw [length_hist_sub_eq_of_simulate H₁] at H₇
   simpa [H₅]
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
@@ -293,15 +293,18 @@ theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF 
       exact h₄
   have H₁ := s.exi_taken_diff (ps := ps); specialize H₁ _
   · clear H₁
-    constructor
-    · simp
-    · simp
-      intro h₂ h₃
+    constructor <;> simp
+    · intro h₂ h₃
       simp [h₃] at h₁
       replace hs' : AState s'; use hs'; rwa [ht]
       simp at h₁
-    · simp
-      intro h₂ h₃
+    · intro h₂ h₃
+      replace hs : AState s; use hs
+      have h₄ := hs.size_taken_eq_one_of_pw_eq_zero h₃
+      have h₅ : p ∈ s.taken; simp [←H]
+      convert h₄; rw [Set'.diff_eq_left_iff]; intro x hx
+      rwa [Set'.eq_of_size_eq_one_and_mem h₄ hx h₅]
+    · intro h₂ h₃
       replace hs : DState s; use hs
       have h₄ := hs.exi_aMove_of_taken_ne_empty
       specialize h₄ _

@@ -5,14 +5,19 @@ namespace AP
 structure WFCnd (s : State) : Prop where
   aPos_not_mem_taken : s.aPos ∉ s.taken
   taken_ne_empty_of_aTurn : s.aTurn → s.taken ≠ ∅
+  size_taken_eq_one_of_aTurn_and_pw_eq_zero : s.aTurn → s.pw = 0 → s.taken.size = 1
   exi_aMove_of_not_aTurn_and_taken_ne_empty : s.aTurn = false → s.taken ≠ ∅ →
     ∃ p, s.aMove p |>.isSome
 
 theorem State.wfCnd_of_wf {s} [hs : sys.WF s] : WFCnd s where
   aPos_not_mem_taken := by simp
   taken_ne_empty_of_aTurn ht := AState.mk hs ht |>.taken_ne_empty
+  size_taken_eq_one_of_aTurn_and_pw_eq_zero ht h :=
+    AState.mk hs ht |>.size_taken_eq_one_of_pw_eq_zero h
   exi_aMove_of_not_aTurn_and_taken_ne_empty ht h :=
     DState.mk hs ht |>.exi_aMove_of_taken_ne_empty h
+
+-- #check 0 #exit
 
 theorem State.exi_hist_wf_of_wfCnd_and_not_aTurn {s} (h : WFCnd s)
 (ht : s.aTurn = false) : ∃ hist, sys.WF # s.setHist hist := by
