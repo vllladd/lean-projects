@@ -841,6 +841,9 @@ theorem State.aTurn_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.aTurn = !s
   simp [sys, move] at h; split_ifs at h with h₁
   all_goals simp [h₁]; simp at h; obtain ⟨s₁, h₂, rfl⟩ := h; simp [h₁]
 
+theorem State.aTurn_eq_of_tr' {s s' p} (h : sys.tr s p = some s') : s.aTurn = !s'.aTurn := by
+  simp [aTurn_eq_of_tr h]
+
 theorem AState.exi_prev {sa} [ha : AState sa] :
 ∃ sd p, DState sd ∧ sys.tr sd p = sa := by
   rcases ha with ⟨h₁, h₂⟩
@@ -869,14 +872,98 @@ theorem AState.exi_prev {sa} [ha : AState sa] :
   use sys.wf_of_trs hr
   simp [State.aTurn_eq_of_tr h₅] at h₂; exact h₂
 
--- #check 0 #exit
+theorem AState.taken_eq_of_tr {s s' p} [hs : AState s]
+(h : sys.tr s p = some s') : s'.taken = s.taken := by
+  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
-theorem DState.exi_prev_of_mem_taken {sd p₀} [hsd : DState sd]
-(h : p₀ ∈ sd.taken) : ∃ sa p, AState sa ∧ sys.tr sa p = sd := by
-  have h₁ := @exi_prev_of_hist_eq_cons sd
-  sorry
+theorem DState.taken_eq_of_tr {s s' p} [hs : DState s]
+(h : sys.tr s p = some s') : s'.taken = s.taken.insert p := by
+  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
--- #check 0 #exit
+theorem State.size_taken_eq_ite_of_tr {s s' p} [hs : sys.WF s] (h : sys.tr s p = some s') :
+s'.taken.size = s.taken.size + if s.aTurn then 0 else 1 := by
+  replace hs := s.aState_or_dState; rcases hs with hs | hs
+  · simp [hs.taken_eq_of_tr h]
+  simp; simp [hs.tr_eq_some_iff] at h
+  rcases h with ⟨⟨h₁, h₂⟩, rfl⟩
+  simp [Set'.size_insert h₂]
+
+theorem State.length_hist_eq_size_taken_mul_two_add_ite {s} [hs : sys.WF s] :
+s.hist.length = s.taken.size * 2 + if s.aTurn then 0 else 1 := by
+  obtain ⟨ps, h₁⟩ := wf_iff.mp hs
+  induction ps using List.reverseRecOn generalizing s
+  · simp at h₁; rw [←h₁]; simp
+  nm ps p ih
+  simp at h₁
+  obtain ⟨s', h₁, h₂⟩ := h₁
+  have h₃ := sys.reachable_of_trs h₁
+  dsimp at h₃
+  have hs' := sys.wf_of_reachable h₃
+  specialize @ih s' _
+  simp [pw_eq_of_reachable h₃, aPos₀_eq_of_reachable h₃] at ih
+  specialize ih h₁
+  simp [hist_eq_of_tr h₂, ih]; clear ih
+  rw [size_taken_eq_ite_of_tr h₂, aTurn_eq_of_tr h₂]
+  simp; split_ifs <;> ring_nf
+
+theorem State.length_hist_le_size_taken_mul_two_add_one {s} [hs : sys.WF s] :
+s.hist.length ≤ s.taken.size * 2 + 1 := by
+  simp [length_hist_eq_size_taken_mul_two_add_ite]
+
+theorem State.size_taken_mul_two_le_length_hist {s} [hs : sys.WF s] :
+s.taken.size * 2 ≤ s.hist.length := by
+  simp [length_hist_eq_size_taken_mul_two_add_ite]
+
+theorem State.length_hist_le_two_of_pw_eq_zero {s} [hs : sys.WF s]
+(h : s.pw = 0) : s.hist.length ≤ 2 := by
+  obtain ⟨ps, h₁⟩ := wf_iff.mp hs
+  cases ps; simp at h₁; rw [←h₁]; simp
+  nm p₁ ps; simp at h₁; split at h₁; simp at h₁; nm x s₁ h₂; clear x
+  cases ps; simp at h₁; subst h₁; simp [hist_eq_of_tr h₂]
+  nm p₂ ps; simp at h₁; split at h₁; simp at h₁; nm x s₂ h₃; clear x
+  have hs₁ : AState s₁; use sys.wf_of_tr h₂; simp [aTurn_eq_of_tr h₂]
+  simp [hs₁.tr_eq_some_iff] at h₃
+  rcases h₃ with ⟨⟨h₃, h₄, h₅⟩, rfl⟩
+  simp [pw_eq_of_tr h₂, h, ne_symm' h₃] at h₅
+
+theorem State.size_taken_le_one_of_pw_eq_zero {s} [hs : sys.WF s]
+(h : s.pw = 0) : s.taken.size ≤ 1 := by
+  by_contra! h₁; replace h₂ := s.size_taken_mul_two_le_length_hist
+  replace h₂ : 3 ≤ s.hist.length; linarith
+  linarith [length_hist_le_two_of_pw_eq_zero h]
+
+@[simp]
+theorem State.length_hist_le_one_iff {s} [hs : sys.WF s] :
+s.hist.length ≤ 1 ↔ s.hist.length = 1 := by
+  simp [Nat.le_one_iff]
+
+@[simp]
+theorem State.not_aState_initState {pw p} : ¬AState (initState pw p) := by
+  simp [AState.iff]
+
+@[simp]
+theorem AState.taken_ne_empty {s} [hs : AState s] : s.taken ≠ ∅ := by
+  intro h; have h₁ := s.length_hist_le_size_taken_mul_two_add_one
+  simp [h] at h₁; rw [←h₁] at hs; simp at hs
+
+theorem DState.exi_prev_of_mem_taken {s p₀} [hs : DState s]
+(h : p₀ ∈ s.taken) : ∃ sa p, AState sa ∧ sys.tr sa p = s := by
+  have h₁ := s.size_taken_mul_two_le_length_hist
+  have h₂ : 1 ≤ s.taken.size
+  · by_contra! h₂; simp at h₂; simp [h₂] at h
+  replace h₁ : 2 ≤ s.hist.length; linarith
+  cases h₃ : s.hist <;> simp [h₃] at h₁; nm p₁ hist
+  cases hist; simp at h₁; nm p₂ hist; clear h₁
+  have h₄ := @exi_prev_of_hist_eq_cons s
+  specialize @h₄ p₁ (p₂ :: hist) _ nofun h₃
+  obtain ⟨sa, hsa, h₄⟩ := h₄
+  refine ⟨sa, p₁, ?_, h₄⟩
+  use hsa; simp [State.aTurn_eq_of_tr' h₄]
+
+theorem DState.exi_prev_of_taken_ne_empty {s} [hs : DState s]
+(h : s.taken ≠ ∅) : ∃ sa p, AState sa ∧ sys.tr sa p = s := by
+  obtain ⟨p₀, h⟩ := Set'.exi_mem_of_ne_empty h
+  exact exi_prev_of_mem_taken h
 
 theorem State.aTurn_eq_of_simulate_eq {st : Strat} {s s₁ n r}
 [hs : sys.WF s] (h : sys.simulate st.f s n = (s₁, r)) :
@@ -1052,14 +1139,6 @@ theorem DState.aPos_eq_of_tr {s s' p} [hs : DState s]
 (h : sys.tr s p = some s') : s'.aPos = s.aPos := by
   simp [hs.tr_eq_some_iff] at h; rw [←h.2]
 
-theorem AState.taken_eq_of_tr {s s' p} [hs : AState s]
-(h : sys.tr s p = some s') : s'.taken = s.taken := by
-  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
-
-theorem DState.taken_eq_of_tr {s s' p} [hs : DState s]
-(h : sys.tr s p = some s') : s'.taken = s.taken.insert p := by
-  simp [hs.tr_eq_some_iff] at h; rw [←h.2]
-
 @[simp]
 theorem State.aPos_ne_chooseDMove {s} [hs : DState s] : s.aPos ≠ s.chooseDMove := by
   have h := hs.validTr_chooseDMove; rw [DState.validTr_iff] at h; exact h.1
@@ -1078,3 +1157,61 @@ s₁.hist = (ps.take # ps.length - r.length).reverse ++ s.hist := by
   nm x s' h₁; simp only [ih h, hist_eq_of_tr h₁, List.length_cons, Nat.succ_sub #
     sys.trs_snd_length_le_of_eq h, Nat.succ_eq_add_one, List.take_succ_cons,
     List.reverse_cons, List.append_assoc, List.cons_append, List.nil_append]
+
+theorem State.taken_subset_of_tr {s s' p} [hs : sys.WF s]
+(h : sys.tr s p = some s') : s.taken ⊆ s'.taken := by
+  intro p' hp'
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs <;> simp [hs.tr_eq_some_iff] at h
+  · rcases h with ⟨⟨h₁, h₂, h₃⟩, rfl⟩; simpa
+  · rcases h with ⟨⟨h₁, h₂⟩, rfl⟩; simp [hp']
+
+theorem State.taken_subset_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : s.taken ⊆ s'.taken := by
+  revert hs
+  induction h; simp
+  clear! s s'
+  nm a b c p h₁ h₂ ih
+  intro ha
+  have hb := sys.wf_of_tr h₁
+  have hc := sys.wf_of_reachable h₂
+  specialize @ih hb
+  apply Set'.subset_trans (taken_subset_of_tr h₁) ih
+
+theorem State.mem_taken_of_tr {s s' p p'} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s') (h₂ : p' ∈ s.taken) : p' ∈ s'.taken :=
+  taken_subset_of_tr h₁ _ h₂
+
+theorem State.mem_taken_of_reachable {s s' p} [hs : sys.WF s]
+(h₁ : sys.Reachable s s') (h₂ : p ∈ s.taken) : p ∈ s'.taken :=
+  taken_subset_of_reachable h₁ _ h₂
+
+@[simp]
+theorem State.aPos_not_mem_taken {s} [hs : sys.WF s] : s.aPos ∉ s.taken := by
+  apply sys.invariant_wf (p := λ s => s.aPos ∉ s.taken) hs <;> clear! s
+  · intro s hs
+    simp at hs
+    rw [←hs]
+    simp
+  intro s s' p hs hs' h₁ h₂
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs <;> simp [hs.tr_eq_some_iff] at h₂
+  · rcases h₂ with ⟨⟨h₃, h₄, h₅⟩, rfl⟩; simpa
+  · rcases h₂ with ⟨⟨h₃, h₄⟩, rfl⟩; simp [h₁, h₃]
+
+theorem State.isSome_aMove_iff {s : State} {p} : (s.aMove p).isSome ↔
+s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
+  simp only [aMove, ne_eq, Option.pure_def, Option.bind_eq_bind, Option.isSome_bind,
+    Option.isSome_some, Option.any_true, Option.any_eq_true, Option.guard_eq_some',
+    exists_const, and_congr_right_iff]
+  simp only [guard, instAlternativeOption, Option.pure_def, apply_ite, Option.isSome_some,
+    Option.isSome_none, Bool.if_false_right, Bool.and_true, decide_eq_true_eq, implies_true]
+
+theorem DState.exi_aMove_of_taken_ne_empty {s} [hs : DState s]
+(h : s.taken ≠ ∅) : ∃ p, s.aMove p |>.isSome := by
+  replace h := exi_prev_of_taken_ne_empty h
+  obtain ⟨sa, p, hsa, h⟩ := h; use sa.aPos
+  simp [hsa.tr_eq_some_iff] at h
+  rcases h with ⟨⟨h₁, h₂, h₃⟩, rfl⟩
+  rw [Point.dist_comm] at h₃
+  simp [State.isSome_aMove_iff, ne_symm' h₁, h₃]

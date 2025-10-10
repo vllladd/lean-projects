@@ -257,7 +257,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   rw [length_hist_sub_eq_of_simulate H₁] at H₇
   simpa [H₅]
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
@@ -291,9 +291,23 @@ theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF 
     · rintro ⟨h₃, h₄, h₅⟩
       simp [←h₁, ne_symm' h₃, h₅] at h₄
       exact h₄
-  have H₁ := s.exi_taken_diff (ps := ps); specialize H₁ _ _
-  · simp [←H, Set'.diff_eq_empty_iff_subset, Set'.subset_def]; use p; simpa
-  · sorry
+  have H₁ := s.exi_taken_diff (ps := ps); specialize H₁ _
+  · clear H₁
+    constructor
+    · simp
+    · simp
+      intro h₂ h₃
+      simp [h₃] at h₁
+      replace hs' : AState s'; use hs'; rwa [ht]
+      simp at h₁
+    · simp
+      intro h₂ h₃
+      replace hs : DState s; use hs
+      have h₄ := hs.exi_aMove_of_taken_ne_empty
+      specialize h₄ _
+      · simp [←H]
+      obtain ⟨p₁, h₄⟩ := h₄
+      use p₁; simp [isSome_aMove_iff] at h₄ ⊢; simp [h₄]
   obtain ⟨s₁, hs₁, hpw₁, ht₁, hpa₁, h₃⟩ := H₁
   specialize @ih fsp s s₁ _ _ h hpw₁ ht₁ hpa₁ _ _
   · simp [h₃]; tauto

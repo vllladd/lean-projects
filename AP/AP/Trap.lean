@@ -194,47 +194,6 @@ inductive State.AReachable (s : State) : PointZ → Prop where
 | mk₁ : s.AReachable s.aPos
 | mk₂ : ∀ {p p' : PointZ}, s.AReachable p → p.dist p' ≤ s.pw → p' ∉ s.taken → s.AReachable p'
 
-theorem State.taken_subset_of_tr {s s' p} [hs : sys.WF s]
-(h : sys.tr s p = some s') : s.taken ⊆ s'.taken := by
-  intro p' hp'
-  replace hs := s.aState_or_dState
-  rcases hs with hs | hs <;> simp [hs.tr_eq_some_iff] at h
-  · rcases h with ⟨⟨h₁, h₂, h₃⟩, rfl⟩; simpa
-  · rcases h with ⟨⟨h₁, h₂⟩, rfl⟩; simp [hp']
-
-theorem State.taken_subset_of_reachable {s s'} [hs : sys.WF s]
-(h : sys.Reachable s s') : s.taken ⊆ s'.taken := by
-  revert hs
-  induction h; simp
-  clear! s s'
-  nm a b c p h₁ h₂ ih
-  intro ha
-  have hb := sys.wf_of_tr h₁
-  have hc := sys.wf_of_reachable h₂
-  specialize @ih hb
-  apply Set'.subset_trans (taken_subset_of_tr h₁) ih
-
-theorem State.mem_taken_of_tr {s s' p p'} [hs : sys.WF s]
-(h₁ : sys.tr s p = some s') (h₂ : p' ∈ s.taken) : p' ∈ s'.taken :=
-  taken_subset_of_tr h₁ _ h₂
-
-theorem State.mem_taken_of_reachable {s s' p} [hs : sys.WF s]
-(h₁ : sys.Reachable s s') (h₂ : p ∈ s.taken) : p ∈ s'.taken :=
-  taken_subset_of_reachable h₁ _ h₂
-
-@[simp]
-theorem State.not_aPos_mem_taken {s} [hs : sys.WF s] : s.aPos ∉ s.taken := by
-  apply sys.invariant_wf (p := λ s => s.aPos ∉ s.taken) hs <;> clear! s
-  · intro s hs
-    simp at hs
-    rw [←hs]
-    simp
-  intro s s' p hs hs' h₁ h₂
-  replace hs := s.aState_or_dState
-  rcases hs with hs | hs <;> simp [hs.tr_eq_some_iff] at h₂
-  · rcases h₂ with ⟨⟨h₃, h₄, h₅⟩, rfl⟩; simpa
-  · rcases h₂ with ⟨⟨h₃, h₄⟩, rfl⟩; simp [h₁, h₃]
-
 theorem State.aReachable_of_mem_aTrap {s p} [hs : sys.WF s]
 (h : p ∈ s.aTrap) : s.AReachable p := by
   obtain ⟨s', h, rfl⟩ := h
@@ -262,7 +221,7 @@ theorem State.aReachable_of_mem_aTrap {s p} [hs : sys.WF s]
       rw [Point.dist_comm, ←h₅]
       simp
     · rw [←h₅]; simp
-      have h₆ := s.not_aPos_mem_taken
+      have h₆ := s.aPos_not_mem_taken
       contrapose! h₆
       exact mem_taken_of_reachable h₁ h₆
 

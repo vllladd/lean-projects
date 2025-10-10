@@ -683,3 +683,19 @@ theorem subset_antisymm (h₁ : s₁ ⊆ s₂) (h₂ : s₂ ⊆ s₁) : s₁ = s
 @[simp] theorem union_self : s ∪ s = s := by ext; simp
 @[simp] theorem inter_self : s ∩ s = s := by ext; simp
 @[simp] theorem diff_self : s \ s = ∅ := by ext; simp
+
+theorem exi_mem_of_ne_empty (h : s ≠ ∅) : ∃ x, x ∈ s := by
+  simp [eq_empty_iff] at h; exact h
+
+theorem ne_empty_of_mem {x} (h : x ∈ s) : s ≠ ∅ := by
+  simp [eq_empty_iff]; use x
+
+theorem eq_empty_of_subset (h₁ : s₁ ⊆ s₂) (h₂ : s₂ = ∅) : s₁ = ∅ := by
+  rw [eq_empty_iff] at h₂ ⊢; intro x hx; exact h₂ x # h₁ x hx
+
+theorem ne_empty_of_subset (h₁ : s₁ ⊆ s₂) (h₂ : s₁ ≠ ∅) : s₂ ≠ ∅ := by
+  simp [eq_empty_iff] at h₂ ⊢; obtain ⟨x, hx⟩ := h₂; use x, h₁ x hx
+
+@[simp]
+theorem insert_ne_empty {x} : s.insert x ≠ ∅ := by
+  apply ne_empty_of_mem (x := x); simp
