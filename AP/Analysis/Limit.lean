@@ -8,6 +8,10 @@ def tendsTo (a : ℕ → ℝ) (L : ℝ) : Prop :=
 def converges (a : ℕ → ℝ) : Prop :=
   ∃ L, tendsTo a L
 
+noncomputable
+def limit (a : ℕ → ℝ) : ℝ :=
+  Classical.epsilon # tendsTo a
+
 noncomputable def someLt (x : ℝ) : ℝ :=
   Classical.epsilon (· < x)
 
@@ -126,6 +130,8 @@ theorem not_converges_minus_one_pow : ¬converges ((-1 : ℝ) ^ ·) := by
   convert not_converges_alternating (x := 1) (y := -1) (by norm_num)
   nm n; induction n using Nat.mod_2_ind <;> simp
 
+-----
+
 theorem ofNat_seq_eq {n : ℕ} : (OfNat.ofNat n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
@@ -134,17 +140,65 @@ theorem cast_seq_eq {n : ℕ} : (n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
 
-theorem tendsTo_const_ofNat {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
-  simp [ofNat_seq_eq, tendsTo_const]
+-- theorem tendsTo_const_ofNat' {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
+--   simp [ofNat_seq_eq, tendsTo_const]
 
-theorem tendsTo_const_cast {n : ℕ} : tendsTo n n := by
+@[simp]
+theorem tendsTo_const_natCast {n : ℕ} : tendsTo n n := by
   simp [cast_seq_eq, tendsTo_const]
 
-theorem tendsTo_const_ofNat_iff {n : ℕ} {L : ℝ} :
-tendsTo (OfNat.ofNat n) L ↔ L = n := by
-  have h := @tendsTo_const_ofNat n
-  use λ h₁ => tendsTo_unique h₁ h
-  rintro rfl; exact h
+class ValidOfNat (α : Type*) (n : ℕ) [f : ∀ n, OfNat α n]
+(i : OfNat α n) : Prop where
+  h : i = f n
+
+-- class ValidNatCast (α : Type*) [f : NatCast α]
+-- (i : OfNat α n) : Prop where
+--   h : i = f n
+
+theorem _root_.Real.ofNat_eq_natCast {n i} [H : ValidOfNat ℝ n i] :
+i.ofNat = n := by rw [H.1]; exact Real.ofNat_eq
+
+theorem _root_.Pi.ofNat_eq_natCast {n i} [H : ValidOfNat (ℕ → ℝ) n i] :
+i.ofNat = n := by rw [H.1]; iterate 2 (cases n; simp; nm n);; rfl
+
+-- #check 0 #exit
+
+instance : ValidOfNat (ℕ → ℝ) 0 # Pi.instZero.toOfNat0 := ⟨rfl⟩
+instance : ValidOfNat (ℕ → ℝ) 1 # Pi.instOne.toOfNat1 := ⟨rfl⟩
+instance {n} : ValidOfNat (ℕ → ℝ) n # Pi.instOfNat n := ⟨rfl⟩
+
+instance : ValidOfNat ℝ 0 # Real.instZero.toOfNat0 := ⟨rfl⟩
+instance : ValidOfNat ℝ 1 # Real.instOne.toOfNat1 := ⟨rfl⟩
+
+instance {n} [h : Nat.AtLeastTwo n] : ValidOfNat ℝ n # instOfNatAtLeastTwo where
+  h := by obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' h.1; rfl
+
+theorem tendsTo_const_natCast_iff {n : ℕ} {L : ℝ} : tendsTo n L ↔ L = n := by
+  have h₁ : tendsTo n n; simp
+  symm; constructor; rintro rfl; exact h₁
+  intro h; exact tendsTo_unique h h₁
+
+theorem tendsTo_const_ofNat_iff {n : ℕ} {L : ℝ} {i}
+[H : ValidOfNat (ℕ → ℝ) n i] : tendsTo (@OfNat.ofNat _ n i) L ↔ L = n := by
+  rw [Pi.ofNat_eq_natCast]; exact tendsTo_const_natCast_iff
+
+theorem tendsTo_const_ofNat {n : ℕ} {a : ℕ → ℝ} {i} [H : ValidOfNat ℝ n i] :
+tendsTo a (@OfNat.ofNat _ n i) ↔ tendsTo a n := by
+  rw [Real.ofNat_eq_natCast]
+
+instance {n₁ n₂ i₁ i₂} :
+Fact # tendsTo (@OfNat.ofNat _ n₁ i₁) (@OfNat.ofNat _ n₂ i₂) := by
+  sorry
+
+set_option trace.Meta.synthInstance true
+
+example : Fact # tendsTo 2 2 := by
+  infer_instance
+
+#check 0 #exit
+
+theorem tendsTo_const_ofNat {n : ℕ} {inst} [H : ValidOfNat inst] :
+tendsTo (@OfNat.ofNat _ n inst) n := by simp
 
 theorem tendsTo_neg {a L} (h : tendsTo a L) : tendsTo (-a) (-L) := by
   intro e he; specialize h e he; obtain ⟨N, h⟩ := h
@@ -185,6 +239,26 @@ tendsTo a L ↔ ∀ (ε : ℝ), 0 < ε → ε < 1 → ∃ (N : ℕ),
   specialize h n hn
   simp at h
   exact h.1
+
+theorem eventually_ne_of_ne_limit {a L M} (h₁ : tendsTo a L)
+(h₂ : M ≠ L) : eventually (a · ≠ M) := by
+  specialize h₁ (|M - L| / 2) _
+  · simp; contrapose! h₂; linarith
+  obtain ⟨N, h₁⟩ := h₁
+  use N
+  intro n hn
+  specialize h₁ n hn
+  contrapose! h₁
+  simp [h₁]
+
+theorem drop_ne_of_ne_limit {a L M} (h₁ : tendsTo a L) (h₂ : M ≠ L) :
+∃ k, tendsTo (a # · + k) L ∧ ∀ n, a (n + k) ≠ M := by
+  obtain ⟨k, h₃⟩ := eventually_ne_of_ne_limit h₁ h₂
+  use k
+  rw [tendsTo_drop_iff]; use h₁
+  intro n
+  specialize h₃ (n + k) (by linarith)
+  exact h₃
 
 theorem tendsTo_inv_aux₁ {x y : ℝ} (h : |x - y| < |y| / 2) : |y| / 2 < |x| := by
   suffices h₆ : 2 * |y| < 3 / 2 * |y| + |x|; linarith; calc
@@ -227,7 +301,7 @@ theorem tendsTo_inv_aux₂ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
   have h₇ : |a n| < |L| / 2; linarith
   contrapose! h₇; exact le_of_lt # tendsTo_inv_aux₁ h
 
-theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
+theorem tendsTo_inv_aux₃ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
 (h₃ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
   intro e he
   obtain ⟨x, hx, h₄⟩ := tendsTo_inv_aux₂ h₁ h₂ h₃
@@ -254,6 +328,11 @@ theorem tendsTo_inv {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
     rw [div_le_div_iff_of_pos_right # by simp [h₁]]
     rw [mul_le_mul_iff_of_pos_right he]; apply h₄
   _ = e := by rw [mul_div_cancel_left₀ _ # by simp [h₁]]
+
+theorem tendsTo_inv {a L} (h₁ : L ≠ 0) (h₂ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
+  obtain ⟨k, h₃, h₄⟩ := drop_ne_of_ne_limit h₂ h₁.symm
+  rw [←tendsTo_drop_iff (k := k)]
+  exact tendsTo_inv_aux₃ h₄ h₁ h₃
 
 @[simp]
 theorem someLt_lt {x} : someLt x < x :=
@@ -292,7 +371,7 @@ theorem bddBelow_of_converges {a} (h : converges a) : BddBelow (Set.range a) := 
   linarith
 
 @[simp]
-theorem converges_neg {a} : converges (-a) ↔ converges a := by
+theorem converges_neg_iff {a} : converges (-a) ↔ converges a := by
   constructor <;> rintro ⟨L, h⟩ <;> use -L <;> convert tendsTo_neg h; simp
 
 theorem bddAbove_of_converges {a} (h : converges a) : BddAbove (Set.range a) := by
@@ -497,9 +576,9 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
       linarith
   apply tendsTo_mul_aux₁ h₅ h₆ H₂ H₄ H₅
 
-theorem tendsTo_div {a₁ a₂ L₁ L₂} (h₁ : ∀ n, a₂ n ≠ 0) (h₂ : L₂ ≠ 0)
-(h₃ : tendsTo a₁ L₁) (h₄ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
-  tendsTo_mul h₃ # tendsTo_inv h₁ h₂ h₄
+theorem tendsTo_div {a₁ a₂ L₁ L₂} (h₁ : L₂ ≠ 0) (h₂ : tendsTo a₁ L₁)
+(h₃ : tendsTo a₂ L₂) : tendsTo (a₁ / a₂) (L₁ / L₂) :=
+  tendsTo_mul h₂ # tendsTo_inv h₁ h₃
 
 theorem squeeze {a b c : ℕ → ℝ} {L} (h₁ : ∀ n, a n ≤ b n) (h₂ : ∀ n, b n ≤ c n)
 (h₃ : tendsTo a L) (h₄ : tendsTo c L) : tendsTo b L := by
@@ -607,3 +686,46 @@ theorem not_bounded_id : ¬bounded (·) := by
 theorem boundedBy_zero_iff_const_zero {a : ℕ → ℝ} : boundedBy a 0 ↔ a = 0 := by
   simp only [boundedBy, abs_nonpos_iff]; symm
   constructor; rintro rfl; simp; intro h; ext; simp [h]
+
+theorem nat_le_of_forall_lt_apply_succ {a : ℕ → ℕ} {n}
+(h : ∀ n, a n < a (n + 1)) : n ≤ a n := by
+  induction n; simp; nm n ih; rw [Nat.succ_le_iff]; exact lt_of_le_of_lt ih # h _
+
+theorem limit_eq_of_tendsTo {a L} (h : tendsTo a L) : limit a = L :=
+  epsilon_eq_of h # λ _ h₁ => tendsTo_unique h₁ h
+
+theorem tendsTo_limit_of_tendsTo {a L} (h : tendsTo a L) : tendsTo a (limit a) := by
+  rwa [limit_eq_of_tendsTo h]
+
+theorem tendsTo_limit_of_converges {a} (h : converges a) : tendsTo a (limit a) := by
+  obtain ⟨L, h⟩ := h; exact tendsTo_limit_of_tendsTo h
+
+theorem converges_add {a b} (ha : converges a) (hb : converges b) :
+converges (a + b) := by
+  obtain ⟨L, ha⟩ := ha; obtain ⟨M, hb⟩ := hb; use L + M; exact tendsTo_add ha hb
+
+theorem converges_sub {a b} (ha : converges a) (hb : converges b) :
+converges (a - b) := by
+  obtain ⟨L, ha⟩ := ha; obtain ⟨M, hb⟩ := hb; use L - M; exact tendsTo_sub ha hb
+
+theorem converges_mul {a b} (ha : converges a) (hb : converges b) :
+converges (a * b) := by
+  obtain ⟨L, ha⟩ := ha; obtain ⟨M, hb⟩ := hb; use L * M; exact tendsTo_mul ha hb
+
+theorem converges_div {a b} (ha : converges a) (hb : converges b)
+(h : limit b ≠ 0) : converges (a / b) := by
+  obtain ⟨L, ha⟩ := ha; obtain ⟨M, hb⟩ := hb; use L / M
+  rw [limit_eq_of_tendsTo hb] at h; exact tendsTo_div h ha hb
+
+theorem converges_neg {a} (ha : converges a) : converges (-a) := by simpa
+
+theorem converges_inv {a} (ha : converges a) (h : limit a ≠ 0) : converges a⁻¹ := by
+  obtain ⟨L, ha⟩ := ha; rw [limit_eq_of_tendsTo ha] at h
+  use L⁻¹; exact tendsTo_inv h ha
+
+theorem tendsTo_pow {a L} {k : ℕ} (h : tendsTo a L) : tendsTo (a ^ k) (L ^ k) := by
+  induction k; simp; exact tendsTo_const
+  nm k hk; simp [pow_add]; exact tendsTo_mul hk h
+
+theorem converges_pow {a} {k : ℕ} (ha : converges a) : converges (a ^ k) := by
+  obtain ⟨L, ha⟩ := ha; use L ^ k, tendsTo_pow ha

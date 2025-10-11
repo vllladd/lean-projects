@@ -95,7 +95,7 @@ theorem continuous_mul_right {x} : continuous (· * x) := by
 theorem continuous_div_right {x} : continuous (· / x) :=
   continuous_mul_right
 
-theorem continuous_rpow {b} (hb : 0 < b) : continuous (b ^ ·) := by
+theorem continuous_rpow_left {b : ℝ} (hb : 0 < b) : continuous (b ^ ·) := by
   simp_rw [Real.rpow_eq_exp hb]
   exact continuous_comp continuous_exp continuous_mul_right
 
@@ -146,7 +146,3 @@ theorem continuousAt_log {x : ℝ} (hx : 0 < x) : continuousAt (·.log) x := by
 
 theorem continuousAt_logb {b x : ℝ} (hx : 0 < x) : continuousAt (Real.logb b) x :=
   continuousAt_comp (continuous_div_right _) (continuousAt_log hx)
-
-theorem nat_le_of_forall_lt_apply_succ {a : ℕ → ℕ} {n}
-(h : ∀ n, a n < a (n + 1)) : n ≤ a n := by
-  induction n; simp; nm n ih; rw [Nat.succ_le_iff]; exact lt_of_le_of_lt ih # h _
