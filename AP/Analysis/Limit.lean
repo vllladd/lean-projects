@@ -130,8 +130,6 @@ theorem not_converges_minus_one_pow : ¬converges ((-1 : ℝ) ^ ·) := by
   convert not_converges_alternating (x := 1) (y := -1) (by norm_num)
   nm n; induction n using Nat.mod_2_ind <;> simp
 
------
-
 theorem ofNat_seq_eq {n : ℕ} : (OfNat.ofNat n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
@@ -140,65 +138,17 @@ theorem cast_seq_eq {n : ℕ} : (n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
 
--- theorem tendsTo_const_ofNat' {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
---   simp [ofNat_seq_eq, tendsTo_const]
-
-@[simp]
-theorem tendsTo_const_natCast {n : ℕ} : tendsTo n n := by
+theorem tendsTo_const_cast {n : ℕ} : tendsTo n n := by
   simp [cast_seq_eq, tendsTo_const]
 
-class ValidOfNat (α : Type*) (n : ℕ) [f : ∀ n, OfNat α n]
-(i : OfNat α n) : Prop where
-  h : i = f n
+theorem tendsTo_const_ofNat {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
+  simp [ofNat_seq_eq, tendsTo_const]
 
--- class ValidNatCast (α : Type*) [f : NatCast α]
--- (i : OfNat α n) : Prop where
---   h : i = f n
-
-theorem _root_.Real.ofNat_eq_natCast {n i} [H : ValidOfNat ℝ n i] :
-i.ofNat = n := by rw [H.1]; exact Real.ofNat_eq
-
-theorem _root_.Pi.ofNat_eq_natCast {n i} [H : ValidOfNat (ℕ → ℝ) n i] :
-i.ofNat = n := by rw [H.1]; iterate 2 (cases n; simp; nm n);; rfl
-
--- #check 0 #exit
-
-instance : ValidOfNat (ℕ → ℝ) 0 # Pi.instZero.toOfNat0 := ⟨rfl⟩
-instance : ValidOfNat (ℕ → ℝ) 1 # Pi.instOne.toOfNat1 := ⟨rfl⟩
-instance {n} : ValidOfNat (ℕ → ℝ) n # Pi.instOfNat n := ⟨rfl⟩
-
-instance : ValidOfNat ℝ 0 # Real.instZero.toOfNat0 := ⟨rfl⟩
-instance : ValidOfNat ℝ 1 # Real.instOne.toOfNat1 := ⟨rfl⟩
-
-instance {n} [h : Nat.AtLeastTwo n] : ValidOfNat ℝ n # instOfNatAtLeastTwo where
-  h := by obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' h.1; rfl
-
-theorem tendsTo_const_natCast_iff {n : ℕ} {L : ℝ} : tendsTo n L ↔ L = n := by
-  have h₁ : tendsTo n n; simp
-  symm; constructor; rintro rfl; exact h₁
-  intro h; exact tendsTo_unique h h₁
-
-theorem tendsTo_const_ofNat_iff {n : ℕ} {L : ℝ} {i}
-[H : ValidOfNat (ℕ → ℝ) n i] : tendsTo (@OfNat.ofNat _ n i) L ↔ L = n := by
-  rw [Pi.ofNat_eq_natCast]; exact tendsTo_const_natCast_iff
-
-theorem tendsTo_const_ofNat {n : ℕ} {a : ℕ → ℝ} {i} [H : ValidOfNat ℝ n i] :
-tendsTo a (@OfNat.ofNat _ n i) ↔ tendsTo a n := by
-  rw [Real.ofNat_eq_natCast]
-
-instance {n₁ n₂ i₁ i₂} :
-Fact # tendsTo (@OfNat.ofNat _ n₁ i₁) (@OfNat.ofNat _ n₂ i₂) := by
-  sorry
-
-set_option trace.Meta.synthInstance true
-
-example : Fact # tendsTo 2 2 := by
-  infer_instance
-
-#check 0 #exit
-
-theorem tendsTo_const_ofNat {n : ℕ} {inst} [H : ValidOfNat inst] :
-tendsTo (@OfNat.ofNat _ n inst) n := by simp
+theorem tendsTo_const_ofNat_iff {n : ℕ} {L : ℝ} :
+tendsTo (OfNat.ofNat n) L ↔ L = n := by
+  have h := @tendsTo_const_ofNat n
+  use λ h₁ => tendsTo_unique h₁ h
+  rintro rfl; exact h
 
 theorem tendsTo_neg {a L} (h : tendsTo a L) : tendsTo (-a) (-L) := by
   intro e he; specialize h e he; obtain ⟨N, h⟩ := h

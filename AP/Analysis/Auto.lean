@@ -35,10 +35,34 @@ Auto # tendsTo (a * b) (L * M) := ⟨tendsTo_mul ha.1 hb.1⟩
 instance {a L} {k : ℕ} [ha : Auto # tendsTo a L] :
 Auto # tendsTo (a ^ k) (L ^ k) := ⟨tendsTo_pow ha.1⟩
 
-instance x {n} {inst} [H : ValidOfNat inst] :
-Auto # tendsTo (@OfNat.ofNat _ n inst) n := ⟨tendsTo_const_ofNat⟩
+-----
 
--- #check 0 #exit
+class P (_ : ℝ) : Prop where
+instance y {n : ℕ} : P n where
+instance x {n : ℕ} {i : OfNat ℝ n} : P (@OfNat.ofNat ℝ n i) where
+
+set_option trace.Meta.synthInstance true
+
+example : P 37 := by
+  -- exact x        -- ok
+  -- exact y        -- ok
+  -- infer_instance -- fails
+  -- change P # nat_lit 37
+  repeat rw [←Nat.cast_ofNat]
+  infer_instance
+
+#check 0 #exit
+
+-----
+
+class P (_ : ℕ) : Prop where
+
+instance {n : ℕ} : P n := ⟨⟩
+
+example : P (nat_lit 5) := by
+  infer_instance
+
+#check 0 #exit
 
 set_option trace.Meta.synthInstance true
 -- set_option pp.all true
