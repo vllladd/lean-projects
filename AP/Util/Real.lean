@@ -68,3 +68,18 @@ theorem gm_le_am_3 (a b c : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c) :
   have h := gm_le_am (xs := [a, b, c])
   specialize h nofun (by simp [ha, hb, hc])
   simp [am, gm] at h; simpa [add_assoc, mul_assoc]
+
+theorem log_eq_logb {a : ℝ} : a.log = Real.logb (Real.exp 1) a := by
+  rw [logb]; simp
+
+theorem eq_of_log_eq_log {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+(h : a.log = b.log) : a = b := by
+  replace h := congrArg (·.exp) h; dsimp at h
+  rw [exp_log ha, exp_log hb] at h; exact h
+
+theorem log_eq_log_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+a.log = b.log ↔ a = b := by
+  use eq_of_log_eq_log ha hb; rintro rfl; rfl
+
+theorem rpow_eq_exp {a b : ℝ} (ha : 0 < a) : a ^ b = (b * a.log).exp := by
+  rw [←log_eq_log_iff] <;> try positivity;; simp [log_rpow ha b]

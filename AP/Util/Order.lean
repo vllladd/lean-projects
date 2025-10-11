@@ -428,3 +428,6 @@ def fintypeToLinearOrder : LinearOrder α where
   toDecidableLE := by infer_instance
 
 end
+
+theorem abs_sub_lt_iff' {x y z : ℝ} : |x - y| < z ↔ y - z < x ∧ x < y + z := by
+  rw [abs_sub_lt_iff]; constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
