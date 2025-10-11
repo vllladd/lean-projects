@@ -23,12 +23,12 @@ Auto # tendsTo (a - b) (L - M) := ⟨tendsTo_sub ha.1 hb.1⟩
 
 instance {a L} [ha : Auto # tendsTo a L] : Auto # tendsTo (-a) (-L) := ⟨tendsTo_neg ha.1⟩
 
-instance {a L} [ha : Auto # tendsTo a L] [h : Auto # ¬(L = (0 : ℕ))] :
+instance {a L} [ha : Auto # tendsTo a L] [h : Auto # L ≠ (0 : ℕ)] :
 Auto # tendsTo a⁻¹ L⁻¹ where
   h := by apply tendsTo_inv _ ha.1; simp at h; exact h.1
 
 instance {a b L M} [ha : Auto # tendsTo a L] [hb : Auto # tendsTo b M]
-[h : Auto # ¬(M = (0 : ℕ))] : Auto # tendsTo (a / b) (L / M) where
+[h : Auto # M ≠ (0 : ℕ)] : Auto # tendsTo (a / b) (L / M) where
   h := by apply tendsTo_div _ ha.1 hb.1; simp at h; exact h.1
 
 instance {a b L M} [ha : Auto # tendsTo a L] [hb : Auto # tendsTo b M] :
