@@ -138,6 +138,7 @@ theorem cast_seq_eq {n : ℕ} : (n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
 
+@[simp]
 theorem tendsTo_const_cast {n : ℕ} : tendsTo n n := by
   simp [cast_seq_eq, tendsTo_const]
 
@@ -679,3 +680,6 @@ theorem tendsTo_pow {a L} {k : ℕ} (h : tendsTo a L) : tendsTo (a ^ k) (L ^ k) 
 
 theorem converges_pow {a} {k : ℕ} (ha : converges a) : converges (a ^ k) := by
   obtain ⟨L, ha⟩ := ha; use L ^ k, tendsTo_pow ha
+
+theorem seq_ofNat_eq {n} : (OfNat.ofNat n : ℕ → ℝ) = n := by
+  iterate 2 cases n; simp; nm n;; rfl
