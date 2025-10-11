@@ -69,3 +69,10 @@ a * b * c + a * b + b * c + c * a ≤ 112 := by
   suffices h₃ : x ^ (2 : ℝ) / 4 + x * (12 - x) ≤ 48; linarith
   suffices h₃ : 0 ≤ (x - 8) ^ 2; simp; linarith
   apply sq_nonneg
+
+end A2 namespace A3 -----
+
+theorem thm_6_div_mul_succ_mul {n : ℕ} : 6 ∣ n * (n + 1) * (2 * n + 1) := by
+  induction n; decide; nm n ih; ring_nf at ih
+  convert_to 6 ∣ n + n ^ 2 * 3 + n ^ 3 * 2 + 6 * (n * 2 + n ^ 2 + 1); ring_nf
+  rw [←Nat.dvd_add_iff_right ih]; simp
