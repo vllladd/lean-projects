@@ -2,64 +2,163 @@ import AP.RealAnalysis.Continuity
 
 namespace RealAnalysis
 
-inductive RationalFn {ι : Type*} :
-({α : Type*} → [Field α] → (ι → α) → α × List α) → Prop
-| lit : (n : ℕ) → RationalFn (λ _ => (n, []))
-| var : (i : ι) → RationalFn (λ F => (F i, []))
-| neg : (f : _) → RationalFn f → RationalFn
-  (λ F => match f F with | (x, cx) => (-x, cx))
-| inv : (f : _) → RationalFn f → RationalFn
-  (λ F => match f F with | (x, cx) => (x⁻¹, x :: cx))
-| add : (f g : _) → RationalFn f → RationalFn g → RationalFn
-  (λ F => match f F, g F with | (x, cx), (y, cy) => (x + y, cx ++ cy))
-| mul : (f g : _) → RationalFn f → RationalFn g → RationalFn
-  (λ F => match f F, g F with | (x, cx), (y, cy) => (x * y, cx ++ cy))
+inductive RationalFn (ι : Type*) where
+| one : RationalFn ι
+| var : ι → RationalFn ι
+| neg : RationalFn ι → RationalFn ι
+| inv : RationalFn ι → RationalFn ι
+| add : RationalFn ι → RationalFn ι → RationalFn ι
+| mul : RationalFn ι → RationalFn ι → RationalFn ι
+
+namespace RationalFn
+
+class Cnd (α : Type*) [ha₁ : AddGroup α] [ha₂ : DivInvMonoid α] where
+  h : ∀ (x : α), x * 0 = 0
+
+instance : Cnd ℝ := ⟨by simp⟩
+instance : Cnd # ℕ → ℝ := ⟨by simp⟩
+
+variable {α : Type*} [ha₁ : AddGroup α] [ha₂ : DivInvMonoid α] [ha₃ : Cnd α]
+variable {ι : Type*} {a b c : RationalFn ι} {F : ι → α}
+
+omit ha₃
+
+instance : One # RationalFn ι := ⟨.one⟩
+theorem one_def : (1 : RationalFn ι) = .one := rfl
+
+instance : Neg # RationalFn ι := ⟨.neg⟩
+theorem neg_def {a : RationalFn ι} : -a = a.neg := rfl
+
+instance : Inv # RationalFn ι := ⟨.inv⟩
+theorem inv_def {a : RationalFn ι} : a⁻¹ = a.inv := rfl
+
+instance : Add # RationalFn ι := ⟨.add⟩
+theorem add_def {a b : RationalFn ι} : a + b = a.add b := rfl
+
+instance : Mul # RationalFn ι := ⟨.mul⟩
+theorem mul_def {a b : RationalFn ι} : a * b = a.mul b := rfl
+
+def sub (a b : RationalFn ι) : RationalFn ι := a + -b
+def div (a b : RationalFn ι) : RationalFn ι := a * b⁻¹
+
+instance : Sub # RationalFn ι := ⟨.sub⟩
+theorem sub_def {a b : RationalFn ι} : a - b = a.sub b := rfl
+
+instance : Div # RationalFn ι := ⟨.div⟩
+theorem div_def {a b : RationalFn ι} : a / b = a.div b := rfl
+
+def zero : RationalFn ι := 1 - 1
+
+instance : Zero # RationalFn ι := ⟨.zero⟩
+theorem zero_def : (0 : RationalFn ι) = .zero := rfl
+
+def pow (a : RationalFn ι) (n : ℕ) : RationalFn ι := match n with
+| 0 => a * 0 + 1
+| n + 1 => a.pow n * a
+
+instance : Pow (RationalFn ι) ℕ := ⟨.pow⟩
+theorem pow_def {a : RationalFn ι} {n : ℕ} : a ^ n = a.pow n := rfl
+
+theorem pow_zero {a : RationalFn ι} : a ^ 0 = a * 0 + 1 := rfl
+theorem pow_succ {a : RationalFn ι} {n : ℕ} : a ^ (n + 1) = a ^ n * a := rfl
+
+def ofNat (n : ℕ) : RationalFn ι := match n with
+| 0 => 0
+| n + 1 => ofNat n + 1
+
+instance {n} : OfNat (RationalFn ι) n := ⟨ofNat n⟩
+theorem ofNat_def {n} : (OfNat.ofNat n : RationalFn ι) = ofNat n := rfl
 
 @[simp]
-theorem RationalFn.lit' {ι : Type*} {n : ℕ} : @RationalFn ι (λ _ => (n, [])) :=
-  RationalFn.lit n
+def eval (a : RationalFn ι) (F : ι → α) : α := match a with
+| .one => 1
+| .var i => F i
+| -a => -a.eval F
+| a⁻¹ => (a.eval F)⁻¹
+| a + b => a.eval F + b.eval F
+| a * b => a.eval F * b.eval F
 
 @[simp]
-theorem RationalFn.var' {ι : Type*} {i : ι} : @RationalFn ι (λ F => (F i, [])) :=
-  RationalFn.var i
+def cnd (a : RationalFn ι) (F : ι → α) : Prop := match a with
+| .one => True
+| .var _ => True
+| -a => a.cnd F
+| a⁻¹ => a.eval F ≠ 0 ∧ a.cnd F
+| a + b => a.cnd F ∧ b.cnd F
+| a * b => a.cnd F ∧ b.cnd F
 
 @[simp]
-theorem RationalFn.neg'.{u, v} {ι : Type u}
-{f : {α : Type v} → [Field α] → (ι → α) → α}
-{cf : {α : Type v} → [Field α] → (ι → α) → List α} :
-@RationalFn ι (λ F => (-f F, cf F)) ↔
-@RationalFn ι (λ F => (f F, cf F)) := by
-  constructor <;> intro h
-  · have h₁ := @RationalFn.neg ι (λ F => (-f F, cf F))
-    simp at h₁; exact h₁ h
-  · exact RationalFn.neg _ h
+theorem eval_sub : (a - b).eval F = a.eval F - b.eval F := by
+  simp [sub_def, sub, sub_eq_add_neg]
 
 @[simp]
-theorem RationalFn.inv'.{u, v} {ι : Type u}
-{f : {α : Type v} → [Field α] → (ι → α) → α}
-{cf : {α : Type v} → [Field α] → (ι → α) → List α} :
-@RationalFn ι (λ F => ((f F)⁻¹, cf F)) ↔
-@RationalFn ι (λ F => (f F, cf F)) ∧
-(∀ {α : Type v} [Field α] (F : ι → α), ∃ xs, cf F = f F :: xs) := by
-  constructor <;> intro h
-  · sorry
-  · exact RationalFn.neg _ h
+theorem eval_div : (a / b).eval F = a.eval F / b.eval F := by
+  simp [div_def, div, div_eq_mul_inv]
 
-#check 0 #exit
+@[simp]
+theorem eval_zero : (0 : RationalFn ι).eval F = 0 := by
+  simp [zero_def, zero]
 
--- example : RationalFn # λ F =>
--- ( (F "L" ^ 2 + 2 * F "L" + F "M") / (3 * F "M" + 2 - F "L" ^ 2)
--- , [3 * F "M" + 2 - F "L" ^ 2]
--- ) := by
---   apply RationalFn.div (λ F => (F "L" ^ 2 + 2 * F "L" + F "M", []))
---     (λ F => (3 * F "M" + 2 - F "L" ^ 2, []))
---   · apply RationalFn.add
+@[simp]
+theorem eval_ofNat_zero : (ofNat 0 : RationalFn ι).eval F = 0 := by
+  simp [ofNat]
 
-#check 0 #exit
+@[simp]
+theorem eval_ofNat_succ {n} : (ofNat (n + 1) : RationalFn ι).eval F =
+(ofNat n : RationalFn ι).eval F + 1 := rfl
+
+include ha₃ in @[simp]
+theorem eval_pow_zero : (a ^ 0).eval F = 1 := by
+  simp [pow_zero, ha₃.h]
+
+include ha₃ in @[simp]
+theorem eval_pow {n : ℕ} : (a ^ n).eval F = a.eval F ^ n := by
+  induction n; simp; nm n ih; simp [_root_.pow_succ, pow_succ, ih]
+
+@[simp]
+theorem cnd_sub : (a - b).cnd F ↔ a.cnd F ∧ b.cnd F := by
+  simp [sub_def, sub]
+
+@[simp]
+theorem cnd_div : (a / b).cnd F ↔ a.cnd F ∧ b.eval F ≠ 0 ∧ b.cnd F := by
+  simp [div_def, div]
+
+@[simp]
+theorem cnd_zero : (0 : RationalFn ι).cnd F := by
+  simp [zero_def, zero]
+
+@[simp]
+theorem cnd_ofNat {n} : (ofNat n : RationalFn ι).cnd F := by
+  induction n <;> simp_all [ofNat]
+
+@[simp]
+theorem cnd_pow {n : ℕ} : (a ^ n).cnd F ↔ a.cnd F := by
+  induction n <;> simp_all [pow_zero, pow_succ]
+
+end RationalFn
+
+theorem tendsTo_of_rationalFn {ι : Type*} {A : ι → ℕ → ℝ} {L : ι → ℝ}
+{f : RationalFn ι} (h₁ : f.cnd L) (h₂ : ∀ i, tendsTo (A i) (L i)) :
+tendsTo (f.eval A) (f.eval L) := by
+  induction f
+  · exact tendsTo_const
+  · apply h₂
+  · nm a ih; exact tendsTo_neg # ih h₁
+  · nm a ih; exact tendsTo_inv h₁.1 # ih h₁.2
+  · nm a b ih₁ ih₂; exact tendsTo_add (ih₁ h₁.1) (ih₂ h₁.2)
+  · nm a b ih₁ ih₂; exact tendsTo_mul (ih₁ h₁.1) (ih₂ h₁.2)
 
 example {a b L M} (ha : tendsTo a L) (hb : tendsTo b M)
 (h : 3 * M + 2 - L ^ 2 ≠ 0) :
 tendsTo ((a ^ 2 + 2 * a + b) / (3 * b + 2 - a ^ 2))
 ((L ^ 2 + 2 * L + M) / (3 * M + 2 - L ^ 2)) := by
-  revert h ha hb; apply Prove.h; simp
-  simp only [Real.ofNat_eq, seq_ofNat_eq]; intros; infer_instance
+  obtain ⟨f, hf⟩ := @hv (RationalFn (Fin 2)) #
+    (.var 0 ^ 2 + 2 * .var 0 + .var 1) /
+    (3 * .var 1 + 2 - .var 0 ^ 2)
+  simp only [Real.ofNat_eq, seq_ofNat_eq, RationalFn.ofNat_def] at h hf ⊢
+  convert_to tendsTo (f.eval ![a, b]) (f.eval ![L, M])
+  iterate 2 simp [hf]; ring_nf
+  convert_to f.cnd ![L, M] at h
+  · simp [hf] at h ⊢; ring_nf
+  apply tendsTo_of_rationalFn h
+  intro i; fin_cases i <;> simpa
