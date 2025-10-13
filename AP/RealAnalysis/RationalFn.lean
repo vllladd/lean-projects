@@ -2,42 +2,60 @@ import AP.RealAnalysis.Continuity
 
 namespace RealAnalysis
 
-class Auto (P : Prop) : Prop where
-  h : P
-
-structure Prove (P : Prop) : Prop where
-  h : P
+inductive RationalFn {ι : Type*} :
+({α : Type*} → [Field α] → (ι → α) → α × List α) → Prop
+| lit : (n : ℕ) → RationalFn (λ _ => (n, []))
+| var : (i : ι) → RationalFn (λ F => (F i, []))
+| neg : (f : _) → RationalFn f → RationalFn
+  (λ F => match f F with | (x, cx) => (-x, cx))
+| inv : (f : _) → RationalFn f → RationalFn
+  (λ F => match f F with | (x, cx) => (x⁻¹, x :: cx))
+| add : (f g : _) → RationalFn f → RationalFn g → RationalFn
+  (λ F => match f F, g F with | (x, cx), (y, cy) => (x + y, cx ++ cy))
+| mul : (f g : _) → RationalFn f → RationalFn g → RationalFn
+  (λ F => match f F, g F with | (x, cx), (y, cy) => (x * y, cx ++ cy))
 
 @[simp]
-theorem Prove.imp {P Q} : Prove (P → Q) ↔ (Auto P → Prove Q) :=
-  ⟨λ ⟨pq⟩ ⟨p⟩ => ⟨pq p⟩, λ pq => ⟨λ p => pq ⟨p⟩ |>.1⟩⟩
+theorem RationalFn.lit' {ι : Type*} {n : ℕ} : @RationalFn ι (λ _ => (n, [])) :=
+  RationalFn.lit n
 
-@[simp low]
-theorem Prove.end {P} : Prove P ↔ Auto P := ⟨(⟨·.1⟩), (⟨·.1⟩)⟩
+@[simp]
+theorem RationalFn.var' {ι : Type*} {i : ι} : @RationalFn ι (λ F => (F i, [])) :=
+  RationalFn.var i
 
-instance {a b L M} [ha : Auto # tendsTo a L] [hb : Auto # tendsTo b M] :
-Auto # tendsTo (a + b) (L + M) := ⟨tendsTo_add ha.1 hb.1⟩
+@[simp]
+theorem RationalFn.neg'.{u, v} {ι : Type u}
+{f : {α : Type v} → [Field α] → (ι → α) → α}
+{cf : {α : Type v} → [Field α] → (ι → α) → List α} :
+@RationalFn ι (λ F => (-f F, cf F)) ↔
+@RationalFn ι (λ F => (f F, cf F)) := by
+  constructor <;> intro h
+  · have h₁ := @RationalFn.neg ι (λ F => (-f F, cf F))
+    simp at h₁; exact h₁ h
+  · exact RationalFn.neg _ h
 
-instance {a b L M} [ha : Auto # tendsTo a L] [hb : Auto # tendsTo b M] :
-Auto # tendsTo (a - b) (L - M) := ⟨tendsTo_sub ha.1 hb.1⟩
+@[simp]
+theorem RationalFn.inv'.{u, v} {ι : Type u}
+{f : {α : Type v} → [Field α] → (ι → α) → α}
+{cf : {α : Type v} → [Field α] → (ι → α) → List α} :
+@RationalFn ι (λ F => ((f F)⁻¹, cf F)) ↔
+@RationalFn ι (λ F => (f F, cf F)) ∧
+(∀ {α : Type v} [Field α] (F : ι → α), ∃ xs, cf F = f F :: xs) := by
+  constructor <;> intro h
+  · sorry
+  · exact RationalFn.neg _ h
 
-instance {a L} [ha : Auto # tendsTo a L] : Auto # tendsTo (-a) (-L) := ⟨tendsTo_neg ha.1⟩
+#check 0 #exit
 
-instance {a L} [ha : Auto # tendsTo a L] [h : Auto # L ≠ (0 : ℕ)] :
-Auto # tendsTo a⁻¹ L⁻¹ where
-  h := by apply tendsTo_inv _ ha.1; simp at h; exact h.1
+-- example : RationalFn # λ F =>
+-- ( (F "L" ^ 2 + 2 * F "L" + F "M") / (3 * F "M" + 2 - F "L" ^ 2)
+-- , [3 * F "M" + 2 - F "L" ^ 2]
+-- ) := by
+--   apply RationalFn.div (λ F => (F "L" ^ 2 + 2 * F "L" + F "M", []))
+--     (λ F => (3 * F "M" + 2 - F "L" ^ 2, []))
+--   · apply RationalFn.add
 
-instance {a b L M} [ha : Auto # tendsTo a L] [hb : Auto # tendsTo b M]
-[h : Auto # M ≠ (0 : ℕ)] : Auto # tendsTo (a / b) (L / M) where
-  h := by apply tendsTo_div _ ha.1 hb.1; simp at h; exact h.1
-
-instance {a b L M} [ha : Auto # tendsTo a L] [hb : Auto # tendsTo b M] :
-Auto # tendsTo (a * b) (L * M) := ⟨tendsTo_mul ha.1 hb.1⟩
-
-instance {a L} {k : ℕ} [ha : Auto # tendsTo a L] :
-Auto # tendsTo (a ^ k) (L ^ k) := ⟨tendsTo_pow ha.1⟩
-
-instance {n : ℕ} : Auto # tendsTo n n := ⟨tendsTo_const_cast⟩
+#check 0 #exit
 
 example {a b L M} (ha : tendsTo a L) (hb : tendsTo b M)
 (h : 3 * M + 2 - L ^ 2 ≠ 0) :
