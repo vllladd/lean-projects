@@ -67,17 +67,27 @@ theorem DState.aStrat_mkFold_eq_of_tr {s s' s₁ p} {z : α} {fa fd} [hs : DStat
   simp [h₄]; simp_all only [Option.some.injEq, exists_eq_left']
 
 theorem AStrat.mkFold_ind {s z fa fd n} {d : DStrat} {p : State → α → Prop}
-[hs : sys.WF s] [hd : d.WF] (h₀ : p s z) (h₁ : ∀ sa [AState sa] acc, p sa acc →
+[hs : sys.WF s] [hd : d.WF] (h₀ : p s z)
+(h₁ : ∀ sa [AState sa] acc, sys.Reachable s sa → p sa acc →
 ∃ sd, sys.tr sa (fa sa acc).1 = some sd ∧ p sd (fa sa acc).2)
-(h₂ : ∀ sd [DState sd] sa [AState sa] p₁ acc, sys.tr sd p₁ = some sa → p sd acc → 
-p sa (fd sd p₁ acc)) : ∃ s₁ acc, sys.simulate (Strat.f ⟨AStrat.mkFold s z fa fd, d⟩)
+(h₂ : ∀ sd [DState sd] sa [AState sa] p₁ acc, sys.Reachable s sd →
+sys.tr sd p₁ = some sa → p sd acc →  p sa (fd sd p₁ acc)) :
+∃ s₁ acc, sys.simulate (Strat.f ⟨AStrat.mkFold s z fa fd, d⟩)
 s n = (s₁, 0) ∧ p s₁ acc := by
   induction n generalizing s z; simp; use z; nm n ih
   replace hs := s.aState_or_dState; rcases hs with hs | hs
-  · specialize h₁ s z h₀
+  · have h₁' := h₁
+    specialize h₁ s z (by rfl) h₀
     obtain ⟨s', h₁, h₃⟩ := h₁
     have hs' := sys.wf_of_tr h₁
-    specialize ih h₃
+    specialize ih h₃ _ _
+    · intro sa hsa acc H H₁; apply h₁'
+      · exact System.Reachable.step h₁ H
+      · exact H₁
+    · intro sd hsd sa hsa p₁ acc H H₁ H₂; apply h₂
+      · exact System.Reachable.step h₁ H
+      · exact H₁
+      · exact H₂
     obtain ⟨s₁, acc, H₁, H₂⟩ := ih
     use s₁, acc
     refine ⟨?_, H₂⟩
@@ -89,8 +99,16 @@ s n = (s₁, 0) ∧ p s₁ acc := by
     exact sys.reachable_of_simulate_full h₄
   · obtain ⟨s', h₃⟩ := d.validTr s
     have hs' := AState.of_tr h₃
-    specialize h₂ s s' (d.f s) z h₃ h₀
-    specialize ih h₂
+    have h₂' := h₂
+    specialize h₂ s s' (d.f s) z (by rfl) h₃ h₀
+    specialize ih h₂ _ _
+    · intro sa hsa acc H H₁; apply h₁
+      · exact System.Reachable.step h₃ H
+      · exact H₁
+    · intro sd hsd sa hsa p₁ acc H H₁ H₂; apply h₂'
+      · exact System.Reachable.step h₃ H
+      · exact H₁
+      · exact H₂
     obtain ⟨s₁, acc, H₁, H₂⟩ := ih
     use s₁, acc
     refine ⟨?_, H₂⟩

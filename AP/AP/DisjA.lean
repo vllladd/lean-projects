@@ -212,6 +212,20 @@ def aDisjEraseTaken (s s' : State) (p : PointZ) (a : AStrat) (fsp : FSP) : AStra
 instance {s s' p a fsp} : (aDisjEraseTaken s s' p a fsp).WF := by
   unfold aDisjEraseTaken; infer_instance
 
+structure DisjEraseTaken.cnd (w₀ w : DisjEraseTaken) (s' s₁' : State) (n : ℕ) : Prop where
+  h₁ : s₁'.hist.length - s'.hist.length = n
+  h₂ : w.n = n
+  h₃ : ∃ (ps : List PointZ), ps.length = n ∧ sys.trs w₀.s ps = (w.s, [])
+  h₄ : w.p ∈ w.s.taken
+  h₅ : s₁'.taken = w.s.taken.erase w.p
+  h₆ : w.s.aForallWinsDisj w.fsp w.a
+  h₇ : ∀ (d : DStrat) [d.WF], ∀ k ≤ n, ∃ s₂, sys.simulate (Strat.f ⟨w.a, d⟩) s₁' k =
+    (s₂, 0) ∧ ¬w.fsp.hasLe n s₂.aPos
+  h₈ : w.a = w₀.a
+  h₉ : w.fsp = w₀.fsp.offset n
+
+-- #check 0 #exit
+
 theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
 (hpa : s'.aPos = s.aPos) (hp : s'.taken = s.taken.erase p) : s'.aHwsDisj fsp := by
@@ -227,37 +241,45 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   have H := AStrat.mkFold_ind (α := DisjEraseTaken)
     (z := ⟨a, s, p, fsp, 0⟩) (s := s') (d := d) (n := n)
     (fa := λ _ => aDisjEraseTaken_fa) (fd := λ _ => aDisjEraseTaken_fd)
-    (p := λ s₁' ⟨a', s₁, p, fsp', n⟩ => a = a' ∧ fsp.offset n = fsp' ∧
-    s₁'.hist.length - s'.hist.length = n ∧ s₁'.aPos = s₁.aPos ∧
-    s₁.aForallWinsDisj fsp a ∧ s₁.aPos ∉ fsp'.get 0)
-  -- simp only [exists_and_right, exists_and_left] at H
-  dsimp at H
+    (p := λ s₁' w => DisjEraseTaken.cnd ⟨a, s, p, fsp, 0⟩ w s' s₁' #
+      s₁'.hist.length - s'.hist.length)
   specialize H _ _ _
-  · clear H; simp_all only [tsub_self, true_and]
-    exact aPos_not_mem_fsp_get_zero_of_aWinsDisj (h d hd)
+  -- · clear H; simp_all only [tsub_self, true_and]
+  --   exact aPos_not_mem_fsp_get_zero_of_aWinsDisj (h d hd)
+  -- · clear H
+  --   rintro sa hsa ⟨a', s₁, p₁, fsp', n'⟩
+  --   dsimp
+  --   rintro ⟨rfl, rfl, H₁, H₂, H₃, H₄⟩
+  --   have H₅ := H₃ default inferInstance 1
+  --   obtain ⟨sd, H₅, H₆⟩ := H₅
+  --   simp at H₅; split at H₅; simp at H₅
+  --   nm x sd' H₇; clear x
+  --   simp at H₅; subst H₅
+  --   sorry
+  -- · clear H; clear! a fsp p
+  --   sorry
   · clear H
-    rintro sa hsa ⟨a', s₁, p₁, fsp', n'⟩
-    dsimp
-    rintro ⟨rfl, rfl, H₁, H₂, H₃, H₄⟩
-    have H₅ := H₃ default inferInstance 1
-    obtain ⟨sd, H₅, H₆⟩ := H₅
-    simp at H₅; split at H₅; simp at H₅
-    nm x sd' H₇; clear x
-    simp at H₅; subst H₅
+    constructor <;> simp <;> try assumption
+    intro d hd
+    specialize h d hd 0
+    simp at h
+    simpa [hpa]
+  · clear H
     sorry
-  · clear H; clear! a fsp p
+  · clear H
     sorry
-  obtain ⟨s₁, ⟨a', s₁', p₁, fsp', n'⟩, H₁, H₂, H₃, H₄, H₅, H₆, H₇⟩ := H
-  dsimp at H₁ H₂ H₃ H₄ H₅ H₆ H₇
-  subst H₂ H₃ H₄
+  obtain ⟨s₁, ⟨a', s₁', p₁, fsp', n'⟩, H₁, H₂⟩ := H
+  rcases H₂ with ⟨G₁, G₂, H₃, H₄, H₅, H₆, G₇, G₈, G₉⟩
+  dsimp at *
+  subst G₈
   use s₁, H₁
-  simp at H₇
-  unfold FSP.hasLe
-  simp
-  rw [length_hist_sub_eq_of_simulate H₁] at H₇
-  simpa [H₅]
+  rw [length_hist_sub_eq_of_simulate H₁] at G₉
+  specialize G₇ default 0 (by simp)
+  simp [G₉] at G₇
+  contrapose! G₇
+  exact fsp.hasLe_of_add_left G₇
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)

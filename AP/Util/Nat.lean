@@ -404,3 +404,9 @@ theorem odd_or_even₁ {n : ℕ} : Odd n ∨ Even n :=
 theorem eventually_or_of {p q : ℕ → Prop}
 (h : eventually p ∨ eventually q) : eventually (λ n => p n ∨ q n) := by
   rcases h with ⟨N, h⟩ | ⟨N, h⟩ <;> use N <;> intro n hn <;> simp_all
+
+theorem ite_odd {α : Type*} {n : ℕ} {x y : α} : ite (Odd n) x y = ite (Even n) y x := by
+  simp_rw [←not_odd_iff_even, ite_not]
+
+theorem ite_even {α : Type*} {n : ℕ} {x y : α} : ite (Even n) x y = ite (Odd n) y x :=
+  ite_odd.symm

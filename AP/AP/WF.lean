@@ -1,16 +1,5 @@
 import AP.AP.FSP
 
-namespace Nat
-
-theorem ite_odd {α : Type*} {n : ℕ} {x y : α} :
-ite (Odd n) x y = ite (Even n) y x := by
-  simp_rw [←not_odd_iff_even, ite_not]
-
-theorem ite_even {α : Type*} {n : ℕ} {x y : α} :
-ite (Even n) x y = ite (Odd n) y x := ite_odd.symm
-
-end Nat
-
 namespace AP
 
 structure WFCnd (s : State) : Prop where
