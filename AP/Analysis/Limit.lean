@@ -688,17 +688,23 @@ theorem limit_le_of_forall_le {a L K} (h₁ : tendsTo a L) (h₂ : ∀ n, a n �
 theorem le_limit_of_forall_le {a L K} (h₁ : tendsTo a L) (h₂ : ∀ n, K ≤ a n) : K ≤ L := by
   have h₃ := limit_le_of_forall_le (K := -K) # tendsTo_neg h₁; simp at h₃; exact h₃ h₂
 
-theorem nat_le_of_forall_lt_apply_succ {a : ℕ → ℕ} {n}
-(h : ∀ n, a n < a (n + 1)) : n ≤ a n := by
+def subseq (σ : ℕ → ℕ) : Prop :=
+  ∀ i j, i < j → σ i < σ j
+
+theorem nat_le_of_forall_lt_apply_succ {σ : ℕ → ℕ} {n}
+(h : ∀ n, σ n < σ (n + 1)) : n ≤ σ n := by
   induction n; simp; nm n ih; rw [Nat.succ_le_iff]; exact lt_of_le_of_lt ih # h _
 
-theorem nat_le_of_forall_lt_of_lt {a : ℕ → ℕ} {n}
-(h : ∀ i j, i < j → a i < a j) : n ≤ a n := by
+theorem nat_le_of_subseq {σ n} (h : subseq σ) : n ≤ σ n := by
   apply nat_le_of_forall_lt_apply_succ; intro k; apply h; simp
 
-theorem tendsTo_subseq {a L} {σ : ℕ → ℕ} (h₁ : tendsTo a L)
-(h₂ : ∀ i j, i < j → σ i < σ j) : tendsTo (a ∘ σ) L := by
+theorem tendsTo_subseq {a σ L} (h₁ : tendsTo a L)
+(h₂ : subseq σ) : tendsTo (a ∘ σ) L := by
   intro e he; specialize h₁ e he; obtain ⟨N, h₁⟩ := h₁
   use N; intro n hn; apply h₁; clear h₁; clear! e
   rw [←Nat.lt_succ_iff, Nat.succ_eq_add_one] at hn ⊢
-  apply lt_of_lt_of_le hn; simp; exact nat_le_of_forall_lt_of_lt h₂
+  apply lt_of_lt_of_le hn; simp; exact nat_le_of_subseq h₂
+
+theorem exi_subseq_tendsTo_of_neg_one_pow :
+∃ σ L, subseq σ ∧ tendsTo (((-1 : ℝ) ^ ·) ∘ σ) L := by
+  use (· * 2), 1, λ i j h => by linarith;; simp; exact tendsTo_const
