@@ -683,3 +683,11 @@ theorem converges_pow {a} {k : ℕ} (ha : converges a) : converges (a ^ k) := by
 
 theorem seq_ofNat_eq {n} : (OfNat.ofNat n : ℕ → ℝ) = n := by
   iterate 2 cases n; simp; nm n;; rfl
+
+theorem limit_le_of_forall_le {a L K} (h₁ : tendsTo a L) (h₂ : ∀ n, a n ≤ K) : L ≤ K := by
+  by_contra! h₃; specialize h₁ ((L - K) / 2) # by linarith
+  obtain ⟨N, h₁⟩ := h₁; specialize h₁ N # by rfl
+  specialize h₂ N; rw [abs_lt] at h₁; linarith
+
+theorem le_limit_of_forall_le {a L K} (h₁ : tendsTo a L) (h₂ : ∀ n, K ≤ a n) : K ≤ L := by
+  have h₃ := limit_le_of_forall_le (K := -K) # tendsTo_neg h₁; simp at h₃; exact h₃ h₂
