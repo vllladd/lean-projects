@@ -1,5 +1,16 @@
 import AP.AP.FSP
 
+namespace Nat
+
+theorem ite_odd {α : Type*} {n : ℕ} {x y : α} :
+ite (Odd n) x y = ite (Even n) y x := by
+  simp_rw [←not_odd_iff_even, ite_not]
+
+theorem ite_even {α : Type*} {n : ℕ} {x y : α} :
+ite (Even n) x y = ite (Odd n) y x := ite_odd.symm
+
+end Nat
+
 namespace AP
 
 structure WFCnd (s : State) : Prop where
@@ -31,7 +42,120 @@ theorem State.exi_hist_wf_of_not_aTurn_and_taken_eq_empty {s : State}
   rw [Option.iget]
   ext:1 <;> simp [ht, h₁]
 
--- #check 0 #exit
+theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken : Set' PointZ}
+(h₁ : p₁ ≠ p₂)
+(h₃ : p₁ ∉ taken)
+(h₄ : p₂ ∉ taken)
+(h₂ : Point.dist p₁ p₂ ≤ ↑s.pw)
+(hn : (s.taken.size * 2 - if s.aTurn = true then 1 else 0) = 0)
+(h₆ : s.aPos = if Odd (s.taken.size + if s.aTurn = true then 0 else 1) then p₁ else p₂)
+(h₅ : s.taken ⊆ taken)
+(H : s.aTurn = true → s.taken ≠ ∅) :
+∃ hist, sys.WF (s.setHist hist) := by
+  by_cases H₁ : s.taken = ∅
+  · simp [H₁] at H; exact exi_hist_wf_of_not_aTurn_and_taken_eq_empty H H₁
+  clear H
+  rw [Nat.sub_eq_zero_iff_le] at hn
+  replace hn : s.taken.size * 2 ≤ 1; apply hn.trans; simp
+  replace hn : s.taken.size / 2 ≤ 1 / 2; omega
+  simp [Nat.lt_succ, Nat.le_one_iff, H₁] at hn
+  simp [hn, Nat.one_add] at h₆
+  have H₃ : s.aPos ∉ s.taken
+  · split_ifs at h₆ <;> subst h₆ <;> apply Set'.not_mem_of_subset h₅ <;> assumption
+  obtain ⟨p, hp⟩ := Set'.exi_mem_of_ne_empty H₁
+  have H₂ : s.aPos ≠ p; rintro rfl; contradiction
+  replace hn := Set'.eq_insert_empty_of_size_eq_one hn hp
+  by_cases ht : s.aTurn <;> simp at ht <;> simp [ht] at h₆ <;> subst h₆
+  · use [p, s.aPos]
+    rw [wf_iff]
+    use [p]
+    simp [sys, move, dMove]
+    rw [Option.iget]
+    simp [H₂]
+    ext:1 <;> simp [hn, ht]
+  · have H₄ : p₁ ≠ p
+    · rintro rfl; exact h₃ # h₅ p₁ hp
+    use [s.aPos, p, p₁]
+    rw [wf_iff]
+    use [p, s.aPos]
+    simp [sys, move, aMove, dMove]
+    rw [Option.iget]
+    rw [Point.dist_comm] at h₂
+    simp [h₁, H₄, H₂, h₂]
+    ext:1 <;> simp [hn, ht]
+
+theorem State.exi_hist_wf_of_exi_p2 {s : State} {p₁ p₂ : PointZ}
+(hpw : s.pw ≠ 0)
+(h₁ : p₁ ≠ p₂)
+(h₂ : p₁.dist p₂ ≤ s.pw)
+(h₃ : p₁ ∉ s.taken)
+(h₄ : p₂ ∉ s.taken)
+(ha : s.aPos = p₁)
+(ht : s.aTurn = false)
+(h₇ : Even s.taken.size) :
+∃ hist, sys.WF # s.setHist hist := by
+  by_cases H : s.taken = ∅
+  · exact exi_hist_wf_of_not_aTurn_and_taken_eq_empty ht H
+  generalize h₅ : s.taken = taken at h₃ h₄
+  generalize hn : (s.taken.size * 2 - ite s.aTurn 1 0) = n
+  have h₆ : s.aPos = if Odd # s.taken.size + ite s.aTurn 0 1 then p₁ else p₂
+  · simp [ha, ht]
+    intro h
+    rw [←Nat.not_even_iff_odd] at h
+    contradiction
+  replace h₅ : s.taken ⊆ taken; simp [←h₅]
+  replace H : s.aTurn = true → s.taken ≠ ∅; tauto
+  clear ha ht h₇
+  induction n generalizing s
+  · exact s.exi_hist_wf_of_exi_p2_aux h₁ h₃ h₄ h₂ hn h₆ h₅ H
+  nm n ih
+  have H₃ : s.aPos ∉ s.taken
+  · rw [h₆]; split_ifs <;> apply Set'.not_mem_of_subset h₅ <;> assumption
+  by_cases ht : s.aTurn
+  · simp [ht] at hn h₆; specialize H ht
+    cases H₁ : s.taken.size; simp [H] at H₁; nm k
+    obtain ⟨p, hp⟩ := Set'.exi_mem_of_ne_empty H
+    generalize hs₁ : {s with taken := s.taken.erase p, aTurn := false} = s₁
+    specialize @ih s₁
+    simp [H₁, Nat.succ_mul] at hn h₆
+    simp [←hs₁, Set'.size_erase hp, H₁] at ih
+    specialize ih hpw h₂ hn h₆ _
+    · apply Set'.subset_trans _ h₅; simp
+    obtain ⟨hist, ih⟩ := ih
+    replace ih : sys.WF # s₁.setHist hist
+    · convert ih using 1; simp [←hs₁]
+    have H₂ : sys.tr (s₁.setHist hist) p = some (s.setHist # p :: hist)
+    · simp [←hs₁, sys, move, dMove]
+      constructor
+      · rintro rfl; contradiction
+      ext:1 <;> simp [ht, Set'.insert_erase_eq_of_mem hp]
+    exact ⟨_, sys.wf_of_tr H₂⟩
+  · simp at ht; simp [ht] at hn h₆
+    clear H
+    by_cases H : s.taken = ∅
+    · exact exi_hist_wf_of_not_aTurn_and_taken_eq_empty ht H
+    cases H₁ : s.taken.size; simp [H] at H₁; nm k
+    generalize hs₁ :
+      {s with
+        aPos := if Even s.taken.size then p₂ else p₁
+      , aTurn := true} = s₁
+    specialize @ih s₁
+    simp [H₁, Nat.succ_mul] at hn h₆
+    simp [←hs₁, H₁, Nat.succ_mul] at ih
+    specialize ih hpw h₂ hn _ _ H
+    · simp [Nat.ite_odd]
+    · apply Set'.subset_trans _ h₅; simp
+    obtain ⟨hist, ih⟩ := ih
+    replace ih : sys.WF # s₁.setHist hist
+    · convert ih using 1; simp [←hs₁, H₁]
+    have H₂ : sys.tr (s₁.setHist hist) s.aPos = some (s.setHist # s.aPos :: hist)
+    · simp [←hs₁, sys, move, aMove, H₁]
+      symm; constructor
+      · ext:1 <;> simp [ht]
+      split_ifs at h₆ ⊢ with H₄ <;> subst h₆
+      · use ne_symm' h₁
+      · rw [Point.dist_comm]; use h₁
+    exact ⟨_, sys.wf_of_tr H₂⟩
 
 theorem State.exi_hist_wf_of_wfCnd_and_not_aTurn {s} (h : WFCnd s)
 (ht : s.aTurn = false) : ∃ hist, sys.WF # s.setHist hist := by
@@ -42,35 +166,45 @@ theorem State.exi_hist_wf_of_wfCnd_and_not_aTurn {s} (h : WFCnd s)
   simp [isSome_aMove_iff] at h₃
   by_cases h₁ : s.pw = 0; simp [h₁] at h₃; tauto
   rcases h₃ with ⟨h₃, h₄, h₅⟩
-  
-  -- generalize ha : AStrat.mk (λ s' => if s'.aPos = s.aPos then p else s.aPos) = a
-  -- generalize hd : DStrat.mk (λ s' => choose? (· ∈ s'.taken \ s.taken)) = d
-  -- have Ha : a.WF; rw [←ha]; infer_instance
-  -- have Hd : d.WF; rw [←hd]; infer_instance
-  
-  -- suffices h₆ : ∃ s', sys.WF s' ∧ s'.pw = s.pw ∧ s'.taken ⊆ s.taken ∧
-  --   s'.aPos = if s'.aTurn ∧ Odd s'.taken.size then s.aPos else p
-  -- · obtain ⟨s', H₁, H₂, H₃, H₄⟩ := h₆
-  
-  generalize hp₁ : s.aPos = p₁
-  have H₁ : p₁ ≠ p₂; rwa [←hp₁]
-  
-  -- Use better condition for `H₂` (involving `n`)
-  -- have H₂ : s.aPos = p₁ ∨ s.aPos = p₂; left; exact hp₁
-  
-  have H₃ : p₁ ∉ s.taken; rw [←hp₁]; exact h.aPos_not_mem_taken
-  
-  generalize hn : (s.taken.size + if s.aTurn then 1 else 0) = n
-  clear ht h₂ h₃ h₅ hp₁
-  
-  induction n generalizing s
-  · simp at hn; exact exi_hist_wf_of_not_aTurn_and_taken_eq_empty hn.2 hn.1
-  nm n ih
-  -- split_ifs at hn with ht
-  -- · simp at hn
-  sorry
-
--- #check 0 #exit
+  have h₀ := h.aPos_not_mem_taken
+  have h₅' := h₅; rw [Point.dist_comm] at h₅'
+  rcases s.taken.size.odd_or_even₁.symm with h₆ | h₆
+  · exact @s.exi_hist_wf_of_exi_p2 s.aPos p₂ h₁ h₃ h₅' h₀ h₄ rfl ht h₆
+  generalize hs₁ : {s with aPos := p₂, aTurn := true, hist := []} = s₁
+  have H₁ : sys.tr s₁ s.aPos = some (s.setHist [s.aPos])
+  · simp [←hs₁, sys, move, aMove, ne_symm' h₃, h₀, h₅']
+    ext:1 <;> simp [ht]
+  obtain ⟨p, hp⟩ := Set'.exi_mem_of_ne_empty h₂
+  generalize hs₂ :
+    { s with
+      aPos := p₂
+    , taken := s.taken.erase p
+    , aTurn := false
+    , hist := []} = s₂
+  have G₁ : p ≠ p₂
+  · rintro rfl; contradiction
+  have H₂ : sys.tr s₂ p = some (s₁.setHist [p])
+  · simp [←hs₁, ←hs₂, sys, move, dMove, ne_symm' G₁]
+    ext:1 <;> simp; exact Set'.insert_erase_eq_of_mem hp
+  cases H₃ : s.taken.size; simp [h₂] at H₃; nm k
+  simp [H₃] at h₆
+  have G₂ : Even s₂.taken.size
+  · simpa [←hs₂, Set'.size_erase hp, H₃]
+  have G₃ := @s₂.exi_hist_wf_of_exi_p2 p₂ s.aPos
+  simp [←hs₂] at G₃
+  specialize G₃ h₁ (ne_symm' h₃) h₅ (λ _ => h₄) (λ _ => h₀) _
+  · simpa [Set'.size_erase hp, H₃]
+  obtain ⟨hist, G₃⟩ := G₃
+  use s.aPos :: p :: hist
+  have H₄ : sys.tr (s₂.setHist hist) p = some (s₁.setHist (p :: hist))
+  · simp; use s₁.setHist [p]; simpa
+  have H₅ : sys.tr (s₁.setHist (p :: hist)) s.aPos =
+    some (s.setHist (s.aPos :: p :: hist))
+  · simp; use s.setHist [s.aPos]; simpa
+  replace G₃ : sys.WF # s₂.setHist hist
+  · convert G₃ using 1; simp [←hs₂]
+  have H₆ := sys.wf_of_tr H₄
+  exact sys.wf_of_tr H₅
 
 theorem State.exi_hist_wf_of_wfCnd {s} (h : WFCnd s) : ∃ hist, sys.WF # s.setHist hist := by
   cases ht : s.aTurn

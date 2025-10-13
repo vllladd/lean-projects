@@ -740,3 +740,7 @@ theorem eq_insert_empty_of_size_eq_one {x}
 (h : s.size = 1) (hx : x ∈ s) : s = (∅ : Set' α).insert x := by
   ext y; simp; symm; constructor; rintro rfl; exact hx
   intro hy; exact eq_of_size_eq_one_and_mem h hy hx
+
+@[simp]
+theorem erase_subset {x} : s.erase x ⊆ s := by
+  intro y; simp
