@@ -1,4 +1,4 @@
-import AP.Analysis.Limit
+import AP.RealAnalysis.Limit
 
 namespace RealAnalysis
 

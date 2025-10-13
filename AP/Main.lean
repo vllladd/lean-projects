@@ -3,7 +3,7 @@ import AP.Misc
 import AP.AP
 import AP.Sokoban
 import AP.RatRect
-import AP.Analysis
+import AP.RealAnalysis
 import AP.DigitalRoot
 import AP.Physics
 
