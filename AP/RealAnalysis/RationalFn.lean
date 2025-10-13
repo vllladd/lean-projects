@@ -159,6 +159,6 @@ tendsTo ((a ^ 2 + 2 * a + b) / (3 * b + 2 - a ^ 2))
   convert_to tendsTo (f.eval ![a, b]) (f.eval ![L, M])
   iterate 2 simp [hf]; ring_nf
   convert_to f.cnd ![L, M] at h
-  · simp [hf] at h ⊢; ring_nf
+  · simp [hf] at ⊢; ring_nf
   apply tendsTo_of_rationalFn h
   intro i; fin_cases i <;> simpa

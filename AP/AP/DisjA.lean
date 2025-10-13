@@ -279,7 +279,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   contrapose! G₇
   exact fsp.hasLe_of_add_left G₇
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
