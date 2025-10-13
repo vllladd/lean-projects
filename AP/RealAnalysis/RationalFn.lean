@@ -138,27 +138,23 @@ theorem cnd_pow {n : ℕ} : (a ^ n).cnd F ↔ a.cnd F := by
 end RationalFn
 
 theorem tendsTo_of_rationalFn {ι : Type*} {A : ι → ℕ → ℝ} {L : ι → ℝ}
-{f : RationalFn ι} (h₁ : f.cnd L) (h₂ : ∀ i, tendsTo (A i) (L i)) :
+{f : RationalFn ι} (h₁ : ∀ i, tendsTo (A i) (L i)) (h₂ : f.cnd L) :
 tendsTo (f.eval A) (f.eval L) := by
   induction f
   · exact tendsTo_const
-  · apply h₂
-  · nm a ih; exact tendsTo_neg # ih h₁
-  · nm a ih; exact tendsTo_inv h₁.1 # ih h₁.2
-  · nm a b ih₁ ih₂; exact tendsTo_add (ih₁ h₁.1) (ih₂ h₁.2)
-  · nm a b ih₁ ih₂; exact tendsTo_mul (ih₁ h₁.1) (ih₂ h₁.2)
+  · apply h₁
+  · nm a ih; exact tendsTo_neg # ih h₂
+  · nm a ih; exact tendsTo_inv h₂.1 # ih h₂.2
+  · nm a b ih₁ ih₂; exact tendsTo_add (ih₁ h₂.1) (ih₂ h₂.2)
+  · nm a b ih₁ ih₂; exact tendsTo_mul (ih₁ h₂.1) (ih₂ h₂.2)
 
 example {a b L M} (ha : tendsTo a L) (hb : tendsTo b M)
 (h : 3 * M + 2 - L ^ 2 ≠ 0) :
 tendsTo ((a ^ 2 + 2 * a + b) / (3 * b + 2 - a ^ 2))
 ((L ^ 2 + 2 * L + M) / (3 * M + 2 - L ^ 2)) := by
-  obtain ⟨f, hf⟩ := @hv (RationalFn (Fin 2)) #
+  revert h; obtain ⟨f, hf⟩ := @hv (RationalFn # Fin 2) #
     (.var 0 ^ 2 + 2 * .var 0 + .var 1) /
     (3 * .var 1 + 2 - .var 0 ^ 2)
-  simp only [Real.ofNat_eq, seq_ofNat_eq, RationalFn.ofNat_def] at h hf ⊢
-  convert_to tendsTo (f.eval ![a, b]) (f.eval ![L, M])
-  iterate 2 simp [hf]; ring_nf
-  convert_to f.cnd ![L, M] at h
-  · simp [hf] at ⊢; ring_nf
-  apply tendsTo_of_rationalFn h
-  intro i; fin_cases i <;> simpa
+  simp only [Real.ofNat_eq, seq_ofNat_eq, RationalFn.ofNat_def] at hf ⊢
+  convert_to f.cnd ![L, M] → tendsTo (f.eval ![a, b]) (f.eval ![L, M]) using 0
+  simp [hf]; ring_nf; apply tendsTo_of_rationalFn; intro i; fin_cases i <;> simpa
