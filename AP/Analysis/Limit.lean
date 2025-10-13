@@ -638,10 +638,6 @@ theorem boundedBy_zero_iff_const_zero {a : ℕ → ℝ} : boundedBy a 0 ↔ a = 
   simp only [boundedBy, abs_nonpos_iff]; symm
   constructor; rintro rfl; simp; intro h; ext; simp [h]
 
-theorem nat_le_of_forall_lt_apply_succ {a : ℕ → ℕ} {n}
-(h : ∀ n, a n < a (n + 1)) : n ≤ a n := by
-  induction n; simp; nm n ih; rw [Nat.succ_le_iff]; exact lt_of_le_of_lt ih # h _
-
 theorem limit_eq_of_tendsTo {a L} (h : tendsTo a L) : limit a = L :=
   epsilon_eq_of h # λ _ h₁ => tendsTo_unique h₁ h
 
@@ -691,3 +687,18 @@ theorem limit_le_of_forall_le {a L K} (h₁ : tendsTo a L) (h₂ : ∀ n, a n �
 
 theorem le_limit_of_forall_le {a L K} (h₁ : tendsTo a L) (h₂ : ∀ n, K ≤ a n) : K ≤ L := by
   have h₃ := limit_le_of_forall_le (K := -K) # tendsTo_neg h₁; simp at h₃; exact h₃ h₂
+
+theorem nat_le_of_forall_lt_apply_succ {a : ℕ → ℕ} {n}
+(h : ∀ n, a n < a (n + 1)) : n ≤ a n := by
+  induction n; simp; nm n ih; rw [Nat.succ_le_iff]; exact lt_of_le_of_lt ih # h _
+
+theorem nat_le_of_forall_lt_of_lt {a : ℕ → ℕ} {n}
+(h : ∀ i j, i < j → a i < a j) : n ≤ a n := by
+  apply nat_le_of_forall_lt_apply_succ; intro k; apply h; simp
+
+theorem tendsTo_subseq {a L} {σ : ℕ → ℕ} (h₁ : tendsTo a L)
+(h₂ : ∀ i j, i < j → σ i < σ j) : tendsTo (a ∘ σ) L := by
+  intro e he; specialize h₁ e he; obtain ⟨N, h₁⟩ := h₁
+  use N; intro n hn; apply h₁; clear h₁; clear! e
+  rw [←Nat.lt_succ_iff, Nat.succ_eq_add_one] at hn ⊢
+  apply lt_of_lt_of_le hn; simp; exact nat_le_of_forall_lt_of_lt h₂
