@@ -5,6 +5,7 @@ import AP.Sokoban
 import AP.RatRect
 import AP.Analysis
 import AP.DigitalRoot
+import AP.Physics
 
 namespace AP
 
