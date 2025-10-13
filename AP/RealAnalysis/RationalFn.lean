@@ -153,8 +153,7 @@ example {a b L M} (ha : tendsTo a L) (hb : tendsTo b M)
 tendsTo ((a ^ 2 + 2 * a + b) / (3 * b + 2 - a ^ 2))
 ((L ^ 2 + 2 * L + M) / (3 * M + 2 - L ^ 2)) := by
   revert h; obtain ⟨f, hf⟩ := @hv (RationalFn # Fin 2) #
-    (.var 0 ^ 2 + 2 * .var 0 + .var 1) /
-    (3 * .var 1 + 2 - .var 0 ^ 2)
+    (.var 0 ^ 2 + 2 * .var 0 + .var 1) / (3 * .var 1 + 2 - .var 0 ^ 2)
   simp only [Real.ofNat_eq, seq_ofNat_eq, RationalFn.ofNat_def] at hf ⊢
   convert_to f.cnd ![L, M] → tendsTo (f.eval ![a, b]) (f.eval ![L, M]) using 0
   simp [hf]; ring_nf; apply tendsTo_of_rationalFn; intro i; fin_cases i <;> simpa
