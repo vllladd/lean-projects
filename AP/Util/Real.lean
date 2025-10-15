@@ -94,10 +94,21 @@ noncomputable
 def euclideanDist {n : ℕ} (a b : Fin n → ℝ) : ℝ :=
   euclideanNorm (a - b)
 
+theorem euclideanDist_triangle_aux₁ {a b x y : ℝ} :
+a * b + x * y ≤ b ^ 2 + √((x ^ 2 + b ^ 2) * (y ^ 2 + (a - b) ^ 2)) := by
+  suffices : a * b + x * y - b ^ 2 ≤ √((x ^ 2 + b ^ 2) * (y ^ 2 + (a - b) ^ 2))
+  · linarith
+  apply le_of_sq_le_sq _ # by positivity
+  rw [sq_sqrt # by positivity]
+  ring_nf
+  suffices h : 0 ≤ x ^ 2 * (a - b) ^ 2 - 2 * (x * (a - b)) * (y * b) + y ^ 2 * b ^ 2
+  · linarith
+  simp only [←mul_pow, ←sub_sq]
+  positivity
+
 theorem euclideanDist_triangle {n : ℕ} {a b c : Fin n → ℝ} :
 euclideanDist a c ≤ euclideanDist a b + euclideanDist b c := by
-  unfold euclideanDist euclideanNorm
-  dsimp
+  dsimp [euclideanDist, euclideanNorm]
   induction n; simp
   nm n ih
   specialize @ih (λ ⟨i, h⟩ => a ⟨i, by linarith⟩) (λ ⟨i, h⟩ => b ⟨i, by linarith⟩)
@@ -105,18 +116,77 @@ euclideanDist a c ≤ euclideanDist a b + euclideanDist b c := by
   simp at ih
   simp_rw [Finset.sum_fin_eq_sum_range] at ih ⊢
   simp [Finset.range_succ]
-  generalize hx : (∑ i ∈ Finset.range n, if h : i < n
-    then (a ⟨i, by linarith⟩ - c ⟨i, by linarith⟩) else 0) = x
-  generalize hy : (∑ i ∈ Finset.range n, if h : i < n
-    then (b ⟨i, by linarith⟩ - c ⟨i, by linarith⟩) else 0) = y
-  generalize hz : (∑ i ∈ Finset.range n, if h : i < n
-    then (c ⟨i, by linarith⟩ - c ⟨i, by linarith⟩) else 0) = z
-  convert_to √((a ⟨n, by linarith⟩ - c ⟨n, by linarith⟩) ^ 2 + x) ≤
-    √((a ⟨n, by linarith⟩ - b ⟨n, by linarith⟩) ^ 2 + y) +
-    √((b ⟨n, by linarith⟩ - c ⟨n, by linarith⟩) ^ 2 + z)
-  · simp [←hx]
-    congr
-
-#check 0 #exit
+  let f (a b : Fin (n + 1) → ℝ) : ℝ := ∑ i ∈ Finset.range n, if h : i < n
+    then (a ⟨i, by linarith⟩ - b ⟨i, by linarith⟩) ^ 2 else 0
+  have hf : ∀ a b, 0 ≤ f a b
+  · intro x y; simp [f]; apply Finset.sum_nonneg; intros; split_ifs <;> positivity
+  generalize hx : f a c = x
+  generalize hy : f a b = y
+  generalize hz : f b c = z
+  generalize_proofs hn
+  generalize hn' : (⟨n, hn⟩ : Fin # n + 1) = n'
+  convert_to √((a n' - c n') ^ 2 + x) ≤ √((a n' - b n') ^ 2 + y) + √((b n' - c n') ^ 2 + z)
+  · simp [←hx, ←hn']
+    congr 2
+    apply Finset.sum_congr rfl
+    simp
+    intro k hk
+    split_ifs with h₁; rfl
+    linarith
+  · simp [←hy, ←hz, ←hn']
+    congr 3
+    · apply Finset.sum_congr rfl
+      simp
+      intro k hk
+      split_ifs with h₁; rfl
+      linarith
+    · apply Finset.sum_congr rfl
+      simp
+      intro k hk
+      split_ifs with h₁; rfl
+      linarith
+  subst hn' f
+  dsimp at hx hy hz
+  simp_rw [hx, hy, hz] at ih
+  simp only [add_comm _ x, add_comm _ y, add_comm _ z]
+  replace hx : 0 ≤ x; subst hx; apply hf
+  replace hy : 0 ≤ y; subst hy; apply hf
+  replace hz : 0 ≤ z; subst hz; apply hf
+  replace ih : x ≤ y + z + 2 * √y * √z
+  · rw [←sq_le_sq₀, add_sq, sq_sqrt, sq_sqrt, sq_sqrt] at ih
+    all_goals first | positivity | linarith
+  generalize_proofs hn
+  generalize (⟨n, hn⟩ : Fin (n + 1)) = n
+  generalize a n = a
+  generalize b n = b
+  generalize c n = c
+  nm n' a' b' c'; clear! n' a' b' c'
+  generalize hd : a - c = d
+  rw [show a = c + d by linarith]
+  generalize he : c + d - b = e
+  rw [show b = c + d - e by linarith]
+  rw [show c + d - e - c = d - e by ring_nf]
+  clear! a b c
+  rename' d => a, e => b
+  rw [←sq_le_sq₀, add_sq, sq_sqrt, sq_sqrt, sq_sqrt, mul_assoc]
+    <;> try positivity
+  suffices h : 2 * √y * √z + a ^ 2 ≤ b ^ 2 +
+    2 * √(y + b ^ 2) * √(z + (a - b) ^ 2) + (a - b) ^ 2
+  · linarith
+  clear! x
+  rw [sub_sq]
+  suffices h : 2 * √y * √z + a ^ 2 ≤ b ^ 2 +
+    2 * √(y + b ^ 2) * √(z + (a - b) ^ 2) + a ^ 2 - 2 * a * b + b ^ 2
+  · ring_nf at h ⊢; exact h
+  suffices h : a * b + √y * √z ≤ b ^ 2 + √(y + b ^ 2) * √(z + (a - b) ^ 2)
+  · linarith
+  nth_rw 2 [←sq_sqrt hz, ←sq_sqrt hy]
+  have hx : 0 ≤ √y; positivity
+  have hy : 0 ≤ √z; positivity
+  generalize √y = x at hx ⊢
+  generalize √z = y at hy ⊢
+  nm r h; clear! r z
+  rw [←sqrt_mul] <;> try positivity
+  exact euclideanDist_triangle_aux₁
 
 end euclidean
