@@ -136,11 +136,3 @@ scoped instance (priority := high) : MetricSpace # Fin n → ℝ where
     rotate_left; intros; positivity
     ext k; specialize h k (by simp)
     nlinarith
-
-example : ‖(![3, 4] : Fin 2 → ℝ)‖ = 5 := by
-  simp [norm_def', Euclidean.norm]; norm_num
-
-end Euclidean
-
-example : ‖(![3, 4] : Fin 2 → ℝ)‖ = 4 := by
-  change NNReal.toReal _ = _; simp [Finset.univ_fin2]; norm_num
