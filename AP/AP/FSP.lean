@@ -185,3 +185,6 @@ theorem hasLe_of_add_right {n k p} (h : fsp.hasLe n p) : fsp.hasLe (n + k) p := 
 @[simp]
 theorem hasLe_zero {p} : fsp.hasLe 0 p ↔ p ∈ fsp.get 0 := by
   simp [hasLe]
+
+theorem next_offset {n} : (fsp.offset n).next = fsp.offset (n + 1) :=
+  offset_succ'.symm
