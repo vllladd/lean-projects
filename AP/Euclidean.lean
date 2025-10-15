@@ -117,20 +117,20 @@ noncomputable
 scoped instance (priority := high) {n} : Dist # Fin n → ℝ where
   dist := Euclidean.dist
 
-theorem norm_def' : ‖a‖ = Euclidean.norm a := rfl
-theorem dist_def' : dist a b = Euclidean.dist a b := rfl
+theorem norm_def : ‖a‖ = Euclidean.norm a := rfl
+theorem dist_def : dist a b = Euclidean.dist a b := rfl
 
 noncomputable
 scoped instance (priority := high) : PseudoMetricSpace # Fin n → ℝ where
-  dist_self a := by simp [dist_def', Euclidean.dist, Euclidean.norm]
-  dist_comm a b := by simp [dist_def', Euclidean.dist, Euclidean.norm, sub_sq_comm]
+  dist_self a := by simp [dist_def, Euclidean.dist, Euclidean.norm]
+  dist_comm a b := by simp [dist_def, Euclidean.dist, Euclidean.norm, sub_sq_comm]
   dist_triangle a b c := dist_triangle
 
 noncomputable
 scoped instance (priority := high) : MetricSpace # Fin n → ℝ where
   eq_of_dist_eq_zero := by
     intro a b h
-    simp [dist_def', Euclidean.dist, Euclidean.norm] at h
+    simp [dist_def, Euclidean.dist, Euclidean.norm] at h
     rw [sqrt_eq_zero # by positivity] at h
     rw [Finset.sum_eq_zero_iff_of_nonneg] at h
     rotate_left; intros; positivity
