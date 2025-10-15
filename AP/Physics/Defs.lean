@@ -1,4 +1,5 @@
 import AP.Util
+import AP.Euclidean
 
 namespace Physics
 
