@@ -83,3 +83,40 @@ a.log = b.log ↔ a = b := by
 
 theorem rpow_eq_exp {a b : ℝ} (ha : 0 < a) : a ^ b = (b * a.log).exp := by
   rw [←log_eq_log_iff] <;> try positivity;; simp [log_rpow ha b]
+
+section euclidean
+
+noncomputable
+def euclideanNorm {n : ℕ} (a : Fin n → ℝ) : ℝ :=
+  √(∑ i, a i ^ 2)
+
+noncomputable
+def euclideanDist {n : ℕ} (a b : Fin n → ℝ) : ℝ :=
+  euclideanNorm (a - b)
+
+theorem euclideanDist_triangle {n : ℕ} {a b c : Fin n → ℝ} :
+euclideanDist a c ≤ euclideanDist a b + euclideanDist b c := by
+  unfold euclideanDist euclideanNorm
+  dsimp
+  induction n; simp
+  nm n ih
+  specialize @ih (λ ⟨i, h⟩ => a ⟨i, by linarith⟩) (λ ⟨i, h⟩ => b ⟨i, by linarith⟩)
+    (λ ⟨i, h⟩ => c ⟨i, by linarith⟩)
+  simp at ih
+  simp_rw [Finset.sum_fin_eq_sum_range] at ih ⊢
+  simp [Finset.range_succ]
+  generalize hx : (∑ i ∈ Finset.range n, if h : i < n
+    then (a ⟨i, by linarith⟩ - c ⟨i, by linarith⟩) else 0) = x
+  generalize hy : (∑ i ∈ Finset.range n, if h : i < n
+    then (b ⟨i, by linarith⟩ - c ⟨i, by linarith⟩) else 0) = y
+  generalize hz : (∑ i ∈ Finset.range n, if h : i < n
+    then (c ⟨i, by linarith⟩ - c ⟨i, by linarith⟩) else 0) = z
+  convert_to √((a ⟨n, by linarith⟩ - c ⟨n, by linarith⟩) ^ 2 + x) ≤
+    √((a ⟨n, by linarith⟩ - b ⟨n, by linarith⟩) ^ 2 + y) +
+    √((b ⟨n, by linarith⟩ - c ⟨n, by linarith⟩) ^ 2 + z)
+  · simp [←hx]
+    congr
+
+#check 0 #exit
+
+end euclidean
