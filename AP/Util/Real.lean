@@ -97,9 +97,81 @@ theorem mk_sub_mk {a b : ℕ → ℚ} {ha : IsCauSeq abs a} {hb : IsCauSeq abs b
 mk ⟨a, ha⟩ - mk ⟨b, hb⟩ = mk ⟨a - b, ha.sub hb⟩ := by
   rw [←ofCauchy_sub]; rfl
 
+theorem _root_.IsCauSeq.abs' {a : ℕ → ℚ} (ha : IsCauSeq abs a) : IsCauSeq abs |a| := by
+  intro ε hε
+  specialize ha ε hε
+  obtain ⟨N, ha⟩ := ha
+  use N
+  intro n hn
+  specialize ha n hn
+  simp
+  exact lt_of_le_of_lt (abs_abs_sub_abs_le _ _) ha
+
+theorem neg_mk {a : ℕ → ℚ} {ha : IsCauSeq abs a} : -mk ⟨a, ha⟩ = mk ⟨-a, ha.neg⟩ := by
+  rw [←ofCauchy_neg]; rfl
+
+theorem abs_mk {a : ℕ → ℚ} {ha : IsCauSeq abs a} : |mk ⟨a, ha⟩| = mk ⟨|a|, ha.abs'⟩ := by
+  change max _ _ = _; rw [neg_mk]; exact ofCauchy_sup _ _ |>.symm
+
+example : ¬∀ {a : ℕ → ℚ} (ha : IsCauSeq abs a) (N : ℕ) (b : ℕ → ℚ)
+(hb : IsCauSeq abs b) (h : ∀ (n : ℕ), N ≤ n → ∃ x, 0 < x ∧
+∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a n + b j),
+∃ (x : ℚ), 0 < x ∧ ∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a j + b j := by
+  push_neg
+  use λ n => (n + 1)⁻¹
+  constructor
+  · intro e he
+    obtain ⟨n, hn⟩ := exists_nat_gt e⁻¹
+    use n
+    intro j hj
+    simp
+    rw [abs_of_nonpos]
+    rotate_left
+    · simp
+      replace hj : (n : ℚ) + 1 ≤ j + 1; simpa
+      rwa [inv_le_inv₀] <;> positivity
+    simp
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hj
+    clear hj
+    field_simp
+    replace hn : (n + 1 : ℚ)⁻¹ < e⁻¹
+    · trans (e + 1)⁻¹
+      rotate_left
+      · rw [inv_lt_inv₀] <;> try positivity
+        linarith
+      rw [inv_lt_inv₀] <;> try positivity
+      simp
+      sorry
+    sorry
+  use 0
+  use λ _ => 0
+  constructor
+  · intro e he
+    simp
+    use 0
+    simpa
+  simp
+  constructor
+  · intro N
+    use (N + 1 : ℚ)⁻¹
+    simp
+    positivity
+  intro x hx i
+  obtain ⟨n, hn⟩ := exists_nat_gt x⁻¹
+  use n + i, by linarith
+  simp
+  have h : (n : ℚ) < n + i + 1; linarith
+  rw [inv_lt_comm₀] <;> try positivity
+  apply h.trans'
+  exact hn
+
+-- example : ¬∀ {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a)
+-- (h : ∃ N, ∀ n, N ≤ n → |a n - x| < ε), |x - (.mk ⟨a, ha⟩)| < ε := by
+--   push_neg
+-- 
 -- #check 0 #exit
 
-theorem abs_sub_cauchy_lt_of_exi {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a) (hε : 0 < ε)
+theorem abs_sub_cauchy_lt_of_exi {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a)
 (h : ∃ N, ∀ n, N ≤ n → |a n - x| < ε) : |x - (.mk ⟨a, ha⟩)| < ε := by
   rw [abs_sub_comm]
   obtain ⟨N, h⟩ := h
@@ -110,20 +182,56 @@ theorem abs_sub_cauchy_lt_of_exi {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq a
   · obtain ⟨e, he, H⟩ := (-ε).exi_mk_cauchy
     rw [neg_eq_iff_eq_neg] at H
     subst H
-    simp at h hε ⊢
+    simp at h ⊢
     change ∃ _, _
     simp
     
-    specialize h N (by rfl)
-    replace h := h.1
-    change mk _ < mk ⟨_, _⟩ - _ at h
-    rw [mk_sub_mk] at h
+    -- specialize h N (by rfl)
+    -- replace h := h.1
+    -- change mk _ < mk ⟨_, _⟩ - _ at h
+    -- rw [mk_sub_mk] at h
+    -- simp at h
+    -- 
+    -- obtain ⟨x, hx, n, h⟩ := h
+    -- simp at h
+    -- 
+    -- rename' b => b', hb => hb'
+    -- generalize h₁ : -b' - e = b
+    -- have hb : IsCauSeq abs b
+    -- · rw [←h₁]; exact hb'.neg.sub he
+    -- replace h₁ : b' = -b - e; simp [←h₁]
+    -- subst h₁; clear hb'
+    -- 
+    -- have h₁ : ∀ (x : ℚ) i, x - (-b i - e i) - e i = x + b i
+    -- · intros; ring_nf
+    -- simp [h₁] at h ⊢; clear h₁; clear! e
+    -- 
+    -- have h₁ : 0 < x / 3; positivity
+    -- use x / 3, h₁
+    -- 
+    -- specialize ha _ h₁
+    -- specialize hb _ h₁
+    -- 
+    -- obtain ⟨N₁, ha⟩ := ha
+    -- obtain ⟨N₂, hb⟩ := hb
+    
+    replace h : ∀ n, N ≤ n → mk ⟨e, he⟩ < ↑(a n) - mk ⟨b, hb⟩
+    · intro n hn; specialize h n hn; exact h.1
+    change ∀ n, N ≤ n → mk ⟨e, he⟩ < mk ⟨_, _⟩ - mk ⟨b, hb⟩ at h
+    simp [mk_sub_mk] at h
+    change ∀ n, N ≤ n → ∃ _, _ at h
     simp at h
     
-    obtain ⟨x, hx, n, h⟩ := h
-    simp at h
-    use x, hx
+    rename' b => b', hb => hb'
+    generalize h₁ : -b' - e = b
+    have hb : IsCauSeq abs b
+    · rw [←h₁]; exact hb'.neg.sub he
+    replace h₁ : b' = -b - e; simp [←h₁]
+    subst h₁; clear hb'
+    
+    have h₁ : ∀ (x : ℚ) i, x - (-b i - e i) - e i = x + b i
+    · intros; ring_nf
+    simp [h₁] at h ⊢; clear h₁; clear! e
     
     sorry
-  
   · sorry
