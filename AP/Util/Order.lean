@@ -242,6 +242,14 @@ theorem abs_add_le_max_add_max {α : Type*}
 (a b x y : α) : |a + b| ≤ max |a| x + max y |b| := by
   apply (abs_add _ _).trans; apply add_le_add <;> simp
 
+theorem nonneg_of_abs_le {α : Type*} {a b : α}
+[ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
+(h : |a| ≤ b) : 0 ≤ b := h.trans' # abs_nonneg _
+
+theorem pos_of_abs_lt {α : Type*} {a b : α}
+[ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
+(h : |a| < b) : 0 < b := lt_of_le_of_lt (abs_nonneg _) h
+
 class InjectiveOfNat (α : Type*) [ha : Semiring α] : Prop where
   h : Function.Injective (λ (n : ℕ) => (OfNat.ofNat n : α))
 
