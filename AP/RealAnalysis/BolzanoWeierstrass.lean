@@ -290,6 +290,20 @@ theorem bwSubseq_lt_of_lt {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {i 
 theorem subseq_bwSubseq {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} :
 subseq # bwSubseq a M h := λ _ _ => bwSubseq_lt_of_lt
 
+theorem bwSeq_fst_le_bwLimit {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n} :
+(bwSeq a (-M) M n).1 ≤ bwLimit a M h := by
+  change Real.mk ⟨_, _⟩ ≤ Real.mk ⟨_, _⟩
+  simp
+  change _ ∨ _
+  sorry
+
+theorem bwLimit_le_bwSeq_snd {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n} :
+bwLimit a M h ≤ (bwSeq a (-M) M n).2 := by
+  change Real.mk ⟨_, _⟩ ≤ Real.mk ⟨_, _⟩
+  simp
+  change _ ∨ _
+  sorry
+
 -- #check 0 #exit
 
 theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
@@ -311,18 +325,45 @@ theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
   intro ε hε
   dsimp
   
-  have h₁ := isCauSeq_bwSeq_fst (a := a) hM
-  obtain ⟨ε', h₂, h₃⟩ := exists_pos_rat_lt hε
+  -- have h₁ := isCauSeq_bwSeq_fst (a := a) hM
+  -- obtain ⟨ε', h₂, h₃⟩ := exists_pos_rat_lt hε
+  -- 
+  -- specialize h₁ _ h₂
+  -- obtain ⟨N, h₁⟩ := h₁
+  -- dsimp at h₁
+  -- 
+  -- use σ N
+  -- intro n hn
+  -- have h₄ := hn.trans' # nat_le_of_subseq hσ
   
-  specialize h₁ _ h₂
-  obtain ⟨N, h₁⟩ := h₁
-  dsimp at h₁
-  
-  use σ N
+  obtain ⟨N, hN⟩ := exists_nat_gt # (M * 2) / ε
+  use N
   intro n hn
-  have h₄ := hn.trans' # nat_le_of_subseq hσ
-  specialize h₁ n h₄
   
-  generalize hL' : (bwSeq a (-M) M N).1 = L' at h₁
+  obtain ⟨-, h₂, h₃⟩ := @bwSubseq_cnd a M h n
+  change _ ≤ a (σ n) at h₂
+  change a (σ n) ≤ _ at h₃
   
-  sorry
+  have h₄ := @bwSeq_fst_le_bwLimit a M h n
+  have h₅ := @bwLimit_le_bwSeq_snd a M h n
+  
+  rw [abs_lt]
+  constructor
+  
+  ·
+    simp
+    apply lt_of_le_of_lt h₅
+    rw [bwSeq_snd_eq_fst_sub hM]
+    simp
+    suffices : (↑M + ↑M) / 2 ^ n < ε; linarith
+    rw [div_lt_comm₀] <;> try positivity
+    have h₆ : 2 ^ N ≤ 2 ^ n
+    · exact Nat.pow_le_pow_right (by norm_num) hn
+    replace h₆ : (2 ^ N : ℝ) ≤ 2 ^ n
+    · sorry
+    apply lt_of_lt_of_le _ h₆
+    clear h₆
+    trans (N : ℝ); rwa [←mul_two]
+    sorry
+  
+  · sorry
