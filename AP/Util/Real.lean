@@ -83,3 +83,47 @@ a.log = b.log ↔ a = b := by
 
 theorem rpow_eq_exp {a b : ℝ} (ha : 0 < a) : a ^ b = (b * a.log).exp := by
   rw [←log_eq_log_iff] <;> try positivity;; simp [log_rpow ha b]
+
+-----
+
+theorem exi_mk_cauchy {x : ℝ} : ∃ (a : ℕ → ℚ) (ha : IsCauSeq abs a), x = .mk ⟨a, ha⟩ := by
+  rcases x with ⟨⟨a, ha⟩⟩; use a, ha; rfl
+
+theorem _root_.IsCauSeq.sub {a b : ℕ → ℚ}
+(ha : IsCauSeq abs a) (hb : IsCauSeq abs b) : IsCauSeq abs (a - b) := by
+  rw [sub_eq_add_neg]; exact ha.add hb.neg
+
+theorem mk_sub_mk {a b : ℕ → ℚ} {ha : IsCauSeq abs a} {hb : IsCauSeq abs b} :
+mk ⟨a, ha⟩ - mk ⟨b, hb⟩ = mk ⟨a - b, ha.sub hb⟩ := by
+  rw [←ofCauchy_sub]; rfl
+
+-- #check 0 #exit
+
+theorem abs_sub_cauchy_lt_of_exi {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a) (hε : 0 < ε)
+(h : ∃ N, ∀ n, N ≤ n → |a n - x| < ε) : |x - (.mk ⟨a, ha⟩)| < ε := by
+  rw [abs_sub_comm]
+  obtain ⟨N, h⟩ := h
+  obtain ⟨b, hb, rfl⟩ := x.exi_mk_cauchy
+  rw [mk_sub_mk]
+  simp_rw [abs_lt] at h ⊢
+  constructor
+  · obtain ⟨e, he, H⟩ := (-ε).exi_mk_cauchy
+    rw [neg_eq_iff_eq_neg] at H
+    subst H
+    simp at h hε ⊢
+    change ∃ _, _
+    simp
+    
+    specialize h N (by rfl)
+    replace h := h.1
+    change mk _ < mk ⟨_, _⟩ - _ at h
+    rw [mk_sub_mk] at h
+    simp at h
+    
+    obtain ⟨x, hx, n, h⟩ := h
+    simp at h
+    use x, hx
+    
+    sorry
+  
+  · sorry
