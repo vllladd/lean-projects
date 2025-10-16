@@ -1,4 +1,4 @@
-import AP.RealAnalysis.Continuity
+import AP.RealAnalysis.RationalFn
 
 namespace RealAnalysis
 
@@ -10,14 +10,8 @@ def bwSeq (a : ℕ → ℝ) (y₁ y₂ : ℚ) (n : ℕ) : ℚ × ℚ := match n 
   if {i | y₁ ≤ a i ∧ a i ≤ y₂}.Infinite
   then bwSeq a y₁ y n else bwSeq a y y₂ n
 
-theorem le_bwSeq_fst {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} {n : ℕ}
-(h : boundedBy a M) (hy₁ : y₁ < -M) (hy₂ : M < y₂) : y₁ ≤ (bwSeq a y₁ y₂ n).1 := by
-  have hM : 0 ≤ (M : ℝ)
-  · specialize h 0; trans |a 0| <;> simp [h]
-  have h₂ : y₁ < y₂
-  · have H : (y₁ : ℝ) < y₂; linarith
-    simp at H; exact H
-  clear hy₁ hy₂
+theorem le_bwSeq_fst {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ}
+(hy : y₁ < y₂) : y₁ ≤ (bwSeq a y₁ y₂ n).1 := by
   induction n generalizing y₁ y₂; rfl
   nm n ih
   simp
@@ -26,14 +20,8 @@ theorem le_bwSeq_fst {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} {n : ℕ}
   trans (y₁ + y₂) / 2; linarith
   apply ih; linarith
 
-theorem bwSeq_snd_le {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} {n : ℕ}
-(h : boundedBy a M) (hy₁ : y₁ < -M) (hy₂ : M < y₂) : (bwSeq a y₁ y₂ n).2 ≤ y₂ := by
-  have hM : 0 ≤ (M : ℝ)
-  · specialize h 0; trans |a 0| <;> simp [h]
-  have h₂ : y₁ < y₂
-  · have H : (y₁ : ℝ) < y₂; linarith
-    simp at H; exact H
-  clear hy₁ hy₂
+theorem bwSeq_snd_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ}
+(hy : y₁ < y₂) : (bwSeq a y₁ y₂ n).2 ≤ y₂ := by
   induction n generalizing y₁ y₂; simp
   nm n ih
   simp
@@ -43,70 +31,43 @@ theorem bwSeq_snd_le {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} {n : ℕ}
     linarith
   apply ih; linarith
 
-theorem bwSeq_add {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} {n k : ℕ}
-(h : boundedBy a M) (hy₁ : y₁ < -M) (hy₂ : M < y₂) :
+theorem bwSeq_add {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n k : ℕ} (hy : y₁ < y₂) :
 bwSeq a y₁ y₂ (n + k) = match bwSeq a y₁ y₂ n with
 | (y₁', y₂') => bwSeq a y₁' y₂' k := by
-  have hM : 0 ≤ (M : ℝ)
-  · specialize h 0; trans |a 0| <;> simp [h]
-  have h₂ : y₁ < y₂
-  · have H : (y₁ : ℝ) < y₂; linarith
-    simp at H; exact H
-  clear hy₁ hy₂
-  
-  -- generalize hr : bwSeq a y₁ y₂ n = r
-  -- rcases r with ⟨y₁', y₂'⟩
-  -- dsimp
-  -- 
-  -- induction k generalizing y₁ y₂ y₁' y₂' n; exact hr
-  -- nm k ih
-  -- nth_rw 1 [Nat.add_succ, ←Nat.succ_add]
-  -- 
-  -- generalize hr' : bwSeq a y₁ y₂ (n + 1) = r'
-  -- rcases r' with ⟨z₁, z₂⟩
-  -- simp at hr'
-  -- split_ifs at hr' with h₃
-  -- 
-  -- ·
-  --   specialize @ih y₁ ((y₁ + y₂) / 2) n (by linarith) z₁ z₂ hr'
-  --   rw [Nat.succ_add]
-  --   simp [h₃, ih]
-  --   split_ifs with h₄
-  --   · 
-  -- -- rw [ih # by linarith]
-  -- split_ifs with h₃
-  -- · 
-  -- --   simp
-  -- --   split_ifs with h₄
-  -- --   · 
-  
-  sorry
+  generalize hr : bwSeq a y₁ y₂ n = r
+  rcases r with ⟨y₁', y₂'⟩
+  dsimp
+  induction n generalizing y₁ y₂ y₁' y₂'
+  · simp at hr; simp [hr]
+  nm n ih
+  simp at hr
+  simp [Nat.succ_add]
+  split_ifs at hr ⊢ with h₁
+  all_goals apply ih; linarith; exact hr
+
+theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
+(bwSeq a y₁ y₂ n).1 < (bwSeq a y₁ y₂ n).2 := by
+  induction n generalizing y₁ y₂ <;> simp; exact hy
+  nm n ih; split_ifs <;> apply ih <;> linarith
 
 -- #check 0 #exit
 
-theorem bwSeq_fst_le_of_le {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} {n m : ℕ}
-(h : boundedBy a M) (hy₁ : y₁ < -M) (hy₂ : M < y₂) (hn : m ≤ n) :
+theorem bwSeq_fst_le_of_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ}
+(hy : y₁ < y₂) (hn : m ≤ n) :
 (bwSeq a y₁ y₂ m).fst ≤ (bwSeq a y₁ y₂ n).fst := by
-  have hM : 0 ≤ (M : ℝ)
-  · specialize h 0; trans |a 0| <;> simp [h]
-  have h₂ : y₁ < y₂
-  · have H : (y₁ : ℝ) < y₂; linarith
-    simp at H; exact H
-  clear hy₁ hy₂
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn
   clear hn
+  rw [bwSeq_add hy]
   
-  -- induction n generalizing y₁ y₂ <;> simp
-  -- nm n ih
-  -- split_ifs with h₁
-  -- 
-  -- · apply ih h₂ |>.trans
+  generalize hr : bwSeq a y₁ y₂ m = r
+  rcases r with ⟨y₁', y₂'⟩
+  dsimp
   
   sorry
 
--- #check 0 #exit
+#check 0 #exit
 
-theorem isCauSeq_bwSeq {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} (h : boundedBy a M)
+theorem isCauSeq_bwSeq_fst {a : ℕ → ℝ} {M : ℝ} {y₁ y₂ : ℚ} (h : boundedBy a M)
 (hy₁ : y₁ < -M) (hy₂ : M < y₂) : IsCauSeq abs (bwSeq a y₁ y₂ · |>.1) := by
   unfold boundedBy at h
   have hM : 0 ≤ (M : ℝ)

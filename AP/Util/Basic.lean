@@ -2,6 +2,7 @@ import AP.Util.Bit
 import AP.Util.Set
 import AP.Util.Fin
 import AP.Util.Real
+import AP.Util.Prod
 import AP.Util.Array
 import AP.Util.Sigma
 import AP.Util.Order
