@@ -71,23 +71,29 @@ theorem le_bwSeq_snd_of_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ}
   rw [Prod.fst_eq_of_eq_mk hr, Prod.snd_eq_of_eq_mk hr]
   exact bwSeq_fst_lt_snd hy
 
-theorem bwSeq_snd_sub_fst_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
-(bwSeq a y₁ y₂ n).2 - (bwSeq a y₁ y₂ n).1 ≤ (y₂ - y₁) / 2 ^ n := by
-  induction n generalizing y₁ y₂; simp
-  nm n ih
-  simp only [bwSeq]
-  split_ifs
-  all_goals
-    apply (ih # by linarith).trans
-    rw [pow_succ']
-    field_simp
-    rw [div_le_div_iff_of_pos_right # by positivity]
-    linarith
-
 theorem fst_lt_snd_of_bwSeq_eq {a : ℕ → ℝ} {y₁ y₂ y₁' y₂' : ℚ} {n : ℕ} (hy : y₁ < y₂)
 (h : bwSeq a y₁ y₂ n = (y₁', y₂')) : y₁' < y₂' := by
   rw [Prod.fst_eq_of_eq_mk h, Prod.snd_eq_of_eq_mk h]
   exact bwSeq_fst_lt_snd hy
+
+theorem bwSeq_snd_sub_fst_eq {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
+(bwSeq a y₁ y₂ n).2 - (bwSeq a y₁ y₂ n).1 = (y₂ - y₁) / 2 ^ n := by
+  induction n generalizing y₁ y₂; simp
+  nm n ih
+  simp only [bwSeq]
+  split_ifs with h₁
+  all_goals
+    apply (ih # by linarith).trans
+    rw [pow_succ']
+    ring_nf
+
+theorem bwSeq_fst_eq_snd_sub {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
+(bwSeq a y₁ y₂ n).1 = (bwSeq a y₁ y₂ n).2 - (y₂ - y₁) / 2 ^ n := by
+  linarith [@bwSeq_snd_sub_fst_eq a y₁ y₂ n hy]
+
+theorem bwSeq_snd_eq_fst_sub {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
+(bwSeq a y₁ y₂ n).2 = (bwSeq a y₁ y₂ n).1 + (y₂ - y₁) / 2 ^ n := by
+  simp [bwSeq_fst_eq_snd_sub hy]
 
 theorem bwSeq_add_fst_sub_lt {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n k : ℕ} (hy : y₁ < y₂) :
 (bwSeq a y₁ y₂ (n + k)).1 - (bwSeq a y₁ y₂ n).1 < (y₂ - y₁) / 2 ^ n := by
@@ -96,7 +102,7 @@ theorem bwSeq_add_fst_sub_lt {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n k : ℕ} (hy
   rcases r with ⟨y₁', y₂'⟩
   dsimp
   apply lt_of_lt_of_le
-  rotate_left; exact bwSeq_snd_sub_fst_le (a := a) hy
+  rotate_left; apply le_of_eq # bwSeq_snd_sub_fst_eq (a := a) hy
   simp [hr]
   have hy' := fst_lt_snd_of_bwSeq_eq hy hr
   exact lt_of_lt_of_le (bwSeq_fst_lt_snd hy') (bwSeq_snd_le hy')
@@ -294,7 +300,10 @@ theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
   replace h : ∀ n, |a n| < M
   · intro n; specialize h n; linarith
   clear! M'
-  use bwSubseq a M h, bwLimit a M h, subseq_bwSubseq
+  
+  let σ := bwSubseq a M h
+  have hσ : subseq σ := subseq_bwSubseq
+  use σ, bwLimit a M h, subseq_bwSubseq
   
   have hM' : 0 < M; have h₁ := pos_of_abs_lt # h 0; simp at h₁; exact h₁
   have hM : -M < M; linarith
@@ -309,8 +318,11 @@ theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
   obtain ⟨N, h₁⟩ := h₁
   dsimp at h₁
   
-  use N
+  use σ N
   intro n hn
-  specialize h₁ n hn
+  have h₄ := hn.trans' # nat_le_of_subseq hσ
+  specialize h₁ n h₄
+  
+  generalize hL' : (bwSeq a (-M) M N).1 = L' at h₁
   
   sorry
