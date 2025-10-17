@@ -703,3 +703,9 @@ theorem prod_range_list_get! {xs : List ℝ} {f : ℝ → ℝ} :
   induction xs using List.reverseRecOn; simp; nm xs x ih
   simp [prod_range_succ]; left; convert ih; clear ih
   nm k h; simp at h; simp [List.getElem?_append_left h]
+
+theorem le_sum_range {a : ℕ → ℝ} {N n : ℕ} (h : n < N) :
+|a n| ≤ ∑ i ∈ range N, |a i| := by
+  obtain ⟨s, h₁, h₂⟩ : ∃ (s : Finset ℕ), n ∉ s ∧ range N = insert n s
+  · use range N |>.erase n; simp; rw [insert_erase]; simpa
+  simp [h₂, sum_insert h₁]; apply sum_nonneg; simp

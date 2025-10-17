@@ -590,13 +590,6 @@ theorem tendsTo_abs {a L} (h : tendsTo a L) : tendsTo (|a ·|) |L| := by
   use N; intro n hn; specialize h n hn; dsimp
   apply lt_of_le_of_lt _ h; apply abs_abs_sub_abs_le
 
-open Finset in
-theorem le_sum_range {a : ℕ → ℝ} {N n : ℕ} (h : n < N) :
-|a n| ≤ ∑ i ∈ range N, |a i| := by
-  obtain ⟨s, h₁, h₂⟩ : ∃ (s : Finset ℕ), n ∉ s ∧ range N = insert n s
-  · use range N |>.erase n; simp; rw [insert_erase]; simpa
-  simp [h₂, sum_insert h₁]; apply sum_nonneg; simp
-
 theorem lt_ub_of_converges {a n} (h : converges a) : a n < ub a := by
   obtain ⟨L, h⟩ := h; exact lt_ub_of_tendsTo h |>.1 _
 
@@ -708,3 +701,24 @@ theorem tendsTo_subseq {a σ L} (h₁ : tendsTo a L)
 theorem exi_subseq_tendsTo_of_neg_one_pow :
 ∃ σ L, subseq σ ∧ tendsTo (((-1 : ℝ) ^ ·) ∘ σ) L := by
   use (· * 2), 1, λ i j h => by linarith;; simp; exact tendsTo_const
+
+theorem bounded_drop_iff {a k} : bounded (a # · + k) ↔ bounded a := by
+  symm; constructor <;> rintro ⟨M, h⟩
+  · use M; intro n; apply h
+  use M + ∑ i ∈ Finset.range k, |a i|
+  intro n
+  by_cases hk : k ≤ n
+  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk
+    clear hk
+    specialize h n
+    dsimp at h
+    rw [add_comm k]
+    apply h.trans
+    simp
+    positivity
+  push_neg at hk
+  specialize h 0
+  simp at h
+  have hM := nonneg_of_abs_le h
+  suffices H : |a n| ≤ ∑ i ∈ Finset.range k, |a i|; linarith
+  exact Finset.le_sum_range hk

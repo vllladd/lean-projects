@@ -120,10 +120,8 @@ theorem aux₃ : mk ⟨_, aux₂⟩ = 0 := by
   suffices H : N < n + 1; exact_mod_cast H
   linarith
 
--- #check 0 #exit
-
 theorem aux₄ : ¬∀ {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a)
-(_ : ∃ N, ∀ n, N ≤ n → |a n - x| < ε), |x - mk ⟨a, ha⟩| < ε := by
+(_ : ∃ N, ∀ n, N ≤ n → |a n - x| < ε), |mk ⟨a, ha⟩ - x| < ε := by
   push_neg
   use (· + 1)⁻¹
   use 1
