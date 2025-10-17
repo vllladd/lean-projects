@@ -112,3 +112,23 @@ theorem neg_mk {a : ℕ → ℚ} {ha : IsCauSeq abs a} : -mk ⟨a, ha⟩ = mk �
 
 theorem abs_mk {a : ℕ → ℚ} {ha : IsCauSeq abs a} : |mk ⟨a, ha⟩| = mk ⟨|a|, ha.abs'⟩ := by
   change max _ _ = _; rw [neg_mk]; exact ofCauchy_sup _ _ |>.symm
+
+-----
+
+theorem inv_lt_self_of_one_lt {x : ℝ} (h : 1 < x) : x⁻¹ < x := by
+  have h₁ : 0 < x⁻¹; positivity
+  replace h : 1 < x * x; nlinarith
+  replace h : 1 * x⁻¹ < x * x * x⁻¹; nlinarith
+  simp at h; exact h
+
+theorem inv_le_self_of_one_le {x : ℝ} (h : 1 ≤ x) : x⁻¹ ≤ x := by
+  rw [le_iff_eq_or_lt] at h; rcases h with rfl | h; norm_num
+  exact le_of_lt # inv_lt_self_of_one_lt h
+
+theorem lt_inv_self_of {x : ℝ} (h₁ : 0 < x) (h₂ : x < 1) : x < x⁻¹ := by
+  replace h : 1 < x⁻¹; rw [one_lt_inv_iff₀]; exact ⟨h₁, h₂⟩
+  nth_rw 1 [←inv_inv x]; exact inv_lt_self_of_one_lt h
+
+theorem le_inv_self_of {x : ℝ} (h₁ : 0 < x) (h₂ : x ≤ 1) : x ≤ x⁻¹ := by
+  rw [le_iff_eq_or_lt] at h₂; rcases h₂ with rfl | h₂; norm_num
+  exact le_of_lt # lt_inv_self_of h₁ h₂

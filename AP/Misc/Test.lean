@@ -45,56 +45,6 @@ end Misc.Test
 
 namespace Real
 
-theorem inv_lt_self_of_one_lt {x : ℝ} (h : 1 < x) : x⁻¹ < x := by
-  have h₁ : 0 < x⁻¹; positivity
-  replace h : 1 < x * x; nlinarith
-  replace h : 1 * x⁻¹ < x * x * x⁻¹; nlinarith
-  simp at h; exact h
-
-theorem inv_le_self_of_one_le {x : ℝ} (h : 1 ≤ x) : x⁻¹ ≤ x := by
-  rw [le_iff_eq_or_lt] at h; rcases h with rfl | h; norm_num
-  exact le_of_lt # inv_lt_self_of_one_lt h
-
-theorem lt_inv_self_of {x : ℝ} (h₁ : 0 < x) (h₂ : x < 1) : x < x⁻¹ := by
-  replace h : 1 < x⁻¹; rw [one_lt_inv_iff₀]; exact ⟨h₁, h₂⟩
-  nth_rw 1 [←inv_inv x]; exact inv_lt_self_of_one_lt h
-
-theorem le_inv_self_of {x : ℝ} (h₁ : 0 < x) (h₂ : x ≤ 1) : x ≤ x⁻¹ := by
-  rw [le_iff_eq_or_lt] at h₂; rcases h₂ with rfl | h₂; norm_num
-  exact le_of_lt # lt_inv_self_of h₁ h₂
-
--- #check 0 #exit
-
-end Real
-
-namespace Rat
-
-theorem inv_lt_self_of_one_lt {x : ℚ} (h : 1 < x) : x⁻¹ < x := by
-  replace h : (1 : ℝ) < x; exact_mod_cast h
-  exact_mod_cast Real.inv_lt_self_of_one_lt h
-
-theorem inv_le_self_of_one_le {x : ℚ} (h : 1 ≤ x) : x⁻¹ ≤ x := by
-  replace h : (1 : ℝ) ≤ x; exact_mod_cast h
-  exact_mod_cast Real.inv_le_self_of_one_le h
-
-theorem lt_inv_self_of {x : ℚ} (h₁ : 0 < x) (h₂ : x < 1) : x < x⁻¹ := by
-  replace h₁ : (0 : ℝ) < x; exact_mod_cast h₁
-  replace h₂ : (x : ℝ) < 1; exact_mod_cast h₂
-  exact_mod_cast Real.lt_inv_self_of h₁ h₂
-
-theorem le_inv_self_of {x : ℚ} (h₁ : 0 < x) (h₂ : x ≤ 1) : x ≤ x⁻¹ := by
-  replace h₁ : (0 : ℝ) < x; exact_mod_cast h₁
-  replace h₂ : (x : ℝ) ≤ 1; exact_mod_cast h₂
-  exact_mod_cast Real.le_inv_self_of h₁ h₂
-
--- #check 0 #exit
-
-end Rat
-
------
-
-namespace Real
-
 theorem aux₁ {a : ℕ → ℚ} : IsCauSeq (abs : ℚ → ℚ) a ↔
 ∀ (ε : ℚ), 0 < ε → ε < 1 → ∃ (N : ℕ), ∀ n ≥ N, |a n - a N| < ε := by
   use λ h ε hε _ => h ε hε
