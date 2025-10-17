@@ -113,6 +113,8 @@ theorem neg_mk {a : ℕ → ℚ} {ha : IsCauSeq abs a} : -mk ⟨a, ha⟩ = mk �
 theorem abs_mk {a : ℕ → ℚ} {ha : IsCauSeq abs a} : |mk ⟨a, ha⟩| = mk ⟨|a|, ha.abs'⟩ := by
   change max _ _ = _; rw [neg_mk]; exact ofCauchy_sup _ _ |>.symm
 
+-- #check 0 #exit
+
 example : ¬∀ {a : ℕ → ℚ} (ha : IsCauSeq abs a) (N : ℕ) (b : ℕ → ℚ)
 (hb : IsCauSeq abs b) (h : ∀ (n : ℕ), N ≤ n → ∃ x, 0 < x ∧
 ∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a n + b j),

@@ -44,7 +44,7 @@ bwSeq a y₁ y₂ (n + k) = bwSeq a (bwSeq a y₁ y₂ n).1 (bwSeq a y₁ y₂ n
   split_ifs at hr ⊢ with h₁
   all_goals apply ih; linarith; exact hr
 
-theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
+theorem bwSeq_fst_lt_snd' {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
 (bwSeq a y₁ y₂ n).1 < (bwSeq a y₁ y₂ n).2 := by
   induction n generalizing y₁ y₂ <;> simp; exact hy
   nm n ih; split_ifs <;> apply ih <;> linarith
@@ -58,7 +58,7 @@ theorem bwSeq_fst_le_of_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ}
   rcases r with ⟨y₁', y₂'⟩
   apply le_bwSeq_fst
   rw [Prod.fst_eq_of_eq_mk hr, Prod.snd_eq_of_eq_mk hr]
-  exact bwSeq_fst_lt_snd hy
+  exact bwSeq_fst_lt_snd' hy
 
 theorem le_bwSeq_snd_of_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ}
 (hy : y₁ < y₂) (hn : m ≤ n) :
@@ -69,12 +69,12 @@ theorem le_bwSeq_snd_of_le {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ}
   rcases r with ⟨y₁', y₂'⟩
   apply bwSeq_snd_le
   rw [Prod.fst_eq_of_eq_mk hr, Prod.snd_eq_of_eq_mk hr]
-  exact bwSeq_fst_lt_snd hy
+  exact bwSeq_fst_lt_snd' hy
 
 theorem fst_lt_snd_of_bwSeq_eq {a : ℕ → ℝ} {y₁ y₂ y₁' y₂' : ℚ} {n : ℕ} (hy : y₁ < y₂)
 (h : bwSeq a y₁ y₂ n = (y₁', y₂')) : y₁' < y₂' := by
   rw [Prod.fst_eq_of_eq_mk h, Prod.snd_eq_of_eq_mk h]
-  exact bwSeq_fst_lt_snd hy
+  exact bwSeq_fst_lt_snd' hy
 
 theorem bwSeq_snd_sub_fst_eq {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n : ℕ} (hy : y₁ < y₂) :
 (bwSeq a y₁ y₂ n).2 - (bwSeq a y₁ y₂ n).1 = (y₂ - y₁) / 2 ^ n := by
@@ -105,7 +105,7 @@ theorem bwSeq_add_fst_sub_lt {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n k : ℕ} (hy
   rotate_left; apply le_of_eq # bwSeq_snd_sub_fst_eq (a := a) hy
   simp [hr]
   have hy' := fst_lt_snd_of_bwSeq_eq hy hr
-  exact lt_of_lt_of_le (bwSeq_fst_lt_snd hy') (bwSeq_snd_le hy')
+  exact lt_of_lt_of_le (bwSeq_fst_lt_snd' hy') (bwSeq_snd_le hy')
 
 theorem isCauSeq_bwSeq_fst {a : ℕ → ℝ} {y₁ y₂ : ℚ}
 (hy : y₁ < y₂) : IsCauSeq abs (bwSeq a y₁ y₂ · |>.1) := by
@@ -229,8 +229,7 @@ theorem bwSubseq_cnd' {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n : �
 let (y₁, y₂) := bwSeq a (-M) M n
 y₁ ≤ a i ∧ a i ≤ y₂ := by
   have hM' : 0 < M
-  · replace h := pos_of_abs_lt # h 0
-    simp at h; exact h
+  · replace h := pos_of_abs_lt # h 0; simp at h; exact h
   have hM : -M < M; linarith
   induction n
   · use 0
@@ -290,21 +289,42 @@ theorem bwSubseq_lt_of_lt {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {i 
 theorem subseq_bwSubseq {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} :
 subseq # bwSubseq a M h := λ _ _ => bwSubseq_lt_of_lt
 
+theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ} (hy : y₁ < y₂) :
+(bwSeq a y₁ y₂ n).1 < (bwSeq a y₁ y₂ m).2 := by
+  by_cases hn : n ≤ m
+  · exact lt_of_le_of_lt (bwSeq_fst_le_of_le hy hn) (bwSeq_fst_lt_snd' hy)
+  replace hn : m ≤ n; linarith
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
+  rw [bwSeq_add hy]
+  generalize hr : bwSeq a y₁ y₂ m = r
+  rcases r with ⟨y₁', y₂'⟩
+  have hy' := fst_lt_snd_of_bwSeq_eq hy hr
+  exact lt_of_lt_of_le (bwSeq_fst_lt_snd' hy') (bwSeq_snd_le hy')
+
 theorem bwSeq_fst_le_bwLimit {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n} :
 (bwSeq a (-M) M n).1 ≤ bwLimit a M h := by
+  have hM' : 0 < M
+  · replace h := pos_of_abs_lt # h 0; simp at h; exact h
+  have hM : -M < M; linarith
   change Real.mk ⟨_, _⟩ ≤ Real.mk ⟨_, _⟩
   simp
-  change _ ∨ _
-  sorry
+  apply CauSeq.le_of_exists
+  use n
+  rintro i (hi : n ≤ i)
+  dsimp
+  exact bwSeq_fst_le_of_le hM hi
 
 theorem bwLimit_le_bwSeq_snd {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n} :
 bwLimit a M h ≤ (bwSeq a (-M) M n).2 := by
+  have hM' : 0 < M
+  · replace h := pos_of_abs_lt # h 0; simp at h; exact h
+  have hM : -M < M; linarith
   change Real.mk ⟨_, _⟩ ≤ Real.mk ⟨_, _⟩
   simp
-  change _ ∨ _
-  sorry
-
--- #check 0 #exit
+  apply CauSeq.le_of_exists
+  use n
+  rintro i (hi : n ≤ i)
+  exact le_of_lt # bwSeq_fst_lt_snd hM
 
 theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
 ∃ σ L, subseq σ ∧ tendsTo (a ∘ σ) L := by
@@ -314,56 +334,34 @@ theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
   replace h : ∀ n, |a n| < M
   · intro n; specialize h n; linarith
   clear! M'
-  
   let σ := bwSubseq a M h
   have hσ : subseq σ := subseq_bwSubseq
   use σ, bwLimit a M h, subseq_bwSubseq
-  
   have hM' : 0 < M; have h₁ := pos_of_abs_lt # h 0; simp at h₁; exact h₁
   have hM : -M < M; linarith
-  
   intro ε hε
   dsimp
-  
-  -- have h₁ := isCauSeq_bwSeq_fst (a := a) hM
-  -- obtain ⟨ε', h₂, h₃⟩ := exists_pos_rat_lt hε
-  -- 
-  -- specialize h₁ _ h₂
-  -- obtain ⟨N, h₁⟩ := h₁
-  -- dsimp at h₁
-  -- 
-  -- use σ N
-  -- intro n hn
-  -- have h₄ := hn.trans' # nat_le_of_subseq hσ
-  
   obtain ⟨N, hN⟩ := exists_nat_gt # (M * 2) / ε
   use N
   intro n hn
-  
   obtain ⟨-, h₂, h₃⟩ := @bwSubseq_cnd a M h n
   change _ ≤ a (σ n) at h₂
   change a (σ n) ≤ _ at h₃
-  
   have h₄ := @bwSeq_fst_le_bwLimit a M h n
   have h₅ := @bwLimit_le_bwSeq_snd a M h n
-  
   rw [abs_lt]
-  constructor
-  
-  ·
-    simp
-    apply lt_of_le_of_lt h₅
-    rw [bwSeq_snd_eq_fst_sub hM]
-    simp
-    suffices : (↑M + ↑M) / 2 ^ n < ε; linarith
-    rw [div_lt_comm₀] <;> try positivity
+  have H : (↑M + ↑M) / 2 ^ n < ε
+  · rw [div_lt_comm₀] <;> try positivity
     have h₆ : 2 ^ N ≤ 2 ^ n
     · exact Nat.pow_le_pow_right (by norm_num) hn
-    replace h₆ : (2 ^ N : ℝ) ≤ 2 ^ n
-    · sorry
+    replace h₆ : (2 ^ N : ℝ) ≤ 2 ^ n; exact_mod_cast h₆
     apply lt_of_lt_of_le _ h₆
     clear h₆
     trans (N : ℝ); rwa [←mul_two]
-    sorry
-  
-  · sorry
+    suffices h₆ : N < 2 ^ N; exact_mod_cast h₆
+    exact Nat.lt_two_pow_self
+  constructor
+  · simp; apply lt_of_le_of_lt h₅
+    rw [bwSeq_snd_eq_fst_sub hM]; simp; linarith
+  · suffices : a (σ n) - ↑(bwSeq a (-M) M n).1 < ε; linarith
+    rw [bwSeq_fst_eq_snd_sub hM]; simp; linarith
