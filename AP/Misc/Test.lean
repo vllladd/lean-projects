@@ -8,9 +8,9 @@ namespace Misc.Test
 -- (ha₂ : 0 ≤ a) (hb₂ : 0 ≤ b) (hc₂ : 0 ≤ c)
 -- (ha₃ : a ≠ 0) (hb₃ : b ≠ 0) (hc₃ : c ≠ 0)
 -- (ha₄ : 1 < a) (hb₄ : 1 < b) (hc₄ : 1 < c) :
--- a⁻¹ < b ↔ 1 < b * a := by
+-- a * c < b * c ↔ a < b := by
 --   exact?
-
+-- 
 -- #check 0 #exit
 
 namespace A1
@@ -37,11 +37,11 @@ theorem thm₂ {n} : f n n = n * 2 := by
   rw [Nat.mul_two]; apply n.rec (motive := λ k => f n k = n + k)
   simp_all [f]; intros; simp_all [thm₁]; rfl
 
+end A2
+
 -----
 
-section
-
-open Real
+end Misc.Test
 
 namespace Real
 
@@ -90,6 +90,10 @@ theorem le_inv_self_of {x : ℚ} (h₁ : 0 < x) (h₂ : x ≤ 1) : x ≤ x⁻¹ 
 -- #check 0 #exit
 
 end Rat
+
+-----
+
+namespace Real
 
 theorem aux₁ {a : ℕ → ℚ} : IsCauSeq (abs : ℚ → ℚ) a ↔
 ∀ (ε : ℚ), 0 < ε → ε < 1 → ∃ (N : ℕ), ∀ n ≥ N, |a n - a N| < ε := by
@@ -140,113 +144,52 @@ theorem aux₂ : IsCauSeq (abs : ℚ → ℚ) (· + 1)⁻¹ := by
     exact hn
   rwa [←inv_eq_one_div]
 
-theorem aux₃ : ¬∀ {a : ℕ → ℚ} (_ : IsCauSeq abs a) (N : ℕ) (b : ℕ → ℚ)
-(_ : IsCauSeq abs b) (_ : ∀ (n : ℕ), N ≤ n → ∃ x, 0 < x ∧
-∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a n + b j),
-∃ (x : ℚ), 0 < x ∧ ∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a j + b j := by
-  push_neg
-  use λ n => (n + 1)⁻¹
-  use aux₂
-  use 0
-  use λ _ => 0
-  constructor
-  · intro e he
-    simp
-    use 0
-    simpa
+theorem aux₃ : mk ⟨_, aux₂⟩ = 0 := by
+  convert_to _ = ((0 : ℕ) : ℝ); simp
+  change _ = mk ⟨_, _⟩
   simp
+  rw [mk_eq]
+  intro e (he : 0 < e)
+  dsimp
+  obtain ⟨N, hN⟩ := exists_nat_gt # max e e⁻¹
+  use N
+  rintro n hn
+  simp
+  rw [abs_of_pos] <;> try positivity
+  rw [max_lt_iff] at hN
+  rcases hN with ⟨h₁, h₂⟩
+  wlog h₃ : e ≤ 1 with ih
+  · push_neg at h₃
+    specialize ih e⁻¹ (by positivity) N n hn h₂ (by simpa) #
+      inv_le_one_of_one_le₀ # le_of_lt h₃
+    exact ih.trans # Rat.inv_lt_self_of_one_lt h₃
+  rw [inv_lt_iff_one_lt_mul₀] at h₂ ⊢ <;> try positivity
+  rw [mul_comm]
+  apply h₂.trans
+  rw [mul_lt_mul_iff_of_pos_right he]
+  suffices H : N < n + 1; exact_mod_cast H
+  linarith
+
+-- #check 0 #exit
+
+theorem aux₄ : ¬∀ {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a)
+(_ : ∃ N, ∀ n, N ≤ n → |a n - x| < ε), |x - mk ⟨a, ha⟩| < ε := by
+  push_neg
+  use (· + 1)⁻¹
+  use 1
+  use 1
+  use aux₂
   constructor
-  · intro N
-    use (N + 1 : ℚ)⁻¹
+  · dsimp
+    use 0
+    intro n hn
+    simp
+    rw [abs_of_nonpos]
+    rotate_left
+    · simp
+      rw [inv_le_one_iff₀]
+      simp
     simp
     positivity
-  intro x hx i
-  obtain ⟨n, hn⟩ := exists_nat_gt x⁻¹
-  use n + i, by linarith
-  simp
-  have h : (n : ℚ) < n + i + 1; linarith
-  rw [inv_lt_comm₀] <;> try positivity
-  apply h.trans'
-  exact hn
-
-theorem aux₄ : ¬∀ {a : ℕ → ℚ} (_ : IsCauSeq abs a) (N : ℕ) (e : ℕ → ℚ)
-(he : IsCauSeq abs e) (_ : ∀ n, e n < 0) (_ : mk ⟨e, he⟩ < 0) (b : ℕ → ℚ) (_ : IsCauSeq abs b)
-(_ : ∀ (n : ℕ), N ≤ n → ∃ x, 0 < x ∧ ∃ i, ∀ (j : ℕ),
-i ≤ j → x ≤ a n - (-b - e) j - e j), ∃ x, 0 < x ∧ ∃ i, ∀ (j : ℕ),
-i ≤ j → x ≤ a j - (-b - e) j - e j := by
-  have H := aux₃; push_neg at H ⊢
-  obtain ⟨a, ha, N, b, hb, H⟩ := H
-  use a, ha, N, -1, IsCauSeq.const _ |>.neg, by simp
-  constructor
-  · convert_to (-1 : ℝ) < 0; rotate_left; norm_num
-    convert_to _ = -((1 : ℕ) : ℝ); simp
-    change mk _ = -mk ⟨_, _⟩
-    rw [neg_mk]; rfl
-  use b, hb
-  simp; ring_nf; exact H
-
--- #check 0 #exit
-
-theorem aux₅ : ¬∀ {a : ℕ → ℚ} (_ : IsCauSeq abs a) (N : ℕ) (b : ℕ → ℚ)
-(_ : IsCauSeq abs b) (e : ℕ → ℚ) (he : IsCauSeq abs e)
-(_ : ∀ n, e n < 0) (_ : mk ⟨e, he⟩ < 0)
-(_ : ∀ (n : ℕ), N ≤ n → ∃ x, 0 < x ∧ ∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a n - b j - e j),
-∃ x, 0 < x ∧ ∃ i, ∀ (j : ℕ), i ≤ j → x ≤ a j - b j - e j := by
-  have H := aux₄; push_neg at H ⊢
-  obtain ⟨a, ha, N, e, he, He, He', b, hb, H⟩ := H
-  use a, ha, N, -b - e, hb.neg.sub he, e, he
-
--- #check 0 #exit
-
-theorem aux₆ : ¬∀ {a : ℕ → ℚ} (ha : IsCauSeq abs a) (N : ℕ) (b : ℕ → ℚ)
-(hb : IsCauSeq abs b) (e : ℕ → ℚ) (he : IsCauSeq abs e)
-(He : ∀ n, e n < 0) (He' : mk ⟨e, he⟩ < 0)
-(h : ∀ (n : ℕ), N ≤ n → mk ⟨e, he⟩ < ↑(a n) - mk ⟨b, hb⟩ ∧
-↑(a n) - mk ⟨b, hb⟩ < -mk ⟨e, he⟩), ∃ x, 0 < x ∧ ∃ i, ∀ (j : ℕ),
-i ≤ j → x ≤ a j - b j - e j := by
-  have H := aux₅; push_neg at H ⊢
-  obtain ⟨a, ha, N, b, hb, e, he, He, He', h, H⟩ := H
-  use a, ha, N, b, hb, e, he, He, He'
-  refine ⟨?_, H⟩
-  intro n hn
-  specialize h n hn
-  constructor
-  · change _ < mk ⟨_, _⟩ - _; simpa [mk_sub_mk]
-  suffices H₁ : a n + mk ⟨e, he⟩ < mk ⟨b, hb⟩; linarith
-  -- change mk ⟨e, he⟩ < a n - mk ⟨b, hb⟩ at h
-  -- change CauSeq.Pos (λ i => a n - b i - e i) at h
-  -- change CauSeq.Pos _ at h
-  replace h : mk ⟨e, he⟩ < a n - mk ⟨b, hb⟩
-  · change _ < mk ⟨_, _⟩ - _; simpa [mk_sub_mk]
-  replace h : mk ⟨b, hb⟩ + mk ⟨e, he⟩ < a n; linarith
-  change mk ⟨e, he⟩ < 0 at He'
-  sorry
-
--- #check 0 #exit
-
-theorem abs_sub_cauchy_lt_of_exi {a : ℕ → ℚ} {x ε : ℝ} (ha : IsCauSeq abs a)
-(h : ∃ N, ∀ n, N ≤ n → |a n - x| < ε) : |x - mk ⟨a, ha⟩| < ε := by
-  rw [abs_sub_comm]
-  obtain ⟨N, h⟩ := h
-  obtain ⟨b, hb, rfl⟩ := x.exi_mk_cauchy
-  rw [mk_sub_mk]
-  simp_rw [abs_lt] at h ⊢
-  constructor
-  · obtain ⟨e, he, H⟩ := (-ε).exi_mk_cauchy
-    rw [neg_eq_iff_eq_neg] at H
-    subst H
-    simp at h ⊢
-    change ∃ _, _
-    simp
-    
-    replace h : ∀ n, N ≤ n → mk ⟨e, he⟩ < ↑(a n) - mk ⟨b, hb⟩
-    · intro n hn; specialize h n hn; exact h.1
-    change ∀ n, N ≤ n → mk ⟨e, he⟩ < mk ⟨_, _⟩ - mk ⟨b, hb⟩ at h
-    simp [mk_sub_mk] at h
-    change ∀ n, N ≤ n → ∃ _, _ at h
-    dsimp at h
-    
-    sorry
-  · sorry
-
-end
+  rw [aux₃]
+  norm_num
