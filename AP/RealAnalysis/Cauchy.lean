@@ -248,9 +248,16 @@ theorem isFakeCauchy_ne_isCauchy : isFakeCauchy ≠ isCauchy := by
   apply ne_of_congr (· (√·)); simp; push_neg; left
   use isFakeCauchy_sqrt, not_isCauchy_sqrt
 
--- todo:
--- * cauchy_add
--- * caucky -> bounded
--- * isCauchy' -> isCauchy_alt1 (a : ℕ → ℝ) : Prop :=
--- * isCauchy_alt2 : ∀ ε, 0 < ε → ∃ N, ∀ i N ≤ i → ∀ j, N ≤ j → |a i - a j| < ε
--- * isCauchy_alt3 : ∀ ε, 0 < ε → ∃ N, ∀ i N ≤ i → ∀ j, i ≤ j → |a i - a j| < ε
+/- todo:
+* cauchy_add
+* cauchy -> bounded
+* isCauchy' -> isCauchy_alt1 (a : ℕ → ℝ) : Prop :=
+* isCauchy_alt2 : ∀ ε, 0 < ε → ∃ N, ∀ i N ≤ i → ∀ j, N ≤ j → |a i - a j| < ε
+* isCauchy_alt3 : ∀ ε, 0 < ε → ∃ N, ∀ i N ≤ i → ∀ j, i ≤ j → |a i - a j| < ε
+* 1, 1.4, 1.41, 1.412 ... -> sqrt 2
+* monotone, bounded on one side (prove 2 theorems) -> cauchy
+  (and another pair of theorems for converges)
+* e > 0 -> (V n, tau n >= n) -> (V n, sigma n >= tau n) ->
+  (V n, e <= |a(sigma n) - a(tau n)|) -> V k, k * e <= a(sigma^k(0))-a(0)
+  (and prove another version with (V n, e <= a(sigma n) - a(tau n)))
+-/
