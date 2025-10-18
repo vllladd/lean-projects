@@ -251,3 +251,6 @@ theorem isFakeCauchy_ne_isCauchy : isFakeCauchy ≠ isCauchy := by
 -- todo:
 -- * cauchy_add
 -- * caucky -> bounded
+-- * isCauchy' -> isCauchy_alt1 (a : ℕ → ℝ) : Prop :=
+-- * isCauchy_alt2 : ∀ ε, 0 < ε → ∃ N, ∀ i N ≤ i → ∀ j, N ≤ j → |a i - a j| < ε
+-- * isCauchy_alt3 : ∀ ε, 0 < ε → ∃ N, ∀ i N ≤ i → ∀ j, i ≤ j → |a i - a j| < ε
