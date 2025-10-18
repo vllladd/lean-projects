@@ -322,7 +322,7 @@ theorem bddBelow_of_converges {a} (h : converges a) : BddBelow (Set.range a) := 
   linarith
 
 @[simp]
-theorem converges_neg_iff {a} : converges (-a) ↔ converges a := by
+theorem converges_neg {a} : converges (-a) ↔ converges a := by
   constructor <;> rintro ⟨L, h⟩ <;> use -L <;> convert tendsTo_neg h; simp
 
 theorem bddAbove_of_converges {a} (h : converges a) : BddAbove (Set.range a) := by
@@ -657,8 +657,6 @@ theorem converges_div {a b} (ha : converges a) (hb : converges b)
   obtain ⟨L, ha⟩ := ha; obtain ⟨M, hb⟩ := hb; use L / M
   rw [limit_eq_of_tendsTo hb] at h; exact tendsTo_div h ha hb
 
-theorem converges_neg {a} (ha : converges a) : converges (-a) := by simpa
-
 theorem converges_inv {a} (ha : converges a) (h : limit a ≠ 0) : converges a⁻¹ := by
   obtain ⟨L, ha⟩ := ha; rw [limit_eq_of_tendsTo ha] at h
   use L⁻¹; exact tendsTo_inv h ha
@@ -723,10 +721,24 @@ theorem bounded_drop_iff {a k} : bounded (a # · + k) ↔ bounded a := by
   suffices H : |a n| ≤ ∑ i ∈ Finset.range k, |a i|; linarith
   exact Finset.le_sum_range hk
 
-set_option linter.unusedVariables false in
-example : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ} {k : ℕ}
-(hε : ε > 0) (hτ : ∀ n, n ≤ τ n) (hσ : ∀ n, τ n ≤ σ n)
-(h : ∀ n, ε ≤ |a (σ n) - a (τ n)|), k * ε ≤ a (σ^[k] 0) - a 0 := by
-  push_neg
-  use (-·), (·), (· + 1), 1, 1
-  simp
+theorem le_lub_of_bounded_top {a : ℕ → ℝ} {n : ℕ}
+(ha : ∃ m, ∀ n, a n ≤ m) : a n ≤ lub a := by
+  obtain ⟨m, ha⟩ := ha; apply le_ciSup; use m
+  intro x; simp; rintro i rfl; apply ha
+
+theorem glb_le_of_bounded_bottom {a : ℕ → ℝ} {n : ℕ}
+(ha : ∃ m, ∀ n, m ≤ a n) : glb a ≤ a n := by
+  obtain ⟨m, ha⟩ := ha; apply ciInf_le; use m
+  intro x; simp; rintro i rfl; apply ha
+
+theorem exi_lub_sub_lt_of_bounded_top {a : ℕ → ℝ} {ε : ℝ}
+(ha : ∃ m, ∀ n, a n ≤ m) (he : 0 < ε) : ∃ n, lub a - a n < ε := by
+  replace ha := λ n => le_lub_of_bounded_top (n := n) ha
+  by_contra! h₁; replace h₁ : ∀ n, a n ≤ lub a - ε
+  intro n; linarith [h₁ n]; linarith [lub_le_of_le h₁]
+
+theorem exi_sub_glb_lt_of_bounded_bottom {a : ℕ → ℝ} {ε : ℝ}
+(ha : ∃ m, ∀ n, m ≤ a n) (he : 0 < ε) : ∃ n, a n - glb a < ε := by
+  replace ha := λ n => glb_le_of_bounded_bottom (n := n) ha
+  by_contra! h₁; replace h₁ : ∀ n, glb a + ε ≤ a n
+  intro n; linarith [h₁ n]; linarith [le_glb_of_le h₁]
