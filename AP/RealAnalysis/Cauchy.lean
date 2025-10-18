@@ -247,3 +247,7 @@ theorem not_isCauchy_sqrt : ¬isCauchy (√·) := by
 theorem isFakeCauchy_ne_isCauchy : isFakeCauchy ≠ isCauchy := by
   apply ne_of_congr (· (√·)); simp; push_neg; left
   use isFakeCauchy_sqrt, not_isCauchy_sqrt
+
+-- todo:
+-- * cauchy_add
+-- * caucky -> bounded
