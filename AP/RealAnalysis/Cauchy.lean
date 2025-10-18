@@ -76,6 +76,30 @@ theorem abs_mk_sub_le {a : ℕ → ℚ} {x e : ℝ} (ha : IsCauSeq abs a)
   constructor
   
   · suffices H : x - e ≤ mk ⟨a, ha⟩; linarith
+    
+    replace h : ∀ (n : ℕ), N ≤ n → x - e < a n
+    · intro n hn
+      specialize h n hn
+      rw [abs_lt] at h
+      linarith
+    change ∀ n, _ → _ < mk ⟨_, _⟩ at h
+    
+    obtain ⟨b, hb, h₁⟩ := @exi_mk_cauchy (x - e)
+    rw [h₁] at h ⊢
+    
+    simp_rw [mk_lt] at h
+    change ∀ n, _ → ∃ _, _ at h
+    simp at h
+    
+    rw [le_iff_eq_or_lt, mk_eq, mk_lt, or_iff_not_imp_left]
+    intro h₂
+    change ¬∀ _, _ at h₂
+    push_neg at h₂
+    simp at h₂
+    obtain ⟨y, h₂, h₃⟩ := h₂
+    change ∃ _, _
+    simp
+    
     sorry
   
   · sorry
