@@ -722,3 +722,11 @@ theorem bounded_drop_iff {a k} : bounded (a # · + k) ↔ bounded a := by
   have hM := nonneg_of_abs_le h
   suffices H : |a n| ≤ ∑ i ∈ Finset.range k, |a i|; linarith
   exact Finset.le_sum_range hk
+
+set_option linter.unusedVariables false in
+example : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ} {k : ℕ}
+(hε : ε > 0) (hτ : ∀ n, n ≤ τ n) (hσ : ∀ n, τ n ≤ σ n)
+(h : ∀ n, ε ≤ |a (σ n) - a (τ n)|), k * ε ≤ a (σ^[k] 0) - a 0 := by
+  push_neg
+  use (-·), (·), (· + 1), 1, 1
+  simp
