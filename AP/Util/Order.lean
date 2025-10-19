@@ -439,18 +439,24 @@ end
 theorem abs_sub_lt_iff' {x y z : ℝ} : |x - y| < z ↔ y - z < x ∧ x < y + z := by
   rw [abs_sub_lt_iff]; constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
-theorem abs_sub_lt_trans {a c e : ℝ} (b : ℝ)
+section
+
+variable {α : Type*} [LinearOrder α] [NormedField α] [IsStrictOrderedRing α]
+
+theorem abs_sub_lt_trans {a c e : α} (b : α)
 (h : |a - b| + |b - c| < e) : |a - c| < e := by
   linarith [abs_sub_le a b c]
 
-theorem abs_sub_le_trans {a c e : ℝ} (b : ℝ)
+theorem abs_sub_le_trans {a c e : α} (b : α)
 (h : |a - b| + |b - c| ≤ e) : |a - c| ≤ e := by
   linarith [abs_sub_le a b c]
 
-theorem abs_sub_lt_trans_half {a c e : ℝ} (b : ℝ)
+theorem abs_sub_lt_trans_half {a c e : α} (b : α)
 (h₁ : |a - b| < e / 2) (h₂ : |b - c| < e / 2) : |a - c| < e := by
   linarith [abs_sub_le a b c]
 
-theorem abs_sub_le_trans_half {a c e : ℝ} (b : ℝ)
+theorem abs_sub_le_trans_half {a c e : α} (b : α)
 (h₁ : |a - b| ≤ e / 2) (h₂ : |b - c| ≤ e / 2) : |a - c| ≤ e := by
   linarith [abs_sub_le a b c]
+
+end
