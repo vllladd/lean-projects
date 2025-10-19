@@ -76,3 +76,99 @@ theorem thm_6_div_mul_succ_mul {n : ℕ} : 6 ∣ n * (n + 1) * (2 * n + 1) := by
   induction n; decide; nm n ih; ring_nf at ih
   convert_to 6 ∣ n + n ^ 2 * 3 + n ^ 3 * 2 + 6 * (n * 2 + n ^ 2 + 1); ring_nf
   rw [←Nat.dvd_add_iff_right ih]; simp
+
+end A3 namespace A4 -----
+
+--         1 * 8 + 1 = 9
+--        12 * 8 + 2 = 98
+--       123 * 8 + 3 = 987
+--      1234 * 8 + 4 = 9876
+--     12345 * 8 + 5 = 98765
+--    123456 * 8 + 6 = 987654
+--   1234567 * 8 + 7 = 9876543
+--  12345678 * 8 + 8 = 98765432
+-- 123456789 * 8 + 9 = 987654321
+
+open Finset
+
+variable {b n : ℕ} (hb : 2 ≤ b) (hn : 1 ≤ n)
+include hb hn
+
+def f (b n : ℕ) : ℕ :=
+  ∑ k ∈ range n, b ^ k
+
+def g (b n : ℕ) : ℕ :=
+  ∑ k ∈ range n, k * b ^ k
+
+omit hn in
+theorem base_sub_one_ne_zero : (b : ℝ) - 1 ≠ 0 := by
+  cases b; simp at hb; nm b; simp; rintro rfl; simp at hb
+
+omit hn in
+theorem one_sub_base_ne_zero : 1 - (b : ℝ) ≠ 0 := by
+  have h := base_sub_one_ne_zero hb; contrapose! h; linarith
+
+theorem f_eq : (f b n : ℝ) = (1 - b ^ n) / (1 - b) := by
+  have h : (f b n : ℝ) = b * f b n + 1 - b ^ n
+  · calc
+    _ = (∑ k ∈ range n, b ^ k : ℝ) := by rw [f]; simp
+    _ = 1 + ∑ k ∈ range (n - 1), b ^ (k + 1) := by
+      cases n; simp at hn; nm n; simp
+      rw [sum_range_succ']; ring_nf
+    _ = 1 + ∑ k ∈ range n, b ^ (k + 1) - b ^ n := by
+      cases n; simp at hn; nm n
+      simp; rw [sum_range_succ]; ring_nf
+    _ = 1 + b * ∑ k ∈ range n, b ^ k - b ^ n := by
+      congr; simp_rw [pow_succ, ←sum_mul]; ring_nf; simp
+    _ = _ := by rw [←f]; ring_nf
+  have h₁ := one_sub_base_ne_zero hb
+  field_simp; linarith
+
+theorem g_eq' : (g b n : ℝ) = (b * f b n - n * b ^ n) / (1 - b) := by
+  have h₁ := one_sub_base_ne_zero hb
+  have h : (g b n : ℝ) = -n * b ^ n + b * g b n + b * f b n
+  · calc
+    _ = (∑ k ∈ range n, k * b ^ k : ℝ) := by rw [g]; simp
+    _ = ∑ k ∈ range (n - 1), (k + 1) * b ^ (k + 1) := by
+      cases n; simp at hn; nm n; simp
+      rw [sum_range_succ']; simp
+    _ = -n * b ^ n + ∑ k ∈ range n, (k + 1) * b ^ (k + 1) := by
+      cases n; simp at hn; nm n; simp
+      rw [sum_range_succ]; ring_nf; congr; ext; ring_nf
+    _ = -n * b ^ n + b * ∑ k ∈ range n, (k + 1) * b ^ k := by
+      congr; simp; simp_rw [pow_succ, ←mul_assoc, ←sum_mul]
+      ring_nf; congr; ext; ring_nf
+    _ = -n * b ^ n + (b * ∑ k ∈ range n, k * b ^ k + b * f b n) := by
+      congr; simp; simp_rw [add_mul]
+      rw [sum_add_distrib, mul_add]; congr; simp [f]
+    _ = -n * b ^ n + b * g b n + b * f b n := by rw [←g]; ring_nf
+  field_simp; linarith
+
+theorem g_eq : (g b n : ℝ) = (b ^ n * (n * b - n - b) + b) / (1 - b) ^ 2 := by
+  have h := g_eq' hb hn
+  rw [f_eq hb hn] at h
+  have h₁ := one_sub_base_ne_zero hb
+  field_simp at h ⊢
+  linarith
+
+theorem main : (∑ k ∈ range n, (n - k : ℝ) * b ^ k) * (b - 2) + n =
+∑ k ∈ range n, (b - n + k : ℝ) * b ^ k := by
+  convert_to (∑ k ∈ range n, (n * b ^ k - k * b ^ k : ℝ)) * (b - 2 : ℝ) + n =
+    ∑ k ∈ range n, ((b - n : ℝ) * b ^ k + k * b ^ k)
+  · simp [sub_mul]
+  · simp [add_mul, sub_mul]
+  convert_to ((n * ∑ k ∈ range n, b ^ k : ℝ) -
+    ∑ k ∈ range n, (k : ℝ) * b ^ k) * (b - 2 : ℝ) + n =
+    (b - n : ℝ) * (∑ k ∈ range n, (b : ℝ) ^ k) + ∑ k ∈ range n, (k : ℝ) * b ^ k
+  · simp [mul_sum]
+  · simp [sum_add_distrib, mul_sum]
+  have hf : ∑ k ∈ range n, (b : ℝ) ^ k = f b n; simp [f]
+  have hg : ∑ k ∈ range n, (k : ℝ) * b ^ k = g b n; simp [g]
+  simp; rw [hf, hg]; clear hf hg
+  rw [f_eq hb hn, g_eq hb hn]
+  have h₁ := one_sub_base_ne_zero hb
+  field_simp
+  generalize (b : ℝ) = b
+  generalize (n : ℝ) = n
+  nm x y; clear! x y
+  ring_nf
