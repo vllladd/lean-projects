@@ -128,7 +128,7 @@ theorem isCauSeq_bwSeq_fst {a : ℕ → ℝ} {y₁ y₂ : ℚ}
       rw [←Real.ratCast_lt] at H₁ ⊢
       push_cast at H₁ ⊢
       apply h₁.trans'; clear h₁
-      simp_rw [div_eq_mul_inv, mul_lt_mul_left H₁]
+      simp_rw [div_eq_mul_inv, mul_lt_mul_iff_right₀ H₁]
       rw [inv_lt_inv₀] <;> try positivity
       rw [←Real.rpow_natCast]
       exact Real.rpow_lt_rpow_of_exponent_lt (by norm_num) hn
@@ -269,7 +269,7 @@ y₁ ≤ a i ∧ a i ≤ y₂ := by
   rw [←hN]
   rw [Nat.lt_one_add_iff]
   replace hk : k ∈ Finset.range (n + 1); simpa
-  exact CanonicallyOrderedAddCommMonoid.single_le_sum hk
+  exact Finset.single_le_sum_of_canonicallyOrdered hk
 
 theorem bwSubseq_cnd {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n : ℕ} :
 (∀ k < n, bwSubseq a M h k < bwSubseq a M h n) ∧

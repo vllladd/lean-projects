@@ -214,7 +214,7 @@ theorem mem_toList [LinearOrder α] {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 
 theorem toList_eq_toList [LinearOrder α] {m₁ m₂ : Map α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   rcases m₁ with ⟨⟨m₁⟩⟩; rcases m₂ with ⟨⟨m₂⟩⟩
-  simp [toList, Quotient.lift_eq, ←equiv_def]
+  simp [Std.ExtDHashMap.lift, toList, Quotient.lift_eq, ←equiv_def]
 
 @[simp]
 theorem toList_eq_nil_iff [LinearOrder α] : mp.toList = [] ↔ mp = ∅ := by

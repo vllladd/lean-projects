@@ -132,3 +132,43 @@ theorem lt_inv_self_of {x : ℝ} (h₁ : 0 < x) (h₂ : x < 1) : x < x⁻¹ := b
 theorem le_inv_self_of {x : ℝ} (h₁ : 0 < x) (h₂ : x ≤ 1) : x ≤ x⁻¹ := by
   rw [le_iff_eq_or_lt] at h₂; rcases h₂ with rfl | h₂; norm_num
   exact le_of_lt # lt_inv_self_of h₁ h₂
+
+theorem sqrt_add_one_sub_lt_one {x} (hx : 0 < x) : √(x + 1) - √x < 1 := by
+  have h₁ : √x < √(x + 1); rw [sqrt_lt_sqrt_iff] <;> linarith
+  rw [←sq_lt_sq₀, sub_sq, sq_sqrt, sq_sqrt] <;> try first | positivity | linarith
+  suffices H : x < √(x + x ^ 2)
+  · rw [mul_assoc, ←sqrt_mul'] <;> try positivity
+    ring_nf at H ⊢; linarith
+  rw [lt_sqrt] <;> try positivity;; simpa
+
+@[simp]
+theorem abs_sqrt {x : ℝ} : |√x| = √x := by
+  rw [abs_of_nonneg]; positivity
+
+theorem abs_sub_lt_of_lt_lt_half {a b c d : ℝ}
+(h₁ : |a - c| < d / 2) (h₂ : |b - c| < d / 2) : |a - b| < d := by
+  calc
+  _ = |a - c - (b - c)| := by ring_nf
+  _ ≤ |a - c| + |b - c| := abs_sub _ _
+  _ < _ := by linarith
+
+theorem abs_sub_lt_of_le_lt_half {a b c d : ℝ}
+(h₁ : |a - c| ≤ d / 2) (h₂ : |b - c| < d / 2) : |a - b| < d := by
+  calc
+  _ = |a - c - (b - c)| := by ring_nf
+  _ ≤ |a - c| + |b - c| := abs_sub _ _
+  _ < _ := by linarith
+
+theorem abs_sub_lt_of_lt_le_half {a b c d : ℝ}
+(h₁ : |a - c| < d / 2) (h₂ : |b - c| ≤ d / 2) : |a - b| < d := by
+  calc
+  _ = |a - c - (b - c)| := by ring_nf
+  _ ≤ |a - c| + |b - c| := abs_sub _ _
+  _ < _ := by linarith
+
+theorem abs_sub_le_of_le_le_half {a b c d : ℝ}
+(h₁ : |a - c| ≤ d / 2) (h₂ : |b - c| ≤ d / 2) : |a - b| ≤ d := by
+  calc
+  _ = |a - c - (b - c)| := by ring_nf
+  _ ≤ |a - c| + |b - c| := abs_sub _ _
+  _ ≤ _ := by linarith

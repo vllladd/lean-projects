@@ -74,7 +74,7 @@ instance {s} [hs : sys.WF s] : sys.WF (sym.fs' s) := by simpa
 
 theorem validTr_iff {s t} :
 sys.validTr s t ↔ sys.validTr (sym.fs s) (sym.ft t) := by
-  unfold validTr; nth_rw 2 [sym.tr_eq']; simp; rw [exists_comm]; simp
+  unfold validTr; nth_rw 2 [sym.tr_eq']; simp
 
 theorem validTr_iff' {s t} :
 sys.validTr s t ↔ sys.validTr (sym.fs' s) (sym.ft' t) := by

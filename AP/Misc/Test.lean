@@ -84,14 +84,13 @@ theorem aux₂ : IsCauSeq (abs : ℚ → ℚ) (· + 1)⁻¹ := by
   field_simp
   replace hn : (n + 1 : ℚ)⁻¹ < ε
   · rw [inv_lt_comm₀] <;> try positivity;; linarith
-  rw [mul_comm, div_mul_eq_div_div]
-  have h₁ : (k : ℚ) / (n + k + 1) < 1
-  · rw [div_lt_comm₀] <;> try positivity;; linarith
+  rw [mul_comm]
+  have h₁ : (k : ℚ) < n + k + 1; linarith
+  simp
   suffices : 1 / (n + 1) < ε
-  · rw [div_lt_iff₀] <;> try positivity
-    apply h₁.trans
+  · apply h₁.trans
     rw [inv_lt_iff_one_lt_mul₀] at hn <;> try positivity
-    exact hn
+    nlinarith
   rwa [←inv_eq_one_div]
 
 theorem aux₃ : mk ⟨_, aux₂⟩ = 0 := by

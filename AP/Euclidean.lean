@@ -35,7 +35,7 @@ Euclidean.dist a c ≤ Euclidean.dist a b + Euclidean.dist b c := by
     (λ ⟨i, h⟩ => c ⟨i, by linarith⟩)
   simp at ih
   simp_rw [Finset.sum_fin_eq_sum_range] at ih ⊢
-  simp [Finset.range_succ]
+  simp [Finset.range_add_one]
   let f (a b : Fin (n + 1) → ℝ) : ℝ := ∑ i ∈ Finset.range n, if h : i < n
     then (a ⟨i, by linarith⟩ - b ⟨i, by linarith⟩) ^ 2 else 0
   have hf : ∀ a b, 0 ≤ f a b

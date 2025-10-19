@@ -19,10 +19,7 @@ theorem toList_empty : (∅ : Std.DHashMap α β).toList = [] := by
   ext:1; simp
 
 @[simp]
-theorem nodup_keys : mp.keys.Nodup := by
-  unfold List.Nodup
-  convert mp.distinct_keys
-  simp
+theorem nodup_keys' : mp.keys.Nodup := nodup_keys
 
 @[simp]
 theorem nodup_toList : mp.toList.Nodup := by
@@ -568,7 +565,7 @@ mp.toList = mp.buckets.toList.flatMap (·.toList) := by
 
 theorem bucket_nodup_keys {mp : Raw α β} (wf : mp.WF) {b}
 (h : b ∈ mp.buckets) : b.toList.map (·.1) |>.Nodup := by
-  have h₁ := DHashMap.nodup_keys (mp := ⟨mp, wf⟩)
+  have h₁ := DHashMap.nodup_keys' (mp := ⟨mp, wf⟩)
   rw [←DHashMap.map_fst_toList_eq_keys, DHashMap.toList, toList_eq_flat_buckets] at h₁
   simp only [List.flatMap, List.map_flatten, List.map_map, Function.comp_def'] at h₁
   rw [List.nodup_flatten] at h₁

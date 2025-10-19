@@ -165,7 +165,7 @@ theorem mem_toList [LinearOrder α] {x} : x ∈ s.toList ↔ x ∈ s := by
 theorem toList_eq_toList [LinearOrder α] {s₁ s₂ : Set' α} :
 s₁.toList = s₂.toList ↔ s₁ = s₂ := by
   rcases s₁ with ⟨⟨s₁⟩⟩; rcases s₂ with ⟨⟨s₂⟩⟩
-  simp [toList, Quotient.lift_eq]
+  simp [Std.ExtDHashMap.lift, toList, Quotient.lift_eq]
   exact Quotient.out_equiv_out (x := s₁)
 
 @[simp]

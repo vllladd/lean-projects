@@ -1,64 +1,6 @@
 import AP.RealAnalysis.Monotonicity
 
-theorem abs_sub_lt_trans {a c e : ℝ} (b : ℝ)
-(h : |a - b| + |b - c| < e) : |a - c| < e := by
-  linarith [abs_sub_le a b c]
-
-theorem abs_sub_le_trans {a c e : ℝ} (b : ℝ)
-(h : |a - b| + |b - c| ≤ e) : |a - c| ≤ e := by
-  linarith [abs_sub_le a b c]
-
-theorem abs_sub_lt_trans_half {a c e : ℝ} (b : ℝ)
-(h₁ : |a - b| < e / 2) (h₂ : |b - c| < e / 2) : |a - c| < e := by
-  linarith [abs_sub_le a b c]
-
-theorem abs_sub_le_trans_half {a c e : ℝ} (b : ℝ)
-(h₁ : |a - b| ≤ e / 2) (h₂ : |b - c| ≤ e / 2) : |a - c| ≤ e := by
-  linarith [abs_sub_le a b c]
-
--- #check 0 #exit
-
 namespace Real
-
-theorem sqrt_add_one_sub_lt_one {x} (hx : 0 < x) : √(x + 1) - √x < 1 := by
-  have h₁ : √x < √(x + 1); rw [sqrt_lt_sqrt_iff] <;> linarith
-  rw [←sq_lt_sq₀, sub_sq, sq_sqrt, sq_sqrt] <;> try first | positivity | linarith
-  suffices H : x < √(x + x ^ 2)
-  · rw [mul_assoc, ←sqrt_mul'] <;> try positivity
-    ring_nf at H ⊢; linarith
-  rw [lt_sqrt] <;> try positivity;; simpa
-
-@[simp]
-theorem abs_sqrt {x : ℝ} : |√x| = √x := by
-  rw [abs_of_nonneg]; positivity
-
-theorem abs_sub_lt_of_lt_lt_half {a b c d : ℝ}
-(h₁ : |a - c| < d / 2) (h₂ : |b - c| < d / 2) : |a - b| < d := by
-  calc
-  _ = |a - c - (b - c)| := by ring_nf
-  _ ≤ |a - c| + |b - c| := abs_sub _ _
-  _ < _ := by linarith
-
-theorem abs_sub_lt_of_le_lt_half {a b c d : ℝ}
-(h₁ : |a - c| ≤ d / 2) (h₂ : |b - c| < d / 2) : |a - b| < d := by
-  calc
-  _ = |a - c - (b - c)| := by ring_nf
-  _ ≤ |a - c| + |b - c| := abs_sub _ _
-  _ < _ := by linarith
-
-theorem abs_sub_lt_of_lt_le_half {a b c d : ℝ}
-(h₁ : |a - c| < d / 2) (h₂ : |b - c| ≤ d / 2) : |a - b| < d := by
-  calc
-  _ = |a - c - (b - c)| := by ring_nf
-  _ ≤ |a - c| + |b - c| := abs_sub _ _
-  _ < _ := by linarith
-
-theorem abs_sub_le_of_le_le_half {a b c d : ℝ}
-(h₁ : |a - c| ≤ d / 2) (h₂ : |b - c| ≤ d / 2) : |a - b| ≤ d := by
-  calc
-  _ = |a - c - (b - c)| := by ring_nf
-  _ ≤ |a - c| + |b - c| := abs_sub _ _
-  _ ≤ _ := by linarith
 
 -- #check 0 #exit
 
@@ -295,7 +237,7 @@ theorem converges_iff_isCauchy {a} : converges a ↔ isCauchy a :=
 
 theorem not_converges_sqrt : ¬converges (√·) := by
   unfold converges tendsTo eventually
-  push_neg; simp
+  push_neg
   intro L
   use 1, by norm_num
   intro N
@@ -403,5 +345,6 @@ tendsTo (a ·) (Real.mk ⟨a, ha⟩) := by
   exact Real.abs_sub_lt_of_lt_lt_half h₃ h₂
 
 /- todo:
+* for each real number x there is a monoLt rat seq that converges to x
 * 1, 1.4, 1.41, 1.412 ... -> sqrt 2
 -/

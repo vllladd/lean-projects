@@ -68,7 +68,7 @@ theorem sum_fn_swap_eq {S : Finset ℕ} {f : ℕ → ℕ} {a b : ℕ}
 
 def toSortedList {α : Type*} [h : LinearOrder α]
 (s : Finset α) : List α := by
-  apply s.val.lift # λ xs => xs.mergeSort
+  apply Quot.liftOn s.val ## λ xs => xs.mergeSort
   intro xs ys hxy
   reduce at hxy
   dsimp

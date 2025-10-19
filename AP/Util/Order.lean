@@ -184,8 +184,7 @@ def Equiv.toLinearOrder {α β : Type*}
   let h₇ : PartialOrder β :=
     by
       constructor
-      intro a b
-      intro ha hb
+      intro a b ha hb
       exact inj # le_antisymm ha hb
   constructor
   · intro a b
@@ -240,7 +239,7 @@ max a b = if b ≤ a then a else b := max_def' _ _
 theorem abs_add_le_max_add_max {α : Type*}
 [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
 (a b x y : α) : |a + b| ≤ max |a| x + max y |b| := by
-  apply (abs_add _ _).trans; apply add_le_add <;> simp
+  apply (abs_add_le _ _).trans; apply add_le_add <;> simp
 
 theorem nonneg_of_abs_le {α : Type*} {a b : α}
 [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
@@ -439,3 +438,19 @@ end
 
 theorem abs_sub_lt_iff' {x y z : ℝ} : |x - y| < z ↔ y - z < x ∧ x < y + z := by
   rw [abs_sub_lt_iff]; constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
+theorem abs_sub_lt_trans {a c e : ℝ} (b : ℝ)
+(h : |a - b| + |b - c| < e) : |a - c| < e := by
+  linarith [abs_sub_le a b c]
+
+theorem abs_sub_le_trans {a c e : ℝ} (b : ℝ)
+(h : |a - b| + |b - c| ≤ e) : |a - c| ≤ e := by
+  linarith [abs_sub_le a b c]
+
+theorem abs_sub_lt_trans_half {a c e : ℝ} (b : ℝ)
+(h₁ : |a - b| < e / 2) (h₂ : |b - c| < e / 2) : |a - c| < e := by
+  linarith [abs_sub_le a b c]
+
+theorem abs_sub_le_trans_half {a c e : ℝ} (b : ℝ)
+(h₁ : |a - b| ≤ e / 2) (h₂ : |b - c| ≤ e / 2) : |a - c| ≤ e := by
+  linarith [abs_sub_le a b c]

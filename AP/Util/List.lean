@@ -4,6 +4,10 @@ import AP.Util.Function
 import Init.Data.List.Perm
 import Init.Data.List.Sublist
 
+instance {α : Type*} [ha : LinearOrder α] : Std.LawfulOrderMax α where
+  max_eq_or := by simp [le_total]
+  max_le_iff := by simp
+
 namespace List
 
 variable {α β : Type*} {xs ys : List α}
@@ -783,11 +787,8 @@ xs.foldlWith (λ acc x h => max acc (f x h)) z =
   apply max_assoc
 
 theorem max?_eq_some_iff₁ [ha : LinearOrder α] {m} :
-xs.max? = some m ↔ m ∈ xs ∧ ∀ b ∈ xs, b ≤ m := by
-  refine @max?_eq_some_iff α m _ _ ?_ ?_ ?_ ?_ xs
-  any_goals simp
-  · constructor; intro a b; exact le_antisymm
-  · intro a b; apply le_total
+xs.max? = some m ↔ m ∈ xs ∧ ∀ b ∈ xs, b ≤ m :=
+  @max?_eq_some_iff α m _ _ xs _ _
 
 theorem le_of_max?_eq_some [ha : LinearOrder α] {x m}
 (h₁ : x ∈ xs) (h₂ : xs.max? = some m) : x ≤ m := by

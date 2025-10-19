@@ -349,7 +349,6 @@ theorem nonempty_embed_of_empty_embed_rev {α : Type u} {β : Type v}
   rw [nonempty_embed_iff_lift.{v, u}]
   rw [←Cardinal.le_def]
   contrapose! h
-  simp
   rw [←Cardinal.le_def]
   exact le_of_lt h
 

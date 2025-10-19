@@ -87,7 +87,6 @@ theorem tendsTo_one_div : tendsTo (1 / ·) 0 := by
   use N
   intro n hn
   simp
-  rw [abs_of_nonneg # by simp]
   have h₁ : 0 < (n : ℝ)
   · cases n
     · simp at hn; simp [hn] at hN; linarith
@@ -170,7 +169,7 @@ theorem tendsTo_add {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
   specialize h₂ n # le_of_max_le_right hn
   calc
     _ = |(a₁ n - L₁) + (a₂ n - L₂)| := by ring_nf
-    _ ≤ |a₁ n - L₁| + |a₂ n - L₂| := by apply abs_add
+    _ ≤ |a₁ n - L₁| + |a₂ n - L₂| := by apply abs_add_le
   linarith
 
 theorem tendsTo_sub {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
@@ -181,8 +180,7 @@ theorem tendsTo_iff_eps_lt_one {a L} :
 tendsTo a L ↔ ∀ (ε : ℝ), 0 < ε → ε < 1 → ∃ (N : ℕ),
 ∀ (n : ℕ), N ≤ n → |a n - L| < ε := by
   use λ h e h₁ _ => h e h₁
-  intro h
-  intro e he
+  intro h e he
   specialize h (min e # 1 / 2) (by simpa) (by norm_num)
   obtain ⟨N, h⟩ := h
   use N
@@ -220,7 +218,7 @@ theorem tendsTo_inv_aux₁ {x y : ℝ} (h : |x - y| < |y| / 2) : |y| / 2 < |x| :
   _ < |y| / 2 + |x + y| := by simpa
   _ ≤ |y| / 2 + |x| + |y| := by
     simp only [add_assoc, add_le_add_iff_left]
-    apply abs_add
+    apply abs_add_le
   _ = _ := by ring_nf
 
 theorem tendsTo_inv_aux₂ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
@@ -427,12 +425,12 @@ theorem tendsTo_mul_aux₁ {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
   have h₇ : |a₁ n * a₂ n - L₁ * L₂| < a₂ n * x + L₁ * y
   · calc
     _ = |a₂ n * (a₁ n - L₁) + L₁ * (a₂ n - L₂)| := by ring_nf
-    _ ≤ |a₂ n * (a₁ n - L₁)| + |L₁ * (a₂ n - L₂)| := by apply abs_add
+    _ ≤ |a₂ n * (a₁ n - L₁)| + |L₁ * (a₂ n - L₂)| := by apply abs_add_le
     _ = |a₂ n| * |a₁ n - L₁| + |L₁| * |a₂ n - L₂| := by simp [abs_mul]
     _ = a₂ n * |a₁ n - L₁| + L₁ * |a₂ n - L₂| := by
       congr; exact abs_of_pos h₄; exact abs_of_pos h₅
-    _ < a₂ n * x + L₁ * |a₂ n - L₂| := by simpa [mul_lt_mul_left h₄]
-    _ < a₂ n * x + L₁ * y := by simpa [mul_lt_mul_left h₅]
+    _ < a₂ n * x + L₁ * |a₂ n - L₂| := by simpa [mul_lt_mul_iff_right₀ h₄]
+    _ < a₂ n * x + L₁ * y := by simpa [mul_lt_mul_iff_right₀ h₅]
   apply h₇.trans; clear h₇
   subst hx hy
   calc
@@ -469,8 +467,7 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
   · intro i; simp [←hb₂, ←hm]
     have H := lb_lt_of_tendsTo h₂ |>.1 i
     simp [max_eq_ite]; split_ifs with h₃
-    · push_neg at h₃
-      have H₃ := abs_nonneg # lb a₁
+    · have H₃ := abs_nonneg # lb a₁
       suffices H₁ : 0 < a₂ i + |lb a₂| + 1; linarith
       rw [abs_eq_ite]; split_ifs <;> linarith
     · rw [abs_eq_ite]; split_ifs <;> linarith

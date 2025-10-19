@@ -22,8 +22,7 @@ theorem AState.tr_of_aForallWinsDisj {s fsp} {a : AStrat}
     split at h₁; simp at h₁
     nm x s₁ h₂; use s₁
   use s', h₂
-  intro d Hd
-  intro n
+  intro d Hd n
   specialize h₁ d Hd (n + 1)
   obtain ⟨s₁, h₁, h₃⟩ := h₁
   simp [h₂] at h₁; simp; use s₁

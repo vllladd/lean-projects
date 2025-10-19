@@ -821,8 +821,7 @@ sys.Acyclic a ↔ ∀ f [sys.SimFn f] n m,
 sys.simulate f a n = sys.simulate f a m → n = m := by
   rw [acyclic_def_sim_full_inj]
   symm; constructor
-  · intro h
-    intro f hf n m h₁ h₂ h₃
+  · intro h f hf n m h₁ h₂ h₃
     apply h f n m
     ext
     · exact h₃
