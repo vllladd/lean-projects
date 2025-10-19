@@ -101,3 +101,34 @@ theorem monoGe_neg {a} : monoGe (-a) ↔ monoLe a := by
 @[simp]
 theorem monoGt_neg {a} : monoGt (-a) ↔ monoLt a := by
   unfold monoLt monoGt; simp
+
+theorem misc₂ : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ}
+(_ : monoLe a) (_ : ∀ n, n ≤ τ n) (_ : ∀ n, τ n ≤ σ n)
+(_ : ∀ n, ε ≤ |a (σ n) - a (τ n)|), subseq τ ∨ subseq σ := by
+  push_neg
+  use (·)
+  use λ n => n + if Even n then 1 else 0
+  use λ n => n * 2 + if Even n then 2 else 0
+  use 1
+  split_ands
+  · simp [monoLe]
+  · omega
+  · intro n; split_ifs <;> linarith
+  · intro n
+    rw [abs_of_pos]
+    · simp; split_ifs with h; linarith
+      simp at h⊢
+      cases n; simp at h
+      nm n; simp
+      linarith
+    simp
+    split_ifs with h; linarith
+    simp
+    cases n; simp at h
+    nm n; simp; linarith
+  · simp [subseq]
+    use 0, 1, by norm_num
+    simp
+  · simp [subseq]
+    use 0, 1, by norm_num
+    simp

@@ -414,9 +414,3 @@ tendsTo (a ·) (Real.mk ⟨a, ha⟩) := by
   replace h₃ : |(a n₁ : ℝ) - a N| < e / 2 / 2
   · trans (e' : ℝ); exact_mod_cast h₃; linarith
   exact Real.abs_sub_lt_of_lt_lt_half h₃ h₂
-
-/- todo:
-* τ σ iterate_gap non-subseqs
-* for each real number x there is a monoLt rat seq that converges to x
-* 1, 1.4, 1.41, 1.412 ... -> sqrt 2
--/
