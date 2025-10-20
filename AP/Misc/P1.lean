@@ -2,7 +2,7 @@ import AP.Util
 
 namespace Misc
 
-namespace A1
+namespace P1
 
 open Real
 
@@ -38,7 +38,7 @@ theorem f_lt {n} (h : 1 < n) : f n < n := by
 example : f 2003 < 2003 := by
   apply f_lt; simp
 
-end A1 namespace A2 -----
+end P1 namespace P2 -----
 
 open Real
 
@@ -70,14 +70,14 @@ a * b * c + a * b + b * c + c * a ≤ 112 := by
   suffices h₃ : 0 ≤ (x - 8) ^ 2; simp; linarith
   apply sq_nonneg
 
-end A2 namespace A3 -----
+end P2 namespace P3 -----
 
 theorem thm_6_div_mul_succ_mul {n : ℕ} : 6 ∣ n * (n + 1) * (2 * n + 1) := by
   induction n; decide; nm n ih; ring_nf at ih
   convert_to 6 ∣ n + n ^ 2 * 3 + n ^ 3 * 2 + 6 * (n * 2 + n ^ 2 + 1); ring_nf
   rw [←Nat.dvd_add_iff_right ih]; simp
 
-end A3 namespace A4 -----
+end P3 namespace P4 -----
 
 --         1 * 8 + 1 = 9
 --        12 * 8 + 2 = 98
@@ -172,3 +172,99 @@ theorem main : (∑ k ∈ range n, (n - k : ℝ) * b ^ k) * (b - 2) + n =
   generalize (n : ℝ) = n
   nm x y; clear! x y
   ring_nf
+
+end P4 namespace P5 -----
+
+def le (n m : ℕ) : Prop :=
+  ∃ (f : ℕ → ℕ) (k : ℕ), f 0 = n ∧ f k = m ∧ ∀ k, f k.succ = (f k).succ
+
+theorem le_iff_nat_le {n m} : le n m ↔ n ≤ m := by
+  constructor
+  · rintro ⟨f, k, rfl, rfl, h⟩; induction k; rfl; rw [h]; linarith
+  · intro h; obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
+    use (n + ·); simp [add_assoc]
+
+end P5 namespace P5 -----
+
+def f : ℕ → ℕ → ℕ
+| n, 0 => n
+| n, m + 1 => f (n + 1) m
+
+theorem thm₁ {n m} : f n (m + 1) = f n m + 1 := by
+  induction m generalizing n <;> simp_all [f]
+
+theorem thm₂ {n} : f n n = n * 2 := by
+  rw [Nat.mul_two]; apply n.rec (motive := λ k => f n k = n + k)
+  simp_all [f]; intros; simp_all [thm₁]; rfl
+
+end P5 namespace P6 -----
+
+-- White horse is not horse
+
+class World where
+  HorseT : Type
+  Horse : Set HorseT
+  WhiteHorse : Set HorseT
+  horse_univ : ∀ (e : HorseT), e ∈ Horse
+  exi_non_white_horse : ∃ (e : HorseT), e ∉ WhiteHorse
+
+example : World where
+  HorseT := String
+  Horse := Set.univ
+  WhiteHorse := {}
+  horse_univ e := by simp
+  exi_non_white_horse := by simp
+
+variable [W : World]
+open World
+
+theorem whiteHorse_ne_horse : WhiteHorse ≠ Horse := by
+  obtain ⟨e, h⟩ := exi_non_white_horse
+  apply ne_of_congr (e ∈ .); simp [h, horse_univ]
+
+end P6 namespace P7 -----
+
+-- There exists a person such that if they drinks, everyone drink
+
+class World where
+  Person : Type
+  drinks : Person → Prop
+  nonempty_person : Nonempty Person
+
+example : World where
+  Person := String
+  drinks _ := False
+  nonempty_person := inferInstance
+
+variable [W : World]
+open World
+
+theorem exi_imp_forall_drinks : ∃ (p : Person), drinks p → ∀ p', drinks p' := by
+  obtain ⟨p₀⟩ := nonempty_person; by_cases h : ∀ p, drinks p
+  use p₀; simp [h]; push_neg at h; obtain ⟨p, h⟩ := h; use p; simp [h]
+
+end P7 namespace P8 -----
+
+-- There exists a woman such that if she becomes sterile, the entire humanity will die out
+
+class World where
+  Woman : Type
+  sterile : Woman → Prop
+  humanityDiesOut : Prop
+  nonempty_woman : Nonempty Woman
+  humanityDiesOut_of_all_sterile : (∀ w, sterile w) → humanityDiesOut
+
+example : World where
+  Woman := String
+  sterile _ := False
+  humanityDiesOut := False
+  nonempty_woman := inferInstance
+  humanityDiesOut_of_all_sterile := by simp
+
+variable [W : World]
+open World
+
+theorem exi_imp_humanityDiesOut : ∃ (w : Woman), sterile w → humanityDiesOut := by
+  obtain ⟨w₀⟩ := nonempty_woman; by_cases h : ∀ w, sterile w
+  use w₀; simp [humanityDiesOut_of_all_sterile h]
+  push_neg at h; obtain ⟨w, h⟩ := h; use w; simp [h]

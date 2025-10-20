@@ -318,7 +318,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   · clear H
     intro sd hsd sa hsa p₁ w h₂ h₃ cnd
     have H₅' := cnd.state_eq_symm
-    rcases cnd with ⟨-, H₂, ⟨ps, hps, H₃⟩, H₄, H₅, H₆, H₈, H₉⟩
+    rcases cnd with ⟨-, H₂, ⟨d₁, hd₁, H₃⟩, H₄, H₅, H₆, H₈, H₉⟩
     dsimp at H₃ H₅ H₈ H₉
     dsimp [aDisjEraseTaken_fd]
     have G' := length_hist_le_of_reachable h₂
@@ -334,13 +334,18 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
       simp
       use h₃
     have hs₂ := AState.of_tr G₂
+    
+    simp
+    generalize hp₂ : (if p₁ = w.p then w.s.chooseDMove else p₁) = p₂ at G₂ ⊢
+    
     constructor <;> simp [G₂]
     · rw [length_hist_eq_of_tr h₃, G, H₂]
     ·
-      -- use ps ++ [if p₁ = w.p then w.s.chooseDMove else p₁]
-      -- simp [hps, length_hist_eq_of_tr h₃, G]
-      -- use w.2
-      sorry
+      use d.set w.s p₂, DStrat.wf_set_of_tr G₂
+      
+
+#check 0 #exit
+
     · simp [DState.taken_eq_of_tr G₂]
     · ext:1 <;> simp
       · rw [pw_eq_of_tr h₃, pw_eq_of_tr G₂, H₅]
@@ -369,7 +374,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   simp [H₃] at h
   exact h
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
