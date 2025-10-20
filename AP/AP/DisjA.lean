@@ -487,8 +487,21 @@ theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF 
   exact s₁.aHwsDisj_erase_taken ih (p := p) (by rw [hpw, hpw₁]) (by rw [ht, ht₁])
     (by rw [hpa, hpa₁]) (by rwa [h₃])
 
+open Classical in noncomputable
+def dChooseFromSet (ps : Set' PointZ) : DStrat :=
+  .mk # λ sd => choose? # λ p => p ∈ ps ∧ p ∉ sd.taken ∧ p ≠ sd.aPos
+
+instance {ps} : dChooseFromSet ps |>.WF := by
+  unfold dChooseFromSet; infer_instance
+
+theorem State.dChooseFromSet_aPos_not_mem_of_simulate {s s' n}
+{ps : Set' PointZ} {a : AStrat} [hs : sys.WF s] [ha : a.WF] (hn : ps.size * 2 + 3 ≤ n)
+(h : sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0)) : s'.aPos ∉ ps := by
+  sorry
+
 -- #check 0 #exit
 
 theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
 (h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 3 # s.aPos.nbhd s.pw |>.toSet := by
+  obtain ⟨a, Ha, h⟩ := h
   sorry
