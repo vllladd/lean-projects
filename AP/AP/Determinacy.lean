@@ -803,3 +803,35 @@ theorem State.dWins_of_lt_le_uncond {s} [hs : sys.WF s]
 s.dWins ⟨a, d⟩ := by
   have h₃ := s.dWins_of_lt_le (a := a) (d := d) (p := λ _ => True) (f := f)
   simp only [true_and, forall_const] at h₃; exact h₃ h₁ h₂
+
+theorem State.simulate_set_a_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat}
+[hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
+(h₁ : sys.validTr s₁ p₁) (h₂ : s₁.hist.length < s.hist.length) :
+sys.simulate (Strat.mk (a.set s₁ p₁) d).f s n = sys.simulate (Strat.mk a d).f s n := by
+  have h₃ := a.wf_set_of_validTr h₁; apply simulate_congr <;> simp
+  intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
+  exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
+
+theorem State.simulate_set_d_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat}
+[hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
+(h₁ : sys.validTr s₁ p₁) (h₂ : s₁.hist.length < s.hist.length) :
+sys.simulate (Strat.mk a (d.set s₁ p₁)).f s n = sys.simulate (Strat.mk a d).f s n := by
+  have h₃ := d.wf_set_of_validTr h₁; apply simulate_congr <;> simp
+  intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
+  exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
+
+theorem State.simulate_set_a_eq_of_le_length_hist_sub {s s₁ p₁ n} {a : AStrat} {d : DStrat}
+[hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
+(h₁ : sys.validTr s₁ p₁) (h₂ : n ≤ s₁.hist.length - s.hist.length) :
+sys.simulate (Strat.mk (a.set s₁ p₁) d).f s n = sys.simulate (Strat.mk a d).f s n := by
+  have h₃ := a.wf_set_of_validTr h₁; apply simulate_congr <;> simp
+  intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
+  simpa [length_hist_eq_of_simulate_eq h₄]
+
+theorem State.simulate_set_d_eq_of_le_length_hist_sub {s s₁ p₁ n} {a : AStrat} {d : DStrat}
+[hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
+(h₁ : sys.validTr s₁ p₁) (h₂ : n ≤ s₁.hist.length - s.hist.length) :
+sys.simulate (Strat.mk a (d.set s₁ p₁)).f s n = sys.simulate (Strat.mk a d).f s n := by
+  have h₃ := d.wf_set_of_validTr h₁; apply simulate_congr <;> simp
+  intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
+  simpa [length_hist_eq_of_simulate_eq h₄]

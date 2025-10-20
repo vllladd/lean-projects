@@ -45,7 +45,7 @@ theorem DState.tr_of_aForallWinsDisj {s s' p fsp} {a : AStrat}
   simp [h₂] at h₁
   convert h₁ using 1; symm
   have hs' := sys.wf_of_tr h₂
-  apply simulate_set_d_eq_of_length_hist_lt ⟨_, h₂⟩
+  apply State.simulate_set_d_eq_of_length_hist_lt ⟨_, h₂⟩
   exact State.length_hist_lt_of_tr h₂
 
 theorem DState.tr_of_aHwsDisj {s s' p fsp} [hs : DState s] (h₁ : s.aHwsDisj fsp)
@@ -218,8 +218,9 @@ def aDisjEraseTaken_fa (acc : DisjEraseTaken) : PointZ × DisjEraseTaken :=
 
 def aDisjEraseTaken_fd (p₁ : PointZ) (acc : DisjEraseTaken) : DisjEraseTaken :=
   let ⟨a, s, p, fsp, n⟩ := acc
-  let p₂ := if p₁ ≠ p then p₁ else s.chooseDMove
-  ⟨a, sys.tr s p₂ |>.get!, p₂, fsp.next, n + 1⟩
+  let p_move := if p₁ = p then s.chooseDMove else p₁
+  let p_next := if p₁ = p then s.chooseDMove else p
+  ⟨a, sys.tr s p_move |>.get!, p_next, fsp.next, n + 1⟩
 
 def aDisjEraseTaken (s s' : State) (p : PointZ) (a : AStrat) (fsp : FSP) : AStrat :=
   .mkFold (α := DisjEraseTaken) s' ⟨a, s, p, fsp, 0⟩
@@ -325,34 +326,101 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
     have G := Nat.succ_sub G'; dsimp at G
     have hws : DState w.s
     · use sys.wf_of_simulate_eq H₃; rw [H₅']; simp
-    obtain ⟨s₂, G₂⟩ : ∃ s₂, sys.tr w.s
-      (if p₁ = w.p then w.s.chooseDMove else p₁) = some s₂
-    · split_ifs with h; simp
+    
+    generalize h_move : (if p₁ = w.p then w.s.chooseDMove else p₁) = p_move
+    generalize h_next : (if p₁ = w.p then w.s.chooseDMove else w.p) = p_next
+    
+    obtain ⟨s₂, G₂⟩ : ∃ s₂, sys.tr w.s p_move = some s₂
+    · subst h_move
+      split_ifs with h; simp
       simp [DState.tr_eq_some_iff] at h₃ ⊢
       rcases h₃ with ⟨⟨h₃, G₃⟩, rfl⟩
       rw [H₅']
       simp
       use h₃
+    
     have hs₂ := AState.of_tr G₂
     
-    simp
-    generalize hp₂ : (if p₁ = w.p then w.s.chooseDMove else p₁) = p₂ at G₂ ⊢
+    have G₃ := length_hist_eq_of_tr h₃
+    have G₄ : sa.hist.length - s'.hist.length = sd.hist.length - s'.hist.length + 1
+    · rw [G₃, G]
+    -- have G₅ : DState w.s
+    -- · use sys.wf_of_simulate_eq H₃
+    --   rw [H₅']; simp
     
     constructor <;> simp [G₂]
     · rw [length_hist_eq_of_tr h₃, G, H₂]
     ·
-      use d.set w.s p₂, DStrat.wf_set_of_tr G₂
-      
-
-#check 0 #exit
-
+      use d₁.set w.s p_move, DStrat.wf_set_of_tr G₂
+      rw [G₄]
+      suffices G₅ : sys.simulate (Strat.f ⟨w.a, d₁.set w.s p_move⟩) s
+        (sd.hist.length - s'.hist.length) = (w.s, 0)
+      · rw [sys.simulate_add]; simp [G₅, G₂]
+      convert H₃ using 1
+      rw [H₈]
+      apply simulate_set_d_eq_of_le_length_hist_sub # sys.validTr_of_eq_some G₂
+      simp [length_hist_eq_of_simulate_eq H₃]
     · simp [DState.taken_eq_of_tr G₂]
+      subst h_move h_next
+      split_ifs with Q₁
+      · subst Q₁; simp
+      · simp [H₄]
     · ext:1 <;> simp
       · rw [pw_eq_of_tr h₃, pw_eq_of_tr G₂, H₅]
-      · sorry
+      ·
+        clear G₃ G₄
+        rw [DState.tr_eq_some_iff] at h₃
+        rcases h₃ with ⟨⟨h₃, h₃'⟩, rfl⟩
+        -- rcases G₂ with ⟨⟨G₂, G₂'⟩, rfl⟩
+        simp
+        split_ifs at h_move h_next with hp₃
+        · subst h_move h_next hp₃
+          ext q
+          simp
+          constructor
+          · rintro (rfl | G₆)
+            · constructor
+              · intro G₇; simp [←G₇] at H₄
+              apply Set'.mem_of_subset _ H₄
+              exact taken_subset_of_tr G₂
+            · rw [H₅] at G₆; simp at G₆
+              constructor
+              · rintro rfl; simp at G₆
+              rcases G₆ with ⟨G₆, G₇⟩
+              apply Set'.mem_of_subset _ G₇
+              exact taken_subset_of_tr G₂
+          · rintro ⟨G₇, G₈⟩
+            rw [or_iff_not_imp_left]
+            intro G₉
+            rw [H₅]
+            simp
+            use ne_symm' G₉
+            rw [DState.tr_eq_some_iff] at G₂
+            rcases G₂ with ⟨⟨G₂, G₂'⟩, rfl⟩
+            simp [ne_symm' G₇] at G₈
+            exact G₈
+        · subst h_move h_next
+          ext q
+          simp
+          constructor
+          · intro G₆
+            rcases G₆ with rfl | G₆
+            · use ne_symm' hp₃, DState.mem_taken_of_tr G₂
+            rw [H₅] at G₆
+            simp at G₆
+            rcases G₆ with ⟨G₆, G₇⟩
+            use G₆
+            exact mem_taken_of_tr G₂ G₇
+          · rintro ⟨G₇, G₈⟩
+            rw [or_iff_not_imp_left]
+            intro G₉
+            rw [H₅]; simp
+            use G₇
+            simp [DState.taken_eq_of_tr G₂, G₉] at G₈
+            exact G₈
+
       · rw [DState.aPos_eq_of_tr h₃, DState.aPos_eq_of_tr G₂, H₅]
-    · sorry
-    -- · sorry
+    · rw [H₈] at H₆ ⊢; exact DState.tr_of_aForallWinsDisj H₆ G₂
     · exact H₈
     · rw [length_hist_eq_of_tr h₃, G, H₉, FSP.next_offset]
   obtain ⟨s₁, ⟨a', s₁', p₁, fsp', n'⟩, H₁, H₂⟩ := H
@@ -373,8 +441,6 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   specialize h d₁ hd₁ n
   simp [H₃] at h
   exact h
-
-#check 0 #exit
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)

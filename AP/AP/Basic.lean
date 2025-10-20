@@ -1225,3 +1225,25 @@ theorem AState.size_taken_eq_one_of_pw_eq_zero {s} [hs : AState s]
 @[simp]
 theorem State.aPos₀_setHist {s : State} {hist} :
 (s.setHist hist).aPos₀ = hist.getLast?.iget := rfl
+
+theorem State.length_hist_eq_of_trs_eq {s s' ps r}
+(h : sys.trs s ps = (s', r)) : s'.hist.length = s.hist.length + ps.length - r.length := by
+  rw [@hist_eq_of_trs s s' ps r h]; simp
+  suffices : r.length ≤ ps.length; omega
+  simp [Prod.snd_eq_of_eq_mk h]
+
+theorem State.length_hist_eq_of_simulate_eq {s s' f n r}
+(h : sys.simulate f s n = (s', r)) : s'.hist.length = s.hist.length + n - r := by
+  induction n generalizing s s'
+  · simp at h; simp [h]
+  nm n ih
+  simp at h
+  split at h
+  · nm x h₁; clear x
+    simp at h
+    rcases h with ⟨rfl, rfl⟩
+    simp
+  nm x s₁ h₁; clear x
+  specialize ih h
+  rw [length_hist_eq_of_tr h₁] at ih
+  omega

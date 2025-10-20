@@ -21,22 +21,6 @@ theorem histBlind_aHistBlind : aHistBlind.HistBlind := by
 @[simp]
 instance : aHistBlind.HistBlind := histBlind_aHistBlind
 
-theorem simulate_set_a_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat} 
-[hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
-(h₁ : sys.validTr s₁ p₁) (h₂ : s₁.hist.length < s.hist.length) :
-sys.simulate (Strat.mk (a.set s₁ p₁) d).f s n = sys.simulate (Strat.mk a d).f s n := by
-  have h₃ : (a.set s₁ p₁).WF := a.wf_set_of_validTr h₁; apply simulate_congr <;> simp
-  intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
-  exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
-
-theorem simulate_set_d_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat} 
-[hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
-(h₁ : sys.validTr s₁ p₁) (h₂ : s₁.hist.length < s.hist.length) :
-sys.simulate (Strat.mk a (d.set s₁ p₁)).f s n = sys.simulate (Strat.mk a d).f s n := by
-  have h₃ : (d.set s₁ p₁).WF := d.wf_set_of_validTr h₁; apply simulate_congr <;> simp
-  intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
-  exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
-
 def State.setHistAt' (s : State) (hist₁ hist₂ : List PointZ) : State :=
   s.setHist # s.hist.take (s.hist.length - hist₁.length) ++ hist₂
 

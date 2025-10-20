@@ -181,7 +181,7 @@ theorem AState.dwn_lt_of_tr {sa sd p} [hsa : AState sa]
   dsimp at h₁
   simp [h₂]
   convert h₁ using 2
-  apply simulate_set_a_eq_of_length_hist_lt ⟨_, h₂⟩
+  apply State.simulate_set_a_eq_of_length_hist_lt ⟨_, h₂⟩
   exact State.length_hist_lt_of_tr h₂
 
 theorem DState.exi_tr_dHws_and_dwn_lt {sd} [hsd : DState sd]
