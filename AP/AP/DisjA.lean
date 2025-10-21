@@ -1,5 +1,28 @@
 import AP.AP.WF
 
+@[simp]
+theorem eventually_const {P : Prop} : eventually (λ _ => P) ↔ P :=
+  ⟨λ ⟨N, h⟩ => h N # le_refl _, λ h => ⟨0, λ _ _ => h⟩⟩
+
+-- #check 0 #exit
+
+namespace Set'
+
+universe u v w
+variable {α : Type u} {β : Type v} {γ : Type w}
+variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
+variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
+variable {s s' s₁ s₂ s₃ : Set' α}
+
+@[simp]
+theorem empty_subset : ∅ ⊆ s := by
+  intro; simp
+
+-- #check 0 #exit
+
+end Set'
+
 namespace AP
 
 def State.aWinsDisj (s : State) (fsp : FSP) (st : Strat) : Prop :=
@@ -494,14 +517,185 @@ def dChooseFromSet (ps : Set' PointZ) : DStrat :=
 instance {ps} : dChooseFromSet ps |>.WF := by
   unfold dChooseFromSet; infer_instance
 
-theorem State.dChooseFromSet_aPos_not_mem_of_simulate {s s' n}
-{ps : Set' PointZ} {a : AStrat} [hs : sys.WF s] [ha : a.WF] (hn : ps.size * 2 + 3 ≤ n)
-(h : sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0)) : s'.aPos ∉ ps := by
-  sorry
+theorem State.eventually_simulate_dChooseFromSet_subset_taken {s}
+{ps : Set' PointZ} {a : AStrat} [hs : sys.WF s] [ha : a.WF] :
+eventually # λ n => ∀ s', sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0) →
+ps ⊆ s'.taken := by
+  generalize hm : ps.size = m
+  induction m generalizing s ps
+  · simp at hm; simp [hm]
+  nm m ih
+  suffices ihd : ∀ s [hs : DState s] (ps : Set' PointZ), ps.size = m + 1 →
+    eventually (λ n => ∀ (s' : State),
+    sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0) → ps ⊆ s'.taken)
+  · replace hs := s.aState_or_dState.symm
+    rcases hs with hs | hs
+    · apply ihd; exact hm
+    by_cases h₁ : ¬sys.hasTr s
+    · use 1
+      rintro n hn s' h₂
+      cases n; simp at hn
+      simp at h₂
+      split at h₂; simp at h₂
+      contrapose! h₁
+      nm x s₁ h₃; clear x
+      exact sys.hasTr_of_eq_some h₃
+    push_neg at h₁
+    obtain ⟨s', h₂⟩ := a.validTr h₁
+    have hs' := DState.of_tr h₂
+    specialize ihd s' ps hm
+    obtain ⟨N, ihd⟩ := ihd
+    dsimp at ihd
+    use N + 1
+    intro n hn s₁ h₃
+    cases n; simp at hn; nm n
+    specialize ihd n (by linarith) s₁
+    simp [h₂] at h₃
+    exact ihd h₃
+  clear! s ps
+  intro s hs ps h
+  obtain ⟨s₁, h₁⟩ := dChooseFromSet ps |>.validTr s
+  have h₁' := h₁
+  simp [dChooseFromSet, choose?_eq_ite] at h₁
+  split_ifs at h₁ with h₂
+  · have h₃ := Classical.epsilon_spec h₂
+    generalize (Classical.epsilon #
+      λ p => p ∈ ps ∧ p ∉ s.taken ∧ ¬p = s.aPos) = p at h₁ h₃
+    rcases h₃ with ⟨h₃, h₄, h₅⟩
+    simp [DState.validTr_iff, ne_symm' h₅, h₄] at h₁
+    have hs₁ := sys.wf_of_tr h₁
+    specialize @ih s₁ (ps.erase p) hs₁ _
+    · simp [Set'.size_erase h₃, h]
+    obtain ⟨N, ih⟩ := ih
+    dsimp at ih
+    use N + 1
+    intro n hn s₂ h₆
+    cases n; simp at hn; nm n
+    specialize ih n (by linarith) s₂
+    simp [h₁'] at h₆
+    have G := sys.reachable_of_simulate_full h₆
+    have H₀ : p ∈ s₁.taken
+    · exact DState.mem_taken_of_tr h₁
+    suffices H : ps.erase p ⊆ s₂.taken
+    · intro p₁ hp₁
+      specialize H p₁
+      simp [hp₁] at H
+      by_cases h₇ : p = p₁
+      · subst h₇
+        exact mem_taken_of_reachable G H₀
+      exact H h₇
+    apply ih; clear ih
+    convert h₆ using 1; clear h₆
+    apply simulate_congr <;> simp
+    intro k hk sd hsd H₁ H₂ H₃
+    simp [dChooseFromSet]
+    congr
+    ext p₁
+    simp
+    rintro H₄ H₅ H₆ rfl
+    apply H₄
+    apply mem_taken_of_reachable # sys.reachable_of_simulate_full H₁
+    exact H₀
+  simp at h₁
+  push_neg at h₂
+  by_cases h₃ : s.aPos ∉ ps
+  · use 0
+    intro n hn s₂ h₄ p₁ hp₁
+    have H₁ := sys.reachable_of_simulate_full h₄
+    specialize h₂ _ hp₁
+    contrapose! h₂
+    constructor
+    · contrapose! h₂
+      exact mem_taken_of_reachable H₁ h₂
+    rintro rfl
+    contradiction
+  rename' s₁ => sa
+  have hsa := AState.of_tr h₁
+  push_neg at h₃
+  clear! m
+  suffices h : eventually # λ n => ∀ (s' : State),
+    sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0) → s.aPos ∈ s'.taken
+  · obtain ⟨N, h⟩ := h
+    use N
+    intro n hn s₁ H₁
+    have H₂ := sys.reachable_of_simulate_full H₁
+    specialize h n hn s₁ H₁
+    intro p₁ hp₁
+    specialize h₂ _ hp₁
+    contrapose! h₂
+    constructor
+    · contrapose! h₂
+      exact mem_taken_of_reachable H₂ h₂
+    rintro rfl
+    contradiction
+  by_cases h₄ : ¬sys.hasTr sa
+  · use 2
+    intro n hn s₁ H₁
+    iterate 2 cases n; simp at hn; nm n
+    simp [h₁'] at H₁
+    split at H₁; simp at H₁
+    nm x s₂ H₂
+    contrapose! h₄
+    exact sys.hasTr_of_eq_some H₂
+  push_neg at h₄
+  replace h₄ := a.validTr h₄
+  obtain ⟨sd, h₄⟩ := h₄
+  have hsd := DState.of_tr h₄
+  obtain ⟨s₁, h₅⟩ := (dChooseFromSet ps).validTr sd
+  have hs₁ := AState.of_tr h₅
+  have h₅' := h₅
+  simp [dChooseFromSet, choose?_eq_ite] at h₅
+  split_ifs at h₅ with h₆
+  rotate_left
+  · exfalso; apply h₆
+    clear h₅ h₅'
+    use s.aPos
+    rw [AState.tr_eq_some_iff] at h₄
+    rcases h₄ with ⟨⟨h₄, h₅, h₆⟩, rfl⟩
+    simp [←DState.aPos_eq_of_tr h₁'] at h₃ ⊢
+    clear hsd
+    use h₃
+  have h₇ := Classical.epsilon_spec h₆
+  generalize (Classical.epsilon # λ y => y ∈ ps ∧
+    y ∉ sd.taken ∧ y ≠ sd.aPos) = pa at h₅ h₇
+  rcases h₇ with ⟨h₇, h₈, h₉⟩
+  simp [DState.validTr_iff, ne_symm' h₉, h₈] at h₅
+  use 3
+  intro n hn s₂ H₂
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
+  rw [add_comm] at H₂
+  simp [h₁', h₄, h₅'] at H₂
+  apply mem_taken_of_reachable # sys.reachable_of_simulate_full H₂
+  simp [DState.taken_eq_of_tr h₅, AState.taken_eq_of_tr h₄]
+  rw [or_iff_not_imp_right, eq_comm]
+  intro H₃
+  specialize h₂ _ h₇
+  apply h₂
+  clear h₂
+  contrapose! h₈
+  apply mem_taken_of_reachable _ h₈
+  exact sys.reachable_of_tr h₁' |>.trans # sys.reachable_of_tr h₄
+
+theorem State.eventually_simulate_dChooseFromSet_aPos_not_mem {s}
+{ps : Set' PointZ} {a : AStrat} [hs : sys.WF s] [ha : a.WF] :
+eventually # λ n => ∀ s', sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0) →
+s'.aPos ∉ ps := by
+  obtain ⟨N, h⟩ := s.eventually_simulate_dChooseFromSet_subset_taken (ps := ps) (a := a)
+  dsimp at h
+  use N
+  intro n hn s' h₁
+  specialize h n hn s' h₁
+  have hs' := sys.wf_of_simulate_eq h₁
+  intro h₂
+  specialize h _ h₂
+  simp at h
 
 -- #check 0 #exit
 
 theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
 (h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 3 # s.aPos.nbhd s.pw |>.toSet := by
   obtain ⟨a, Ha, h⟩ := h
+  obtain ⟨N, h₁⟩ := s.eventually_simulate_dChooseFromSet_aPos_not_mem (a := a)
+    (ps := s.aPos.nbhd s.pw)
+  dsimp at h₁
   sorry

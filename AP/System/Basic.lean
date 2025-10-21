@@ -226,6 +226,7 @@ theorem reachable_ind_right {P : ∀ a b, sys.Reachable a b → Prop}
     simpa
   · simp
 
+@[simp]
 theorem simulate_snd_le {f s n} : (sys.simulate f s n).2 ≤ n := by
   induction n generalizing s
   · rfl
@@ -349,3 +350,10 @@ theorem wfTrans_of_validTr {s t} [hs : sys.WF s]
 
 theorem wfTrans_of_tr {s s' t} [hs : sys.WF s]
 (h : sys.tr s t = some s') : sys.WFTrans t := by use s, hs, s'
+
+theorem simulate_snd_le_of_eq {f s s' r n} (h : sys.simulate f s n = (s', r)) : r ≤ n := by
+  simp [Prod.snd_eq_of_eq_mk h]
+
+theorem simulate_snd_ne_zero_of {f s s' r n m} (h : sys.simulate f s n = (s', r))
+(hr : r ≠ 0) (hm : n ≤ m) : (sys.simulate f s m).2 ≠ 0 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hm; rw [simulate_add, h]; simp [hr]
