@@ -740,6 +740,33 @@ s'.aPos ∉ ps := by
   specialize h _ h₂
   simp at h
 
+theorem State.aTurn_of_tr_aPos_ne {s s' p} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s') (h₂ : s'.aPos ≠ s.aPos) : s.aTurn := by
+  contrapose! h₂; simp at h₂; replace hs : DState s; use hs; exact hs.aPos_eq_of_tr h₁
+
+theorem AState.of_tr_aPos_ne {s s' p} [hs : sys.WF s]
+(h₁ : sys.tr s p = some s') (h₂ : s'.aPos ≠ s.aPos) : AState s :=
+  ⟨hs, s.aTurn_of_tr_aPos_ne h₁ h₂⟩
+
+theorem State.aForallWinsDisj_of_simulate_eq {fsp : FSP} {s s' r n}
+{a : AStrat} {d : DStrat} [hs : sys.WF s] [ha : a.WF] [hd : d.WF]
+(h₁ : s.aForallWinsDisj fsp a) (h₂ : sys.simulate (Strat.f ⟨a, d⟩) s n = (s', r)) :
+s'.aForallWinsDisj (fsp.offset n) a := by
+  induction n generalizing s
+  · simp at h₂; rcases h₂ with ⟨rfl, rfl⟩; simpa
+  nm n ih
+  generalize hp : Strat.f ⟨a, d⟩ s = p
+  obtain ⟨s₁, h₃⟩ : sys.validTr s p
+  · rw [←hp, sys.validTr_iff_of_simFn]
+    exact s.hasTr_of_aHws # aHws_of_aForallWinsDisj h₁
+  have hs₁ := sys.wf_of_tr h₃
+  simp [hp, h₃] at h₂
+  specialize @ih s₁ _ _
+  · intro d₁ hd₁ n
+    specialize h₁ (d₁.set s p) (DStrat.wf_set_of_tr h₃) (n + 1)
+    sorry
+  sorry
+
 -- #check 0 #exit
 
 theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
@@ -748,7 +775,74 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
   have h₁ := s.eventually_simulate_dChooseFromSet_aPos_not_mem
     (a := a) (ps := s.aPos.nbhd s.pw)
   simp at h₁
-  generalize hF : sys.simulate (Strat.f ⟨a, dChooseFromSet #
-    Set'.ofList # s.aPos.nbhd s.pw⟩) = F at h₁
+  generalize h₀ : dChooseFromSet (Set'.ofList # s.aPos.nbhd s.pw) = d at h₁
+  have hd : d.WF; subst h₀; infer_instance
+  generalize hF : sys.simulate (Strat.f ⟨a, d⟩) = F at h₁
   rw [eventually_iff_exi_least] at h₁
+  rcases h₁ with h₁ | h₁
+  · subst hF
+    specialize h₁ 0 s rfl
+    simp at h₁
+    omega
+  obtain ⟨k, h₁, h₂⟩ := h₁
+  
+  replace h₂ : ∀ {n s'}, F s n = (s', 0) → k < n →
+    s.pw < Point.dist s.aPos s'.aPos; tauto
+  
+  push_neg at h₁
+  obtain ⟨sa, h₁, h₃⟩ := h₁
+  
+  have H₁ : ∀ {n r s'}, F s n = (s', r) → sys.WF s'
+  · intro n r hn h₄; rw [←hF] at h₄
+    exact sys.wf_of_simulate_eq h₄
+  
+  have H₂ : ∀ n, ∃ s', F s n = (s', 0)
+  · rw [←hF]
+    intro n
+    specialize h d hd
+    replace h := State.aWins_of_aWinsDisj h
+    specialize h n
+    simpa [Prod.ext_iff]
+  
+  have H₃ : ∀ {n r s'}, F s n = (s', r) → sys.Reachable s s'
+  · intro n r s' H₃; rw [←hF] at H₃
+    exact sys.reachable_of_simulate_eq H₃
+  
+  obtain ⟨sd, h₄, h₅⟩ : ∃ sd, F s (k + 1) = (sd, 0) ∧ sys.tr sa (Strat.f ⟨a, d⟩ sa) = sd
+  · obtain ⟨sd, h₄⟩ := H₂ (k + 1)
+    use sd
+    rw [←hF] at h₁ h₄ ⊢
+    use h₄
+    rw [sys.simulate_add, h₁] at h₄
+    simp at h₄
+    split at h₄; simp at h₄; simp at h₄; rwa [←h₄]
+  
+  have hsa := H₁ h₁
+  
+  have h₆ : s.pw < Point.dist s.aPos sd.aPos
+  · apply h₂ h₄; simp
+  
+  replace hsa : AState sa
+  · apply AState.of_tr_aPos_ne h₅
+    apply ne_of_congr (Point.dist s.aPos · ≤ s.pw)
+    simpa [h₃]
+  
+  have hsd := DState.of_tr h₅
+  
+  simp at h₅
+  
+  have hpwa := pw_eq_of_reachable # H₃ h₁
+  
+  have h₇ : sa.aPos ≠ s.aPos
+  · have h₅' := h₅
+    rw [AState.tr_eq_some_iff] at h₅
+    rcases h₅ with ⟨⟨h₅, h₇, h₈⟩, rfl⟩
+    intro H₄
+    rw [hpwa, Point.dist_comm, H₄] at h₈
+    linarith
+  
+  have h₈ : sa.aForallWinsDisj fsp a
+  · rw [←hF] at h₁
+    sorry
+  
   sorry
