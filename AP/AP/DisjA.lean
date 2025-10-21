@@ -252,15 +252,77 @@ theorem DisjEraseTaken.Cnd.state_eq_symm {w₀ w s' s₁' n}
 w.s = {s₁' with taken := s₁'.taken.insert w.p, hist := w.s.hist} := by
   ext:1 <;> rw [h.h₅]; exact Set'.insert_erase_eq_of_mem h.h₄|>.symm
 
+theorem State.aWinsDisj_insert_taken_of_aWinsDisj {fsp s} {st : Strat}
+[hs : sys.WF s] (h : s.aWinsDisj fsp st) :
+s.aWinsDisj (fsp.insertSet 0 s.taken.toSet) st := by
+  rw [aWinsDisj_iff] at h ⊢
+  rcases h with ⟨h₁, h₂⟩
+  use h₁
+  intro n
+  specialize h₂ n
+  simp [FSP.hasLe, FSP.insertSet] at h₂ ⊢
+  intro k hk
+  specialize h₂ k hk
+  split_ifs with h₃ <;> simp [h₂]
+  generalize hr : sys.simulate st.f s n = r at h₂ ⊢
+  rcases r with ⟨s₁, r⟩; dsimp at h₂ ⊢
+  have hs₁ := sys.wf_of_simulate_eq hr
+  have h : s₁.aPos ∉ s₁.taken; simp
+  contrapose! h
+  apply mem_taken_of_reachable # sys.reachable_of_simulate_eq hr
+  exact h
+
+theorem State.aForallWinsDisj_insert_taken_of_aForallWinsDisj {fsp s} {a : AStrat}
+[hs : sys.WF s] (h : s.aForallWinsDisj fsp a) :
+s.aForallWinsDisj (fsp.insertSet 0 s.taken.toSet) a :=
+  λ d hd => aWinsDisj_insert_taken_of_aWinsDisj # h d hd
+
+theorem State.aHwsDisj_insert_taken_of_aHwsDisj {fsp s} [hs : sys.WF s]
+(h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 0 s.taken.toSet := by
+  obtain ⟨a, ha, h⟩ := h; use a, ha
+  exact aForallWinsDisj_insert_taken_of_aForallWinsDisj h
+
+theorem State.aWinsDisj_of_aWinsDisj_insertSet {fsp : FSP} {s : State} {k ps} {st : Strat}
+(h : s.aWinsDisj (fsp.insertSet k ps) st) : s.aWinsDisj fsp st := by
+  rw [aWinsDisj_iff] at h ⊢
+  rcases h with ⟨h₁, h₂⟩
+  use h₁
+  intro n
+  specialize h₂ n
+  simp [FSP.hasLe, FSP.insertSet] at h₂ ⊢
+  intro k hk
+  specialize h₂ k hk
+  split_ifs at h₂ with h₃
+  · simp at h₂; tauto
+  · exact h₂
+
+theorem State.aForallWinsDisj_of_aForallWinsDisj_insertSet
+{fsp : FSP} {s : State} {k ps} {a : AStrat}
+(h : s.aForallWinsDisj (fsp.insertSet k ps) a) : s.aForallWinsDisj fsp a :=
+  λ d hd => aWinsDisj_of_aWinsDisj_insertSet # h d hd
+
+theorem State.aHwsDisj_of_aHwsDisj_insertSet {fsp : FSP} {s : State} {k ps}
+(h : s.aHwsDisj # fsp.insertSet k ps) : s.aHwsDisj fsp := by
+  obtain ⟨a, ha, h⟩ := h; use a, ha
+  exact aForallWinsDisj_of_aForallWinsDisj_insertSet h
+
+theorem State.aWinsDisj_of_aWinsDisj_insert {fsp : FSP} {s : State} {k p} {st : Strat}
+(h : s.aWinsDisj (fsp.insert k p) st) : s.aWinsDisj fsp st :=
+  aWinsDisj_of_aWinsDisj_insertSet h
+
+theorem State.aForallWinsDisj_of_aForallWinsDisj_insert
+{fsp : FSP} {s : State} {k p} {a : AStrat}
+(h : s.aForallWinsDisj (fsp.insert k p) a) : s.aForallWinsDisj fsp a :=
+  aForallWinsDisj_of_aForallWinsDisj_insertSet h
+
+theorem State.aHwsDisj_of_aHwsDisj_insert {fsp : FSP} {s : State} {k p}
+(h : s.aHwsDisj # fsp.insert k p) : s.aHwsDisj fsp :=
+  aHwsDisj_of_aHwsDisj_insertSet h
+
 theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
-(hpa : s'.aPos = s.aPos) (hp : s'.taken = s.taken.erase p) : s'.aHwsDisj fsp := by
-  by_cases h₁ : p ∉ s.taken
-  · rw [Set'.erase_eq_of_not_mem h₁] at hp
-    have h₂ : s' = s.setHist s'.hist
-    · ext:1 <;> first | assumption | simp
-    rw [h₂] at hs' ⊢; exact aHwsDisj_setHist_of_aHwsDisj h
-  push_neg at h₁
+(hpa : s'.aPos = s.aPos) (hp : s'.taken = s.taken.erase p)
+(h₁ : p ∈ s.taken) : s'.aHwsDisj # fsp.insert 0 p := by
   obtain ⟨a, ha, h⟩ := h
   use aDisjEraseTaken s s' p a fsp, inferInstance
   intro d hd n
@@ -424,11 +486,21 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   rw [←G₂] at H₃
   specialize h d₁ hd₁ n
   simp [H₃] at h
-  exact h
+  simp [FSP.hasLe] at h ⊢
+  intro k hk
+  specialize h k hk
+  simp [FSP.insert, FSP.insertSet]
+  split_ifs with h₂ <;> simp [h]
+  have hs₁' := sys.wf_of_simulate_eq H₃
+  apply ne_of_congr (· ∈ s₁'.taken)
+  simp
+  apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₃
+  exact h₁
 
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
-(hpa : s'.aPos = s.aPos) (h₁ : s'.taken ⊆ s.taken) : s'.aHwsDisj fsp := by
+(hpa : s'.aPos = s.aPos) (h₁ : s'.taken ⊆ s.taken) :
+s'.aHwsDisj # fsp.insertSet 0 s.taken.toSet := by
   rw [Set'.subset_iff_exi_disj_union] at h₁
   obtain ⟨ps, h₁', h₁⟩ := h₁
   revert fsp s s'
@@ -437,7 +509,9 @@ theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF 
     simp at h₁
     have h₂ : s' = s.setHist s'.hist
     · ext:1 <;> first | assumption | simp
-    rw [h₂] at hs' ⊢; exact aHwsDisj_setHist_of_aHwsDisj h
+    rw [h₂] at hs' ⊢
+    apply aHwsDisj_setHist_of_aHwsDisj
+    exact aHwsDisj_insert_taken_of_aHwsDisj h
   clear ps
   intro ps p hp ih fsp s s' hs hs' h hpw ht hpa h₁' h₁
   simp at h₁'
@@ -484,8 +558,9 @@ theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF 
   · rw [h₃, ←H]; ext p₁; simp; constructor
     · rintro (⟨h₄, h₅⟩ | h₄) <;> simp [h₄]
     · rintro (h₄ | h₄ | h₄) <;> simp [h₄, Decidable.not_or_of_imp]
-  exact s₁.aHwsDisj_erase_taken ih (p := p) (by rw [hpw, hpw₁]) (by rw [ht, ht₁])
-    (by rw [hpa, hpa₁]) (by rwa [h₃])
+  have H₁ := s₁.aHwsDisj_erase_taken ih (p := p) (by rw [hpw, hpw₁])
+    (by rw [ht, ht₁]) (by rw [hpa, hpa₁]) (by rwa [h₃]) (by simpa [h₃, ←H])
+  exact aHwsDisj_of_aHwsDisj_insertSet H₁
 
 open Classical in noncomputable
 def dChooseFromSet (ps : Set' PointZ) : DStrat :=
@@ -550,7 +625,7 @@ ps ⊆ s'.taken := by
     cases n; simp at hn; nm n
     specialize ih n (by linarith) s₂
     simp [h₁'] at h₆
-    have G := sys.reachable_of_simulate_full h₆
+    have G := sys.reachable_of_simulate_eq h₆
     have H₀ : p ∈ s₁.taken
     · exact DState.mem_taken_of_tr h₁
     suffices H : ps.erase p ⊆ s₂.taken
@@ -571,14 +646,14 @@ ps ⊆ s'.taken := by
     simp
     rintro H₄ H₅ H₆ rfl
     apply H₄
-    apply mem_taken_of_reachable # sys.reachable_of_simulate_full H₁
+    apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₁
     exact H₀
   simp at h₁
   push_neg at h₂
   by_cases h₃ : s.aPos ∉ ps
   · use 0
     intro n hn s₂ h₄ p₁ hp₁
-    have H₁ := sys.reachable_of_simulate_full h₄
+    have H₁ := sys.reachable_of_simulate_eq h₄
     specialize h₂ _ hp₁
     contrapose! h₂
     constructor
@@ -595,7 +670,7 @@ ps ⊆ s'.taken := by
   · obtain ⟨N, h⟩ := h
     use N
     intro n hn s₁ H₁
-    have H₂ := sys.reachable_of_simulate_full H₁
+    have H₂ := sys.reachable_of_simulate_eq H₁
     specialize h n hn s₁ H₁
     intro p₁ hp₁
     specialize h₂ _ hp₁
@@ -642,7 +717,7 @@ ps ⊆ s'.taken := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
   rw [add_comm] at H₂
   simp [h₁', h₄, h₅'] at H₂
-  apply mem_taken_of_reachable # sys.reachable_of_simulate_full H₂
+  apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₂
   simp [DState.taken_eq_of_tr h₅, AState.taken_eq_of_tr h₄]
   rw [or_iff_not_imp_right, eq_comm]
   intro H₃

@@ -73,11 +73,9 @@ sys.Reachable s₁ s₂ := by
   · apply Reachable.step h₁; rfl
   exact ih h
 
-theorem reachable_of_simulate_full
-{f} {s₁ s₂ n} (h : sys.simulate f s₁ n = (s₂, 0)) :
-sys.Reachable s₁ s₂ := by
-  replace h := congrArg (·.1) h
-  exact reachable_of_simulate h
+theorem reachable_of_simulate_eq {f} {s₁ s₂ n r}
+(h : sys.simulate f s₁ n = (s₂, r)) : sys.Reachable s₁ s₂ :=
+  reachable_of_simulate # Prod.fst_eq_of_eq_mk h |>.symm
 
 theorem reachable_left {a b c t}
 (h₁ : sys.tr a t = some b) (h₂ : sys.Reachable b c) : sys.Reachable a c :=

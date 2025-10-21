@@ -1356,10 +1356,10 @@ theorem not_reachable_of_acyclic_and_simulate_and_lt {a b f k n}
   rw [simulate_add] at h₁
   simp at h₁; split at h₁ <;> simp at h₁
   nm x d h₄; clear x
-  specialize @h₃ c d (f c) (reachable_of_simulate_full hr) h₄
+  specialize @h₃ c d (f c) (reachable_of_simulate_eq hr) h₄
   contrapose! h₃
   trans b; rotate_left; exact h₃
-  exact reachable_of_simulate_full h₁
+  exact reachable_of_simulate_eq h₁
 
 theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.SimFn f]
 (h₁ : sys.simulate f a n = r) (h₂ : r.2 ≠ 0) : ¬sys.hasTr r.1 := by

@@ -96,7 +96,7 @@ s n = (s₁, 0) ∧ p s₁ acc := by
     apply simulate_congr _ (by simp)
     intro k hk b hb h₄ h₅ h₆
     apply hs.aStrat_mkFold_eq_of_tr h₁
-    exact sys.reachable_of_simulate_full h₄
+    exact sys.reachable_of_simulate_eq h₄
   · obtain ⟨s', h₃⟩ := d.validTr s
     have hs' := AState.of_tr h₃
     have h₂' := h₂
@@ -117,4 +117,4 @@ s n = (s₁, 0) ∧ p s₁ acc := by
     apply simulate_congr _ (by simp)
     intro k hk b hb h₄ h₅ h₆
     apply hs.aStrat_mkFold_eq_of_tr h₃
-    exact sys.reachable_of_simulate_full h₄
+    exact sys.reachable_of_simulate_eq h₄

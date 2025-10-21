@@ -40,5 +40,5 @@ sys.simulate (Strat.f ⟨a, dse₂.st (dse₁.st d)⟩) s₀ n := by
   simp [st]
   cases H₃ : dse₁.f s <;> cases H₄ : dse₂.f s <;> simp
   nm s₁ s₂
-  have H₅ := sys.reachable_of_simulate_full h₁
+  have H₅ := sys.reachable_of_simulate_eq h₁
   exact h H₅ H₃ H₄

@@ -45,7 +45,7 @@ sys.tr sd (st.d.f sd) = some sa' → p sa') : sa₀.aWins st ∧ p sa₀ := by
   have ha : AState sa
   · replace ih := congrArg (·.1) ih; subst ih; infer_instance
   simp [ih]
-  specialize h (sys.reachable_of_simulate_full ih) hp
+  specialize h (sys.reachable_of_simulate_eq ih) hp
   obtain ⟨sd, h₁, h₂⟩ := h
   simp [h₁]
   have hd := DState.of_tr h₁
@@ -286,7 +286,7 @@ sys.simulate st₂.f s k = (sd, 0) → sys.hasTr sd → st₁.d.f sd = st₂.d.f
 sys.simulate st₁.f s n = sys.simulate st₂.f s n := by
   apply System.simulate_congr
   intro k hk s₁ h₄ h₅ h₆
-  have h₇ := System.wf_of_reachable # System.reachable_of_simulate_full h₄
+  have h₇ := System.wf_of_reachable # System.reachable_of_simulate_eq h₄
   replace h₇ := s₁.aState_or_dState
   rcases h₇ with ha | hd <;> simp
   · apply h₁ <;> assumption
@@ -342,14 +342,14 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
     replace H₄ := H₄.2 (by rfl) h₂
     rintro rfl
     apply H₄
-    exact System.reachable_of_simulate_full H₂
+    exact System.reachable_of_simulate_eq H₂
   apply simulate_congr <;> simp only [implies_true]
   intro k hk b hb H₁ H₂ H₃
   replace H₃ : b.getMoveAt sa = some pa
   · apply getMoveAt_eq_some_of_tr_and_reachable h₁
     trans sa'
     · exact System.reachable_of_tr h₂
-    · exact System.reachable_of_simulate_full H₁
+    · exact System.reachable_of_simulate_eq H₁
   simp [dStratOfDWins, mk_strat_fn, H₃, h₁]; clear H₃
   rw [choose?_eq_of_exi, Hpd]; rotate_left; exact h
   simp
@@ -396,7 +396,7 @@ theorem AState.dHws_of_tr' {sd sa pd} [hd : DState sd]
   have H₆ : sys.Acyclic b := inferInstance
   replace H₆ := H₆.2 (by rfl) h₁
   exfalso; apply H₆
-  exact System.reachable_of_simulate_full H₂
+  exact System.reachable_of_simulate_eq H₂
 
 theorem DState.aHws_of_tr' {sa sd pa} [ha : AState sa]
 (h₁ : sys.tr sa pa = some sd) (h₂ : sd.aHws) : sa.aHws := by
@@ -422,7 +422,7 @@ theorem DState.aHws_of_tr' {sa sd pa} [ha : AState sa]
   have H₆ : sys.Acyclic b := inferInstance
   replace H₆ := H₆.2 (by rfl) h₁
   exfalso; apply H₆
-  exact System.reachable_of_simulate_full H₂
+  exact System.reachable_of_simulate_eq H₂
 
 theorem State.aHws_of_not_dHws {s : State} [hs : sys.WF s]
 (h : ¬s.dHws) : s.aHws := by
@@ -451,7 +451,7 @@ theorem State.aHws_of_not_dHws {s : State} [hs : sys.WF s]
   intro k hk b H₅ H₂ H₃ H₄
   have H₆ : b.getMoveAt sd = some (d.f sd)
   · apply getMoveAt_eq_some_of_tr_and_reachable h₁
-    exact System.reachable_of_simulate_full H₂
+    exact System.reachable_of_simulate_eq H₂
   simp [aStratOfAHws, mk_strat_fn, H₆, h₁]
   rw [choose?_eq_of_exi, h₂]; rotate_left; exact h
   simp [h₃.validTr H₄]
@@ -696,7 +696,7 @@ theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀
   rw [Nat.sub_add_cancel]
   have h₂ : s'.hist.length ≤ s.hist.length
   · apply length_hist_le_of_reachable
-    exact System.reachable_of_simulate_full h
+    exact System.reachable_of_simulate_eq h
   have h₃ : s₀.hist.length < s'.hist.length
   · exact State.length_hist_lt_of_tr h₁
   omega
@@ -810,7 +810,7 @@ theorem State.simulate_set_a_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {
 sys.simulate (Strat.mk (a.set s₁ p₁) d).f s n = sys.simulate (Strat.mk a d).f s n := by
   have h₃ := a.wf_set_of_validTr h₁; apply simulate_congr <;> simp
   intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
-  exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
+  exact length_hist_le_of_reachable # System.reachable_of_simulate_eq h₅
 
 theorem State.simulate_set_d_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {d : DStrat}
 [hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
@@ -818,7 +818,7 @@ theorem State.simulate_set_d_eq_of_length_hist_lt {s s₁ p₁ n} {a : AStrat} {
 sys.simulate (Strat.mk a (d.set s₁ p₁)).f s n = sys.simulate (Strat.mk a d).f s n := by
   have h₃ := d.wf_set_of_validTr h₁; apply simulate_congr <;> simp
   intro k hk sa hsa h₄ h₅ h₆; rw [fn_set_eq_of_ne]; rintro rfl; contrapose! h₂
-  exact length_hist_le_of_reachable # System.reachable_of_simulate_full h₅
+  exact length_hist_le_of_reachable # System.reachable_of_simulate_eq h₅
 
 theorem State.simulate_set_a_eq_of_le_length_hist_sub {s s₁ p₁ n} {a : AStrat} {d : DStrat}
 [hs : sys.WF s] [hs₁ : sys.WF s₁] [ha : a.WF] [hd : d.WF]
