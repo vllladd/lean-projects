@@ -1,28 +1,5 @@
 import AP.AP.WF
 
-@[simp]
-theorem eventually_const {P : Prop} : eventually (λ _ => P) ↔ P :=
-  ⟨λ ⟨N, h⟩ => h N # le_refl _, λ h => ⟨0, λ _ _ => h⟩⟩
-
--- #check 0 #exit
-
-namespace Set'
-
-universe u v w
-variable {α : Type u} {β : Type v} {γ : Type w}
-variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
-variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
-variable {s s' s₁ s₂ s₃ : Set' α}
-
-@[simp]
-theorem empty_subset : ∅ ⊆ s := by
-  intro; simp
-
--- #check 0 #exit
-
-end Set'
-
 namespace AP
 
 def State.aWinsDisj (s : State) (fsp : FSP) (st : Strat) : Prop :=

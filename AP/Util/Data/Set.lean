@@ -744,3 +744,7 @@ theorem eq_insert_empty_of_size_eq_one {x}
 @[simp]
 theorem erase_subset {x} : s.erase x ⊆ s := by
   intro y; simp
+
+@[simp]
+theorem empty_subset : ∅ ⊆ s := by
+  intro; simp

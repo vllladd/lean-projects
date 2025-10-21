@@ -373,26 +373,6 @@ theorem mod_self_sub_one_eq_one {n} (h : 3 ≤ n) : n % (n - 1) = 1 := by
 theorem ne_zero_of_mod_ne_zero {n k} (h : n % k ≠ 0) : n ≠ 0 := by
   contrapose! h; simp [h]
 
-def _root_.eventually (p : ℕ → Prop) : Prop :=
-  ∃ N, ∀ n, N ≤ n → p n
-
-theorem eventually_and {p q : ℕ → Prop} :
-eventually (λ n => p n ∧ q n) ↔ eventually p ∧ eventually q := by
-  constructor
-  · refine λ ⟨N, h⟩ => ⟨⟨N, ?_⟩, N, ?_⟩ <;> intros <;> simp_all only
-  · rintro ⟨⟨N₁, h₁⟩, N₂, h₂⟩; use max N₁ N₂
-    intro n hn; constructor <;> simp_all only [sup_le_iff]
-
-@[simp]
-theorem not_eventually_even : ¬eventually Even := by
-  unfold eventually; push_neg; simp
-  intro N; use N * 2 + 1; simp; linarith
-
-@[simp]
-theorem not_eventually_odd : ¬eventually Odd := by
-  unfold eventually; push_neg; simp
-  intro N; use N * 2; simp
-
 @[simp]
 theorem even_or_odd₁ {n : ℕ} : Even n ∨ Odd n :=
   even_or_odd n
@@ -400,10 +380,6 @@ theorem even_or_odd₁ {n : ℕ} : Even n ∨ Odd n :=
 @[simp]
 theorem odd_or_even₁ {n : ℕ} : Odd n ∨ Even n :=
   even_or_odd₁.symm
-
-theorem eventually_or_of {p q : ℕ → Prop}
-(h : eventually p ∨ eventually q) : eventually (λ n => p n ∨ q n) := by
-  rcases h with ⟨N, h⟩ | ⟨N, h⟩ <;> use N <;> intro n hn <;> simp_all
 
 theorem ite_odd {α : Type*} {n : ℕ} {x y : α} : ite (Odd n) x y = ite (Even n) y x := by
   simp_rw [←not_odd_iff_even, ite_not]
