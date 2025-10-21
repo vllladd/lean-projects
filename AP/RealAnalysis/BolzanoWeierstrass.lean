@@ -2,7 +2,7 @@ import AP.RealAnalysis.RationalFn
 
 namespace RealAnalysis
 
-open scoped Classical in
+open Classical in
 @[simp] noncomputable
 def bwSeq (a : ℕ → ℝ) (y₁ y₂ : ℚ) (n : ℕ) : ℚ × ℚ := match n with
 | 0 => (y₁, y₂)
@@ -159,11 +159,11 @@ theorem isCauSeq_bwSeq_fst_of_abs_lt {a : ℕ → ℝ} {M : ℚ}
   have h₁ := pos_of_abs_lt # h 0
   simp at h₁; exact h₁
 
-open scoped Classical in noncomputable
+open Classical in noncomputable
 def bwLimit (a : ℕ → ℝ) (M : ℚ) (h : ∀ n, |a n| < M) : ℝ :=
   Real.mk # .mk _ # isCauSeq_bwSeq_fst_of_abs_lt h
 
-open scoped Classical in noncomputable
+open Classical in noncomputable
 def bwSubseq (a : ℕ → ℝ) (M : ℚ) (h : ∀ n, |a n| < M) (n : ℕ) : ℕ :=
   Classical.epsilon # λ i => (∀ k < n, bwSubseq a M h k < i) ∧
   let (y₁, y₂) := bwSeq a (-M) M n

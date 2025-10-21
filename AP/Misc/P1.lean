@@ -1,5 +1,7 @@
 import AP.Util
 
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+
 namespace Misc
 
 namespace P1
@@ -268,3 +270,68 @@ theorem exi_imp_humanityDiesOut : ∃ (w : Woman), sterile w → humanityDiesOut
   obtain ⟨w₀⟩ := nonempty_woman; by_cases h : ∀ w, sterile w
   use w₀; simp [humanityDiesOut_of_all_sterile h]
   push_neg at h; obtain ⟨w, h⟩ := h; use w; simp [h]
+
+end P8 namespace P9 -----
+
+noncomputable
+abbrev μ : MeasureTheory.Measure ℝ :=
+  MeasureTheory.volume
+
+theorem integral_congr {f g : ℝ → ℝ} {a b : ℝ}
+(ha : a ≤ b) (h : ∀ x, a ≤ x → x ≤ b → f x = g x) :
+∫ x in a..b, f x ∂μ = ∫ x in a..b, g x ∂μ := by
+  apply intervalIntegral.integral_congr; intro x h₁
+  simp [Set.mem_uIcc] at h₁; apply h <;> cases h₁ <;> linarith
+
+theorem one_add_sqrt_two_pos : (0 : ℝ) < 1 + √2 := by
+  positivity
+
+theorem log_one_add_sqrt_two_pos : (0 : ℝ) < (1 + √2).log := by
+  rw [Real.log_pos_iff]; norm_num; positivity
+
+theorem log_one_add_sqrt_two_nonneg : (0 : ℝ) ≤ (1 + √2).log :=
+  le_of_lt log_one_add_sqrt_two_pos
+
+theorem integrable_of_continuous {f : ℝ → ℝ} {a b : ℝ}
+(h : Continuous f) : IntervalIntegrable f μ a b := by
+  rw [intervalIntegrable_iff]; exact Continuous.integrableOn_uIoc h
+
+theorem integral_exp {a b : ℝ} : ∫ x in a..b, x.exp ∂μ = b.exp - a.exp := by
+  apply intervalIntegral.integral_eq_sub_of_hasDerivAt
+  · intros; apply Real.hasDerivAt_exp
+  · apply integrable_of_continuous; continuity
+
+set_option maxHeartbeats 1000000
+theorem main : ∫ x in 0..(1 + √2).log,
+(((x.exp - (-x).exp) / 2) ^ 3 * ((x.exp + (-x).exp) / 2) ^ 11) ∂μ = 107 / 28 := by
+  rw [integral_congr (g := λ x => (x.exp - (-x).exp) ^ 3 / 2 ^ 3 *
+    ((x.exp + (-x).exp) ^ 11 / 2 ^ 11)) log_one_add_sqrt_two_nonneg]
+  rotate_left
+  · intro x hx h₁
+    simp_rw [←Real.rpow_natCast]
+    congr
+    · rw [Real.div_rpow # by simpa]; positivity
+    · rw [Real.div_rpow]; positivity; norm_num
+  simp_rw [show ∀ (a b c d : ℝ), a / b * (c / d) = (b * d)⁻¹ * (a * c)
+    by intros; field_simp]
+  rw [intervalIntegral.integral_const_mul]
+  rw [inv_mul_eq_iff_eq_mul₀ # by norm_num]
+  ring_nf
+  simp_rw [←Real.rpow_natCast]
+  simp_rw [←Real.exp_mul, ←Real.exp_add]
+  ring_nf
+  simp only [show ∀ (x y : ℝ), -(x * y) = (-y) * x by simp [mul_comm]]
+  repeat rw [intervalIntegral.integral_add]
+  repeat rw [intervalIntegral.integral_sub]
+  any_goals apply integrable_of_continuous; continuity
+  simp [-neg_mul, integral_exp]
+  simp only [mul_comm _ # Real.log _, Real.exp_mul]
+  rw [Real.exp_log one_add_sqrt_two_pos]
+  simp
+  field_simp
+  ring_nf
+  simp_rw [←Real.rpow_natCast]
+  simp
+  simp_rw [pow_succ]
+  simp [mul_assoc]
+  ring_nf
