@@ -27,3 +27,43 @@ theorem eventually_or_of {p q : ℕ → Prop}
 @[simp]
 theorem eventually_const {P : Prop} : eventually (λ _ => P) ↔ P :=
   ⟨λ ⟨N, h⟩ => h N # le_refl _, λ h => ⟨0, λ _ _ => h⟩⟩
+
+theorem exi_of_eventually {p : ℕ → Prop} (h : eventually p) : ∃ n, p n := by
+  obtain ⟨n, h⟩ := h; use n, h _ # by rfl
+
+theorem eventually_iff_exi_least {p : ℕ → Prop} : eventually p ↔
+(∀ n, p n) ∨ ∃ N, ¬p N ∧ ∀ n, N < n → p n := by
+  by_cases h₀ : ∀ n, p n
+  · simp [h₀]; use 0; simpa
+  simp [h₀]
+  push_neg at h₀
+  obtain ⟨n₀, h₀⟩ := h₀
+  constructor
+  · intro h
+    use Nat.findRaw (λ N => ∀ n, N ≤ n → p n) - 1
+    obtain ⟨h₁, h₂⟩ := Nat.findRaw_spec' h; clear h
+    generalize Nat.findRaw (λ N => ∀ n, N ≤ n → p n) = m at h₁ h₂ ⊢
+    constructor
+    · cases m
+      · simp
+        specialize h₁ n₀
+        simp [h₀] at h₁
+      nm m
+      simp
+      intro h₃
+      specialize h₂ m _
+      · intro n hn
+        rw [le_iff_eq_or_lt] at hn
+        rcases hn with rfl | hn
+        · exact h₃
+        rw [←Nat.add_one_le_iff] at hn
+        exact h₁ n hn
+      linarith
+    · intro n hn
+      apply h₁
+      omega
+  · rintro ⟨N, h₁, h₂⟩
+    use N + 1
+    intro n hn
+    apply h₂
+    omega

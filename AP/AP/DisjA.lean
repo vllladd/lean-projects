@@ -203,8 +203,6 @@ theorem State.aHws_of_aForallWinsDisj {fsp} {s : State} {a : AStrat} [ha : a.WF]
 (h : s.aForallWinsDisj fsp a) : s.aHws :=
   ⟨a, ha, λ _ _ => aWins_of_aForallWinsDisj h⟩
 
------
-
 structure DisjEraseTaken : Type where
   a : AStrat
   s : State
@@ -747,7 +745,10 @@ s'.aPos ∉ ps := by
 theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
 (h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 3 # s.aPos.nbhd s.pw |>.toSet := by
   obtain ⟨a, Ha, h⟩ := h
-  obtain ⟨N, h₁⟩ := s.eventually_simulate_dChooseFromSet_aPos_not_mem (a := a)
-    (ps := s.aPos.nbhd s.pw)
-  dsimp at h₁
+  have h₁ := s.eventually_simulate_dChooseFromSet_aPos_not_mem
+    (a := a) (ps := s.aPos.nbhd s.pw)
+  simp at h₁
+  generalize hF : sys.simulate (Strat.f ⟨a, dChooseFromSet #
+    Set'.ofList # s.aPos.nbhd s.pw⟩) = F at h₁
+  rw [eventually_iff_exi_least] at h₁
   sorry

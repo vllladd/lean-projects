@@ -386,3 +386,16 @@ theorem ite_odd {α : Type*} {n : ℕ} {x y : α} : ite (Odd n) x y = ite (Even 
 
 theorem ite_even {α : Type*} {n : ℕ} {x y : α} : ite (Even n) x y = ite (Odd n) y x :=
   ite_odd.symm
+
+theorem exi_least_of_exi {p : ℕ → Prop} (h : ∃ n, p n) : ∃ n, p n ∧ ∀ k, k < n → ¬p k := by
+  use Nat.findRaw p; convert Nat.findRaw_spec' h using 1
+  constructor <;> intro h k hk
+  · by_contra! h₁; exact h _ h₁ hk
+  · intro h₁; specialize h _ h₁; linarith
+
+theorem exi_iff_exi_least {p : ℕ → Prop} : (∃ n, p n) ↔ ∃ n, p n ∧ ∀ k, k < n → ¬p k := by
+  constructor; use exi_least_of_exi; tauto
+
+@[simp]
+theorem le_self_sub_add_one_iff {a b : ℕ} : a ≤ a - (b + 1) ↔ a = 0 := by
+  omega
