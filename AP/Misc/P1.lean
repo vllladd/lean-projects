@@ -273,6 +273,8 @@ theorem exi_imp_humanityDiesOut : ∃ (w : Woman), sterile w → humanityDiesOut
 
 end P8 namespace P9 -----
 
+-- From MHA S04E17 at 13:19
+
 noncomputable
 abbrev μ : MeasureTheory.Measure ℝ :=
   MeasureTheory.volume
