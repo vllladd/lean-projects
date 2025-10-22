@@ -157,12 +157,11 @@ theorem subseq_iterate_of_id_lt {σ : ℕ → ℕ}
 
 theorem exi_subseq_of_forall_exi_gt {p : ℕ → Prop}
 (h : ∀ N, ∃ n, N < n ∧ p n) : ∃ σ, subseq σ ∧ ∀ n, p (σ n) := by
-  choose σ h using h
+  choose σ h₁ h₂ using h
   use (σ^[· + 1] 0)
   constructor
   · apply subseq_iterate_of_id_lt
-    intro n
-    exact h _ |>.1
+    intro n; apply h₁
   intro n
   rw [Function.iterate_succ']
-  exact h _ |>.2
+  apply h₂
