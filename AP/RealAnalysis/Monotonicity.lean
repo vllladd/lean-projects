@@ -132,3 +132,37 @@ theorem misc₂ : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ}
   · simp [subseq]
     use 0, 1, by norm_num
     simp
+
+theorem subseq_iff_lt_add_one {σ : ℕ → ℕ} :
+subseq σ ↔ ∀ n, σ n < σ (n + 1) := by
+  constructor
+  · intro h n
+    apply h
+    simp
+  intro h k n h₁
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt h₁; clear h₁
+  induction n generalizing k
+  · apply h
+  nm n ih
+  simp [←add_assoc]
+  apply ih _ |>.trans
+  apply h
+
+theorem subseq_iterate_of_id_lt {σ : ℕ → ℕ}
+(h : ∀ n, n < σ n) {n} : subseq (σ^[·] n) := by
+  rw [subseq_iff_lt_add_one]
+  intro k
+  rw [Function.iterate_succ']
+  apply h
+
+theorem exi_subseq_of_forall_exi_gt {p : ℕ → Prop}
+(h : ∀ N, ∃ n, N < n ∧ p n) : ∃ σ, subseq σ ∧ ∀ n, p (σ n) := by
+  choose σ h using h
+  use (σ^[· + 1] 0)
+  constructor
+  · apply subseq_iterate_of_id_lt
+    intro n
+    exact h _ |>.1
+  intro n
+  rw [Function.iterate_succ']
+  exact h _ |>.2

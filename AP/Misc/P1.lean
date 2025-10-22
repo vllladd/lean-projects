@@ -254,21 +254,21 @@ class World where
   sterile : Woman → Prop
   humanityDiesOut : Prop
   nonempty_woman : Nonempty Woman
-  humanityDiesOut_of_all_sterile : (∀ w, sterile w) → humanityDiesOut
+  humanityDiesOut_of_forall_sterile : (∀ w, sterile w) → humanityDiesOut
 
 example : World where
   Woman := String
   sterile _ := False
   humanityDiesOut := False
   nonempty_woman := inferInstance
-  humanityDiesOut_of_all_sterile := by simp
+  humanityDiesOut_of_forall_sterile := by simp
 
 variable [W : World]
 open World
 
 theorem exi_imp_humanityDiesOut : ∃ (w : Woman), sterile w → humanityDiesOut := by
   obtain ⟨w₀⟩ := nonempty_woman; by_cases h : ∀ w, sterile w
-  use w₀; simp [humanityDiesOut_of_all_sterile h]
+  use w₀; simp [humanityDiesOut_of_forall_sterile h]
   push_neg at h; obtain ⟨w, h⟩ := h; use w; simp [h]
 
 end P8 namespace P9 -----
