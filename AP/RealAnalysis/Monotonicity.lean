@@ -1,4 +1,4 @@
-import AP.RealAnalysis.BolzanoWeierstrass
+import AP.RealAnalysis.RationalFn
 
 namespace RealAnalysis
 
@@ -165,3 +165,29 @@ theorem exi_subseq_of_forall_exi_gt {p : ℕ → Prop}
   intro n
   rw [Function.iterate_succ']
   apply h₂
+
+theorem exi_subseq_of_forall_exi_le {p : ℕ → Prop}
+(h : ∀ N, ∃ n, N ≤ n ∧ p n) : ∃ σ, subseq σ ∧ ∀ n, p (σ n) := by
+  apply exi_subseq_of_forall_exi_gt
+  intro N
+  specialize h # N + 1
+  obtain ⟨n, h₁, h₂⟩ := h
+  use n, by linarith
+
+theorem subseq_comp {σ₁ σ₂} (h₁ : subseq σ₁) (h₂ : subseq σ₂) : subseq (σ₁ ∘ σ₂) := by
+  rw [subseq_iff_lt_add_one]
+  intro n
+  apply h₁
+  apply h₂
+  simp
+
+theorem forall_exi_le_or_forall_exi_ge {a : ℕ → ℝ} {L : ℝ} :
+(∀ N, ∃ n, N ≤ n ∧ a n ≤ L) ∨ (∀ N, ∃ n, N ≤ n ∧ L ≤ a n) := by
+  rw [or_iff_not_imp_left]
+  intro h₁ N
+  push_neg at h₁
+  obtain ⟨N₁, h₁⟩ := h₁
+  use N + N₁, by linarith
+  apply le_of_lt
+  apply h₁
+  linarith

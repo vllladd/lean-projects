@@ -1,4 +1,4 @@
-import AP.RealAnalysis.Monotonicity
+import AP.RealAnalysis.BolzanoWeierstrass
 
 namespace RealAnalysis
 
@@ -170,7 +170,7 @@ theorem tendsTo_of_converges_and_subseq_tendsTo {a σ L}
 
 theorem converges_of_isCauchy {a} (h : isCauchy a) : converges a := by
   have h₁ := bounded_of_isCauchy h
-  obtain ⟨σ, L, hσ, h₂⟩ := exi_subseq_tendsTo_of_bounded h₁
+  obtain ⟨σ, hσ, L, h₂⟩ := exi_converges_subseq_of_bounded h₁
   use L, tendsTo_of_isCauchy_and_subseq_tendsTo hσ h h₂
 
 theorem isCauchy_iff_converges {a} : isCauchy a ↔ converges a :=
@@ -414,3 +414,177 @@ tendsTo (a ·) (Real.mk ⟨a, ha⟩) := by
   replace h₃ : |(a n₁ : ℝ) - a N| < e / 2 / 2
   · trans (e' : ℝ); exact_mod_cast h₃; linarith
   exact Real.abs_sub_lt_of_lt_lt_half h₃ h₂
+
+def isPeak (a : ℕ → ℝ) (N : ℕ) : Prop :=
+  ∀ n, N ≤ n → a n ≤ a N
+
+def isPeakAlt₁ (a : ℕ → ℝ) (N : ℕ) : Prop :=
+  ∀ n, N < n → a n ≤ a N
+
+theorem isPeak_iff_isPeakAlt₁ {a n} : isPeak a n ↔ isPeakAlt₁ a n := by
+  constructor
+  · intro h N h₁
+    apply h
+    linarith
+  · intro h N h₁
+    rw [le_iff_eq_or_lt] at h₁
+    rcases h₁ with rfl | h₁
+    · rfl
+    apply h
+    exact h₁
+
+theorem exi_monoLe_or_monoGe_subseq_of_converges {a}
+(h : converges a) : ∃ σ, subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
+  sorry
+  -- obtain ⟨L, h⟩ := h
+  -- rcases @forall_exi_le_or_forall_exi_ge a L with h₁ | h₁
+  -- ·
+  --   choose σ h₁ h₂ using h₁
+  --   have ⟨σ', h₃, h₄⟩ := exi_subseq_of_forall_exi_le
+  --     (p := (λ N => a N ≤ L)) # λ N => ⟨σ N, h₁ _, h₂ _⟩
+  --   clear! σ
+  --   change ∀ n, (a ∘ σ') n ≤ L at h₄
+  --   suffices h₅ : ∃ σ, subseq σ ∧ monoLe ((a ∘ σ') ∘ σ)
+  --   · obtain ⟨σ, h₅, h₆⟩ := h₅
+  --     use σ' ∘ σ
+  --     refine ⟨?_, by left; exact h₆⟩
+  --     apply subseq_comp _ h₅
+  --     rw [subseq_iff_lt_add_one]
+  --     intro k
+  --     apply h₃
+  --     simp
+  --   replace h := tendsTo_subseq h h₃
+  --   generalize a ∘ σ' = a' at h h₄ ⊢
+  --   clear! a σ'; rename' a' => a
+  --   
+  --   by_cases H : ∀ N, ∃ n, N ≤ n ∧ a N < a n
+  --   · replace H : ∀ N, ∃ n, N < n ∧ a N < a n
+  --     · intro N
+  --       specialize H N
+  --       obtain ⟨n, h₂, h₃⟩ := H
+  --       refine ⟨n, ?_, h₃⟩
+  --       rw [lt_iff_le_and_ne]; use h₂
+  --       rintro rfl
+  --       linarith
+  --     choose σ h₇ h₈ using H
+  --     use (σ^[·] 0)
+  --     use subseq_iterate_of_id_lt h₇
+  --     rw [monoLe_iff_le_succ]
+  --     intro n
+  --     dsimp
+  --     apply le_of_lt
+  --     change _ < a (σ^[n + 1] 0)
+  --     rw [Function.iterate_succ']
+  --     apply h₈
+  --   rename' H => h₁
+  --   push_neg at h₁
+  --   obtain ⟨N, h₁⟩ := h₁
+  --   
+  --   by_cases h₂ : a N = L
+  --   · have h₃ : ∀ N, ∃ n, N ≤ n ∧ a n = L
+  --     · intro N₁
+  --       by_contra! h₃
+  --       have h₅ : a (N + N₁) < L
+  --       · rw [lt_iff_le_and_ne]
+  --         use h₄ _
+  --         apply h₃
+  --         linarith
+  --       specialize h (L - a (N + N₁)) # by linarith
+  --       obtain ⟨N₂, h⟩ := h
+  --       dsimp at h
+  --       have h₁' := h₁
+  --       have h₃' := h₃
+  --       have h₄' := h₄
+  --       specialize h₁ (N + N₁ + N₂) # by linarith
+  --       specialize h₃ (N + N₁ + N₂) # by linarith
+  --       specialize h₄ (N + N₁ + N₂)
+  --       specialize h (N + N₁ + N₂) # by linarith
+  --       rw [abs_of_neg] at h
+  --       rotate_left
+  --       · simp
+  --         rw [lt_iff_le_and_ne]
+  --         use h₄
+  --       simp at h
+  --   
+  --   -- · intro N
+  --   --   by_contra! h₁
+  --   --   replace h₄ : ∀ n, a n < L
+  --   --   · intro n
+  --   --     rw [lt_iff_le_and_ne]
+  --   --     use h₄ n
+  --   --     rintro rfl
+  --   --     specialize h₁ # N + 1
+  --   --     simp at h₁
+  --   --   have h₂ : a N < L; linarith [h₄ N]
+  --   --   specialize h (L - a N) # by linarith
+  --   --   obtain ⟨N₁, h⟩ := h
+  --   --   dsimp at h
+  --   --   specialize h₁ (N + N₁) # by linarith
+  --   --   specialize h (N + N₁) # by linarith
+  --   --   rw [abs_sub_lt_iff] at h
+  --   --   linarith
+  --   
+  --   by_cases h₅ : ∀ N, ∃ n, N ≤ n ∧ a n = L
+  --   · choose σ h₅ h₆ using h₅
+  --     obtain ⟨σ', h₇, h₈⟩ := exi_subseq_of_forall_exi_le
+  --       (p := (a · = L)) # λ N => ⟨σ N, h₅ _, h₆ _⟩
+  --     use σ', h₇
+  --     intro i j h
+  --     simp [h₈]
+  --   
+  --   suffices H : ∀ N, ∃ n, N ≤ n ∧ a N < a n
+  --   · clear h₅
+  --     replace H : ∀ N, ∃ n, N < n ∧ a N < a n
+  --     · intro N
+  --       specialize H N
+  --       obtain ⟨n, h₂, h₃⟩ := H
+  --       refine ⟨n, ?_, h₃⟩
+  --       rw [lt_iff_le_and_ne]; use h₂
+  --       rintro rfl
+  --       linarith
+  --     choose σ h₇ h₈ using H
+  --     use (σ^[·] 0)
+  --     use subseq_iterate_of_id_lt h₇
+  --     rw [monoLe_iff_le_succ]
+  --     intro n
+  --     dsimp
+  --     apply le_of_lt
+  --     change _ < a (σ^[n + 1] 0)
+  --     rw [Function.iterate_succ']
+  --     apply h₈
+  --   
+  --   push_neg at h₅
+  --   intro N₁
+  --   obtain ⟨N, h₅⟩ := h₅
+  --   by_contra! h₂
+  --   
+  --   replace h₂ : ∀ n, N + N₁ ≤ n → a n ≤ a N₁
+  --   · intro n hn
+  --     have h₃ := h₂ n # by linarith
+  --     linarith
+  --   
+  --   replace h₅ : ∀ n, N + N₁ ≤ n → a n < L
+  --   · intro n hn
+  --     specialize h₅ n # by linarith
+  --     rw [lt_iff_le_and_ne]
+  --     use h₄ n
+  --   
+  --   have h₁ : a N₁ < L
+  --   · 
+  --   
+  --   generalize a N₁ = x at h₁ h₂
+  --   generalize N + N₁ = N at h₂ h₅; nm y; clear y N₁
+  --   
+  --   specialize h (L - x) # by linarith
+  --   obtain ⟨N₁, h⟩ := h
+  --   dsimp at h
+  --   
+  -- · sorry
+
+-- #check 0 #exit
+
+theorem exi_monoLe_or_monoGe_subseq_of_bounded {a}
+(h : bounded a) : ∃ σ, subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
+  obtain ⟨σ, h₁, h₂⟩ := exi_converges_subseq_of_bounded h
+  obtain ⟨σ', H₁, H₂⟩ := exi_monoLe_or_monoGe_subseq_of_converges h₂
+  use σ ∘ σ', subseq_comp h₁ H₁, H₂

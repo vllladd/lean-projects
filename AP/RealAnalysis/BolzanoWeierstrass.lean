@@ -1,4 +1,4 @@
-import AP.RealAnalysis.RationalFn
+import AP.RealAnalysis.Monotonicity
 
 namespace RealAnalysis
 
@@ -164,8 +164,8 @@ def bwLimit (a : ℕ → ℝ) (M : ℚ) (h : ∀ n, |a n| < M) : ℝ :=
   Real.mk # .mk _ # isCauSeq_bwSeq_fst_of_abs_lt h
 
 open Classical in noncomputable
-def bwSubseq (a : ℕ → ℝ) (M : ℚ) (h : ∀ n, |a n| < M) (n : ℕ) : ℕ :=
-  Classical.epsilon # λ i => (∀ k < n, bwSubseq a M h k < i) ∧
+def bwSubseq (a : ℕ → ℝ) (M : ℚ) (n : ℕ) : ℕ :=
+  Classical.epsilon # λ i => (∀ k < n, bwSubseq a M k < i) ∧
   let (y₁, y₂) := bwSeq a (-M) M n
   y₁ ≤ a i ∧ a i ≤ y₂
 
@@ -224,8 +224,8 @@ theorem infinite_between_of_bwSeq_eq_of_abs_lt {a : ℕ → ℝ} {M y₁ y₂ : 
   rw [abs_lt] at h
   constructor <;> linarith
 
-theorem bwSubseq_cnd' {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n : ℕ} :
-∃ i, (∀ k < n, bwSubseq a M h k < i) ∧
+theorem bwSubseq_cnd' {a : ℕ → ℝ} {M : ℚ} {n : ℕ} (h : ∀ n, |a n| < M) :
+∃ i, (∀ k < n, bwSubseq a M k < i) ∧
 let (y₁, y₂) := bwSeq a (-M) M n
 y₁ ≤ a i ∧ a i ≤ y₂ := by
   have hM' : 0 < M
@@ -240,7 +240,7 @@ y₁ ≤ a i ∧ a i ≤ y₂ := by
   nm n ih
   have h₁ := Classical.epsilon_spec ih
   generalize h₂ : Classical.epsilon (λ i =>
-    (∀ k < n, bwSubseq a M h k < i) ∧
+    (∀ k < n, bwSubseq a M k < i) ∧
     match bwSeq a (-M) M n with
     | (y₁, y₂) => ↑y₁ ≤ a i ∧ a i ≤ ↑y₂) = i at h₁
   rcases h₁ with ⟨h₁, h₃⟩
@@ -257,7 +257,7 @@ y₁ ≤ a i ∧ a i ≤ y₂ := by
   have hR : bwSeq a (-M) M (n + 1) = (y₁', y₂')
   · rwa [bwSeq_add hM, hr]
   have H := infinite_between_of_bwSeq_eq_of_abs_lt h hR
-  generalize hN : 1 + ∑ k ∈ Finset.range (n + 1), bwSubseq a M h k = N
+  generalize hN : 1 + ∑ k ∈ Finset.range (n + 1), bwSubseq a M k = N
   rw [Set.infinite_iff_exists_gt] at H
   specialize H N
   simp at H
@@ -271,23 +271,23 @@ y₁ ≤ a i ∧ a i ≤ y₂ := by
   replace hk : k ∈ Finset.range (n + 1); simpa
   exact Finset.single_le_sum_of_canonicallyOrdered hk
 
-theorem bwSubseq_cnd {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n : ℕ} :
-(∀ k < n, bwSubseq a M h k < bwSubseq a M h n) ∧
+theorem bwSubseq_cnd {a : ℕ → ℝ} {M : ℚ} {n : ℕ} (h : ∀ n, |a n| < M) :
+(∀ k < n, bwSubseq a M k < bwSubseq a M n) ∧
 let (y₁, y₂) := bwSeq a (-M) M n
-y₁ ≤ a (bwSubseq a M h n) ∧ a (bwSubseq a M h n) ≤ y₂ := by
-  have h₁ := @bwSubseq_cnd' a M h n
+y₁ ≤ a (bwSubseq a M n) ∧ a (bwSubseq a M n) ≤ y₂ := by
+  have h₁ := @bwSubseq_cnd' a M n h
   have h₂ := Classical.epsilon_spec h₁
   rw [←bwSubseq] at h₂; exact h₂
 
-theorem bwSubseq_lt_of_lt {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {i j : ℕ}
-(h₁ : i < j) : bwSubseq a M h i < bwSubseq a M h j := by
-  obtain ⟨h₂, h₃, h₄⟩ := @bwSubseq_cnd a M h i
-  obtain ⟨h₅, h₆, h₇⟩ := @bwSubseq_cnd a M h j
+theorem bwSubseq_lt_of_lt {a : ℕ → ℝ} {M : ℚ} {i j : ℕ} (h : ∀ n, |a n| < M)
+(h₁ : i < j) : bwSubseq a M i < bwSubseq a M j := by
+  obtain ⟨h₂, h₃, h₄⟩ := @bwSubseq_cnd a M i h
+  obtain ⟨h₅, h₆, h₇⟩ := @bwSubseq_cnd a M j h
   specialize h₅ i h₁
   linarith
 
-theorem subseq_bwSubseq {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} :
-subseq # bwSubseq a M h := λ _ _ => bwSubseq_lt_of_lt
+theorem subseq_bwSubseq {a : ℕ → ℝ} {M : ℚ} (h : ∀ n, |a n| < M) :
+subseq # bwSubseq a M := λ _ _ => bwSubseq_lt_of_lt h
 
 theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ} (hy : y₁ < y₂) :
 (bwSeq a y₁ y₂ n).1 < (bwSeq a y₁ y₂ m).2 := by
@@ -301,7 +301,7 @@ theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ} (hy : y
   have hy' := fst_lt_snd_of_bwSeq_eq hy hr
   exact lt_of_lt_of_le (bwSeq_fst_lt_snd' hy') (bwSeq_snd_le hy')
 
-theorem bwSeq_fst_le_bwLimit {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n} :
+theorem bwSeq_fst_le_bwLimit {a : ℕ → ℝ} {M : ℚ} {n} (h : ∀ n, |a n| < M) :
 (bwSeq a (-M) M n).1 ≤ bwLimit a M h := by
   have hM' : 0 < M
   · replace h := pos_of_abs_lt # h 0; simp at h; exact h
@@ -314,7 +314,7 @@ theorem bwSeq_fst_le_bwLimit {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} 
   dsimp
   exact bwSeq_fst_le_of_le hM hi
 
-theorem bwLimit_le_bwSeq_snd {a : ℕ → ℝ} {M : ℚ} {h : ∀ n, |a n| < M} {n} :
+theorem bwLimit_le_bwSeq_snd {a : ℕ → ℝ} {M : ℚ} {n} (h : ∀ n, |a n| < M) :
 bwLimit a M h ≤ (bwSeq a (-M) M n).2 := by
   have hM' : 0 < M
   · replace h := pos_of_abs_lt # h 0; simp at h; exact h
@@ -326,17 +326,17 @@ bwLimit a M h ≤ (bwSeq a (-M) M n).2 := by
   rintro i (hi : n ≤ i)
   exact le_of_lt # bwSeq_fst_lt_snd hM
 
-theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
-∃ σ L, subseq σ ∧ tendsTo (a ∘ σ) L := by
+theorem exi_converges_subseq_of_bounded {a} (h : bounded a) :
+∃ σ, subseq σ ∧ converges (a ∘ σ) := by
   obtain ⟨M', h⟩ := h
   unfold boundedBy at h
   obtain ⟨M, h₁⟩ := exists_rat_gt M'
   replace h : ∀ n, |a n| < M
   · intro n; specialize h n; linarith
   clear! M'
-  let σ := bwSubseq a M h
-  have hσ : subseq σ := subseq_bwSubseq
-  use σ, bwLimit a M h, subseq_bwSubseq
+  let σ := bwSubseq a M
+  have hσ : subseq σ := subseq_bwSubseq h
+  use σ, subseq_bwSubseq h, bwLimit a M h
   have hM' : 0 < M; have h₁ := pos_of_abs_lt # h 0; simp at h₁; exact h₁
   have hM : -M < M; linarith
   intro ε hε
@@ -344,11 +344,11 @@ theorem exi_subseq_tendsTo_of_bounded {a} (h : bounded a) :
   obtain ⟨N, hN⟩ := exists_nat_gt # (M * 2) / ε
   use N
   intro n hn
-  obtain ⟨-, h₂, h₃⟩ := @bwSubseq_cnd a M h n
+  obtain ⟨-, h₂, h₃⟩ := @bwSubseq_cnd a M n h
   change _ ≤ a (σ n) at h₂
   change a (σ n) ≤ _ at h₃
-  have h₄ := @bwSeq_fst_le_bwLimit a M h n
-  have h₅ := @bwLimit_le_bwSeq_snd a M h n
+  have h₄ := @bwSeq_fst_le_bwLimit a M n h
+  have h₅ := @bwLimit_le_bwSeq_snd a M n h
   rw [abs_lt]
   have H : (↑M + ↑M) / 2 ^ n < ε
   · rw [div_lt_comm₀] <;> try positivity
