@@ -180,9 +180,13 @@ digRoot' b (n + m) = digRoot' b (digRoot' b n + digRoot' b m) := by
   · unfold digRoot'; simp [h₁, h₂]
 
 @[simp]
-theorem digRoot'_le_base {n} : digRoot' b n ≤ b := by
+theorem digRoot'_lt_base {n} : digRoot' b n < b := by
   unfold digRoot'; split_ifs with h₁ h₂; iterate 2 simp
-  trans b - 1; apply le_of_lt; apply Nat.mod_lt; simp; simp
+  trans b - 1; apply Nat.mod_lt; simp; simp
+
+@[simp]
+theorem digRoot'_le_base {n} : digRoot' b n ≤ b :=
+  le_of_lt digRoot'_lt_base
 
 theorem digRoot'_mul_base_sub_one_add {n k} (h : n ≠ 0) :
 digRoot' b (k * (b - 1) + n) = digRoot' b n := by
@@ -264,6 +268,10 @@ digRoot b (b - 1 + n) = digRoot b n := by
 theorem digRoot_add {n m} :
 digRoot b (n + m) = digRoot b (digRoot b n + digRoot b m) := by
   simp [digRoot_eq_digRoot']; exact digRoot'_add
+
+@[simp]
+theorem digRoot_lt_base {n} : digRoot b n < b := by
+  simp [digRoot_eq_digRoot']
 
 @[simp]
 theorem digRoot_le_base {n} : digRoot b n ≤ b := by

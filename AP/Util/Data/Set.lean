@@ -184,10 +184,6 @@ theorem toList_eq_nil_iff [LinearOrder α] : s.toList = [] ↔ s = ∅ := by
 def toDMap (s : Set' α) : DMap α (λ _ => Unit) :=
   ⟨s.inner⟩
 
-@[simp]
-def toMap (s : Set' α) : Map α Unit :=
-  ⟨s.inner⟩
-
 instance : DecidableEq (Set' α) :=
   λ s₁ s₂ => match h : decide # s₁.inner = s₂.inner with
   | true => isTrue # by
