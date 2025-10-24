@@ -56,7 +56,7 @@ theorem tendsTo_unique {a L₁ L₂}
   simp at h₂
   linarith
 
-theorem tendsTo_drop_iff {a L k} : tendsTo (a # · + k) L ↔ tendsTo a L := by
+theorem tendsTo_drop_iff' {a L k} : tendsTo (a # · + k) L ↔ tendsTo a L := by
   constructor
   · intro h e he
     specialize h e he
@@ -79,7 +79,7 @@ theorem tendsTo_drop_iff {a L k} : tendsTo (a # · + k) L ↔ tendsTo a L := by
     exact h
 
 theorem converges_drop_iff {a k} : converges (a # · + k) ↔ converges a :=
-  exists_congr # λ _ => tendsTo_drop_iff
+  exists_congr # λ _ => tendsTo_drop_iff'
 
 theorem tendsTo_one_div : tendsTo (1 / ·) 0 := by
   intro e he
@@ -98,7 +98,7 @@ theorem tendsTo_one_div : tendsTo (1 / ·) 0 := by
   nlinarith
 
 theorem tendsTo_one_div_succ : tendsTo (λ n => 1 / (n + 1)) 0 := by
-  have h := tendsTo_drop_iff (a := (1 / ·)) (k := 1) (L := 0)
+  have h := tendsTo_drop_iff' (a := (1 / ·)) (k := 1) (L := 0)
   push_cast at h; rw [h]; exact tendsTo_one_div
 
 theorem not_converges_alternating {x y : ℝ} (h : x ≠ y) :
@@ -204,7 +204,7 @@ theorem drop_ne_of_ne_limit {a L M} (h₁ : tendsTo a L) (h₂ : M ≠ L) :
 ∃ k, tendsTo (a # · + k) L ∧ ∀ n, a (n + k) ≠ M := by
   obtain ⟨k, h₃⟩ := eventually_ne_of_ne_limit h₁ h₂
   use k
-  rw [tendsTo_drop_iff]; use h₁
+  rw [tendsTo_drop_iff']; use h₁
   intro n
   specialize h₃ (n + k) (by linarith)
   exact h₃
@@ -280,7 +280,7 @@ theorem tendsTo_inv_aux₃ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
 
 theorem tendsTo_inv {a L} (h₁ : L ≠ 0) (h₂ : tendsTo a L) : tendsTo a⁻¹ L⁻¹ := by
   obtain ⟨k, h₃, h₄⟩ := drop_ne_of_ne_limit h₂ h₁.symm
-  rw [←tendsTo_drop_iff (k := k)]
+  rw [←tendsTo_drop_iff' (k := k)]
   exact tendsTo_inv_aux₃ h₄ h₁ h₃
 
 @[simp]
@@ -558,7 +558,7 @@ theorem eventually_abs_limit_div_two_lt_aux₁ {a L} (h₁ : 0 < L) (h₂ : ∀ 
 theorem eventually_abs_limit_div_two_lt_aux₂ {a L} (h₁ : 0 < L) (h₂ : tendsTo a L) :
 eventually (|L| / 2 < |a ·|) := by
   obtain ⟨N, h₃⟩ := eventually_pos_of_limit_pos h₁ h₂
-  rw [←tendsTo_drop_iff (k := N)] at h₂
+  rw [←tendsTo_drop_iff' (k := N)] at h₂
   replace h₃ : ∀ n, 0 < a (n + N); aesop
   obtain ⟨N₁, h₄⟩ := eventually_abs_limit_div_two_lt_aux₁ h₁ h₃ h₂
   use N + N₁; intro n hn
@@ -739,3 +739,9 @@ theorem exi_sub_glb_lt_of_bounded_bottom {a : ℕ → ℝ} {ε : ℝ}
   replace ha := λ n => glb_le_of_bounded_bottom (n := n) ha
   by_contra! h₁; replace h₁ : ∀ n, glb a + ε ≤ a n
   intro n; linarith [h₁ n]; linarith [le_glb_of_le h₁]
+
+theorem tendsTo_drop_iff {a L k} : tendsTo (a # k + ·) L ↔ tendsTo a L := by
+  simp_rw [add_comm k, tendsTo_drop_iff']
+
+theorem tendsTo_drop_of {a L k} (h : tendsTo a L) : tendsTo (a # k + ·) L :=
+  tendsTo_drop_iff.mpr h

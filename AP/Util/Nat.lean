@@ -399,3 +399,9 @@ theorem exi_iff_exi_least {p : ℕ → Prop} : (∃ n, p n) ↔ ∃ n, p n ∧ �
 @[simp]
 theorem le_self_sub_add_one_iff {a b : ℕ} : a ≤ a - (b + 1) ↔ a = 0 := by
   omega
+
+theorem findRaw_pos_of {p} (h₁ : ¬p 0) (h₂ : ∃ n, p n) : 0 < findRaw p := by
+  choose h₃ h₄ using Nat.findRaw_spec' h₂
+  cases h₅ : findRaw p
+  · simp [h₁, h₅] at h₃
+  · simp

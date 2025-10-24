@@ -191,3 +191,14 @@ theorem forall_exi_le_or_forall_exi_ge {a : ℕ → ℝ} {L : ℝ} :
   apply le_of_lt
   apply h₁
   linarith
+
+@[simp] theorem monoLe_const {M : ℝ} : monoLe (λ _ => M) := by simp [monoLe]
+@[simp] theorem monoGe_const {M : ℝ} : monoGe (λ _ => M) := by simp [monoGe]
+
+@[simp]
+theorem not_monoLt_const {M : ℝ} : ¬monoLt (λ _ => M) := by
+  simp [monoLt]; use 0, 1; norm_num
+
+@[simp]
+theorem not_monoGt_const {M : ℝ} : ¬monoGt (λ _ => M) := by
+  simp [monoGt]; use 0, 1; norm_num
