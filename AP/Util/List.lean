@@ -397,6 +397,13 @@ xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
   · simp [hz] at h
     exact h
 
+theorem eq_iff_of_nodup_and_sorted' {α : Type*} [ha : LinearOrder α]
+{xs ys : List α} (hx₁ : xs.Nodup) (hy₁ : ys.Nodup)
+(hx₂ : xs.Sorted (· ≤ ·)) (hy₂ : ys.Sorted (· ≤ ·)) :
+xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
+  apply eq_iff_of_nodup_and_sorted (· ≤ ·) hx₁ hy₁ _ hx₂ hy₂
+  intro _ _ _ _; exact le_antisymm
+
 theorem take_length_add {n} :
 xs.take (xs.length + n) = xs := by
   simp [take_add]
@@ -988,3 +995,18 @@ theorem drop_reverse_append_cons_length_succ {x} :
 theorem drop_reverse_append_cons_succ_length_succ {x} :
 (xs.reverse ++ x :: ys).drop (xs.length + 1) = ys := by
   rw [←length_reverse, drop_add_one_eq_tail_drop, drop_append]; simp
+
+theorem sorted_of_sorted_and_sublist {r} (h₁ : xs.Sorted r) (h₂ : ys <+ xs) : ys.Sorted r := by
+  induction h₂ <;> clear! xs ys
+  · exact h₁
+  · nm xs ys x h₂ ih
+    simp at h₁
+    exact ih h₁.2
+  · nm xs ys x h₂ ih
+    simp at h₁ ⊢
+    rcases h₁ with ⟨h₁, h₃⟩
+    specialize ih h₃
+    symm; use ih
+    intro y hy
+    apply h₁
+    exact h₂.mem hy

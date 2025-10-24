@@ -522,3 +522,13 @@ theorem get?_insert {i j x} :
 theorem push_push_comm {i j} {mp : Map α ℕ} :
 (mp.push i).push j = (mp.push j).push i := by
   ext; simp [push, get?_insert]; aesop
+
+@[simp]
+theorem mem_push {mp : Map α ℕ} {x y : α} : y ∈ mp.push x ↔ y = x ∨ y ∈ mp := by
+  simp [push]
+
+@[simp]
+theorem length_toList [ha : LinearOrder α] : mp.toList.length = mp.size := by
+  rcases mp with ⟨m⟩
+  simp [toList, size, Std.ExtDHashMap.lift, Std.ExtDHashMap.size]
+  induction m; simp

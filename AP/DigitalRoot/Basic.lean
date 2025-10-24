@@ -286,3 +286,17 @@ theorem digRoot_digSum {n} : digRoot b (digSum b n) = digRoot b n := by
   simp [digRoot_eq_digRoot']
 
 instance : Base 10 := ⟨by norm_num⟩
+
+@[simp]
+theorem digRoot_digRoot_add_left {n m} : digRoot b (n + digRoot b m) = digRoot b (n + m) := by
+  simp [digRoot_add]
+
+@[simp]
+theorem digRoot_digRoot_add_right {n m} : digRoot b (digRoot b n + m) = digRoot b (n + m) := by
+  simp [digRoot_add]
+
+@[simp]
+theorem digRoot_eq_self_iff {n} : digRoot b n = n ↔ n < b := by
+  constructor
+  · intro h₁; rw [←h₁]; simp
+  · exact digRoot_eq_of_lt_base

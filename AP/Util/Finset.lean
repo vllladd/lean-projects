@@ -661,6 +661,12 @@ theorem le_max? [ha : LinearOrder α] {x m : α}
   simp at h₃
   cases h₄ : (xs.erase x).max? <;> simp [h₄] at h₃ <;> simp [←h₃]
 
+theorem nodup_erase [ha : DecidableEq α] {x} (h : xs.Nodup) : (xs.erase x).Nodup :=
+  nodup_of_nodup_and_subperm h # erase_subperm _ _
+
+theorem sorted_erase [ha : DecidableEq α] {r x} (h : xs.Sorted r) : (xs.erase x).Sorted r :=
+  sorted_of_sorted_and_sublist h erase_sublist
+
 end List namespace Finset
 
 variable {α β γ : Type*} {s : Finset α}

@@ -126,13 +126,14 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     rename_i x_1 heq_1
     split at left
     rename_i x_2 heq_2
-    simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_true, Bool.not_true, Bool.false_and, Option.bind_some]
+    simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_true, Bool.not_true,
+      Bool.false_and, Option.bind_some]
     split at left
     rename_i x_3 heq_3
     split at left
     rename_i x_4 heq_4
-    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Option.elim_some, Option.some.injEq, not_false_eq_true, true_and]
+    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Option.elim_some, Option.some.injEq, not_false_eq_true, true_and]
     subst left
     obtain ⟨left, right_1⟩ := heq_4
     apply Exists.intro
@@ -165,32 +166,32 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 6 => rename_i x_4 heq_4
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Bool.and_eq_false_imp, Bool.not_false, decide_eq_true_eq, Option.elim_some, Option.some.injEq, not_false_eq_true,
-      true_and]
+    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Bool.and_eq_false_imp, Bool.not_false, decide_eq_true_eq,
+      Option.elim_some, Option.some.injEq, not_false_eq_true, true_and]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Bool.not_false, decide_eq_true_eq, Bool.and_eq_true, Option.elim_none, Option.some.injEq, not_false_eq_true,
-      true_and]
+    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Bool.not_false, decide_eq_true_eq, Bool.and_eq_true,
+        Option.elim_none, Option.some.injEq, not_false_eq_true, true_and]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Bool.not_false, decide_eq_true_eq, Option.elim_none, reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_eq_false_iff_not, decide_false, Bool.not_false,
-      Bool.true_and, decide_true, Bool.not_true, Bool.false_and, Option.bind_some]
+    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Bool.not_false, decide_eq_true_eq, Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_eq_false_iff_not, decide_false,
+      Bool.not_false, Bool.true_and, decide_true, Bool.not_true, Bool.false_and, Option.bind_some]
     split at left
     rename_i x_4 heq_4
     split at left
     rename_i x_5 heq_5
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Bool.and_eq_true,
-      Option.elim_some, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Bool.and_eq_true, Option.elim_some, Option.some.injEq, not_false_eq_true]
     subst left
     obtain ⟨left, right_1⟩ := heq_5
     apply Exists.intro
@@ -202,28 +203,31 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 6 => rename_i x_5 heq_5
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, abs_neg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Bool.and_eq_false_imp,
-      Bool.not_false, decide_eq_true_eq, Option.elim_some, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Bool.and_eq_false_imp, Bool.not_false, decide_eq_true_eq, Option.elim_some,
+      Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_neg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.and_eq_true,
-      Bool.not_true, decide_eq_false_iff_not, Option.elim_none, Option.some.injEq, not_false_eq_true, true_and]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.and_eq_true, Bool.not_true, decide_eq_false_iff_not, Option.elim_none,
+      Option.some.injEq, not_false_eq_true, true_and]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.and_eq_false_imp,
-      Bool.not_true, decide_eq_false_iff_not, Option.elim_none, reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_eq_false_iff_not, decide_false, Bool.not_false,
-      Bool.true_and, Option.bind_some, decide_true, Bool.not_true, Bool.false_and, Option.bind_none]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.and_eq_false_imp, Bool.not_true, decide_eq_false_iff_not, Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_eq_false_iff_not, decide_false,
+      Bool.not_false, Bool.true_and, Option.bind_some, decide_true, Bool.not_true,
+      Bool.false_and, Option.bind_none]
     split at left
     rename_i x_4 heq_4
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Option.elim_some,
-      Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.elim_some, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     apply And.intro
@@ -233,23 +237,24 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 5 => rename_i x_5 heq_5
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, abs_neg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.not_true,
-      decide_eq_false_iff_not, Option.elim_some, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.not_true, decide_eq_false_iff_not, Option.elim_some, Option.some.injEq,
+      not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Option.elim_none,
-      reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_true, Bool.not_true,
-      Bool.false_and, Option.bind_some, decide_false, Bool.not_false, Bool.true_and]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_true,
+      Bool.not_true, Bool.false_and, Option.bind_some, decide_false, Bool.not_false, Bool.true_and]
     split at left
     rename_i x_4 heq_4
     split at left
     rename_i x_5 heq_5
-    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Option.elim_some, Option.some.injEq, not_false_eq_true, true_and]
+    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Option.elim_some, Option.some.injEq, not_false_eq_true, true_and]
     subst left
     apply Exists.intro
     apply And.intro
@@ -260,30 +265,32 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 6 => rename_i x_5 heq_5
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Bool.not_false, decide_eq_true_eq, Option.elim_some, Option.some.injEq, not_false_eq_true, true_and]
+    simp_all only [Int.reduceNeg, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Bool.not_false, decide_eq_true_eq, Option.elim_some,
+      Option.some.injEq, not_false_eq_true, true_and]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Bool.not_false, decide_eq_true_eq, Option.elim_none, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Bool.not_false, decide_eq_true_eq, Option.elim_none,
+      Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_neg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Bool.not_false, decide_eq_true_eq, Option.elim_none, reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_false, Bool.not_false,
-      Bool.true_and, decide_true, Bool.not_true, Bool.false_and, Option.bind_some]
+    simp_all only [Int.reduceNeg, Bool.and_eq_false_imp, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not, Bool.not_false, decide_eq_true_eq, Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_false,
+      Bool.not_false, Bool.true_and, decide_true, Bool.not_true, Bool.false_and, Option.bind_some]
     split at left
     rename_i x_5 heq_5
     split at left
     rename_i x_6 heq_6
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Option.elim_some,
-      Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.elim_some, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     apply And.intro
@@ -294,28 +301,30 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 6 => rename_i x_6 heq_6
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, abs_neg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Bool.not_false,
-      decide_eq_true_eq, Option.elim_some, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Bool.not_false, decide_eq_true_eq, Option.elim_some, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_neg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.not_true,
-      decide_eq_false_iff_not, Option.elim_none, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.not_true, decide_eq_false_iff_not, Option.elim_none, Option.some.injEq,
+      not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_neg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Option.elim_none,
-      reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_false, Bool.not_false,
-      Bool.true_and, Option.bind_some, decide_true, Bool.not_true, Bool.false_and, Option.bind_none]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_false,
+      Bool.not_false, Bool.true_and, Option.bind_some, decide_true, Bool.not_true,
+      Bool.false_and, Option.bind_none]
     split at left
     rename_i x_5 heq_5
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Option.elim_some,
-      Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.elim_some, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     apply And.intro
@@ -325,21 +334,23 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 5 => rename_i x_6 heq_6
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, abs_neg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.not_true,
-      decide_eq_false_iff_not, Option.elim_some, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.not_true, decide_eq_false_iff_not, Option.elim_some, Option.some.injEq,
+      not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, Nat.abs_ofNat, le_refl]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Option.elim_none,
-      reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_true, Bool.not_true,
-      Bool.false_and, Option.bind_none, decide_false, Bool.not_false, Bool.true_and, Option.bind_some, Option.elim_none]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_true,
+      Bool.not_true, Bool.false_and, Option.bind_none, decide_false, Bool.not_false,
+      Bool.true_and, Option.bind_some, Option.elim_none]
     split at left
     rename_i x_4 heq_4
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Option.some.injEq,
-      not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     apply And.intro
@@ -349,20 +360,22 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 5 => rename_i x_5 heq_5
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, abs_neg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.not_true,
-      decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.not_true, decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_false, Bool.not_false,
-      Bool.true_and, decide_true, Bool.not_true, Bool.false_and, Option.bind_none, Option.bind_some, Option.elim_none]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, decide_false,
+      Bool.not_false, Bool.true_and, decide_true, Bool.not_true, Bool.false_and,
+      Option.bind_none, Option.bind_some, Option.elim_none]
     split at left
     rename_i x_5 heq_5
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Option.some.injEq,
-      not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     apply And.intro
@@ -372,16 +385,17 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 5 => rename_i x_6 heq_6
     on_goal 2 => {rfl}
     · simp_all only [Int.reduceNeg, abs_neg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Bool.not_true,
-      decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Bool.not_true, decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, reduceCtorEq]
-    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_false, Bool.not_false, Bool.true_and,
-      Option.bind_none, Option.elim_none, reduceCtorEq]
+    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      reduceCtorEq]
+    simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_false, Bool.not_false,
+      Bool.true_and, Option.bind_none, Option.elim_none, reduceCtorEq]
     simp_all only [Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
@@ -393,7 +407,8 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     obtain ⟨left_1, right⟩ := right
     split at left
     rename_i x_1 heq_1
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
+    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     apply And.intro
@@ -406,21 +421,22 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     on_goal 6 => rename_i x_3 heq_3
     on_goal 2 => {rfl}
     · simp_all only [abs_zero, Nat.ofNat_nonneg]
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg, Bool.not_true,
-      decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
+    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg,
+      Bool.not_true, decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_neg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg, Bool.not_true,
-      decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
+    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg,
+      Bool.not_true, decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
     subst left
     apply Exists.intro
     · apply And.intro
       on_goal 2 => {rfl}
       · simp_all only [Int.reduceNeg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg, reduceCtorEq]
+    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+      Int.reduceNeg, reduceCtorEq]
   · simp_all only [imp_false, reduceCtorEq, false_and]
 
 theorem dist_eq_zero_of_eq_some {s p} (h : e.defense.f s = some p) : e.dist p = 0 := by

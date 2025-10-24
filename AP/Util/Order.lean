@@ -1,6 +1,8 @@
 import AP.Util.Real
 import AP.Util.SetTheory
 
+import Mathlib.SetTheory.Cardinal.Order
+
 theorem max_right_eq_of_max_eq_and_ne {α : Type*} [LinearOrder α] {a b c : α}
 (h₁ : max a b = c) (h₂ : a ≠ c) : b = c := by
   simp [max_eq_iff, h₂] at h₁; exact h₁.1
@@ -458,5 +460,46 @@ theorem abs_sub_lt_trans_half {a c e : α} (b : α)
 theorem abs_sub_le_trans_half {a c e : α} (b : α)
 (h₁ : |a - b| ≤ e / 2) (h₂ : |b - c| ≤ e / 2) : |a - c| ≤ e := by
   linarith [abs_sub_le a b c]
+
+end
+
+section
+
+variable {α : Type*}
+
+structure LeCnd (le : α → α → Prop) : Prop where
+  refl : ∀ x, le x x
+  trans : ∀ x y z, le x y → le y z → le x z
+  antisymm : ∀ x y, le x y → le y x → x = y
+  total : ∀ x y, le x y ∨ le y x
+
+theorem exi_leCnd : ∃ le, @LeCnd α le := by
+  obtain ⟨lin, h⟩ := @exists_wellOrder α
+  use (· ≤ ·)
+  constructor
+  · simp
+  · intro x y z h₁ h₂
+    exact h₁.trans h₂
+  · intro x y; exact le_antisymm
+  · exact le_total
+
+def leClassical : α → α → Prop :=
+  Classical.epsilon LeCnd
+
+theorem leCnd_leClassical : LeCnd # @leClassical α :=
+  Classical.epsilon_spec exi_leCnd
+
+open Classical in noncomputable
+def linearOrderClassical : LinearOrder α where
+  le := leClassical
+  le_refl := leCnd_leClassical.refl
+  le_trans := leCnd_leClassical.trans
+  le_antisymm := leCnd_leClassical.antisymm
+  le_total := leCnd_leClassical.total
+  toDecidableLE := inferInstance
+
+noncomputable
+instance (priority := low) [∀ P, Decidable P] : LinearOrder α :=
+  linearOrderClassical
 
 end

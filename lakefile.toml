@@ -6,6 +6,7 @@ defaultTargets = ["AP", "main"]
 [leanOptions]
 pp.unicode.fun = true
 autoImplicit = false
+linter.style.longLine = true
 
 [[require]]
 name = "mathlib"

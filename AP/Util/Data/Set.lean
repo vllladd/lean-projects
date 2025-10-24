@@ -744,3 +744,144 @@ theorem erase_subset {x} : s.erase x ⊆ s := by
 @[simp]
 theorem empty_subset : ∅ ⊆ s := by
   intro; simp
+
+def toMap (s : Set' α) (f : α → β) : Map α β :=
+  ⟨s.1.map # λ x _ => f x⟩
+
+omit hb₁ hb₂ in @[simp]
+theorem mem_toMap {f : α → β} {i} : i ∈ s.toMap f ↔ i ∈ s := by
+  rcases s with ⟨m⟩
+  simp [toMap, mem_def, Map.mem_def]
+
+omit hb₁ hb₂ in @[simp]
+theorem get?_toMap_eq_some_iff {f : α → β} {i x} :
+(s.toMap f).get? i = some x ↔ i ∈ s ∧ f i = x := by
+  rcases s with ⟨m⟩
+  simp [toMap, Map.get?, mem_def]
+  rintro rfl
+  rw [Std.ExtDHashMap.mem_iff_get?_eq_some]
+  simp [exi_unit_iff]
+
+omit hb₁ hb₂ in @[simp]
+theorem toMap_empty {f : α → β} : (∅ : Set' α).toMap f = ∅ := by
+  ext i x; simp
+
+omit ha₁ ha₂ in @[simp]
+theorem mem_list_foldl_map_push_iff {xs : List α} {f : α → β} {y : β} {mp : Map β ℕ} :
+y ∈ xs.foldl (λ mp x => mp.push (f x)) mp ↔ y ∈ mp ∨ ∃ x ∈ xs, f x = y := by
+  induction xs generalizing mp <;> simp
+  nm x xs ih
+  simp [ih]
+  tauto
+
+@[simp]
+theorem toList_erase [ha : LinearOrder α] {x} : (s.erase x).toList = s.toList.erase x := by
+  rw [List.eq_iff_of_nodup_and_sorted']
+  rotate_left
+  · simp
+  · apply List.nodup_erase; simp
+  · simp
+  · apply List.sorted_erase; simp
+  intro y
+  simp [List.mem_erase_iff_of_nodup]
+  tauto
+
+theorem count_eq_countP_toList [ha : LinearOrder α] {p : α → Bool} :
+s.count p = s.toList.countP p := by
+  generalize hn : s.size = n
+  induction n generalizing s
+  · simp at hn; simp [hn]
+  nm n ih
+  cases h : s.toList
+  · simp at h; simp [h] at hn
+  nm x xs
+  have h₁ : x ∈ s
+  · rw [←mem_toList, h]
+    simp
+  have h₂ := insert_erase_eq_of_mem h₁
+  rw [←h₂, count_insert # by simp, List.countP_cons]
+  have h₃ : (s.erase x).size = n
+  · simp [size_erase h₁, hn]
+  rw [ih h₃]
+  simp [h]
+
+theorem fold_map_push_eq_map_toMap {f : α → β} :
+s.fold (λ mp x => mp.push # f x) (∅ : Map β ℕ) Map.push_push_comm =
+(s.map f).toMap (s.count # λ x => f x = ·) := by
+  classical
+  rw [fold_eq_foldl_toList]
+  ext y n
+  simp
+  generalize hm : (∅ : Map β ℕ) = mp
+  suffices H : ((s.toList.foldl (λ (mp : Map β ℕ) x => mp.push # f x) mp).get? y).getD 0 =
+    (mp.get? y).getD 0 + s.count (λ x => f x = y)
+  · subst hm;
+    simp at H
+    constructor
+    · intro h
+      simp [h ]at H
+      subst H
+      simp
+      replace h := Map.mem_of_get?_eq_some h
+      simp at h
+      exact h
+    · rintro ⟨⟨x, hx, rfl⟩, rfl⟩
+      generalize s.toList.foldl (λ (mp : Map β ℕ) x => mp.push # f x) ∅ = mp₀ at H ⊢
+      cases h : mp₀.get? # f x <;> simp [h] at H
+      · rw [eq_comm] at H
+        simp [count_eq_zero_iff] at H
+        cases H x hx rfl
+      nm k
+      simp [H]
+  clear hm
+  rw [count_eq_countP_toList]
+  generalize s.toList = xs; clear! s
+  induction xs generalizing mp <;> simp
+  nm x xs ih
+  rw [ih]; clear ih
+  simp [List.countP_cons, Map.push, Map.get?_insert]
+  split_ifs with h
+  · subst h
+    simp
+    ring_nf
+  simp
+
+theorem fold_map_push_eq_toMap :
+s.fold (λ mp x => mp.push x) (∅ : Map α ℕ) Map.push_push_comm =
+s.toMap (s.count # λ y => y = ·) := by
+  convert s.fold_map_push_eq_map_toMap (f := id); simp
+
+omit hb₁ hb₂ in
+theorem get?_toMap_eq {f : α → β} {x} :
+(s.toMap f).get? x = if x ∈ s then some (f x) else none := by
+  rcases s with ⟨m⟩
+  simp [toMap, Map.get?, mem_def]
+  cases h : m.get? x
+  · rw [Std.ExtDHashMap.get?_eq_none_iff] at h
+    simp [h]
+  nm y
+  simp
+  rw [Std.ExtDHashMap.mem_iff_get?_eq_some]
+  use y
+
+@[simp]
+theorem length_toList [ha : LinearOrder α] : s.toList.length = s.size := by
+  rcases s with ⟨m⟩
+  simp [toList, size, Std.ExtDHashMap.lift, Std.ExtDHashMap.size]
+  induction m; simp
+
+omit hb₁ hb₂ in @[simp]
+theorem size_toMap {f : α → β} : (s.toMap f).size = s.size := by
+  rcases s with ⟨m⟩
+  simp [toMap, size, Map.size]
+
+theorem size_ofList_of_nodup {xs : List α} (h : xs.Nodup) : (ofList xs).size = xs.length := by
+  simp [ofList, size]
+  rw [Std.ExtDHashMap.size_ofList]
+  · simp
+  · simpa [List.pairwise_map]
+
+@[simp]
+theorem size_ofFinset {s : Finset α} : (ofFinset s).size = s.card := by
+  simp [ofFinset, size_ofList_of_nodup]
+  change s.val.toList.length = s.card; simp

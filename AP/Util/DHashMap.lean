@@ -1049,3 +1049,11 @@ theorem count_insert {p i x} (h : i ∉ mp) :
 
 theorem count_eq_of_perm {p} (h : mp₁ ~m mp₂) : mp₁.count p = mp₂.count p := by
   simp [count_eq_size_filter, -size_filter_eq_count, size_filter_congr_of_equiv h]
+
+@[simp]
+theorem length_toSortedList [ha : LinearOrder α] : mp.toSortedList.length = mp.size := by
+  simp [toSortedList]
+
+@[simp]
+theorem length_toSortedKeys [ha : LinearOrder α] : mp.toSortedKeys.length = mp.size := by
+  simp [toSortedKeys]
