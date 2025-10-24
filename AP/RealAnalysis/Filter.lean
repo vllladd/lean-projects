@@ -253,21 +253,6 @@ theorem exi_monoGt_subseq_of_unBddCnd_limit_lt {a L} (h₁ : tendsTo a L)
   simp at h₄ ⊢
   exact h₄
 
-theorem exi_monoLe_or_monoGe_subseq_of_converges {a}
-(h : converges a) : ∃ σ, subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
-  choose L h using h
-  rcases @unBddCnd_le_or_ge a L with h₁ | h₁
-  · choose σ h₂ h₃ using exi_monoLe_subseq_of_unBddCnd_le_limit h h₁
-    use σ, h₂; left; exact h₃
-  · choose σ h₂ h₃ using exi_monoGe_subseq_of_unBddCnd_limit_le h h₁
-    use σ, h₂; right; exact h₃
-
-theorem exi_monoLe_or_monoGe_subseq_of_bounded {a}
-(h : bounded a) : ∃ σ, subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
-  obtain ⟨σ, h₁, h₂⟩ := exi_converges_subseq_of_bounded h
-  obtain ⟨σ', H₁, H₂⟩ := exi_monoLe_or_monoGe_subseq_of_converges h₂
-  use σ ∘ σ', subseq_comp h₁ H₁, H₂
-
 def isPeak (a : ℕ → ℝ) (k : ℕ) : Prop :=
   ∀ n, k ≤ n → a n ≤ a k
 
@@ -352,3 +337,8 @@ theorem exi_monoGe_subseq_of_unBddPeaks {a} (h : unBddPeaks a) :
   obtain ⟨k, h₃⟩ := Nat.exists_eq_add_of_le # le_of_lt h₁
   rw [h₃]
   apply h₂
+
+theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
+  by_cases h : unBddPeaks a
+  · choose σ h₁ h₂ using exi_monoGe_subseq_of_unBddPeaks h; use σ, h₁; right; exact h₂
+  · choose σ h₁ h₂ using exi_monoLe_subseq_of_not_unBddPeaks h; use σ, h₁; left; exact h₂
