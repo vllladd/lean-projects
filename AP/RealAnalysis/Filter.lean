@@ -342,3 +342,29 @@ theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, subseq σ ∧ (monoLe (a ∘ �
   by_cases h : unBddPeaks a
   · choose σ h₁ h₂ using exi_monoGe_subseq_of_unBddPeaks h; use σ, h₁; right; exact h₂
   · choose σ h₁ h₂ using exi_monoLe_subseq_of_not_unBddPeaks h; use σ, h₁; left; exact h₂
+
+theorem exi_converges_and_not_monoLe_and_not_monoGe :
+∃ a, converges a ∧ ¬monoLe a ∧ ¬monoGe a := by
+  use λ n => (-1) ^ n / (n + 1)
+  split_ands
+  · use 0
+    rw [tendsTo_iff_eps_lt_one]
+    intro e he h₁
+    simp
+    choose N h₂ using exists_nat_ge e⁻¹
+    use N
+    intro n hn
+    rw [abs_div]
+    simp
+    rw [abs_of_nonneg # by linarith]
+    field_simp
+    suffices h : e⁻¹ < (n + 1)
+    · field_simp at h; rwa [mul_comm]
+    replace hn : (N : ℝ) ≤ n; exact_mod_cast hn
+    linarith
+  · simp [monoLe]
+    use 0, 1, by norm_num
+    norm_num
+  · simp [monoGe]
+    use 1, 2, by norm_num
+    norm_num
