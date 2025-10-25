@@ -343,9 +343,10 @@ theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, subseq σ ∧ (monoLe (a ∘ �
   · choose σ h₁ h₂ using exi_monoGe_subseq_of_unBddPeaks h; use σ, h₁; right; exact h₂
   · choose σ h₁ h₂ using exi_monoLe_subseq_of_not_unBddPeaks h; use σ, h₁; left; exact h₂
 
-theorem exi_converges_and_not_monoLe_and_not_monoGe :
-∃ a, converges a ∧ ¬monoLe a ∧ ¬monoGe a := by
-  use λ n => (-1) ^ n / (n + 1)
+def convAndNotMono (a : ℕ → ℝ) : Prop :=
+  converges a ∧ ¬monoLe a ∧ ¬monoGe a
+
+theorem convAndNotMono_neg_one_pow_div_add_one : convAndNotMono # λ n => (-1) ^ n / (n + 1) := by
   split_ands
   · use 0
     rw [tendsTo_iff_eps_lt_one]
@@ -362,9 +363,24 @@ theorem exi_converges_and_not_monoLe_and_not_monoGe :
     · field_simp at h; rwa [mul_comm]
     replace hn : (N : ℝ) ≤ n; exact_mod_cast hn
     linarith
-  · simp [monoLe]
-    use 0, 1, by norm_num
-    norm_num
-  · simp [monoGe]
-    use 1, 2, by norm_num
-    norm_num
+  · simp [monoLe]; use 0, 1; split_ands <;> norm_num
+  · simp [monoGe]; use 1, 2; split_ands <;> norm_num
+
+theorem convAndNotMono_div_ite : convAndNotMono # λ n => if n = 0 then 0 else 1 / (n : ℝ) := by
+  split_ands
+  · use 0
+    rw [tendsTo_iff_eps_lt_one]
+    intro e he h₁
+    simp
+    choose N h₂ using exists_nat_ge e⁻¹
+    use N + 1
+    intro n hn
+    split_ifs with h₃; simpa
+    simp
+    field_simp
+    suffices h : e⁻¹ < n
+    · field_simp at h; rwa [mul_comm]
+    replace hn : (N + 1 : ℝ) ≤ n; exact_mod_cast hn
+    linarith
+  · simp [monoLe]; use 1, 2; split_ands <;> norm_num
+  · simp [monoGe]; use 0, 1; split_ands <;> norm_num
