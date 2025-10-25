@@ -752,20 +752,32 @@ theorem State.aForallWinsDisj_of_simulate_eq {fsp : FSP} {s s' r n}
 {a : AStrat} {d : DStrat} [hs : sys.WF s] [ha : a.WF] [hd : d.WF]
 (h₁ : s.aForallWinsDisj fsp a) (h₂ : sys.simulate (Strat.f ⟨a, d⟩) s n = (s', r)) :
 s'.aForallWinsDisj (fsp.offset n) a := by
-  induction n generalizing s
-  · simp at h₂; rcases h₂ with ⟨rfl, rfl⟩; simpa
-  nm n ih
-  generalize hp : Strat.f ⟨a, d⟩ s = p
-  obtain ⟨s₁, h₃⟩ : sys.validTr s p
-  · rw [←hp, sys.validTr_iff_of_simFn]
-    exact s.hasTr_of_aHws # aHws_of_aForallWinsDisj h₁
-  have hs₁ := sys.wf_of_tr h₃
-  simp [hp, h₃] at h₂
-  specialize @ih s₁ _ _
-  · intro d₁ hd₁ n
-    specialize h₁ (d₁.set s p) (DStrat.wf_set_of_tr h₃) (n + 1)
-    sorry
-  sorry
+  choose s₁ h₃ h₄ using h₁ d hd n
+  simp [h₃] at h₂
+  rcases h₂ with ⟨rfl, rfl⟩
+  intro d₁ hd₁ k
+  generalize hd₂ : DStrat.mk (λ sd => if sd.hist.length - s.hist.length < n
+    then d.f sd else d₁.f sd) = d₂
+  have Hd₂ : d₂.WF; subst hd₂; infer_instance
+  choose s₂ h₁ h₅ using h₁ d₂ Hd₂ (n + k)
+  have G₃ : sys.simulate (Strat.f ⟨a, d₂⟩) s n = (s₁, 0)
+  · convert h₃ using 1
+    apply simulate_congr <;> simp
+    intro m hm sd hsd H₁ H₂ H₃
+    rw [←hd₂]
+    simp [length_hist_eq_of_simulate_eq H₁, hm]
+  simp [sys.simulate_add, G₃] at h₁
+  use s₂
+  split_ands
+  have hs₁ := sys.wf_of_simulate_eq G₃
+  · convert h₁ using 1
+    apply simulate_congr <;> simp
+    intro m hm sd hsd H₁ H₂ H₃
+    rw [←hd₂]
+    simp [length_hist_eq_of_simulate_eq H₁, length_hist_eq_of_simulate_eq G₃]
+    rw [if_neg # by omega]
+    simp
+  rwa [FSP.hasLe_offset, add_comm]
 
 -- #check 0 #exit
 
