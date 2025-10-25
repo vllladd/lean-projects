@@ -366,7 +366,7 @@ theorem convAndNotMono_neg_one_pow_div_add_one : convAndNotMono # λ n => (-1) ^
   · simp [monoLe]; use 0, 1; split_ands <;> norm_num
   · simp [monoGe]; use 1, 2; split_ands <;> norm_num
 
-theorem convAndNotMono_div_ite : convAndNotMono # λ n => if n = 0 then 0 else 1 / (n : ℝ) := by
+theorem convAndNotMono_ite_div : convAndNotMono # λ n => if n = 0 then 0 else 1 / (n : ℝ) := by
   split_ands
   · use 0
     rw [tendsTo_iff_eps_lt_one]
