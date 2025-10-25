@@ -769,15 +769,15 @@ s'.aForallWinsDisj (fsp.offset n) a := by
   simp [sys.simulate_add, G₃] at h₁
   use s₂
   split_ands
-  have hs₁ := sys.wf_of_simulate_eq G₃
-  · convert h₁ using 1
+  · have hs₁ := sys.wf_of_simulate_eq G₃
+    convert h₁ using 1
     apply simulate_congr <;> simp
     intro m hm sd hsd H₁ H₂ H₃
     rw [←hd₂]
     simp [length_hist_eq_of_simulate_eq H₁, length_hist_eq_of_simulate_eq G₃]
     rw [if_neg # by omega]
     simp
-  rwa [FSP.hasLe_offset, add_comm]
+  · rwa [FSP.hasLe_offset, add_comm]
 
 -- #check 0 #exit
 
