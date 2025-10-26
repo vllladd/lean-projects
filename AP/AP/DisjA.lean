@@ -853,8 +853,42 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     rw [hpwa, Point.dist_comm, H₄] at h₈
     linarith
   
-  have h₈ : sa.aForallWinsDisj fsp a
+  have hk : k ≠ 0
+  · rintro rfl
+    rw [←hF] at h₁
+    simp at h₁
+    subst h₁
+    simp at h₇
+  
+  have h₈ : sa.aForallWinsDisj fsp.next a
   · rw [←hF] at h₁
+    have H₄ := s.aForallWinsDisj_of_simulate_eq h h₁
+    cases k; simp at hk; nm k
+    rw [FSP.offset_succ] at H₄
+    exact sa.aForallWinsDisj_of_aForallWinsDisj_offset H₄
+  
+  obtain ⟨s', H₄⟩ : ∃ s', sys.tr s sa.aPos = some s'
+  · simp [AState.tr_eq_some_iff] at h₅ ⊢
+    rcases h₅ with ⟨⟨H₄, H₅, H₆⟩, rfl⟩
+    dsimp at *
+    rw [Point.dist_comm]
+    refine ⟨ne_symm' h₇, ?_, h₃⟩
+    rw [←hF] at h₁
+    have H : sa.aPos ∉ sa.taken; simp
+    contrapose! H
+    apply State.mem_taken_of_reachable _ H
+    exact sys.reachable_of_simulate_eq h₁
+  
+  have hs' := DState.of_tr H₄
+  
+  -- have G : sd.pw = s.pw
+  -- · rw [pw_eq_of_tr h₅, hpwa]
+  -- have G₁ : s'.pw = s.pw
+  -- · rw [pw_eq_of_tr H₄]
+  -- have G₂ : s'.aPos = sd.aPos
+  
+  have H₅ : s'.aHwsDisj # fsp.insertSet 2 # s.aPos.nbhd s.pw |>.toSet
+  · -- have H₂ := @sa.aHwsDisj_of_taken_subset fsp.next s' _ _ ⟨a, h₈⟩ (by rw [G, G₁]) (by simp)
     sorry
   
   sorry
