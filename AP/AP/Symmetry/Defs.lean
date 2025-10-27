@@ -18,3 +18,6 @@ def mkSymFs (ft : PointZ ≃ PointZ) : State ≃ State where
 def mkSym (ft : PointZ ≃ PointZ) : sys.Symmetry where
   ft := ft
   fs := mkSymFs ft
+
+class BasicSym (sym : sys.Symmetry) extends System.Symmetry.WF sym where
+  exi_mkSym : ∃ ft, mkSym ft = sym

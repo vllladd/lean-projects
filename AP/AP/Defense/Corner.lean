@@ -117,12 +117,12 @@ theorem edge₂_eq_none_of_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd' s)
   simp at H
 
 theorem validTr_defense : c.defense.ValidTr := by
-  constructor; intro s hs p h; simp [f] at h; rcases h with h | ⟨h₁, h₂⟩
+  intro s hs p h; simp [f] at h; rcases h with h | ⟨h₁, h₂⟩
   exact Defense.valid_tr h; exact Defense.valid_tr h₂
 
 theorem wf_defense : c.defense.WF := by
-  have H := c.validTr_defense
-  constructor; intro s hs h a Ha d Hd n
+  use c.validTr_defense
+  intro s hs h a Ha d Hd n
   have h₁ := cnd_defense_edge₁ h
   have h₂ := cnd_defense_edge₂ h
   have He₁ : c.edge₁.defense.WF; infer_instance

@@ -44,3 +44,6 @@ theorem translate.cnd_tr_eq {dif s p} : sys.tr s p =
 instance {dif} : (translate dif).WF where
   initial_fs_iff := translate.cnd_initial_fs_iff
   tr_eq := translate.cnd_tr_eq
+
+@[simp] instance {dif} : BasicSym # translate dif where
+  exi_mkSym := by simp [translate]

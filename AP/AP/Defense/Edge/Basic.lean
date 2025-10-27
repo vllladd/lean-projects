@@ -448,7 +448,7 @@ theorem not_mem_taken_of_eq_some {s p} (h : e.defense.f s = some p) : p ∉ s.ta
   obtain ⟨-, h₁, h₂, z, h₃, h₄⟩ := of_eq_some h; exact h₂
 
 theorem validTr_defense : e.defense.ValidTr := by
-  constructor; intro s hs p h
+  intro s hs p h
   replace h := of_eq_some h
   simp [getBorderPoint, dist] at h
   cases hd : e.dir

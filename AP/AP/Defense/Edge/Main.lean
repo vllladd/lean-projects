@@ -1,4 +1,4 @@
-import AP.AP.Defense.Edge.Basic
+import AP.AP.Defense.Edge.Symmetry
 
 namespace AP.Edge
 
@@ -17,8 +17,8 @@ def cnd (e : Edge) (s : State) : Prop :=
   | d => 0 < d
 
 theorem wf_defense : e.defense.WF := by
-  have H := e.validTr_defense
-  constructor; intro s hs h a Ha d Hd n
+  use e.validTr_defense
+  intro s hs h a Ha d Hd n
   sorry
 
 -- #check 0 #exit

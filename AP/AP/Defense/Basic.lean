@@ -12,14 +12,14 @@ theorem default_def : (default : Defense) =
 {cnd := λ _ => True, ps := ∅, f := λ _ => none} := rfl
 
 @[simp] instance : WF default where
-  valid_tr := by simp
+  valid_tr := by simp [ValidTr]
   not_mem_ps := by simp
 
-theorem valid_tr [H : dse.ValidTr] {s} [DState s] {p} :
+theorem valid_tr [H : dse.WF] {s} [DState s] {p} :
 dse.f s = some p → sys.validTr s p := H.1
 
 @[simp]
-instance [H : dse.ValidTr] {d : DStrat} [Hd : d.WF] : (dse.st d).WF := by
+instance [H : dse.WF] {d : DStrat} [Hd : d.WF] : (dse.st d).WF := by
   unfold st; rw [DStrat.wf_iff]; intro s hs
   dsimp; cases h : dse.f s <;> simp; exact dse.valid_tr h
 

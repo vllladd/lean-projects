@@ -139,6 +139,77 @@ theorem State.dHws_iff_sym {s} {sym : sys.Symmetry} {hs : sys.WF s}
   rw [←not_iff_not]; simp [←aHws_iff_sym]
 
 @[simp]
-theorem mkSymFsAux_initState {ft pw p} :
-mkSymFsAux ft (initState pw p) = initState pw (ft p) := by
+theorem mkSymFsAux_initState {ft pw p} : mkSymFsAux ft (initState pw p) = initState pw (ft p) := by
   ext:1 <;> simp
+
+@[simp]
+theorem mkSymFsAux_id : mkSymFsAux id = id := by
+  ext <;> simp
+
+@[simp]
+theorem mkSym_one : mkSym 1 = 1 := by
+  ext:1 <;> simp [mkSym]; rfl
+  simp [mkSymFs, System.Symmetry.one_def, System.Symmetry.one, Equiv.refl]
+
+@[simp]
+instance : BasicSym 1 := ⟨⟨1, by simp⟩⟩
+
+@[simp]
+instance {sym} [H : BasicSym sym] : BasicSym sym⁻¹ := by
+  obtain ⟨f, rfl⟩ := H; use f⁻¹; rfl
+
+@[simp]
+instance {sym} {n : ℕ} [H : BasicSym sym] : BasicSym # sym ^ n := by
+  obtain ⟨f, rfl⟩ := H
+  use f ^ n
+  induction n
+  · simp
+  nm n ih
+  simp [pow_succ, ←ih]; clear ih
+  ext :3 <;> simp
+
+@[simp]
+instance {sym} {z : ℤ} [H : BasicSym sym] : BasicSym # sym ^ z := by
+  cases z <;> simp
+
+@[simp]
+theorem aPos₀_sym_of_basicSym {sym s} [H : BasicSym sym] [hs : sys.WF s] :
+(sym.fs s).aPos₀ = sym.ft s.aPos₀ := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; simp
+
+@[simp]
+theorem aPos₀_sym_of_basicSym' {sym s} [H : BasicSym sym] [hs : sys.WF s] :
+(sym.fs' s).aPos₀ = sym.ft' s.aPos₀ := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; simp
+
+@[simp]
+theorem aPos_sym_of_basicSym {sym s} [H : BasicSym sym] :
+(sym.fs s).aPos = sym.ft s.aPos := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; rfl
+
+@[simp]
+theorem aPos_sym_of_basicSym' {sym s} [H : BasicSym sym] :
+(sym.fs' s).aPos = sym.ft' s.aPos := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; rfl
+
+@[simp]
+theorem taken_sym_of_basicSym {sym s} [H : BasicSym sym] :
+(sym.fs s).taken = s.taken.map sym.ft := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; rfl
+
+@[simp]
+theorem taken_sym_of_basicSym' {sym s} [H : BasicSym sym] :
+(sym.fs' s).taken = s.taken.map sym.ft' := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; rfl
+
+theorem ft_eq_iff {sym : sys.Symmetry} {p₁ p₂} : sym.ft p₁ = p₂ ↔ p₁ = sym.ft' p₂ :=
+  Equiv.apply_eq_iff_eq_symm_apply _
+
+theorem ft'_eq_iff {sym : sys.Symmetry} {p₁ p₂} : sym.ft' p₁ = p₂ ↔ p₁ = sym.ft p₂ :=
+  Equiv.apply_eq_iff_eq_symm_apply _
+
+theorem fs_eq_iff {sym : sys.Symmetry} {s₁ s₂} : sym.fs s₁ = s₂ ↔ s₁ = sym.fs' s₂ :=
+  Equiv.apply_eq_iff_eq_symm_apply _
+
+theorem fs'_eq_iff {sym : sys.Symmetry} {s₁ s₂} : sym.fs' s₁ = s₂ ↔ s₁ = sym.fs s₂ :=
+  Equiv.apply_eq_iff_eq_symm_apply _

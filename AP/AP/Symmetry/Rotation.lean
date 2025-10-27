@@ -148,3 +148,9 @@ theorem rotLeft_pow_four : rotLeft ^ 4 = 1 := by
 
 @[simp] theorem inv_rotRight : rotRight⁻¹ = rotLeft := rfl
 @[simp] theorem inv_rotLeft : rotLeft⁻¹ = rotRight := rfl
+
+@[simp] instance : BasicSym rotRight where
+  exi_mkSym := by simp [rotRight]
+
+@[simp] instance : BasicSym rotLeft := by unfold rotLeft; infer_instance
+@[simp] instance : BasicSym rot180 := by unfold rot180; infer_instance
