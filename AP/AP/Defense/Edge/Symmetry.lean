@@ -1,5 +1,28 @@
 import AP.AP.Defense.Edge.Basic
 
+namespace List
+
+variable {α β : Type*} {xs ys : List α}
+
+theorem find?_cons' {p : α → Bool} {x xs} :
+(x :: xs).find? p = if p x then some x else xs.find? p := by
+  simp [find?_cons]; split
+  · simp_all only [↓reduceIte]
+  · simp_all only [Bool.false_eq_true, ↓reduceIte]
+
+-- #check 0 #exit
+
+end List
+
+namespace Equiv
+
+theorem option_eq_iff_map {α β : Type*} {e : α ≃ β} {x y : Option α} :
+x = y ↔ x.map e = y.map e := by cases x <;> cases y <;> simp
+
+-- #check 0 #exit
+
+end Equiv
+
 namespace AP.Edge
 
 variable {e e₁ e₂ : Edge}
@@ -31,19 +54,19 @@ theorem dist_rotRight {p} : e.rotRight.dist p = e.dist (rotRight.ft' p) := by
   by_contra h; cases hd : e.dir <;> revert h <;> simp [hd] <;> ring_nf
 
 @[simp]
-theorem rotRight_getBorderPoint₀ {p} :
+theorem getBorderPoint₀_rotRight {p} :
 e.rotRight.getBorderPoint₀ p = rotRight.ft (e.getBorderPoint₀ # rotRight.ft' p) := by
   simp [Edge.rotRight, rotRight, getBorderPoint₀, getBorderPoint]
   by_contra h; cases hd : e.dir <;> revert h <;> simp [hd]
 
 @[simp]
-theorem rotRight_getBorderPoint_of_hor [H : Fact e.hor] {p d} :
+theorem getBorderPoint_rotRight_of_hor [H : Fact e.hor] {p d} :
 e.rotRight.getBorderPoint p d = rotRight.ft (e.getBorderPoint (rotRight.ft' p) d) := by
   rcases H with ⟨H⟩; unfold hor at H; simp [Edge.rotRight, getBorderPoint]
   by_contra h; cases hd : e.dir <;> simp [hd] at H <;> revert h <;> simp [hd, rotRight]
 
 @[simp]
-theorem rotRight_getBorderPoints_of_hor [H : Fact e.hor] {p d} :
+theorem getBorderPoints_rotRight_of_hor [H : Fact e.hor] {p d} :
 e.rotRight.getBorderPoints p d = (e.getBorderPoints (rotRight.ft' p) d).map rotRight.ft := by
   rcases H with ⟨H⟩; unfold hor at H; simp [Edge.rotRight, getBorderPoints, getBorderPoint]
   by_contra h; cases hd : e.dir <;> simp [hd] at H <;> revert h <;> simp [hd, rotRight]
@@ -65,23 +88,45 @@ e.rotRight.offset = e.offset := by simp [Edge.rotRight]
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 10000000
 
+-- #check 0 #exit
+
 theorem rotRight_defense_of_hor_fCase2 {e : Edge} {s : State} {p : PointZ}
-[H : Fact e.hor] (h₁ : ¬p = s.aPos) (h₂ : p ∉ s.taken)
+[H : Fact e.hor] (h₁ : p ≠ s.aPos) (h₂ : p ∉ s.taken)
 (h₃ : e.dist (rotRight.ft' s.aPos) = 2) : fCase2 s (rotRight.ft (e.getBorderPoint₀
 (rotRight.ft' s.aPos))) (e.rotRight.getBorderPoints s.aPos) = some p ↔ fCase2 (rotRight.fs' s)
 (e.getBorderPoint₀ (rotRight.ft' s.aPos)) (e.getBorderPoints (rotRight.ft' s.aPos)) =
 some (rotRight.ft' p) := by
-  unfold getBorderPoints
-  simp [getBorderPoint₀, getBorderPoint]
-  simp [fCase2, List.find?, ft'_eq_iff]
-  split_ifs with h₄
-  · -- aesop?
-    --   aesop: internal error during proof reconstruction:
-    --   goal 386 was not normalised
-    sorry
-  · sorry
+  -- unfold getBorderPoints
+  -- simp [getBorderPoint₀, getBorderPoint]
+  
+  -- unfold fCase2
+  -- simp_rw [List.find?_cons']
+  -- simp [ft'_eq_iff]
+  
+  -- nth_rw 2 [fCase2]
+  -- simp only [taken_sym_of_basicSym', Option.bind_eq_bind]
+  
+  unfold fCase2
+  nth_rw 2 [rotRight.ft.option_eq_iff_map]
+  rw [Option.map_some, System.Symmetry.ft_ft', apply_ite (f := Option.map rotRight.ft)]
+  rw [taken_sym_of_basicSym', Option.map_some]
+  
+  convert_to _ ↔ (if rotRight.ft (e.getBorderPoint₀ (rotRight.ft' s.aPos)) ∉ s.taken then
+      some (rotRight.ft (e.getBorderPoint₀ (rotRight.ft' s.aPos)))
+    else
+      Option.map (⇑rotRight.ft)
+        (have ps₁ := e.getBorderPoints (rotRight.ft' s.aPos) 1;
+        have ps₂ := e.getBorderPoints (rotRight.ft' s.aPos) 2;
+        have f := fun ps₁ ps₂ ↦ do
+          let p ← List.find? (fun x ↦ decide (x ∈ s.taken.map ⇑rotRight.ft')) ps₁
+          List.find? (fun p' ↦ decide (p' ∉ s.taken.map ⇑rotRight.ft' ∧ Point.dist p' p ≠ 1)) ps₂;
+        (f ps₁ ps₂).elim (f ps₂ ps₁) some)) =
+    some p
+  · simp [ft'_eq_iff]
+  
+  sorry
 
-#check 0 #exit
+-- #check 0 #exit
 
 theorem rotRight_defense_of_hor [H : Fact e.hor] :
 e.rotRight.defense = e.defense.sym rotRight := by
