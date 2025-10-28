@@ -65,21 +65,18 @@ instance : Decidable d.vert :=
   | left => .isFalse # λ h => h
   | right => .isFalse # λ h => h
 
-@[simp]
 def rotRight : Dir → Dir
 | up => right
 | right => down
 | down => left
 | left => up
 
-@[simp]
 def rotLeft : Dir → Dir
 | up => left
 | right => up
 | down => right
 | left => down
 
-@[simp]
 def inv : Dir → Dir
 | up => down
 | right => left
@@ -88,6 +85,21 @@ def inv : Dir → Dir
 
 instance : Inv Dir := ⟨inv⟩
 theorem inv_def : d⁻¹ = d.inv := rfl
+
+@[simp] theorem rotRight_up : rotRight up = right := rfl
+@[simp] theorem rotRight_right : rotRight right = down := rfl
+@[simp] theorem rotRight_down : rotRight down = left := rfl
+@[simp] theorem rotRight_left : rotRight left = up := rfl
+
+@[simp] theorem rotLeft_up : rotLeft up = left := rfl
+@[simp] theorem rotLeft_right : rotLeft right = up := rfl
+@[simp] theorem rotLeft_down : rotLeft down = right := rfl
+@[simp] theorem rotLeft_left : rotLeft left = down := rfl
+
+@[simp] theorem inv_up : up⁻¹ = down := rfl
+@[simp] theorem inv_right : right⁻¹ = left := rfl
+@[simp] theorem inv_down : down⁻¹ = up := rfl
+@[simp] theorem inv_left : left⁻¹ = right := rfl
 
 @[simp] theorem rotRight_rotRight : d.rotRight.rotRight = d⁻¹ := by cases d <;> rfl
 @[simp] theorem rotLeft_rotLeft : d.rotLeft.rotLeft = d.inv := by cases d <;> rfl
@@ -117,3 +129,10 @@ def coord (p : Point α) (d : Dir) : α :=
 @[simp] theorem coord_right : p.coord .right = p.x := rfl
 
 end Point
+
+@[simp] theorem hor_rotRight {d : Dir} : d.rotRight.hor = d.vert := by cases d <;> rfl
+@[simp] theorem vert_rotRight {d : Dir} : d.rotRight.vert = d.hor := by cases d <;> rfl
+@[simp] theorem hor_rotLeft {d : Dir} : d.rotLeft.hor = d.vert := by cases d <;> rfl
+@[simp] theorem vert_rotLeft {d : Dir} : d.rotLeft.vert = d.hor := by cases d <;> rfl
+@[simp] theorem hor_inv {d : Dir} : d⁻¹.hor = d.hor := by cases d <;> rfl
+@[simp] theorem vert_inv {d : Dir} : d⁻¹.vert = d.vert := by cases d <;> rfl

@@ -352,6 +352,10 @@ variable [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid 
 def dist [LinearOrder α] [Ring α] (a b : Point α) : α :=
   max |(a.x : α) - b.x| |(a.y : α) - b.y|
 
+omit ha₃ in @[simp]
+theorem mk_dist_mk {x₁ y₁ x₂ y₂} : (⟨x₁, y₁⟩ : Point α).dist ⟨x₂, y₂⟩ =
+max |x₁ - x₂| |y₁ - y₂| := rfl
+
 omit ha₃ in
 @[symm]
 theorem dist_comm : a.dist b = b.dist a := by
@@ -385,8 +389,7 @@ a.dist b ≤ d ↔ max (|a.x - b.x|) (|a.y - b.y|) ≤ d := by
 @[simp]
 theorem dist_le_zero_iff : a.dist b ≤ 0 ↔ a = b := by
   refine' ⟨λ h => _, λ h => by simp [h]⟩
-  rcases a, b with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩
-  simp [dist_le_iff] at h; simp
+  rcases a, b with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩; simp at h ⊢
   constructor <;> apply eq_of_sub_eq_zero <;> simp [h]
 
 @[simp] theorem zero_le_dist : 0 ≤ a.dist b := by simp [dist]

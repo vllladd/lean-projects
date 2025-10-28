@@ -48,21 +48,43 @@ e.rotRight.getBorderPoints p d = (e.getBorderPoints (rotRight.ft' p) d).map rotR
   rcases H with ⟨H⟩; unfold hor at H; simp [Edge.rotRight, getBorderPoints, getBorderPoint]
   by_contra h; cases hd : e.dir <;> simp [hd] at H <;> revert h <;> simp [hd, rotRight]
 
+@[simp] theorem dir_rotRight : e.rotRight.dir = e.dir.rotRight := rfl
+@[simp] theorem vert_dir_of_hor [H : Fact e.hor] : e.dir.vert := H.1
+@[simp] theorem not_hor_dir_of_hor [H : Fact e.hor] : ¬e.dir.hor := by simp
+@[simp] theorem hor_dir_of_vert [H : Fact e.vert] : e.dir.hor := H.1
+@[simp] theorem not_vert_dir_of_vert [H : Fact e.vert] : ¬e.dir.vert := by simp
+
+@[simp] theorem offset_rotRight_eq_of_hor [H : Fact e.hor] :
+e.rotRight.offset = -e.offset := by simp [Edge.rotRight]
+
+@[simp] theorem offset_rotRight_eq_of_vert [H : Fact e.vert] :
+e.rotRight.offset = e.offset := by simp [Edge.rotRight]
+
 -- #check 0 #exit
 
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 10000000
+
 theorem rotRight_defense_of_hor_fCase2 {e : Edge} {s : State} {p : PointZ}
-[H : Fact e.hor] (hv : e.dir.vert) (h₁ : ¬p = s.aPos) (h₂ : p ∉ s.taken)
+[H : Fact e.hor] (h₁ : ¬p = s.aPos) (h₂ : p ∉ s.taken)
 (h₃ : e.dist (rotRight.ft' s.aPos) = 2) : fCase2 s (rotRight.ft (e.getBorderPoint₀
 (rotRight.ft' s.aPos))) (e.rotRight.getBorderPoints s.aPos) = some p ↔ fCase2 (rotRight.fs' s)
 (e.getBorderPoint₀ (rotRight.ft' s.aPos)) (e.getBorderPoints (rotRight.ft' s.aPos)) =
 some (rotRight.ft' p) := by
-  sorry
+  unfold getBorderPoints
+  simp [getBorderPoint₀, getBorderPoint]
+  simp [fCase2, List.find?, ft'_eq_iff]
+  split_ifs with h₄
+  · -- aesop?
+    --   aesop: internal error during proof reconstruction:
+    --   goal 386 was not normalised
+    sorry
+  · sorry
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem rotRight_defense_of_hor [H : Fact e.hor] :
 e.rotRight.defense = e.defense.sym rotRight := by
-  have hv : e.dir.vert := H.1
   simp [defense, Defense.sym]
   ext s p :2
   simp
@@ -76,5 +98,5 @@ e.rotRight.defense = e.defense.sym rotRight := by
   · simp [ft_eq_iff]
   · simp [ft'_eq_iff, ft_eq_iff]
   · simp [ft'_eq_iff, ft_eq_iff]
-  · exact rotRight_defense_of_hor_fCase2 hv h₁ h₂ h₃
+  · exact rotRight_defense_of_hor_fCase2 h₁ h₂ h₃
   · simp [ft'_eq_iff, ft_eq_iff]

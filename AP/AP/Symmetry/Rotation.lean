@@ -154,3 +154,18 @@ theorem rotLeft_pow_four : rotLeft ^ 4 = 1 := by
 
 @[simp] instance : BasicSym rotLeft := by unfold rotLeft; infer_instance
 @[simp] instance : BasicSym rot180 := by unfold rot180; infer_instance
+
+@[simp] theorem rotRight_ft_x {p} : (rotRight.ft p).x = -p.y := rfl
+@[simp] theorem rotRight_ft_y {p} : (rotRight.ft p).y = p.x := rfl
+@[simp] theorem rotRight_ft'_x {p} : (rotRight.ft' p).x = p.y := rfl
+@[simp] theorem rotRight_ft'_y {p} : (rotRight.ft' p).y = -p.x := rfl
+
+@[simp] theorem rotLeft_ft_x {p} : (rotLeft.ft p).x = p.y := rfl
+@[simp] theorem rotLeft_ft_y {p} : (rotLeft.ft p).y = -p.x := rfl
+@[simp] theorem rotLeft_ft'_x {p} : (rotLeft.ft' p).x = -p.y := rfl
+@[simp] theorem rotLeft_ft'_y {p} : (rotLeft.ft' p).y = p.x := rfl
+
+@[simp] theorem rot180_ft_x {p} : (rot180.ft p).x = -p.x := rfl
+@[simp] theorem rot180_ft_y {p} : (rot180.ft p).y = -p.y := rfl
+@[simp] theorem rot180_ft'_x {p} : (rot180.ft' p).x = -p.x := rfl
+@[simp] theorem rot180_ft'_y {p} : (rot180.ft' p).y = -p.y := rfl

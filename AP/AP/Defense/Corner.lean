@@ -86,16 +86,16 @@ theorem cnd_defense_edge₂ {s} (h : c.cnd s) : c.edge₂.defense.cnd s :=
 @[simp] theorem f_defense : c.defense.f = c.f := rfl
 
 theorem edge₁_hor_iff : c.edge₁.dir.hor ↔ c.edge₂.dir.vert := by
-  simp [edge₁, edge₂]; split <;> simp_all
+  simp [edge₁, edge₂]
 
 theorem edge₂_hor_iff : c.edge₂.dir.hor ↔ c.edge₁.dir.vert := by
-  simp [edge₁, edge₂]; split <;> simp_all
+  simp [edge₁, edge₂]
 
 theorem edge₁_vert_iff : c.edge₁.dir.vert ↔ c.edge₂.dir.hor := by
-  simp [edge₁, edge₂]; split <;> simp_all
+  simp [edge₁, edge₂]
 
 theorem edge₂_vert_iff : c.edge₂.dir.vert ↔ c.edge₁.dir.hor := by
-  simp [edge₁, edge₂]; split <;> simp_all
+  simp [edge₁, edge₂]
 
 theorem cnd'_of_reachable {s s'} [hs : sys.WF s]
 (h₁ : sys.Reachable s s') (h₂ : c.cnd' s) : c.cnd' s' :=
