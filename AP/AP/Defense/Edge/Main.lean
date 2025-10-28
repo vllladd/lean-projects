@@ -16,9 +16,6 @@ def cnd (e : Edge) (s : State) : Prop :=
   | 1 => (p₀ :: get 1).all (· ∈ s.taken)
   | d => 0 < d
 
-instance {s} : Decidable # e.cnd s := by
-  simp [cnd]; split <;> all_goals infer_instance
-
 theorem wf_defense : e.defense.WF := by
   use e.validTr_defense
   intro s hs h a Ha d Hd n

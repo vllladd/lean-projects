@@ -1,3 +1,12 @@
+import AP.Util.Logic
+
+example {x y : Bool} {b : ℕ → Bool} :
+(if b 1 || b 2 then some x else if b 3 then some x else none) =
+(if b 4 || b 5 then none else if b 6 || b 7 then some y
+else if b 8 then some y else none) := by aesop
+
+#check 0 #exit
+
 import AP.Util
 import AP.Misc
 import AP.AP
@@ -107,5 +116,8 @@ theorem parseAMove_8 : parseAMove "8" = some Dir.up.point := by native_decide
 theorem parseAMove_6 : parseAMove "6" = some Dir.right.point := by native_decide
 theorem parseAMove_2 : parseAMove "2" = some Dir.down.point := by native_decide
 theorem parseAMove_4 : parseAMove "4" = some Dir.left.point := by native_decide
+
+instance {e : Edge} {s} : Decidable # e.cnd s := by
+  simp [Edge.cnd]; split <;> all_goals infer_instance
 
 theorem cnd_state₀ : edge.cnd state₀ := by native_decide
