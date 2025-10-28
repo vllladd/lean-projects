@@ -503,3 +503,7 @@ instance (priority := low) [∀ P, Decidable P] : LinearOrder α :=
   linearOrderClassical
 
 end
+
+theorem le_congr {α : Type*} [ha : LinearOrder α] {a b c d : α}
+(h₁ : a = c) (h₂ : b = d) : a ≤ b ↔ c ≤ d := by
+  rw [h₁, h₂]

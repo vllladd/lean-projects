@@ -1,44 +1,5 @@
 import AP.AP.Defense.Edge.Basic
 
-section order
-
-variable {α : Type*} [ha : LinearOrder α]
-
-theorem le_congr {a b c d : α} (h₁ : a = c) (h₂ : b = d) : a ≤ b ↔ c ≤ d := by rw [h₁, h₂]
-
--- #check 0 #exit
-
-end order
-
-namespace Set'
-
-universe u v w
-variable {α : Type u} {β : Type v} {γ : Type w}
-variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
-variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
-variable {s s' s₁ s₂ s₃ : Set' α}
-
-@[simp]
-theorem forall_ne_iff_not_mem {x} : (∀ y ∈ s, y ≠ x) ↔ x ∉ s := by
-  simp_all only [ne_eq]
-  apply Iff.intro
-  · intro a
-    apply Aesop.BuiltinRules.not_intro
-    intro a_1
-    apply a
-    on_goal 2 => rfl
-    · simp_all only
-  · intro a y a_1
-    apply Aesop.BuiltinRules.not_intro
-    intro a_2
-    subst a_2
-    simp_all only
-
--- #check 0 #exit
-
-end Set'
-
 namespace AP.Edge
 
 variable {e e₁ e₂ : Edge}
@@ -89,10 +50,19 @@ e.rotRight.getBorderPoints p d = (e.getBorderPoints (rotRight.ft' p) d).map rotR
 
 -- #check 0 #exit
 
+theorem rotRight_defense_of_hor_fCase2 {e : Edge} {s : State} {p : PointZ}
+[H : Fact e.hor] (hv : e.dir.vert) (h₁ : ¬p = s.aPos) (h₂ : p ∉ s.taken)
+(h₃ : e.dist (rotRight.ft' s.aPos) = 2) : fCase2 s (rotRight.ft (e.getBorderPoint₀
+(rotRight.ft' s.aPos))) (e.rotRight.getBorderPoints s.aPos) = some p ↔ fCase2 (rotRight.fs' s)
+(e.getBorderPoint₀ (rotRight.ft' s.aPos)) (e.getBorderPoints (rotRight.ft' s.aPos)) =
+some (rotRight.ft' p) := by
+  sorry
+
+-- #check 0 #exit
+
 theorem rotRight_defense_of_hor [H : Fact e.hor] :
 e.rotRight.defense = e.defense.sym rotRight := by
   have hv : e.dir.vert := H.1
-  
   simp [defense, Defense.sym]
   ext s p :2
   simp
@@ -106,12 +76,5 @@ e.rotRight.defense = e.defense.sym rotRight := by
   · simp [ft_eq_iff]
   · simp [ft'_eq_iff, ft_eq_iff]
   · simp [ft'_eq_iff, ft_eq_iff]
-  ·
-    simp [ft'_eq_iff]
-    split_ifs with h₄
-    ·
-      simp [getBorderPoints, getBorderPoint, hv]
-      simp [List.find?, rotRight]
-      sorry
-    · sorry
+  · exact rotRight_defense_of_hor_fCase2 hv h₁ h₂ h₃
   · simp [ft'_eq_iff, ft_eq_iff]

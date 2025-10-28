@@ -252,3 +252,23 @@ theorem Bool.ite_eq_false_iff {α : Type*} {b : Bool} {x y : α} :
 
 @[simp]
 theorem and_not_iff_right_iff {P Q : Prop} : (P ∧ ¬Q ↔ Q) ↔ (¬P ∧ ¬Q) := by tauto
+
+@[simp]
+theorem forall_ne_iff_not {α : Type*} {p : α → Prop} {x : α} : (∀ y, p y → y ≠ x) ↔ ¬p x := by
+  simp_all only [ne_eq]
+  apply Iff.intro
+  · intro a
+    apply Aesop.BuiltinRules.not_intro
+    intro a_1
+    apply a
+    on_goal 2 => rfl
+    · simp_all only
+  · intro a y a_1
+    apply Aesop.BuiltinRules.not_intro
+    intro a_2
+    subst a_2
+    simp_all only
+
+@[simp]
+theorem forall_ne_iff_not' {α : Type*} {p : α → Prop} {x : α} : (∀ y, p y → x ≠ y) ↔ ¬p x := by
+  convert forall_ne_iff_not using 2; tauto

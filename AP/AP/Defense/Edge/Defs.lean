@@ -46,6 +46,15 @@ def getBorderPoint₀ (e : Edge) (p : PointZ) : PointZ :=
 def getBorderPoints (e : Edge) (p : PointZ) (d : ℕ) : List PointZ :=
   [e.getBorderPoint p (-d : ℤ), e.getBorderPoint p d]
 
+def fCase2 (s : State) (p₀ : PointZ) (get : ℕ → List PointZ) : Option PointZ :=
+  if p₀ ∉ s.taken then some p₀ else
+  let ps₁ := get 1
+  let ps₂ := get 2
+  let f := λ (ps₁ ps₂ : List PointZ) => do
+    let p ← ps₁ |>.find? (· ∈ s.taken)
+    ps₂ |>.find? # λ p' => p' ∉ s.taken ∧ p'.dist p ≠ 1
+  f ps₁ ps₂ |>.elim (f ps₂ ps₁) some
+
 def f' (e : Edge) (s : State) : Option PointZ :=
   let pa := s.aPos
   let p₀ := e.getBorderPoint₀ pa
@@ -55,13 +64,7 @@ def f' (e : Edge) (s : State) : Option PointZ :=
   | 5 => some p₀
   | 4 => pick # p₀ :: get 1
   | 3 => pick # get 1 ++ [p₀]
-  | 2 => if p₀ ∉ s.taken then some p₀ else
-    let ps₁ := get 1
-    let ps₂ := get 2
-    let f := λ (ps₁ ps₂ : List PointZ) => do
-      let p ← ps₁ |>.find? (· ∈ s.taken)
-      ps₂ |>.find? # λ p' => p' ∉ s.taken ∧ p'.dist p ≠ 1
-    f ps₁ ps₂ |>.elim (f ps₂ ps₁) some
+  | 2 => fCase2 s p₀ get
   | 1 => pick # p₀ :: get 1
   | _ => none
 

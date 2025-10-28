@@ -9,13 +9,16 @@ import AP.Physics
 
 namespace AP
 
+def center : PointZ :=
+  ⟨0, -6⟩
+
 def getPs (d : ℕ) : List PointZ :=
-  (⟨0, 0⟩ : PointZ).nbhd d
+  center.nbhd d
 
 def State.toStr (s : State) : String := String.mk # do
-  let d := 5
+  let d := 7
   let p ← getPs d
-  let ⟨x, y⟩ := p
+  let ⟨x, y⟩ := p - center
   let sp := do
     guard # x + d = 0 ∧ y + d ≠ 0
     return '\n'
@@ -31,33 +34,78 @@ def logb : IO Unit := do
   IO.println # String.mk # List.replicate 100 '='
   IO.println ""
 
+-----
+
 def state₀ : State :=
-  initState 1 0
+  initState 1 center
 
-def aStrat : AStrat := .mkFold (α := Dir)
-  state₀ Dir.up (fd := λ _ _ z => z) # λ s d =>
-  (s.aPos + d.point, d.rotRight)
+def edge : Edge where
+  dir := .down
+  offset := 0
 
-def dStrat : DStrat :=
-  let n := 1
-  .mkFold (α := PointZ × Dir) state₀ (⟨-n, -n⟩, Dir.up)
-  (fa := λ _ _ z => z) # λ _ ⟨p, d⟩ =>
-  let cnd := |p.coord d| = n
-  let d₁ := if cnd then d.rotRight else d
-  let p₁ := p + d₁.point
-  (p, (p₁, d₁))
+def defense : Defense :=
+  edge.defense
 
-def strat : Strat := ⟨aStrat, dStrat⟩
+def mkDigit (d : ℕ) : Char :=
+  let c := '0'.val + d.toUInt32
+  if h : c.isValidChar then ⟨c, h⟩ else default
 
-def run (s : State) (n : ℕ) : IO Unit := do
-  IO.println s.toStr
+def movesMp : Map Char PointZ :=
+  Map.ofList # List.range 9 |>.map # λ i =>
+    (mkDigit # i + 1, ⟨i % 3 - 1, 1 - i / 3⟩)
+
+def parseAMove (inp : String) : Option PointZ :=
+  match inp.toList with
+  | [] => none
+  | _ :: _ :: _ => none
+  | [c] => movesMp.get? c
+
+def readAMove : IO (Option PointZ) := do
+  let stdin ← IO.getStdin
+  IO.print "\n> "
+  let inp ← stdin.getLine
+  pure # parseAMove # inp.take # inp.length - 1
+
+def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
   match n with
   | 0 => pure ()
-  | n + 1 => match sys.tr s (strat.f s) with
-    | none => pure ()
-    | some s₁ => do
-      IO.println ""
-      run s₁ n
+  | n + 1 => do
+    let p? ← match s.aTurn with
+    | false => pure # some # match defense.f s with
+      | some p => p
+      | none => s.chooseDMove + 100
+    | true => do
+      if !isFst then logb else pure ()
+      IO.println s.toStr
+      IO.println # "\n" ++ if edge.cnd s then "Yes" else "No"
+      let p ← readAMove
+      pure # p.map (s.aPos + ·)
+    match p? with
+    | none => do
+      IO.println "Invalid command"
+      run s false n
+    | some p => do
+      -- IO.println # repr p
+      match sys.tr s p with
+      | none => do
+        IO.println "Illegal move"
+        run s false n
+      | some s' => run s' false n
 
 def _root_.main : IO Unit := do
-  run state₀ 100
+  run state₀ true # 2 ^ 30
+
+-----
+
+theorem toList_movesMp : movesMp.toList =
+[ ('1', ⟨-1, 1⟩), ('2', ⟨0, 1⟩), ('3', ⟨1, 1⟩)
+, ('4', ⟨-1, 0⟩), ('5', ⟨0, 0⟩), ('6', ⟨1, 0⟩)
+, ('7', ⟨-1, -1⟩), ('8', ⟨0, -1⟩), ('9', ⟨1, -1⟩)
+] := by native_decide
+
+theorem parseAMove_8 : parseAMove "8" = some Dir.up.point := by native_decide
+theorem parseAMove_6 : parseAMove "6" = some Dir.right.point := by native_decide
+theorem parseAMove_2 : parseAMove "2" = some Dir.down.point := by native_decide
+theorem parseAMove_4 : parseAMove "4" = some Dir.left.point := by native_decide
+
+theorem cnd_state₀ : edge.cnd state₀ := by native_decide
