@@ -110,10 +110,12 @@ def rot180 : sys.Symmetry :=
 @[simp] theorem rotRight_mul_rotLeft : rotRight * rotLeft = 1 := by simp [rotLeft]
 @[simp] theorem rotLeft_mul_rotRight : rotLeft * rotRight = 1 := by simp [rotLeft]
 
-@[simp]
 theorem inv_rot180 : rot180⁻¹ = rot180 := by
   rw [rot180, pow_two, mul_inv_rev, rotRight]
   ext:2 <;> simp; ext:1 <;> simp
+
+instance : rot180.SelfInverse where
+  inv_eq_self := inv_rot180
 
 @[simp]
 theorem rotLeft_mul_rotLeft : rotLeft * rotLeft = rot180 := by
@@ -132,7 +134,7 @@ theorem rotLeft_pow_three : rotLeft ^ 3 = rotRight := by
 
 @[simp]
 theorem rot180_mul_rot180 : rot180 * rot180 = 1 := by
-  nth_rw 1 [←inv_rot180]; simp [-inv_rot180]
+  nth_rw 1 [←inv_rot180, inv_mul_cancel]
 
 @[simp]
 theorem rot180_pow_two : rot180 ^ 2 = 1 :=
@@ -169,3 +171,39 @@ theorem rotLeft_pow_four : rotLeft ^ 4 = 1 := by
 @[simp] theorem rot180_ft_y {p} : (rot180.ft p).y = -p.y := rfl
 @[simp] theorem rot180_ft'_x {p} : (rot180.ft' p).x = -p.x := rfl
 @[simp] theorem rot180_ft'_y {p} : (rot180.ft' p).y = -p.y := rfl
+
+@[simp]
+theorem rotRight_dist_rotRight {p₁ p₂} :
+(rotRight.ft p₁).dist (rotRight.ft p₂) = p₁.dist p₂ := by
+  simp [rotRight, Point.dist, neg_add_eq_sub, abs_sub_comm, max_comm]
+
+@[simp]
+theorem rotRight_dist_rotRight' {p₁ p₂} :
+(rotRight.ft' p₁).dist (rotRight.ft' p₂) = p₁.dist p₂ := by
+  simp [rotRight, Point.dist, neg_add_eq_sub, abs_sub_comm, max_comm]
+
+@[simp]
+theorem rotLeft_dist_rotLeft {p₁ p₂} :
+(rotLeft.ft p₁).dist (rotLeft.ft p₂) = p₁.dist p₂ :=
+  rotRight_dist_rotRight'
+
+@[simp]
+theorem rotLeft_dist_rotLeft' {p₁ p₂} :
+(rotLeft.ft' p₁).dist (rotLeft.ft' p₂) = p₁.dist p₂ :=
+  rotRight_dist_rotRight
+
+@[simp]
+theorem rot180_dist_rot180 {p₁ p₂} :
+(rot180.ft p₁).dist (rot180.ft p₂) = p₁.dist p₂ :=
+  rotRight_dist_rotRight.trans rotRight_dist_rotRight
+
+@[simp]
+theorem rot180_dist_rot180' {p₁ p₂} :
+(rot180.ft' p₁).dist (rot180.ft' p₂) = p₁.dist p₂ :=
+  rotRight_dist_rotRight'.trans rotRight_dist_rotRight'
+
+@[simp] theorem rotRight_ft_mk {x y} : rotRight.ft ⟨x, y⟩ = ⟨-y, x⟩ := rfl
+@[simp] theorem rotRight_ft'_mk {x y} : rotRight.ft' ⟨x, y⟩ = ⟨y, -x⟩ := rfl
+@[simp] theorem rotLeft_ft_mk {x y} : rotLeft.ft ⟨x, y⟩ = ⟨y, -x⟩ := rfl
+@[simp] theorem rotLeft_ft'_mk {x y} : rotLeft.ft' ⟨x, y⟩ = ⟨-y, x⟩ := rfl
+@[simp] theorem rot180_ft_mk {x y} : rot180.ft ⟨x, y⟩ = ⟨-x, -y⟩ := rfl

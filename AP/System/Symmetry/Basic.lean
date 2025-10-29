@@ -207,3 +207,30 @@ theorem snd_simulate_eq {f s n} :
 theorem snd_simulate_eq' {f s n} :
 (sys.simulate (sym.simFn' f) s n).2 = (sys.simulate f (sym.fs s) n).2 := by
   rw [sym.simulate_eq]; simp
+
+namespace SelfInverse
+
+omit wf
+
+variable [H : SelfInverse sym]
+
+@[simp]
+theorem inv_eq_self' : sym⁻¹ = sym := H.inv_eq_self
+
+@[simp]
+theorem ft'_eq_ft : sym.ft' = sym.ft := by
+  nth_rw 1 [←H.inv_eq_self, ft'_inv]
+
+@[simp]
+theorem fs'_eq_fs : sym.fs' = sym.fs := by
+  nth_rw 1 [←H.inv_eq_self, fs'_inv]
+
+@[simp]
+theorem ft_ft {t} : sym.ft (sym.ft t) = t := by
+  nth_rw 1 [←ft'_eq_ft, ft'_ft]
+
+@[simp]
+theorem fs_fs {s} : sym.fs (sym.fs s) = s := by
+  nth_rw 1 [←fs'_eq_fs, fs'_fs]
+
+end SelfInverse

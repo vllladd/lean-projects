@@ -52,3 +52,9 @@ instance {offset} : (translate offset).WF where
 @[simp] theorem translate_ft_y {p offset} : (translate offset |>.ft p).y = p.y + offset.y := rfl
 @[simp] theorem translate_ft'_x {p offset} : (translate offset |>.ft' p).x = p.x - offset.x := rfl
 @[simp] theorem translate_ft'_y {p offset} : (translate offset |>.ft' p).y = p.y - offset.y := rfl
+
+@[simp] theorem translate_ft_mk {offset x y} :
+(translate offset).ft ⟨x, y⟩ = ⟨x + offset.x, y + offset.y⟩ := rfl
+
+@[simp] theorem translate_ft_mk' {offset x y} :
+(translate offset).ft' ⟨x, y⟩ = ⟨x - offset.x, y - offset.y⟩ := rfl

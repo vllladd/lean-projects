@@ -213,3 +213,21 @@ theorem fs_eq_iff {sym : sys.Symmetry} {s₁ s₂} : sym.fs s₁ = s₂ ↔ s₁
 
 theorem fs'_eq_iff {sym : sys.Symmetry} {s₁ s₂} : sym.fs' s₁ = s₂ ↔ s₁ = sym.fs s₂ :=
   Equiv.apply_eq_iff_eq_symm_apply _
+
+theorem ext_iff_of_basicSym {sym₁ sym₂} [H₁ : BasicSym sym₁] [H₂ : BasicSym sym₂] :
+sym₁ = sym₂ ↔ ∀ p, sym₁.ft p = sym₂.ft p := by
+  constructor; rintro rfl; simp
+  obtain ⟨ft₁, rfl⟩ := H₁.exi_mkSym
+  obtain ⟨ft₂, rfl⟩ := H₂.exi_mkSym
+  intro h
+  simp [mkSym] at h ⊢
+  use by rwa [Equiv.ext_iff]
+  ext <;> simp [h]
+
+@[simp]
+instance {sym₁ sym₂} [H₁ : BasicSym sym₁] [H₂ : BasicSym sym₂] : BasicSym (sym₁ * sym₂) := by
+  constructor
+  obtain ⟨ft₁, rfl⟩ := H₁.exi_mkSym
+  obtain ⟨ft₂, rfl⟩ := H₂.exi_mkSym
+  use ft₁.comp ft₂
+  ext <;> simp

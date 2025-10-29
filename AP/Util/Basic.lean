@@ -5,6 +5,7 @@ import AP.Util.Rat
 import AP.Util.Real
 import AP.Util.Prod
 import AP.Util.Char
+import AP.Util.Equiv
 import AP.Util.Array
 import AP.Util.Sigma
 import AP.Util.Order

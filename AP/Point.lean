@@ -202,6 +202,9 @@ theorem neg_def [ha : Neg α] {p : Point α} : -p = ⟨-p.1, -p.2⟩ := rfl
 @[simp]
 theorem neg_mk [ha : Neg α] {x y : α} : -(⟨x, y⟩ : Point α) = ⟨-x, -y⟩ := rfl
 
+@[simp] theorem x_neg [ha : Neg α] {p : Point α} : (-p).x = -p.x := rfl
+@[simp] theorem y_neg [ha : Neg α] {p : Point α} : (-p).y = -p.y := rfl
+
 -----
 
 instance [ha : AddSemigroup α] : AddSemigroup (Point α) where

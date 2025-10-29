@@ -42,3 +42,22 @@ sys.simulate (Strat.f ⟨a, dse₂.st (dse₁.st d)⟩) s₀ n := by
   nm s₁ s₂
   have H₅ := sys.reachable_of_simulate_eq h₁
   exact h H₅ H₃ H₄
+
+@[simp]
+theorem sym_one : dse.sym 1 = dse := by
+  ext <;> simp [sym]
+
+@[simp]
+theorem sym_sym {sym₁ sym₂ : sys.Symmetry} : (dse.sym sym₁).sym sym₂ = dse.sym (sym₂ * sym₁) := by
+  ext <;> simp [sym]
+  apply Iff.intro
+  · intro a
+    apply Exists.intro
+    · apply And.intro
+      · exact a
+      · simp_all only [System.Symmetry.ft_ft']
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    subst right
+    simp_all only [System.Symmetry.ft'_ft]

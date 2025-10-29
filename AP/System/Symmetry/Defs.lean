@@ -64,3 +64,6 @@ def zpow (z : ℤ) (sym : sys.Symmetry) : sys.Symmetry :=
   match z with
   | .ofNat n => sym.npow n
   | .negSucc n => sym⁻¹.npow (n + 1)
+
+class SelfInverse (sym : sys.Symmetry) extends sym.WF where
+  inv_eq_self : sym⁻¹ = sym

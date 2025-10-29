@@ -42,3 +42,7 @@ theorem bind_ite {α β : Type*} {P} [hp : Decidable P]
 
 theorem ne_none_of_eq_some {α : Type*} {m : Option α} {x : α}
 (h : m = some x) : m ≠ none := by simp [h]
+
+theorem map_elim_fn_some {α β : Type*} {f : α → β} {x y : Option α} :
+(x.elim y some).map f = (x.map f).elim (y.map f) some := by
+  cases x <;> rfl

@@ -1010,3 +1010,9 @@ theorem sorted_of_sorted_and_sublist {r} (h₁ : xs.Sorted r) (h₂ : ys <+ xs) 
     intro y hy
     apply h₁
     exact h₂.mem hy
+
+theorem find?_cons' {p : α → Bool} {x xs} :
+(x :: xs).find? p = if p x then some x else xs.find? p := by
+  simp [find?_cons]; split
+  · simp_all only [↓reduceIte]
+  · simp_all only [Bool.false_eq_true, ↓reduceIte]
