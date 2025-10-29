@@ -64,7 +64,7 @@ def readAMove : IO (Option PointZ) := do
   let stdin ← IO.getStdin
   IO.print "\n> "
   let inp ← stdin.getLine
-  pure # parseAMove # inp.take # inp.length - 1
+  pure # parseAMove ⟨inp.1.filter (· ∉ "\r\n".1)⟩
 
 def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
   match n with
