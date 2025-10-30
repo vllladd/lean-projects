@@ -13,15 +13,6 @@ protected def rotLeft (e : Edge) : Edge where
   offset := if e.hor then e.offset else -e.offset
 
 @[simp]
-theorem points_translate {offset} :
-(e.translate offset).points = (translate offset).ft '' e.points := by
-  ext p
-  simp [translate, Edge.translate, points, memPoints, Dir.vert]
-  by_contra h
-  cases hd : e.dir
-  all_goals revert h; simp [hd]
-
-@[simp]
 theorem points_rotRight : e.rotRight.points = rotRight.ft '' e.points := by
   ext p
   simp [rotRight, Edge.rotRight, points, memPoints, Dir.vert]
@@ -57,30 +48,8 @@ theorem points_rotLeft : e.rotLeft.points = rotLeft.ft '' e.points := by
       linarith
 
 @[simp]
-theorem points_flipV : e.flipV.points = flipV.ft '' e.points := by
-  ext p
-  simp [flipV, Edge.flipV, points, memPoints, Dir.vert]
-  by_contra h
-  cases hd : e.dir
-  all_goals
-    revert h
-    simp [hd, Point.ext_iff]
-    constructor
-    · intro h
-      use ⟨p.x, -p.y⟩
-      simp
-      linarith
-    · rintro ⟨⟨x₁, y₁⟩, h₁, h₂, h₃⟩
-      linarith
-
-@[simp]
 theorem dist_rotRight {p} : e.rotRight.dist p = e.dist (rotRight.ft' p) := by
   simp [rotRight, Edge.rotRight, dist]
-  by_contra h; cases hd : e.dir <;> revert h <;> simp [hd] <;> ring_nf
-
-@[simp]
-theorem dist_flipV {p} : e.flipV.dist p = e.dist (flipV.ft' p) := by
-  simp [flipV, Edge.flipV, dist]
   by_contra h; cases hd : e.dir <;> revert h <;> simp [hd] <;> ring_nf
 
 @[simp]
@@ -102,10 +71,6 @@ e.rotRight.getBorderPoints p d = (e.getBorderPoints (rotRight.ft' p) d).map rotR
   by_contra h; cases hd : e.dir <;> simp [hd] at H <;> revert h <;> simp [hd, rotRight]
 
 @[simp] theorem dir_rotRight : e.rotRight.dir = e.dir.rotRight := rfl
-@[simp] theorem vert_dir_of_hor [H : Fact e.hor] : e.dir.vert := H.1
-@[simp] theorem not_hor_dir_of_hor [H : Fact e.hor] : ¬e.dir.hor := by simp
-@[simp] theorem hor_dir_of_vert [H : Fact e.vert] : e.dir.hor := H.1
-@[simp] theorem not_vert_dir_of_vert [H : Fact e.vert] : ¬e.dir.vert := by simp
 
 @[simp] theorem offset_rotRight_eq_of_hor [H : Fact e.hor] :
 e.rotRight.offset = -e.offset := by simp [Edge.rotRight]
@@ -238,16 +203,6 @@ e.rotRight.defense = e.defense.sym rotRight := by
   split <;> try simp [ft'_eq_iff, ft_eq_iff]
   exact rotRight_defense_of_hor_fCase2
 
-@[simp] theorem dir_eq_of_up [H : Fact # e.dir = .up] : e.dir = .up := H.1
-@[simp] theorem dir_eq_of_down [H : Fact # e.dir = .down] : e.dir = .down := H.1
-@[simp] theorem hor_of_up [H : Fact # e.dir = .up] : e.hor := by simp
-@[simp] theorem not_vert_of_up [H : Fact # e.dir = .up] : ¬e.vert := by simp
-
-@[simp] theorem dir_flipV : e.flipV.dir = if e.hor then e.dir⁻¹ else e.dir := rfl
-@[simp] theorem offset_flipV : e.flipV.offset = if e.hor then -e.offset else e.offset := rfl
-
-@[simp] instance [H : Fact # e.dir = .up] : Fact # e.hor := by simp
-
 @[simp] theorem dir_eq_or_eq_of_hor [H : Fact e.hor] : e.dir = .up ∨ e.dir = .down := by
   cases hd : e.dir <;> simp [hd] at H ⊢
 
@@ -267,35 +222,6 @@ e.dist (rot180.ft p) = e.dist (-p) := by
   rcases e.dir_eq_or_eq_of_hor with h | h <;> simp [h, dist]
 
 @[simp]
-theorem getBorderPoint₀_flipV_of_hor {p} [H : Fact e.hor] :
-e.flipV.getBorderPoint₀ p = flipV.ft (e.getBorderPoint₀ p) := by
-  simp [getBorderPoint₀, getBorderPoint]
-
-@[simp]
-theorem getBorderPoint_flipV_of_hor [H : Fact e.hor] {p d} :
-e.flipV.getBorderPoint p d = flipV.ft (e.getBorderPoint p d) := by
-  simp [getBorderPoint]
-
-@[simp]
-theorem getBorderPoints_flipV_of_hor [H : Fact e.hor] {p d} :
-e.flipV.getBorderPoints p d = (e.getBorderPoints p d).map flipV.ft := by
-  simp [getBorderPoints]
-
-@[simp]
-theorem getBorderPoint₀_rot180_ft_of_hor {p} [H : Fact e.hor] :
-e.getBorderPoint₀ (rot180.ft p) = flipH.ft (e.getBorderPoint₀ p) := by
-  simp [getBorderPoint₀, getBorderPoint]
-
-@[simp]
-theorem getBorderPoint_rot180_ft_of_hor {p d} [H : Fact e.hor] :
-e.getBorderPoint (rot180.ft p) d = flipH.ft (e.getBorderPoint p (-d)) := by
-  simp [getBorderPoint, add_comm]
-
-@[simp]
-theorem flipV_flipV : e.flipV.flipV = e := by
-  cases h : e.dir <;> ext <;> simp [h]
-
-@[simp]
 theorem rotRight_rotLeft : e.rotLeft.rotRight = e := by
   cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
 
@@ -304,34 +230,8 @@ theorem rotLeft_rotRight : e.rotRight.rotLeft = e := by
   cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
 
 @[simp] theorem dir_rotLeft : e.rotLeft.dir = e.dir.rotLeft := rfl
-@[simp] theorem dir_translate {offset} : (e.translate offset).dir = e.dir := rfl
-
-@[simp]
-theorem offset_translate {offset} :
-(e.translate offset).offset = e.offset + if e.hor then offset.y else offset.x := rfl
-
-@[simp]
-theorem dist_translate {offset p} :
-(e.translate offset).dist p = e.dist (translate offset |>.ft' p) := by
-  simp [translate, Edge.translate, dist]
-  by_contra h; cases hd : e.dir <;> revert h <;> simp [hd] <;> ring_nf
 
 @[simp] theorem hor_of_down [H : Fact # e.dir = .down] : e.hor := by simp
-
-@[simp]
-theorem getBorderPoint_translate_of_down {offset p d} [H : Fact # e.dir = .down] :
-(e.translate offset).getBorderPoint p d = e.getBorderPoint p d + ⟨0, offset.y⟩ := by
-  simp [getBorderPoint]
-
-@[simp]
-theorem getBorderPoint₀_translate_of_down {offset p} [H : Fact # e.dir = .down] :
-(e.translate offset).getBorderPoint₀ p = e.getBorderPoint₀ p + ⟨0, offset.y⟩ := by
-  simp [getBorderPoint₀]
-
-@[simp]
-theorem getBorderPoints_translate_of_down {offset p d} [H : Fact # e.dir = .down] :
-(e.translate offset).getBorderPoints p d = (e.getBorderPoints p d).map (· + ⟨0, offset.y⟩) := by
-  simp [getBorderPoints]
 
 -- set_option maxHeartbeats 10000000
 
