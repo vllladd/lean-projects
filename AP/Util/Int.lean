@@ -100,3 +100,7 @@ theorem mul_2_succ_div_2_eq {n : ℤ}
 @[simp]
 theorem max_abs_eq_zero_iff {n m : ℤ} : max |n| |m| = 0 ↔ n = 0 ∧ m = 0 := by
   rw [max_def']; aesop
+
+@[simp]
+theorem eq_self_sub_iff {a b : ℤ} : a = a - b ↔ b = 0 := by
+  omega

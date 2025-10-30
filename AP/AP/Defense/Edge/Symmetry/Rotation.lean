@@ -53,22 +53,19 @@ theorem dist_rotRight {p} : e.rotRight.dist p = e.dist (rotRight.ft' p) := by
   by_contra h; cases hd : e.dir <;> revert h <;> simp [hd] <;> ring_nf
 
 @[simp]
+theorem getBorderPoint_rotRight {p d} :
+e.rotRight.getBorderPoint p d = rotRight.ft (e.getBorderPoint (rotRight.ft' p) d) := by
+  cases h : e.dir <;> simp [Edge.rotRight, getBorderPoint, h] <;> ring_nf
+
+@[simp]
 theorem getBorderPoint₀_rotRight {p} :
 e.rotRight.getBorderPoint₀ p = rotRight.ft (e.getBorderPoint₀ # rotRight.ft' p) := by
-  simp [Edge.rotRight, rotRight, getBorderPoint₀, getBorderPoint]
-  by_contra h; cases hd : e.dir <;> revert h <;> simp [hd]
+  simp [getBorderPoint₀]
 
 @[simp]
-theorem getBorderPoint_rotRight_of_hor [H : Fact e.hor] {p d} :
-e.rotRight.getBorderPoint p d = rotRight.ft (e.getBorderPoint (rotRight.ft' p) d) := by
-  rcases H with ⟨H⟩; unfold hor at H; simp [Edge.rotRight, getBorderPoint]
-  by_contra h; cases hd : e.dir <;> simp [hd] at H <;> revert h <;> simp [hd, rotRight]
-
-@[simp]
-theorem getBorderPoints_rotRight_of_hor [H : Fact e.hor] {p d} :
+theorem getBorderPoints_rotRight {p d} :
 e.rotRight.getBorderPoints p d = (e.getBorderPoints (rotRight.ft' p) d).map rotRight.ft := by
-  rcases H with ⟨H⟩; unfold hor at H; simp [Edge.rotRight, getBorderPoints, getBorderPoint]
-  by_contra h; cases hd : e.dir <;> simp [hd] at H <;> revert h <;> simp [hd, rotRight]
+  simp [getBorderPoints]
 
 @[simp] theorem dir_rotRight : e.rotRight.dir = e.dir.rotRight := rfl
 
@@ -88,8 +85,8 @@ theorem rotLeft_rotRight : e.rotRight.rotLeft = e := by
 
 @[simp] theorem dir_rotLeft : e.rotLeft.dir = e.dir.rotLeft := rfl
 
-theorem defense_rotRight_of_hor_fCase2 {e : Edge} {s : State} {p : PointZ}
-[H : Fact e.hor] : fCase2 s (rotRight.ft (e.getBorderPoint₀
+theorem defense_rotRight_fCase2 {e : Edge} {s : State} {p : PointZ} :
+fCase2 s (rotRight.ft (e.getBorderPoint₀
 (rotRight.ft' s.aPos))) (e.rotRight.getBorderPoints s.aPos) = some p ↔ fCase2 (rotRight.fs' s)
 (e.getBorderPoint₀ (rotRight.ft' s.aPos)) (e.getBorderPoints (rotRight.ft' s.aPos)) =
 some (rotRight.ft' p) := by
@@ -126,7 +123,7 @@ some (rotRight.ft' p) := by
       (f ps₁ ps₂).elim (f ps₂ ps₁) some))
   · rw [h]
   
-  iterate 2 rw [getBorderPoints_rotRight_of_hor]
+  iterate 2 rw [getBorderPoints_rotRight]
   
   trans (have ps₁ := e.getBorderPoints (rotRight.ft' s.aPos) 1;
     have ps₂ := e.getBorderPoints (rotRight.ft' s.aPos) 2;
@@ -204,13 +201,12 @@ some (rotRight.ft' p) := by
   simp only [rotRight_dist_rotRight, ne_eq, Bool.decide_and, decide_not, Option.bind_eq_bind]
 
 @[simp]
-theorem defense_rotRight_of_hor [H : Fact e.hor] :
-e.rotRight.defense = e.defense.sym rotRight := by
+theorem defense_rotRight : e.rotRight.defense = e.defense.sym rotRight := by
   simp only [defense, dist_rotRight, points_rotRight, Defense.sym, aPos_sym_of_basicSym',
     Defense.mk.injEq, true_and]
   ext s p :2
   simp only [f, f', dist_rotRight, getBorderPoint₀_rotRight, decide_not,
-    getBorderPoints_rotRight_of_hor, List.find?_append, List.find?_map, Function.comp_def',
+    getBorderPoints_rotRight, List.find?_append, List.find?_map, Function.comp_def',
     List.find?_singleton, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, ite_not,
     ne_eq, Option.pure_def, Option.bind_eq_bind, Option.bind_eq_some_iff', Option.guard_eq_some',
     Option.some.injEq, exists_const, ↓existsAndEq, and_true, aPos_sym_of_basicSym',
@@ -219,4 +215,4 @@ e.rotRight.defense = e.defense.sym rotRight := by
     forall_ne_iff_not, and_congr_left_iff, and_imp]
   intro h₁ h₂
   split <;> try simp [ft'_eq_iff, ft_eq_iff]
-  exact defense_rotRight_of_hor_fCase2
+  exact defense_rotRight_fCase2

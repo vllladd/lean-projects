@@ -22,11 +22,6 @@ theorem points_inj (h : e₁.points = e₂.points) : e₁ = e₂ := by
 theorem points_eq_points_iff : e₁.points = e₂.points ↔ e₁ = e₂ :=
   ⟨points_inj, λ h => by rw [h]⟩
 
-theorem sorted_lt_getBorderPoints {p d} (h : d ≠ 0) :
-(e.getBorderPoints p d).Sorted (· < ·) := by
-  simp [getBorderPoints, getBorderPoint]
-  split_ifs with h₁ <;> simp [h, Nat.zero_lt_of_ne_zero h]
-
 @[simp] theorem ps_defense : e.defense.ps = e.points := rfl
 
 theorem of_eq_some_fCase2 {e : Edge} {s : State} {p : PointZ} (h₁ : e.dist s.aPos = 2)
@@ -328,7 +323,6 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
 ∃ (z : ℤ), |z| ≤ 2 ∧ e.getBorderPoint s.aPos z = p := by
   simp [defense, f, f', getBorderPoints, getBorderPoint₀, List.find?_cons] at h
   split at h
-  -- all_goals aesop
   · simp_all only [Option.some.injEq, Nat.ofNat_pos, le_refl, not_false_eq_true, true_and]
     obtain ⟨left, right⟩ := h
     obtain ⟨left_1, right⟩ := right
@@ -450,9 +444,8 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
   · simp_all only [imp_false, reduceCtorEq, false_and]
 
 theorem dist_eq_zero_of_eq_some {s p} (h : e.defense.f s = some p) : e.dist p = 0 := by
-  obtain ⟨-, h₁, h₂, z, h₃, rfl⟩ := of_eq_some h; simp [getBorderPoint]; split_ifs with h₄
-  · rw [Dir.vert_iff] at h₄; rcases h₄ with h₄ | h₄ <;> simp [dist, h₄]
-  · simp [Dir.hor_iff] at h₄; rcases h₄ with h₄ | h₄ <;> simp [dist, h₄]
+  obtain ⟨-, h₁, h₂, z, h₃, rfl⟩ := of_eq_some h; simp [getBorderPoint] at h₂ ⊢
+  simp [dist]; cases hd : e.dir <;> simp [hd] at h₂ ⊢
 
 theorem not_mem_taken_of_eq_some {s p} (h : e.defense.f s = some p) : p ∉ s.taken := by
   obtain ⟨-, h₁, h₂, z, h₃, h₄⟩ := of_eq_some h; exact h₂
@@ -468,9 +461,8 @@ theorem validTr_defense : e.defense.ValidTr := by
     simp [DState.validTr_iff]
     refine ⟨?_, h₃⟩
     simp [Point.ext_iff]
-  -- all_goals aesop
   · rintro rfl
-    simp_all only [abs_zero, Nat.ofNat_nonneg, add_zero]
+    simp_all only [abs_zero, Nat.ofNat_nonneg]
     apply Aesop.BuiltinRules.not_intro
     intro a; simp_all only [lt_self_iff_false]
   · intro a; simp_all only [lt_self_iff_false]

@@ -38,7 +38,11 @@ def dist (e : Edge) (p : PointZ) : ℤ :=
   | .right => e.offset - p.x
 
 def getBorderPoint (e : Edge) (p : PointZ) (d : ℤ) : PointZ :=
-  if e.hor then ⟨p.x + d, e.offset⟩ else ⟨e.offset, p.y + d⟩
+  match e.dir with
+  | .up => ⟨p.x - d, e.offset⟩
+  | .down => ⟨p.x + d, e.offset⟩
+  | .left => ⟨e.offset, p.y + d⟩
+  | .right => ⟨e.offset, p.y - d⟩
 
 def getBorderPoint₀ (e : Edge) (p : PointZ) : PointZ :=
   e.getBorderPoint p 0

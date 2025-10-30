@@ -1,6 +1,7 @@
 import AP.Util.Bit
 import AP.Util.Set
 import AP.Util.Fin
+import AP.Util.Int
 import AP.Util.Rat
 import AP.Util.Real
 import AP.Util.Prod

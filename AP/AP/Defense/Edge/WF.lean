@@ -24,36 +24,41 @@ theorem wf_defense_of_down (h : e.dir = .down) : e.defense.WF := by
 
 -- #check 0 #exit
 
+theorem wf_defense_of_left (h : e.dir = .left) : e.defense.WF := by
+  have h₁ : e.rotLeft.defense.WF
+  · apply wf_defense_of_down; simp [h]
+  have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
+  · have H : Fact # e.rotLeft.hor; simp [h]
+    exact defense_rotRight
+  simp at h₂
+  rw [h₂]
+  simpa
+
 theorem wf_defense_of_up (h : e.dir = .up) : e.defense.WF := by
-  have H : Fact # e.dir = .up; use h
-  have h₁ := congrArg (·.sym rot180) e.defense_flipV_of_up
-  simp at h₁
-  rw [←h₁]; clear h₁
-  have h₁ : e.flipV.defense.WF
-  · apply wf_defense_of_down; simp
-  infer_instance
+  have h₁ : e.rotLeft.defense.WF
+  · apply wf_defense_of_left; simp [h]
+  have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
+  · have H : Fact # e.rotLeft.vert; simp [h]
+    exact defense_rotRight
+  simp at h₂
+  rw [h₂]
+  simpa
+
+theorem wf_defense_of_right (h : e.dir = .right) : e.defense.WF := by
+  have h₁ : e.rotLeft.defense.WF
+  · apply wf_defense_of_up; simp [h]
+  have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
+  · have H : Fact # e.rotLeft.hor; simp [h]
+    exact defense_rotRight
+  simp at h₂
+  rw [h₂]
+  simpa
 
 theorem wf_defense : e.defense.WF := by
   cases h : e.dir
   · exact wf_defense_of_up h
-  · have h₁ : e.rotLeft.defense.WF
-    · apply wf_defense_of_down; simp [h]
-    
-    have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
-    · have H : Fact # e.rotLeft.hor; simp [h]
-      exact defense_rotRight_of_hor
-    simp at h₂
-    rw [h₂]
-    simpa
-  · have h₁ : e.rotLeft.defense.WF
-    · apply wf_defense_of_up; simp [h]
-    
-    have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
-    · have H : Fact # e.rotLeft.hor; simp [h]
-      exact defense_rotRight_of_hor
-    simp at h₂
-    rw [h₂]
-    simpa
+  · exact wf_defense_of_left h
+  · exact wf_defense_of_right h
   · exact wf_defense_of_down h
 
 @[simp] instance : e.defense.WF := wf_defense

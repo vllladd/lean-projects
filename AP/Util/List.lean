@@ -1016,3 +1016,9 @@ theorem find?_cons' {p : α → Bool} {x xs} :
   simp [find?_cons]; split
   · simp_all only [↓reduceIte]
   · simp_all only [Bool.false_eq_true, ↓reduceIte]
+
+theorem find?_eq_some_equiv_iff {e : α ≃ α} {p : α → Bool} {x} :
+xs.find? p = some (e x) ↔ (xs.map e.symm).find? (p ∘ e) = some x := by
+  simp [find?_eq_some_iff_append]; constructor
+  · rintro ⟨h₁, xs, ⟨ys, rfl⟩, h₂⟩; use e x; simp [h₁]; use xs; simpa
+  · rintro ⟨x, ⟨h₁, xs, ⟨h₂, rfl⟩, h₃⟩, rfl⟩; simp [h₁]; use xs; simpa
