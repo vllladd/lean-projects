@@ -39,12 +39,8 @@ def logb : IO Unit := do
 def state₀ : State :=
   initState 1 center
 
-def edge : Edge where
-  dir := .down
-  offset := 0
-
 def defense : Defense :=
-  edge.defense
+  Edge.edge₀.defense
 
 def mkDigit (d : ℕ) : Char :=
   let c := '0'.val + d.toUInt32
@@ -77,7 +73,7 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
     | true => do
       if !isFst then logb else pure ()
       IO.println s.toStr
-      IO.println # "\n" ++ if edge.cnd s then "Yes" else "No"
+      IO.println # "\n" ++ if Edge.cnd₀ s then "Yes" else "No"
       let p ← readAMove
       pure # p.map (s.aPos + ·)
     match p? with
@@ -108,4 +104,4 @@ theorem parseAMove_6 : parseAMove "6" = some Dir.right.point := by native_decide
 theorem parseAMove_2 : parseAMove "2" = some Dir.down.point := by native_decide
 theorem parseAMove_4 : parseAMove "4" = some Dir.left.point := by native_decide
 
-theorem cnd_state₀ : edge.cnd state₀ := by native_decide
+theorem cnd_state₀ : Edge.cnd₀ state₀ := by native_decide
