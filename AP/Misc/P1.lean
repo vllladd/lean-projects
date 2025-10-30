@@ -2,6 +2,18 @@ import AP.Util
 
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
+theorem Finset.one_le_prod_of_forall_one_le {ι : Type*} {s : Finset ι} {f : ι → ℝ}
+(h : ∀ i ∈ s, 1 ≤ f i) : 1 ≤ ∏ i ∈ s, f i := by
+  classical
+  induction s using Finset.induction
+  · simp
+  nm i s hi ih
+  rw [Finset.prod_insert hi]
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  nlinarith
+
 namespace Misc
 
 namespace P1
@@ -337,3 +349,135 @@ theorem main : ∫ x in 0..(1 + √2).log,
   simp_rw [pow_succ]
   simp [mul_assoc]
   ring_nf
+
+end P9 namespace P10 -----
+
+/-
+Let `a` be an infinite sequence of positive integers such that `a n ≤ 2025` for all positive
+integers `n`. Suppose the geometric mean of the first `n` terms of this sequence is an integer
+for all positive integers `n`. Prove that there exist positive integers `c` and `N` such that
+`a n = c` for all `n ≥ N`.
+-/
+
+-- #check 0 #exit
+
+open Finset
+
+theorem aux₁ {r : ℕ} {a : ℕ → ℕ}
+(h₁ : ∀ n, a n ≠ 0)
+(h₂ : ∀ n, a n ≤ r)
+(h₃ : ∀ n, ∃ (k : ℕ), (∏ i ∈ range n, a i : ℝ) ^ (n : ℝ)⁻¹ = k) :
+∃ c N, ∀ n, N ≤ n → a n = c := by
+  obtain ⟨c, hc⟩ := h₃ r
+  use c, r + 1
+  
+  suffices h : ∀ n, r < n → (∀ k, r < k → k < n → a k = c) → a n = c
+  · intro n hn
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
+    induction n using Nat.strong_induction_on
+    nm n ih
+    apply h
+    · omega
+    · intro k h₄ h₅
+      obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₄
+      apply ih
+      omega
+  
+  intro n hn H
+  
+  have hr : 1 ≤ r
+  · cases r
+    · simp at h₂
+      simp [h₂] at h₁
+    simp
+  
+  simp [←Nat.one_le_iff_ne_zero] at h₁
+  
+  have h₄ : 1 ≤ c
+  · suffices h : (1 : ℝ) ≤ c; exact_mod_cast h
+    rw [←hc]
+    rw [Real.le_rpow_inv_iff_of_pos] <;> try positivity
+    simp
+    apply one_le_prod_of_forall_one_le
+    simp
+    intro i hi
+    apply h₁
+  
+  have h₅ : c ≤ r
+  · suffices h : (c : ℝ) ≤ r; exact_mod_cast h
+    rw [←hc]
+    rw [Real.rpow_inv_le_iff_of_pos] <;> try positivity
+    convert_to _ ≤ ∏ i ∈ range r, (r : ℝ); simp
+    apply Finset.prod_le_prod
+    · simp
+    simp
+    intro i hi
+    apply h₂
+  
+  rw [Real.rpow_inv_eq] at hc <;> try positivity
+  sorry
+
+--   use a (i + k) instead of this
+--   have H₁ : ∀ k, r ≤ k → k < n → (∏ i ∈ range k, a i : ℝ) ^ (k : ℝ)⁻¹ = c
+--   · intro k hk₁ hk₂
+--     
+--     rw [le_iff_eq_or_lt] at hk₁
+--     rcases hk₁ with rfl | hk₁
+--     · rwa [Real.rpow_inv_eq] <;> positivity
+--     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hk₁; clear hk₁
+--     
+--     rw [prod_range_add, Real.mul_rpow] <;> try positivity
+--     simp
+--     rw [hc]
+--     
+--     cases k
+--     · simp
+--       rw [←Real.rpow_natCast, ←Real.rpow_mul, mul_inv_cancel₀, Real.rpow_one] <;> try positivity
+--     nm k
+--     nth_rw 2 [show k + 1 = 1 + k by rw [add_comm]]
+--     rw [prod_range_add]
+--     simp
+--     
+--     have h₆ : ∏ i ∈ range k, (a # r + (1 + i) : ℝ) = (c : ℝ) ^ k
+--     · trans ∏ i ∈ range k, c
+--       · apply prod_congr rfl
+--         simp
+--         intro m hm
+--         apply H
+--         · simp
+--         · linarith
+--       simp
+--     rw [h₆]; clear h₆
+--     
+--     simp_rw [←Real.rpow_natCast]
+--     rw [←Real.mul_rpow, Real.rpow_inv_eq, ←mul_assoc, mul_comm _ (a r : ℝ),
+--       mul_assoc, ←Real.rpow_add, ←eq_div_iff_mul_eq, ←Real.rpow_sub] <;> try positivity
+--     ring_nf
+--     simp
+-- 
+-- #check 0 #exit
+-- 
+--   apply le_antisymm <;> by_contra! h₆
+--   
+--   · replace h₆ : ∃ δ, 1 ≤ δ ∧ δ < r ∧ a n = c + δ
+--     · use a n - c
+--       obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt h₆
+--       simp [hk]
+--       ring_nf
+--       split_ands
+--       · omega
+--       · suffices h : 1 + k < r; omega
+--         apply lt_of_lt_of_le (b := c + k + 1)
+--         · linarith
+--         rw [←hk]
+--         apply h₂
+--       · omega
+--     obtain ⟨δ, h₆, h₇, h₈⟩ := h₆
+--     
+--     obtain ⟨c₁, hc₁⟩ := h₃ r
+--     
+--     specialize h₃ (r + 1)
+--     obtain ⟨c₁, h₃⟩ := h₃
+--     simp [Finset.prod_range_succ] at h₃
+--     rw [Real.rpow_inv_eq] at h₃ hc₁ <;> try positivity
+--     rw [hc₁] at h₃
