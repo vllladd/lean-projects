@@ -70,11 +70,10 @@ def cnd (c : Corner) (s : State) : Prop :=
 def f (c : Corner) (s : State) : Option PointZ :=
   c.edge₁.defense.f s <|> c.edge₂.defense.f s
 
-def defense (c : Corner) : Defense :=
-  { cnd := c.cnd
-  , ps := c.points
-  , f := c.f
-  }
+def defense (c : Corner) : Defense where
+  cnd := c.cnd
+  ps := c.points
+  f := c.f
 
 theorem cnd_defense_edge₁ {s} (h : c.cnd s) : c.edge₁.defense.cnd s :=
   le_of_le_min_left h.1

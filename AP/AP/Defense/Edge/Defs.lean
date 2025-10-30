@@ -78,8 +78,11 @@ def f (e : Edge) (s : State) : Option PointZ := do
   guard # p ∉ s.taken
   return p
 
-def defense (e : Edge) : Defense :=
-  { cnd := λ s => 6 ≤ e.dist s.aPos
-  , ps := e.points
-  , f := e.f
-  }
+def defense (e : Edge) : Defense where
+  cnd := λ s => 6 ≤ e.dist s.aPos
+  ps := e.points
+  f := e.f
+
+def edge₀ : Edge where
+  dir := .down
+  offset := 0

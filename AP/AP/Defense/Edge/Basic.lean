@@ -450,6 +450,7 @@ theorem dist_eq_zero_of_eq_some {s p} (h : e.defense.f s = some p) : e.dist p = 
 theorem not_mem_taken_of_eq_some {s p} (h : e.defense.f s = some p) : p ∉ s.taken := by
   obtain ⟨-, h₁, h₂, z, h₃, h₄⟩ := of_eq_some h; exact h₂
 
+@[simp]
 theorem validTr_defense : e.defense.ValidTr := by
   intro s hs p h
   replace h := of_eq_some h
@@ -471,3 +472,6 @@ theorem validTr_defense : e.defense.ValidTr := by
     simp_all only [abs_zero, Nat.ofNat_nonneg, add_zero]
     apply Aesop.BuiltinRules.not_intro
     intro a; simp_all only [lt_self_iff_false]
+
+@[simp] theorem dir_edge₀ : edge₀.dir = .down := rfl
+@[simp] theorem offset_edge₀ : edge₀.offset = 0 := rfl
