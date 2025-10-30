@@ -275,3 +275,5 @@ theorem forall_ne_iff_not' {α : Type*} {p : α → Prop} {x : α} : (∀ y, p y
 
 @[simp] instance : Fact True := ⟨trivial⟩
 @[simp] theorem not_fact_false : ¬Fact False := by rintro ⟨⟨⟩⟩
+
+theorem iff_iff_not {P Q : Prop} : (P ↔ Q) ↔ (¬P ↔ ¬Q) := by tauto

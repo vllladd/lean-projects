@@ -1,39 +1,8 @@
-import AP.AP.Defense.Edge.Basic
-
-theorem add_eq_iff_eq_sub {α : Type*} [AddGroup α] {a b c : α} : a + b = c ↔ a = c - b :=
-  eq_sub_iff_add_eq.symm
-
--- #check 0 #exit
-
-section Logic
-
-theorem iff_iff_not {P Q : Prop} : (P ↔ Q) ↔ (¬P ↔ ¬Q) := by tauto
-
--- #check 0 #exit
-
-end Logic
-
-namespace Point
-
-variable {α : Type*}
-
-theorem forall_iff {p : Point α → Prop} : (∀ pt, p pt) ↔ ∀ x y, p ⟨x, y⟩ :=
-  ⟨λ h x y => h ⟨x, y⟩, λ h ⟨x, y⟩ => h x y⟩
-
-theorem exi_iff {p : Point α → Prop} : (∃ pt, p pt) ↔ ∃ x y, p ⟨x, y⟩ := by
-  rw [iff_iff_not]; push_neg; exact forall_iff
-
--- #check 0 #exit
-
-end Point
+import AP.AP.Defense.Edge.Symmetry.Basic
 
 namespace AP.Edge
 
 variable {e e₁ e₂ : Edge}
-
-protected def translate (e : Edge) (offset : PointZ) : Edge where
-  dir := e.dir
-  offset := e.offset + if e.hor then offset.y else offset.x
 
 protected def rotRight (e : Edge) : Edge where
   dir := e.dir.rotRight
@@ -42,10 +11,6 @@ protected def rotRight (e : Edge) : Edge where
 protected def rotLeft (e : Edge) : Edge where
   dir := e.dir.rotLeft
   offset := if e.hor then e.offset else -e.offset
-
-protected def flipV (e : Edge) : Edge where
-  dir := if e.hor then e.dir⁻¹ else e.dir
-  offset := if e.hor then -e.offset else e.offset
 
 @[simp]
 theorem points_translate {offset} :

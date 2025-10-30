@@ -554,6 +554,8 @@ theorem forall_le_iff_le_yx_iff₄ {a b : α} :
 
 end le
 
+section
+
 variable [ha₁ : LinearOrder α] [ha₂ : Ring α]
 
 @[simp]
@@ -570,3 +572,11 @@ instance [ha₃ : AddLeftMono α] : AddLeftMono # Point α := by
 
 instance [ha₃ : AddRightMono α] : AddRightMono # Point α := by
   constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp [Function.swap]
+
+end
+
+theorem forall_iff {p : Point α → Prop} : (∀ pt, p pt) ↔ ∀ x y, p ⟨x, y⟩ :=
+  ⟨λ h x y => h ⟨x, y⟩, λ h ⟨x, y⟩ => h x y⟩
+
+theorem exi_iff {p : Point α → Prop} : (∃ pt, p pt) ↔ ∃ x y, p ⟨x, y⟩ := by
+  rw [iff_iff_not]; push_neg; exact forall_iff

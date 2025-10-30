@@ -14,3 +14,6 @@ theorem Set.linearIndep_empty : linearIndep (∅ : Set α) := by
 theorem Set.linearIndep_singleton {x} : linearIndep ({x} : Set α) := by
   simp [linearIndep]; intro xs hx h; cases xs; simp at hx
   nm y xs; specialize h y.1 y.2; simp at h
+
+theorem add_eq_iff_eq_sub {α : Type*} [AddGroup α] {a b c : α} : a + b = c ↔ a = c - b :=
+  eq_sub_iff_add_eq.symm
