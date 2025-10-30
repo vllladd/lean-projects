@@ -144,6 +144,9 @@ theorem add_def [Add α] {a b : Point α} : a + b = ⟨a.1 + b.1, a.2 + b.2⟩ :
 @[simp] theorem mk_add_mk [Add α] {x₁ y₁ x₂ y₂ : α} :
 (⟨x₁, y₁⟩ : Point α) + ⟨x₂, y₂⟩ = ⟨x₁ + x₂, y₁ + y₂⟩ := rfl
 
+@[simp] theorem x_add [ha : Add α] {p₁ p₂ : Point α} : (p₁ + p₂).x = p₁.x + p₂.x := rfl
+@[simp] theorem y_add [ha : Add α] {p₁ p₂ : Point α} : (p₁ + p₂).y = p₁.y + p₂.y := rfl
+
 def sub [Sub α] (a b : Point α) : Point α :=
   ⟨a.x - b.x, a.y - b.y⟩
 
@@ -153,6 +156,9 @@ theorem sub_def [Sub α] {a b : Point α} : a - b = ⟨a.1 - b.1, a.2 - b.2⟩ :
 
 @[simp] theorem mk_sub_mk [Sub α] {x₁ y₁ x₂ y₂ : α} :
 (⟨x₁, y₁⟩ : Point α) - ⟨x₂, y₂⟩ = ⟨x₁ - x₂, y₁ - y₂⟩ := rfl
+
+@[simp] theorem x_sub [ha : Sub α] {p₁ p₂ : Point α} : (p₁ - p₂).x = p₁.x - p₂.x := rfl
+@[simp] theorem y_sub [ha : Sub α] {p₁ p₂ : Point α} : (p₁ - p₂).y = p₁.y - p₂.y := rfl
 
 def mul [Mul α] (a b : Point α) : Point α :=
   ⟨a.x * b.x, a.y * b.y⟩
@@ -164,6 +170,9 @@ theorem mul_def [Mul α] {a b : Point α} : a * b = ⟨a.1 * b.1, a.2 * b.2⟩ :
 @[simp] theorem mk_mul_mk [Mul α] {x₁ y₁ x₂ y₂ : α} :
 (⟨x₁, y₁⟩ : Point α) * ⟨x₂, y₂⟩ = ⟨x₁ * x₂, y₁ * y₂⟩ := rfl
 
+@[simp] theorem x_mul [ha : Mul α] {p₁ p₂ : Point α} : (p₁ * p₂).x = p₁.x * p₂.x := rfl
+@[simp] theorem y_mul [ha : Mul α] {p₁ p₂ : Point α} : (p₁ * p₂).y = p₁.y * p₂.y := rfl
+
 def div [Div α] (a b : Point α) : Point α :=
   ⟨a.x / b.x, a.y / b.y⟩
 
@@ -173,6 +182,9 @@ theorem div_def [Div α] {a b : Point α} : a / b = ⟨a.1 / b.1, a.2 / b.2⟩ :
 
 @[simp] theorem mk_div_mk [Div α] {x₁ y₁ x₂ y₂ : α} :
 (⟨x₁, y₁⟩ : Point α) / ⟨x₂, y₂⟩ = ⟨x₁ / x₂, y₁ / y₂⟩ := rfl
+
+@[simp] theorem x_div [ha : Div α] {p₁ p₂ : Point α} : (p₁ / p₂).x = p₁.x / p₂.x := rfl
+@[simp] theorem y_div [ha : Div α] {p₁ p₂ : Point α} : (p₁ / p₂).y = p₁.y / p₂.y := rfl
 
 instance [ha : Zero α] : Zero (Point α) where
   zero := ⟨0, 0⟩

@@ -4,13 +4,30 @@ namespace AP.Edge
 
 variable {e e₁ e₂ : Edge}
 
+protected def translate (e : Edge) (offset : PointZ) : Edge where
+  dir := e.dir
+  offset := e.offset + if e.hor then offset.y else offset.x
+
 protected def rotRight (e : Edge) : Edge where
   dir := e.dir.rotRight
   offset := if e.hor then -e.offset else e.offset
 
+protected def rotLeft (e : Edge) : Edge where
+  dir := e.dir.rotLeft
+  offset := if e.hor then e.offset else -e.offset
+
 protected def flipV (e : Edge) : Edge where
   dir := if e.hor then e.dir⁻¹ else e.dir
   offset := if e.hor then -e.offset else e.offset
+
+@[simp]
+theorem points_translate {offset} :
+(e.translate offset).points = (translate offset).ft '' e.points := by
+  ext p
+  simp [translate, Edge.translate, points, memPoints, Dir.vert]
+  by_contra h
+  cases hd : e.dir
+  all_goals revert h; simp [hd]
 
 @[simp]
 theorem points_rotRight : e.rotRight.points = rotRight.ft '' e.points := by
@@ -24,6 +41,24 @@ theorem points_rotRight : e.rotRight.points = rotRight.ft '' e.points := by
     constructor
     · intro h
       use ⟨p.y, -p.x⟩
+      simp
+      linarith
+    · rintro ⟨⟨x₁, y₁⟩, h₁, h₂, h₃⟩
+      linarith
+
+@[simp]
+theorem points_rotLeft : e.rotLeft.points = rotLeft.ft '' e.points := by
+  ext p
+  unfold rotLeft rotRight
+  simp [Edge.rotLeft, points, memPoints, Dir.vert]
+  by_contra h
+  cases hd : e.dir
+  all_goals
+    revert h
+    simp [hd, Point.ext_iff]
+    constructor
+    · intro h
+      use ⟨-p.y, p.x⟩
       simp
       linarith
     · rintro ⟨⟨x₁, y₁⟩, h₁, h₂, h₃⟩
@@ -212,6 +247,7 @@ e.rotRight.defense = e.defense.sym rotRight := by
   exact rotRight_defense_of_hor_fCase2
 
 @[simp] theorem dir_eq_of_up [H : Fact # e.dir = .up] : e.dir = .up := H.1
+@[simp] theorem dir_eq_of_down [H : Fact # e.dir = .down] : e.dir = .down := H.1
 @[simp] theorem hor_of_up [H : Fact # e.dir = .up] : e.hor := by simp
 @[simp] theorem not_vert_of_up [H : Fact # e.dir = .up] : ¬e.vert := by simp
 
@@ -266,6 +302,67 @@ e.getBorderPoint (rot180.ft p) d = flipH.ft (e.getBorderPoint p (-d)) := by
 @[simp]
 theorem flipV_flipV : e.flipV.flipV = e := by
   cases h : e.dir <;> ext <;> simp [h]
+
+@[simp]
+theorem rotRight_rotLeft : e.rotLeft.rotRight = e := by
+  cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
+
+@[simp]
+theorem rotLeft_rotRight : e.rotRight.rotLeft = e := by
+  cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
+
+@[simp] theorem dir_rotLeft : e.rotLeft.dir = e.dir.rotLeft := rfl
+@[simp] theorem dir_translate {offset} : (e.translate offset).dir = e.dir := rfl
+
+@[simp]
+theorem offset_translate {offset} :
+(e.translate offset).offset = e.offset + if e.hor then offset.y else offset.x := rfl
+
+@[simp]
+theorem dist_translate {offset p} :
+(e.translate offset).dist p = e.dist (translate offset |>.ft' p) := by
+  simp [translate, Edge.translate, dist]
+  by_contra h; cases hd : e.dir <;> revert h <;> simp [hd] <;> ring_nf
+
+@[simp] theorem hor_of_down [H : Fact # e.dir = .down] : e.hor := by simp
+
+-- @[simp]
+-- theorem getBorderPoint_translate_of_down {offset p d} [H : Fact # e.dir = .down] :
+-- (e.translate offset).getBorderPoint p d = e.getBorderPoint p d + ⟨0, offset.y⟩ := by
+--   simp [getBorderPoint]
+-- 
+-- @[simp]
+-- theorem getBorderPoint₀_translate_of_down {offset p} [H : Fact # e.dir = .down] :
+-- (e.translate offset).getBorderPoint₀ p = e.getBorderPoint₀ p + ⟨0, offset.y⟩ := by
+--   simp [getBorderPoint₀]
+-- 
+-- @[simp]
+-- theorem getBorderPoints_translate_of_down {offset p d} [H : Fact # e.dir = .down] :
+-- (e.translate offset).getBorderPoints p d = (e.getBorderPoints p d).map (· + ⟨0, offset.y⟩) := by
+--   simp [getBorderPoints]
+
+-- #check 0 #exit
+
+theorem defense_translate_of_down {offset : PointZ} [H : Fact # e.dir = .down] :
+(e.translate offset).defense = e.defense.sym (translate offset) := by
+  simp [defense, Defense.sym, dist]; ring_nf; simp
+  ext s p :2
+  simp [ft_eq_iff, f, f']
+  intro h₁ h₂
+  split
+  
+  all_goals
+    nm x h₃; clear x
+    nth_rw 2 [Equiv.option_eq_iff_map (e := (translate offset).ft)]
+    simp only [Option.map_some, Option.some_inj, System.Symmetry.ft_ft']
+  
+  · simp [getBorderPoint₀, getBorderPoint, Point.ext_iff]
+  ·
+    sorry
+  · sorry
+  · sorry
+  · sorry
+  · simp
 
 -- #check 0 #exit
 

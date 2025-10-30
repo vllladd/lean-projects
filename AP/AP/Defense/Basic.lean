@@ -65,8 +65,6 @@ theorem sym_sym {sym₁ sym₂ : sys.Symmetry} : (dse.sym sym₁).sym sym₂ = d
 @[simp]
 theorem ps_sym {sym : sys.Symmetry} : (dse.sym sym).ps = sym.ft '' dse.ps := rfl
 
--- #check 0 #exit
-
 theorem wf_sym_of_basicSym {sym} [H₁ : dse.WF] [H₂ : BasicSym sym] : dse.sym sym |>.WF := by
   have H₁' := H₁
   have wf := H₂.toWF
@@ -127,9 +125,6 @@ theorem wf_sym_of_basicSym {sym} [H₁ : dse.WF] [H₂ : BasicSym sym] : dse.sym
       have Hb₂ := sys.wf_of_simulate_eq hb₂
       dsimp at Hb₁ Hb₂
       
-      -- have ht : (sym.fs b₁).aTurn = b₁.aTurn
-      -- · subst hsym; simp
-      
       replace Hb₁ := b₁.aState_or_dState
       rcases Hb₁ with Hb₁ | Hb₁
       
@@ -169,8 +164,22 @@ theorem wf_sym_of_basicSym {sym} [H₁ : dse.WF] [H₂ : BasicSym sym] : dse.sym
         simp_rw [←Option.getD_map] at hc₂
         simp at hc₂
         
-        sorry
+        have H₁ : sys.validTr b₁ # sym.ft' # d.f # sym.fs b₁
+        · rw [sym.validTr_iff]; simp
+        
+        simp [←hd', H₁, hc₂] at hc₁
+        rw [hc₁]
     
     obtain ⟨s', rfl, h⟩ := h
     rw [h]; clear h
     subst hsym; simpa
+
+instance {sym} [H₁ : dse.WF] [H₂ : BasicSym sym] : dse.sym sym |>.WF :=
+  wf_sym_of_basicSym
+
+@[simp]
+theorem wf_sym_iff_of_basicSym {sym} [H₂ : BasicSym sym] : (dse.sym sym).WF ↔ dse.WF := by
+  symm; constructor <;> intro h; infer_instance
+  convert_to dse.sym sym |>.sym sym⁻¹ |>.WF
+  · simp
+  · infer_instance
