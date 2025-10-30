@@ -61,3 +61,37 @@ e.getBorderPoint (rot180.ft p) d = flipH.ft (e.getBorderPoint p (-d)) := by
 @[simp]
 theorem flipV_flipV : e.flipV.flipV = e := by
   cases h : e.dir <;> ext <;> simp [h]
+
+@[simp]
+theorem rot180_points_eq_flipV_points_of_hor [H : Fact e.hor] :
+rot180.ft '' e.points = flipV.ft '' e.points := by
+  rcases e.dir_eq_or_eq_of_hor with h | h <;> ext p <;> simp [h, points, memPoints]
+
+@[simp]
+theorem dist_flipV_ft_eq_of_hor [H : Fact e.hor] {p} :
+e.dist (flipV.ft p) = e.dist (-p) := by
+  rcases e.dir_eq_or_eq_of_hor with h | h <;> simp [h, dist]
+
+@[simp]
+theorem dist_rot180_ft_eq_dist_flipV_ft_of_hor [H : Fact e.hor] {p} :
+e.dist (rot180.ft p) = e.dist (-p) := by
+  rcases e.dir_eq_or_eq_of_hor with h | h <;> simp [h, dist]
+
+-- #check 0 #exit
+
+theorem defense_flipV_of_up [H : Fact # e.dir = .up] :
+e.flipV.defense = e.defense.sym rot180 := by
+  simp [defense, Defense.sym, dist, neg_sub_comm]
+  ext s p :2
+  simp [ft_eq_iff, f, f']
+  intro h₁ h₂
+  split
+  all_goals
+    nm x h₃; clear x
+    conv_rhs => rw [Equiv.option_eq_iff_map (e := rot180.ft)]
+  · simp
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · simp

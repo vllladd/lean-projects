@@ -78,7 +78,17 @@ e.rotRight.offset = -e.offset := by simp [Edge.rotRight]
 @[simp] theorem offset_rotRight_eq_of_vert [H : Fact e.vert] :
 e.rotRight.offset = e.offset := by simp [Edge.rotRight]
 
-theorem rotRight_defense_of_hor_fCase2 {e : Edge} {s : State} {p : PointZ}
+@[simp]
+theorem rotRight_rotLeft : e.rotLeft.rotRight = e := by
+  cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
+
+@[simp]
+theorem rotLeft_rotRight : e.rotRight.rotLeft = e := by
+  cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
+
+@[simp] theorem dir_rotLeft : e.rotLeft.dir = e.dir.rotLeft := rfl
+
+theorem defense_rotRight_of_hor_fCase2 {e : Edge} {s : State} {p : PointZ}
 [H : Fact e.hor] : fCase2 s (rotRight.ft (e.getBorderPoint₀
 (rotRight.ft' s.aPos))) (e.rotRight.getBorderPoints s.aPos) = some p ↔ fCase2 (rotRight.fs' s)
 (e.getBorderPoint₀ (rotRight.ft' s.aPos)) (e.getBorderPoints (rotRight.ft' s.aPos)) =
@@ -191,295 +201,22 @@ some (rotRight.ft' p) := by
   (f ps₁ ps₂).elim (f ps₂ ps₁) some)
   · simp [Option.bind_map]
   
-  simp
+  simp only [rotRight_dist_rotRight, ne_eq, Bool.decide_and, decide_not, Option.bind_eq_bind]
 
 @[simp]
 theorem defense_rotRight_of_hor [H : Fact e.hor] :
 e.rotRight.defense = e.defense.sym rotRight := by
-  simp [defense, Defense.sym]
+  simp only [defense, dist_rotRight, points_rotRight, Defense.sym, aPos_sym_of_basicSym',
+    Defense.mk.injEq, true_and]
   ext s p :2
-  simp [ft_eq_iff, f, f']
+  simp only [f, f', dist_rotRight, getBorderPoint₀_rotRight, decide_not,
+    getBorderPoints_rotRight_of_hor, List.find?_append, List.find?_map, Function.comp_def',
+    List.find?_singleton, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, ite_not,
+    ne_eq, Option.pure_def, Option.bind_eq_bind, Option.bind_eq_some_iff', Option.guard_eq_some',
+    Option.some.injEq, exists_const, ↓existsAndEq, and_true, aPos_sym_of_basicSym',
+    taken_sym_of_basicSym', Set'.mem_map, not_exists, not_and, decide_eq_true_eq, Option.map_bind,
+    Function.comp_apply, Option.map_some, ft_eq_iff, EmbeddingLike.apply_eq_iff_eq,
+    forall_ne_iff_not, and_congr_left_iff, and_imp]
   intro h₁ h₂
   split <;> try simp [ft'_eq_iff, ft_eq_iff]
-  exact rotRight_defense_of_hor_fCase2
-
-@[simp] theorem dir_eq_or_eq_of_hor [H : Fact e.hor] : e.dir = .up ∨ e.dir = .down := by
-  cases hd : e.dir <;> simp [hd] at H ⊢
-
-@[simp]
-theorem rot180_points_eq_flipV_points_of_hor [H : Fact e.hor] :
-rot180.ft '' e.points = flipV.ft '' e.points := by
-  rcases e.dir_eq_or_eq_of_hor with h | h <;> ext p <;> simp [h, points, memPoints]
-
-@[simp]
-theorem dist_flipV_ft_eq_of_hor [H : Fact e.hor] {p} :
-e.dist (flipV.ft p) = e.dist (-p) := by
-  rcases e.dir_eq_or_eq_of_hor with h | h <;> simp [h, dist]
-
-@[simp]
-theorem dist_rot180_ft_eq_dist_flipV_ft_of_hor [H : Fact e.hor] {p} :
-e.dist (rot180.ft p) = e.dist (-p) := by
-  rcases e.dir_eq_or_eq_of_hor with h | h <;> simp [h, dist]
-
-@[simp]
-theorem rotRight_rotLeft : e.rotLeft.rotRight = e := by
-  cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
-
-@[simp]
-theorem rotLeft_rotRight : e.rotRight.rotLeft = e := by
-  cases h : e.dir <;> simp [Edge.rotRight, Edge.rotLeft, Edge.ext_iff, h]
-
-@[simp] theorem dir_rotLeft : e.rotLeft.dir = e.dir.rotLeft := rfl
-
-@[simp] theorem hor_of_down [H : Fact # e.dir = .down] : e.hor := by simp
-
--- set_option maxHeartbeats 10000000
-
-theorem defense_translate_of_down_fCase2 {dy s p} [H : Fact # e.dir = .down] :
-fCase2 s (e.getBorderPoint₀ s.aPos + ⟨0, dy⟩) ((e.translate ⟨0, dy⟩).getBorderPoints s.aPos) =
-some p ↔ fCase2 ((translate ⟨0, dy⟩).fs' s) (e.getBorderPoint₀ ((translate ⟨0, dy⟩).ft' s.aPos))
-(e.getBorderPoints ((translate ⟨0, dy⟩).ft' s.aPos)) = some ((translate ⟨0, dy⟩).ft' p) := by
-  unfold fCase2
-  sorry
-
--- #check 0 #exit
-
-theorem defense_translate_of_down {dy} [H : Fact # e.dir = .down] :
-(e.translate ⟨0, dy⟩).defense = e.defense.sym (translate ⟨0, dy⟩) := by
-  simp [defense, Defense.sym, dist]; ring_nf; simp
-  ext s p :2
-  simp [ft_eq_iff, f, f']
-  intro h₁ h₂
-  split
-  
-  all_goals
-    nm x h₃; clear x
-    conv_rhs => rw [Equiv.option_eq_iff_map (e := translate ⟨0, dy⟩ |>.ft)]
-    simp [translate, getBorderPoint₀, getBorderPoint, getBorderPoints, Point.ext_iff]
-    try simp [Point.forall_iff, Point.exi_iff, sub_eq_iff_eq_add, add_eq_iff_eq_sub]
-  
-  ·
-    simp_all only [dir_eq_of_down, instFactTrue_aP, Int.reduceNeg]
-    apply Iff.intro
-    · intro a
-      cases a with
-      | inl
-        h =>
-        simp_all only [sub_add_cancel, and_self, and_true, Int.reduceNeg, left_eq_add,
-          one_ne_zero, and_false, false_or, false_and, or_false]
-        intro x y a a_1
-        subst a_1
-        obtain ⟨left, right⟩ := h
-        obtain ⟨left_1, right⟩ := right
-        simp_all only [sub_add_cancel, not_false_eq_true]
-        apply Aesop.BuiltinRules.not_intro
-        intro a_1
-        subst a_1
-        simp_all only [not_true_eq_false]
-      | inr h_1 =>
-        simp_all only [Int.reduceNeg, true_and]
-        obtain ⟨left, right⟩ := h_1
-        cases right with
-        | inl
-          h =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, add_eq_left, one_ne_zero, and_true,
-            and_false, add_neg_cancel_right, and_self, false_and, or_false, false_or]
-          intro x y a a_1
-          subst a_1
-          obtain ⟨left_1, right⟩ := h
-          obtain ⟨left_2, right⟩ := right
-          simp_all only [Int.reduceNeg, add_neg_cancel_right, sub_add_cancel, not_false_eq_true]
-          apply Aesop.BuiltinRules.not_intro
-          intro a_1
-          subst a_1
-          simp_all only [not_true_eq_false]
-        | inr
-          h_1 =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, sub_eq_self, one_ne_zero, and_true,
-            and_false, and_self, false_or]
-          obtain ⟨left_1, right⟩ := h_1
-          obtain ⟨left_2, right⟩ := right
-          obtain ⟨left_3, right⟩ := right
-          simp_all only [Int.reduceNeg, sub_add_cancel, not_false_eq_true, true_and]
-          apply Or.inr
-          intro x y a a_1
-          subst a_1
-          apply Aesop.BuiltinRules.not_intro
-          intro a_1
-          subst a_1
-          simp_all only [not_true_eq_false]
-    · intro a
-      cases a with
-      | inl h =>
-        simp_all only [sub_add_cancel, not_false_eq_true, and_self, Int.reduceNeg, left_eq_add,
-          one_ne_zero, and_true, and_false, false_or, false_and, or_false]
-      | inr h_1 =>
-        simp_all only [Int.reduceNeg, not_true_eq_false, false_and, true_and, false_or]
-        obtain ⟨left, right⟩ := h_1
-        cases right with
-        | inl h =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, add_neg_cancel_right, not_false_eq_true,
-            and_self, and_true, false_and, or_false]
-        | inr h_1 =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, and_true, not_false_eq_true, and_self]
-          obtain ⟨left_1, right⟩ := h_1
-          obtain ⟨left_2, right⟩ := right
-          obtain ⟨left_3, right⟩ := right
-          simp_all only [Int.reduceNeg, sub_add_cancel, not_true_eq_false, false_and, or_true]
-  
-  · simp_all only [dir_eq_of_down, instFactTrue_aP, Int.reduceNeg]
-    apply Iff.intro
-    · intro a
-      cases a with
-      | inl h =>
-        cases h with
-        | inl
-          h_1 =>
-          simp_all only [Int.reduceNeg, add_neg_cancel_right, sub_add_cancel, and_self, and_true,
-            false_and, or_false, add_eq_left, one_ne_zero, and_false]
-          intro x y a a_1
-          subst a_1
-          obtain ⟨left, right⟩ := h_1
-          obtain ⟨left_1, right⟩ := right
-          simp_all only [Int.reduceNeg, add_neg_cancel_right, sub_add_cancel, not_false_eq_true]
-          apply Aesop.BuiltinRules.not_intro
-          intro a_1
-          subst a_1
-          simp_all only [not_true_eq_false]
-        | inr
-          h_2 =>
-          simp_all only [Int.reduceNeg, sub_add_cancel, and_true, and_self, sub_eq_self,
-            one_ne_zero, and_false, or_false]
-          obtain ⟨left, right⟩ := h_2
-          obtain ⟨left_1, right⟩ := right
-          obtain ⟨left_2, right⟩ := right
-          simp_all only [Int.reduceNeg, sub_add_cancel, not_false_eq_true, true_and]
-          apply Or.inr
-          intro x y a a_1
-          subst a_1
-          apply Aesop.BuiltinRules.not_intro
-          intro a_1
-          subst a_1
-          simp_all only [not_true_eq_false]
-      | inr
-        h_1 =>
-        simp_all only [Int.reduceNeg, sub_add_cancel, left_eq_add, one_ne_zero, and_true,
-          and_false, false_or, implies_true, and_self, true_and]
-        obtain ⟨left, right⟩ := h_1
-        obtain ⟨left_1, right⟩ := right
-        obtain ⟨left_2, right⟩ := right
-        simp_all only [Int.reduceNeg, sub_add_cancel, not_false_eq_true]
-        apply Or.inr
-        intro x y a a_1
-        subst a_1
-        apply Aesop.BuiltinRules.not_intro
-        intro a_1
-        subst a_1
-        simp_all only [not_true_eq_false]
-    · intro a
-      cases a with
-      | inl h =>
-        cases h with
-        | inl h_1 =>
-          simp_all only [Int.reduceNeg, add_neg_cancel_right, sub_add_cancel, not_false_eq_true,
-            and_self, and_true, false_and, or_false, add_eq_left, one_ne_zero, and_false]
-        | inr
-          h_2 =>
-          simp_all only [Int.reduceNeg, sub_add_cancel, and_true, not_false_eq_true, and_self,
-            sub_eq_self, one_ne_zero, and_false, or_false]
-          obtain ⟨left, right⟩ := h_2
-          obtain ⟨left_1, right⟩ := right
-          obtain ⟨left_2, right⟩ := right
-          simp_all only [Int.reduceNeg, sub_add_cancel, not_true_eq_false, false_and, or_true]
-      | inr h_1 =>
-        simp_all only [Int.reduceNeg, sub_add_cancel, left_eq_add, one_ne_zero, and_true,
-          and_false, false_or, implies_true, not_false_eq_true, and_self, or_true]
-  
-  · sorry
-  
-  · simp_all only [dir_eq_of_down, instFactTrue_aP, Int.reduceNeg]
-    apply Iff.intro
-    · intro a
-      cases a with
-      | inl
-        h =>
-        simp_all only [sub_add_cancel, and_self, and_true, Int.reduceNeg, left_eq_add, one_ne_zero,
-          and_false, false_or, false_and, or_false]
-        intro x y a a_1
-        subst a_1
-        obtain ⟨left, right⟩ := h
-        obtain ⟨left_1, right⟩ := right
-        simp_all only [sub_add_cancel, not_false_eq_true]
-        apply Aesop.BuiltinRules.not_intro
-        intro a_1
-        subst a_1
-        simp_all only [not_true_eq_false]
-      | inr h_1 =>
-        simp_all only [Int.reduceNeg, true_and]
-        obtain ⟨left, right⟩ := h_1
-        cases right with
-        | inl
-          h =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, add_eq_left, one_ne_zero, and_true,
-            and_false, add_neg_cancel_right, and_self, false_and, or_false, false_or]
-          intro x y a a_1
-          subst a_1
-          obtain ⟨left_1, right⟩ := h
-          obtain ⟨left_2, right⟩ := right
-          simp_all only [Int.reduceNeg, add_neg_cancel_right, sub_add_cancel, not_false_eq_true]
-          apply Aesop.BuiltinRules.not_intro
-          intro a_1
-          subst a_1
-          simp_all only [not_true_eq_false]
-        | inr
-          h_1 =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, sub_eq_self, one_ne_zero, and_true,
-            and_false, and_self, false_or]
-          obtain ⟨left_1, right⟩ := h_1
-          obtain ⟨left_2, right⟩ := right
-          obtain ⟨left_3, right⟩ := right
-          simp_all only [Int.reduceNeg, sub_add_cancel, not_false_eq_true, true_and]
-          apply Or.inr
-          intro x y a a_1
-          subst a_1
-          apply Aesop.BuiltinRules.not_intro
-          intro a_1
-          subst a_1
-          simp_all only [not_true_eq_false]
-    · intro a
-      cases a with
-      | inl h =>
-        simp_all only [sub_add_cancel, not_false_eq_true, and_self, Int.reduceNeg, left_eq_add,
-          one_ne_zero, and_true, and_false, false_or, false_and, or_false]
-      | inr h_1 =>
-        simp_all only [Int.reduceNeg, not_true_eq_false, false_and, true_and, false_or]
-        obtain ⟨left, right⟩ := h_1
-        cases right with
-        | inl h =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, add_neg_cancel_right, not_false_eq_true,
-            and_self, and_true, false_and, or_false]
-        | inr h_1 =>
-          simp_all only [sub_add_cancel, Int.reduceNeg, and_true, not_false_eq_true, and_self]
-          obtain ⟨left_1, right⟩ := h_1
-          obtain ⟨left_2, right⟩ := right
-          obtain ⟨left_3, right⟩ := right
-          simp_all only [Int.reduceNeg, sub_add_cancel, not_true_eq_false, false_and, or_true]
-
--- #check 0 #exit
-
-theorem defense_flipV_of_up [H : Fact # e.dir = .up] :
-e.flipV.defense = e.defense.sym rot180 := by
-  simp [defense, Defense.sym, dist, neg_sub_comm]
-  ext s p :2
-  simp [ft_eq_iff, f, f']
-  intro h₁ h₂
-  split
-  all_goals
-    nm x h₃; clear x
-    conv_rhs => rw [Equiv.option_eq_iff_map (e := rot180.ft)]
-  · simp
-  · sorry
-  · sorry
-  · sorry
-  · sorry
-  · simp
+  exact defense_rotRight_of_hor_fCase2
