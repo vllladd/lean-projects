@@ -588,5 +588,3 @@ theorem main {r : ℕ} {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n
 example {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ 2025)
 (h₃ : ∀ n, ∃ (k : ℕ), (∏ i ∈ range n, a i : ℝ) ^ (n : ℝ)⁻¹ = k) :
 ∃ c N, ∀ n, N ≤ n → a n = c := main h₁ h₂ h₃
-
-#check left_lt_max_add_one
