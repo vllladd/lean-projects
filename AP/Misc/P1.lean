@@ -511,7 +511,7 @@ theorem aux₂ {r N n c : ℕ} {w : ℝ} {a : ℕ → ℕ}
   replace H₃ : c - 1 < c₁; exact_mod_cast H₃
   omega
 
-theorem main {r : ℕ} {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ r)
+theorem aux₃ {r : ℕ} {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ r)
 (h₃ : ∀ n, ∃ (k : ℕ), (∏ i ∈ range n, a i : ℝ) ^ (n : ℝ)⁻¹ = k) :
 ∃ c N, ∀ n, N ≤ n → a n = c := by
   generalize hw : max (r : ℝ) (Real.logb (1 + 1 / r) r) + 1 = w
@@ -585,6 +585,116 @@ theorem main {r : ℕ} {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n
   · apply aux₁ <;> assumption
   · apply aux₂ <;> assumption
 
-example {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ 2025)
+theorem main {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ 2025)
 (h₃ : ∀ n, ∃ (k : ℕ), (∏ i ∈ range n, a i : ℝ) ^ (n : ℝ)⁻¹ = k) :
-∃ c N, ∀ n, N ≤ n → a n = c := main h₁ h₂ h₃
+∃ c N, ∀ n, N ≤ n → a n = c :=
+  aux₃ h₁ h₂ h₃
+
+theorem cntrex₁ : ¬∀ {a : ℕ → ℕ}
+(_h₁ : ∀ n : ℕ, a n ≤ 2025)
+(_h₂ : ∀ n : ℕ, n ≠ 0 → ∃ k : ℤ, k^n = ∏ i : Fin n, a i),
+∃ c N : ℕ, c ≠ 0 ∧ N ≠ 0 ∧ ∀ n : ℕ, n ≥ N → a n = c := by
+  push_neg
+  use λ n => if n = 0 then 0 else if Odd n then 1 else 2
+  split_ands
+  · simp
+    intro n
+    split_ifs <;> norm_num
+  · intro n hn
+    use 0
+    simp
+    cases n
+    · simp at hn
+    rename_i n
+    simp
+    symm
+    apply prod_eq_zero (i := 0)
+    · simp
+    · simp
+  · simp
+    intro c N hc hn
+    by_cases h₁ : c = 1
+    · use N * 2, by linarith
+      simp [hn]
+      aesop
+    · use N * 2 + 1, by linarith
+      simp
+      rwa [eq_comm]
+
+theorem main_alt_pnat {a : PNat → PNat}
+(h₁ : ∀ n : PNat, (a n).val ≤ 2025)
+(h₂ : ∀ n : PNat, ∃ (k : ℤ), k ^ n.val = ∏ i : Fin n, a ⟨i + 1, by simp⟩) :
+∃ c N : PNat, ∀ n : PNat, n.val ≥ N.val → a n = c := by
+  let a' (n : ℕ) : ℕ := a ⟨n + 1, by simp⟩ |>.1
+  have h₃ := @main a'
+  specialize h₃ _ _ _
+  · intro n
+    simp [a']
+    generalize_proofs h₄
+    cases h₅ : a ⟨n + 1, h₄⟩
+    simp; linarith
+  · intro n
+    apply h₁
+  · intro n
+    cases n
+    · use 1; simp
+    nm n
+    specialize h₂ ⟨n + 1, by simp⟩
+    choose k hk using h₂
+    symm at hk
+    simp at hk ⊢
+    use |k|.toNat
+    rw [Real.rpow_inv_eq] <;> try positivity
+    have h : k ^ (n + 1) = |k| ^ (n + 1)
+    · by_cases h₄ : 0 ≤ k
+      · rw [abs_of_nonneg h₄]
+      push_neg at h₄
+      rw [abs_of_neg h₄]
+      have h₅ : 0 < k ^ (n + 1)
+      · rw [←hk]
+        positivity
+      symm
+      rcases Nat.even_or_odd (n + 1) with h₆ | h₆
+      · apply h₆.neg_pow
+      · exfalso
+        have h₇ := h₆.neg_pow (-k)
+        simp at h₇
+        rw [h₇] at h₅
+        contrapose! h₅; clear h₅
+        simp
+        apply Int.pow_nonneg
+        linarith
+    rw [h] at hk; clear h
+    rw [show |k| = |k|.toNat by simp] at hk
+    generalize |k|.toNat = k at hk ⊢; nm x; clear x
+    rw [prod_fin_eq_prod_range] at hk
+    simp at hk
+    replace hk : (_ : ℝ) = _ := congrArg Int.cast hk
+    push_cast at hk
+    convert_to _ = (k : ℝ) ^ ((n + 1 : ℕ) : ℝ); simp
+    rw [Real.rpow_natCast]
+    rw [←hk]; clear hk
+    apply prod_congr; rfl
+    simp
+    intro i h₄
+    simp [h₄]
+    rfl
+  choose c N h₃ using h₃
+  have hc : c ≠ 0
+  · rintro rfl
+    specialize h₃ N (by rfl)
+    simp [a'] at h₃
+    generalize_proofs h₄ at h₃
+    cases h₅ : a ⟨N + 1, h₄⟩
+    nm k hk
+    simp [h₅] at h₃
+    linarith
+  use ⟨c, by positivity⟩, ⟨N + 1, by simp⟩
+  rintro ⟨n, hn⟩ h₄
+  simp at h₄
+  cases n
+  · simp at hn
+  nm n
+  specialize h₃ n (by linarith)
+  rw [Subtype.eq_iff]
+  exact h₃
