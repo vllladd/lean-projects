@@ -3,18 +3,6 @@ import AP.Util
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import Mathlib.Data.Nat.Choose.Sum
 
-theorem Finset.one_le_prod_of_forall_one_le {ι : Type*} {s : Finset ι} {f : ι → ℝ}
-(h : ∀ i ∈ s, 1 ≤ f i) : 1 ≤ ∏ i ∈ s, f i := by
-  classical
-  induction s using Finset.induction
-  · simp
-  nm i s hi ih
-  rw [Finset.prod_insert hi]
-  simp at h
-  rcases h with ⟨h₁, h₂⟩
-  specialize ih h₂
-  nlinarith
-
 namespace Misc
 
 namespace P1
@@ -600,3 +588,5 @@ theorem main {r : ℕ} {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n
 example {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ 2025)
 (h₃ : ∀ n, ∃ (k : ℕ), (∏ i ∈ range n, a i : ℝ) ^ (n : ℝ)⁻¹ = k) :
 ∃ c N, ∀ n, N ≤ n → a n = c := main h₁ h₂ h₃
+
+#check left_lt_max_add_one

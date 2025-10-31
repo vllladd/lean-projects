@@ -715,3 +715,15 @@ theorem le_sum_range {a : ℕ → ℝ} {N n : ℕ} (h : n < N) :
   obtain ⟨s, h₁, h₂⟩ : ∃ (s : Finset ℕ), n ∉ s ∧ range N = insert n s
   · use range N |>.erase n; simp; rw [insert_erase]; simpa
   simp [h₂, sum_insert h₁]; apply sum_nonneg; simp
+
+theorem one_le_prod_of_forall_one_le {ι : Type*} {s : Finset ι} {f : ι → ℝ}
+(h : ∀ i ∈ s, 1 ≤ f i) : 1 ≤ ∏ i ∈ s, f i := by
+  classical
+  induction s using Finset.induction
+  · simp
+  nm i s hi ih
+  rw [Finset.prod_insert hi]
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  nlinarith
