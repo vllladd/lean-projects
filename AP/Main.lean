@@ -6,6 +6,7 @@ import AP.RatRect
 import AP.RealAnalysis
 import AP.DigitalRoot
 import AP.Physics
+import AP.Knowledge
 
 namespace AP
 
@@ -61,6 +62,9 @@ def readAMove : IO (Option PointZ) := do
   IO.print "\n> "
   let inp ← stdin.getLine
   pure # parseAMove ⟨inp.1.filter (· ∉ "\r\n".1)⟩
+
+instance {s} : Decidable # Edge.cnd₀ s := by
+  simp [Edge.cnd₀]; split <;> all_goals infer_instance
 
 def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
   match n with

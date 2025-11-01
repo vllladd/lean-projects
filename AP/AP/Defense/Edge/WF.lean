@@ -16,9 +16,6 @@ def cnd₀ (s : State) : Prop :=
   | 1 => (p₀ :: get 1).all (· ∈ s.taken)
   | d => 0 < d
 
-instance {s} : Decidable # cnd₀ s := by
-  simp [cnd₀]; split <;> all_goals infer_instance
-
 theorem aPos_y_lt_zero_of_cnd₀ {s} (h : cnd₀ s) : s.aPos.y < 0 := by
   simp [cnd₀, getBorderPoints, getBorderPoint₀, getBorderPoint, dist] at h ⊢
   split at h <;> linarith
