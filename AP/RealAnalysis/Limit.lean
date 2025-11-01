@@ -745,3 +745,12 @@ theorem tendsTo_drop_iff {a L k} : tendsTo (a # k + ·) L ↔ tendsTo a L := by
 
 theorem tendsTo_drop_of {a L k} (h : tendsTo a L) : tendsTo (a # k + ·) L :=
   tendsTo_drop_iff.mpr h
+
+@[simp]
+theorem tendsTo_limit_iff_converges {a} : tendsTo a (limit a) ↔ converges a := by
+  constructor <;> intro h
+  · use limit a
+  · exact tendsTo_limit_of_converges h
+
+theorem converges_const {x : ℝ} : converges (λ _ => x) :=
+  ⟨_, tendsTo_const⟩
