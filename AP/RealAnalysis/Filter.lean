@@ -384,3 +384,23 @@ theorem convAndNotMono_ite_div : convAndNotMono # λ n => if n = 0 then 0 else 1
     linarith
   · simp [monoLe]; use 1, 2; split_ands <;> norm_num
   · simp [monoGe]; use 0, 1; split_ands <;> norm_num
+
+theorem tendsTo_zero_iff_of_int {a : ℕ → ℤ} :
+tendsTo (a ·) 0 ↔ ∀ (ε : ℤ), 0 < ε → ∃ (N : ℕ), ∀ (n : ℕ), N ≤ n → |a n| < ε := by
+  constructor
+  · intro h ε hε
+    specialize h ε # by exact_mod_cast hε
+    choose N h using h
+    use N
+    intro n hn
+    specialize h n hn
+    simp at h
+    exact_mod_cast h
+  · intro h ε hε
+    specialize h 1 # by norm_num
+    choose N h using h
+    simp at h
+    use N
+    intro n hn
+    specialize h n hn
+    simpa [h]
