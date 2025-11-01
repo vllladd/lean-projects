@@ -1,6 +1,30 @@
 import AP.Util
 
-namespace Knowledge
+universe u
+variable {World Ent : Type u}
+
+def KnowledgeFn (World Ent : Type u) (n : ℕ) : Type u :=
+  match n with
+  | 0 => PUnit
+  | n + 1 => Ent → World → KnowledgeFn World Ent n → Prop
+
+structure Knowledge (World Ent : Type u) : Type u where
+  depth : ℕ
+  fn : KnowledgeFn World Ent depth
+
+structure WorldWithKnowledge (World Ent : Type u) : Type u where
+  world : World
+  knowledge : Knowledge World Ent
+
+#check 0 #exit
+
+def Knowledge.WF (k : Knowledge World Ent) (w : World) : Prop :=
+  match k with
+  | ⟨0, _⟩ => true
+  | ⟨n + 1, f⟩ => ∀ e w' k', f e w' k' → sorry
+
+def WorldWithKnowledge.WF (wk : WorldWithKnowledge World Ent) : Prop :=
+  wk.knowledge.WF wk.world
 
 def Knowing (W E K : Type*) :=
   E → W → K → Prop
