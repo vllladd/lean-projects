@@ -16,15 +16,35 @@ structure WorldWithKnowledge (World Ent : Type u) : Type u where
   world : World
   knowledge : Knowledge World Ent
 
-#check 0 #exit
+def KnowledgeFnWf (w : World) (n : ℕ) (f : KnowledgeFn World Ent n) : Prop :=
+  match n, f with
+  | 0, _ => True
+  | n + 1, p => ∀ e, ∃ (f' : KnowledgeFn World Ent n), KnowledgeFnWf w n f' ∧ p e w f'
 
 def Knowledge.WF (k : Knowledge World Ent) (w : World) : Prop :=
-  match k with
-  | ⟨0, _⟩ => true
-  | ⟨n + 1, f⟩ => ∀ e w' k', f e w' k' → sorry
+  KnowledgeFnWf w k.depth k.fn
+
+def Knowledge.SatisfiesAnyW (k : Knowledge World Ent) (e : Ent) (w : World) : Prop :=
+  match k.depth, k.fn with
+  | 0, _ => True
+  | _ + 1, p => ∃ f', p e w f'
+
+def Knowledge.SatisfiesAllW (k : Knowledge World Ent) (e : Ent) (w : World) : Prop :=
+  match k.depth, k.fn with
+  | 0, _ => True
+  | _ + 1, p => ∀ f', p e w f'
 
 def WorldWithKnowledge.WF (wk : WorldWithKnowledge World Ent) : Prop :=
   wk.knowledge.WF wk.world
+
+def Knowledge.KnowsW (k : Knowledge World Ent) (e : Ent) (p : World → Prop) (w : World) : Prop :=
+  p w ∧ ∀ w', k.SatisfiesAnyW e w' → p w'
+
+def WorldWithKnowledge.KnowsW (wk : WorldWithKnowledge World Ent) (e : Ent)
+(p : World → Prop) : Prop :=
+  wk.knowledge.KnowsW e p wk.world
+
+#check 0 #exit
 
 def Knowing (W E K : Type*) :=
   E → W → K → Prop
