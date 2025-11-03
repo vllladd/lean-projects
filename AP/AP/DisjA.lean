@@ -19,8 +19,7 @@ theorem AState.tr_of_aForallWinsDisj {s fsp} {a : AStrat}
   · specialize h₁ default inferInstance 1
     simp at h₁
     obtain ⟨s', h₁, -⟩ := h₁
-    split at h₁; simp at h₁
-    nm x s₁ h₂; use s₁
+    use s'
   use s', h₂
   intro d Hd n
   specialize h₁ d Hd (n + 1)
@@ -227,9 +226,7 @@ def aDisjEraseTaken (s s' : State) (p : PointZ) (a : AStrat) (fsp : FSP) : AStra
 theorem AState.validTr_of_aForallWinsDisj {fsp s} {a : AStrat} [hsa : AState s]
 (h : s.aForallWinsDisj fsp a) : sys.validTr s (a.f s) := by
   replace h := State.forall_aWins_of_aForallWinsDisj h default 1
-  simp at h; unfold System.validTr; split at h
-  next x heq => simp_all only [one_ne_zero]
-  next x s₁ heq => simp_all only [Option.some.injEq, exists_eq']
+  simp at h; exact h
 
 @[simp]
 instance {s s' p a fsp} : (aDisjEraseTaken s s' p a fsp).WF := by
@@ -585,10 +582,9 @@ ps ⊆ s'.taken := by
     · use 1
       rintro n hn s' h₂
       cases n; simp at hn
-      simp at h₂
-      split at h₂; simp at h₂
       contrapose! h₁
-      nm x s₁ h₃; clear x
+      simp at h₂
+      choose s₁ h₃ h₂ using h₂
       exact sys.hasTr_of_eq_some h₃
     push_neg at h₁
     obtain ⟨s', h₂⟩ := a.validTr h₁
@@ -682,10 +678,9 @@ ps ⊆ s'.taken := by
   · use 2
     intro n hn s₁ H₁
     iterate 2 cases n; simp at hn; nm n
-    simp [h₁'] at H₁
-    split at H₁; simp at H₁
-    nm x s₂ H₂
     contrapose! h₄
+    simp [h₁'] at H₁
+    choose s₂ H₂ H₁ using H₁
     exact sys.hasTr_of_eq_some H₂
   push_neg at h₄
   replace h₄ := a.validTr h₄
@@ -827,7 +822,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     use h₄
     rw [sys.simulate_add, h₁] at h₄
     simp at h₄
-    split at h₄; simp at h₄; simp at h₄; rwa [←h₄]
+    exact h₄
   
   have hsa := H₁ h₁
   
