@@ -20,17 +20,13 @@ theorem State.dHws_of_pw_0 {s} [hs : sys.WF s] (h : s.pw = 0) : s.dHws := by
   replace hs := s.aState_or_dState; rcases hs with hs | hs
   · use 1
     simp
-    split; simp
-    nm x s' h₁; clear x
+    intro s' h₁
     simp [hs.tr_eq_some_iff, h] at h₁
     rcases h₁ with ⟨⟨h₁, h₂, h₃⟩, h₄⟩
     simp [h₃] at h₁
   · use 2
     simp
-    split
-    · nm x h₁; simp at h₁
-    nm x s₁ h₁; clear x
-    split; simp; nm x s₂ h₂; clear x
+    intro s₁ h₁ s₂ h₂
     have hs₁ := AState.of_tr h₁
     simp [hs₁.tr_eq_some_iff, pw_eq_of_tr h₁, h] at h₂
     rcases h₂ with ⟨⟨h₂, h₃, h₄⟩, h₅⟩

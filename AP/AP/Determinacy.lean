@@ -13,7 +13,7 @@ theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
 {st : Strat} [hst : st.WF] {n} : AState (sys.simulate st.f sa # n * 2).1 := by
   induction n generalizing sa; exact ha
   nm n ih
-  simp [Nat.succ_mul]
+  simp [Nat.succ_mul, System.simulate]
   split; exact ha
   nm x sd h₁; clear x
   have hd := DState.of_tr h₁
@@ -22,8 +22,26 @@ theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
   have ha' := AState.of_tr h₂
   exact ih
 
+@[simp]
 instance {sa} [ha : AState sa] {st : Strat} [hst : st.WF] {n} :
-AState (sys.simulate st.f sa # n * 2).1 := ha.of_simulate_mul_two
+AState (sys.simulate st.f sa # n * 2).1 :=
+  ha.of_simulate_mul_two
+
+theorem AState.of_simulate_mul_two_eq {sa s₁ r} [ha : AState sa]
+{st : Strat} [hst : st.WF] {n} (h : sys.simulate st.f sa (n * 2) = (s₁, r)) : AState s₁ := by
+  rw [Prod.fst_eq_of_eq_mk h]; infer_instance
+
+theorem AState.of_simulate_mul_two_eq_full {sa s₁} [ha : AState sa]
+{st : Strat} {n} (h : sys.simulate st.f sa (n * 2) = (s₁, 0)) : AState s₁ := by
+  induction n generalizing sa
+  · simp at h
+    rwa [←h]
+  nm n ih
+  simp [Nat.add_mul] at h
+  obtain ⟨sd, h₁, sa', h₂, h₃⟩ := h
+  have hsd := DState.of_tr h₁
+  have hsa' := AState.of_tr h₂
+  exact ih h₃
 
 theorem AState.aWins_of_ind_two' {sa₀} [ha₀ : AState sa₀]
 {st : Strat} [hst : st.WF] {p : State → Prop} (hp : p sa₀)
@@ -70,12 +88,10 @@ sys.tr sa pa = some sd → sys.tr sd pd = some sa' → p sa')
   induction n using Nat.strong_induction_on generalizing ts sa
   nm n ih
   cases ts; simp at h₃; simpa [←h₃]; nm pa ts
-  simp at h₃; split at h₃; simp at h₃
-  nm x sd h₄; clear x
+  simp at h₃; choose sd h₄ h₃ using h₃
   have hd := DState.of_tr h₄
   cases ts; simp at h₃; simp [h₃] at hd; nm pd ts
-  simp at h₃; split at h₃; simp at h₃
-  nm x sa₁ h₅; clear x
+  simp at h₃; choose sa₁ h₅ h₃ using h₃
   simp [add_assoc] at hn; subst hn
   have ha₁ := AState.of_tr h₅
   exact @ih ts.length (by simp) sa₁ _
@@ -217,10 +233,8 @@ theorem getMoveAt_eq_some_of_tr_and_reachable {s s₁ s₂ p} [hs : sys.WF s]
   split_ifs at h₂ with h₃ <;> simp at h₂
   subst h₃
   simp at h₂
-  rcases h₂ with ⟨h₂, h₃⟩
-  split at h₃ <;> simp at h₃
-  nm x s₄ h₄; clear x h₃
-  simp [h₄] at h₂
+  rcases h₂ with ⟨h₂, s₄, h₄⟩
+  simp [System.trs, h₄] at h₂
   subst h₂
   specialize ih hr
   have hs₁ := sys.wf_of_tr h₁
@@ -469,9 +483,8 @@ theorem State.hasTr_of_aHws {s} (h : s.aHws) : sys.hasTr s := by
   obtain ⟨a, h₁, h₂⟩ := h
   specialize h₂ (.mk # λ _ => none) inferInstance 1
   simp at h₂
-  split at h₂; simp at h₂
-  nm x sd h₃; clear x h₂
-  exact System.hasTr_of_eq_some h₃
+  choose s₁ h₂ using h₂
+  exact sys.hasTr_of_eq_some h₂
 
 theorem AState.aHws_iff_tr {sa} [hs : AState sa] :
 sa.aHws ↔ ∃ p sd, sys.tr sa p = some sd ∧ sd.aHws := by
@@ -685,7 +698,7 @@ theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀
   · simp at h; simp [h]
   nm n ih
   simp at h
-  split at h; simp at h; nm x s' h₁; clear x
+  choose s' h₁ h using h
   have hs' := sys.wf_of_tr h₁
   specialize ih h
   rw [hist_eq_of_tr h₁] at ih

@@ -182,7 +182,7 @@ theorem tr_fs'_ft' {s t} : sys.tr (sym.fs' s) (sym.ft' t) = (sys.tr s t).map sym
 
 theorem trs_eq {s ts} : sys.trs s ts =
 (sys.trs (sym.fs s) # ts.map sym.ft).map sym.fs' (·.map sym.ft') := by
-  induction ts generalizing s; simp; nm t ts ih; simp [tr_fs_ft]
+  induction ts generalizing s; simp; nm t ts ih; simp [trs, tr_fs_ft]
   split; nm x h₁; clear x; simp [h₁]; nm x s' h₁; clear x; simp [h₁, ih]
 
 theorem trs_eq' {s ts} : sys.trs s ts =
@@ -191,7 +191,7 @@ theorem trs_eq' {s ts} : sys.trs s ts =
 
 theorem simulate_eq {f s n} : sys.simulate f s n =
 (sys.simulate (sym.simFn f) (sym.fs s) n).map sym.fs' id := by
-  induction n generalizing s; simp; nm n ih; simp [tr_fs_ft]
+  induction n generalizing s; simp; nm n ih; simp [simulate, tr_fs_ft]
   split; nm x h₁; clear x; simp [h₁]; nm x s' h₁; clear x; simp [h₁, ih]
 
 theorem simulate_eq' {f s n} : sys.simulate f s n =

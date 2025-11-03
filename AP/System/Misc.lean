@@ -71,7 +71,7 @@ sn ≠ sm := by
   push_neg
   use Unit, Unit, ⟨{()}, λ _ _ => none⟩, ()
   simp [simFn_def, acyclic_def, hasTr]
-  refine' ⟨_, default, 0, 1, by simp⟩
+  refine' ⟨_, default, 0, 1, by simp [simulate]⟩
   constructor; simp [initial_def]
 
 theorem aux₉ {s} [h₁ : sys.Acyclic s] {f} [h₂ : SimFn sys f]
@@ -120,7 +120,7 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
   simp [simFn_def, hasTr]
   intro N
   use N + 1
-  simp
+  simp [simulate]
 
 theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 {s} [Acyclic sys s] {f} [SimFn sys f] {x},

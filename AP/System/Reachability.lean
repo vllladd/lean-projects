@@ -28,7 +28,7 @@ theorem sim_full_inj_of_acyclic {s} [ha : sys.Acyclic s]
   obtain ⟨a, ha⟩ := hv (sys.simulate f s n).1
   rw [add_assoc] at h₃
   rw [simulate_add] at h₃
-  simp [h₂, ←ha] at h₃
+  simp [h₂, ←ha, simulate] at h₃
   split at h₃
   · simp [←h₃] at h₂
   nm x b h₄
@@ -41,7 +41,7 @@ theorem reachable_simulate {f} {s n} : sys.Reachable s (sys.simulate f s n).1 :=
   induction n generalizing s
   · rfl
   nm n ih
-  simp
+  simp [simulate]
   split
   · rfl
   nm x s₁ h₁; clear x
@@ -73,7 +73,7 @@ sys.simulate (fn_set b t f) a n = sys.simulate f a n := by
   induction n generalizing a
   · rfl
   nm n ih
-  simp
+  simp [simulate]
   split <;> split; rfl
   · nm x h₃ y c h₄
     exfalso
@@ -103,7 +103,7 @@ sys.simulate (fn_set b t f) a n = sys.simulate f a n := by
   apply ih
   intro k hk
   specialize h₂ (k + 1) # by linarith
-  simp [h₃] at h₂
+  simp [h₃, simulate] at h₂
   exact h₂
 
 theorem simulate_snd_eq_zero_of_le_and_eq_zero {f a k n}
@@ -117,7 +117,7 @@ theorem simulate_snd_eq_zero_of_le_and_eq_zero {f a k n}
 theorem simulate_snd_eq_zero_of_hasTr {f} [hf : sys.SimFn f] {a n} [ha : sys.WF a]
 (h : sys.hasTr (sys.simulate f a n).1) : (sys.simulate f a n).2 = 0 := by
   induction n generalizing a; rfl; nm n ih
-  simp at h ⊢
+  simp [simulate] at h ⊢
   split at h
   · nm x h₁; clear x
     obtain ⟨s, hs⟩ := hf.1 h
@@ -137,14 +137,14 @@ theorem acyclic_of_tree {a} [ht : sys.Tree a] : sys.Acyclic a := by
   nm x y; clear x y
   specialize @ht ts₁ (ts₁ ++ t :: ts₂) _
   · rw [trs_append]
-    simp [h₁, h₂, h₃]
+    simp [h₁, h₂, h₃, trs]
   simp at ht
 
 instance {a} [ht : sys.Tree a] : sys.Acyclic a := acyclic_of_tree
 
 theorem simulate_eq_of_tr_eq_none {f a n}
 (h : sys.tr a (f a) = none) : sys.simulate f a n = (a, n) := by
-  cases n; rfl; nm n; simp [h]
+  cases n; rfl; nm n; simp [h, simulate]
 
 theorem exi_trs_of_simulate_eq {f a n r} (h₁ : sys.simulate f a n = r) :
 ∃ ts, sys.trs a ts = (r.1, []) ∧ n = ts.length + r.2 := by
@@ -153,7 +153,7 @@ theorem exi_trs_of_simulate_eq {f a n r} (h₁ : sys.simulate f a n = r) :
     subst h₁
     simp
   nm n ih
-  simp at h₁
+  simp [simulate] at h₁
   split at h₁
   · use []
     simp [←h₁]
@@ -177,6 +177,7 @@ theorem eq_of_tree_and_trs_eq {a} [ht : sys.Tree a] {ts₁ ts₂ b}
 
 theorem trs_snd_eq_nil_of_prefix_and_eq_nil {a xs ys}
 (h₁ : xs <+: ys) (h₂ : (sys.trs a ys).2 = []) : (sys.trs a xs).2 = [] := by
+  classical
   induction xs generalizing a ys
   · rfl
   nm x xs ih
@@ -185,10 +186,9 @@ theorem trs_snd_eq_nil_of_prefix_and_eq_nil {a xs ys}
   simp at h₁
   rcases h₁ with ⟨rfl, h₁⟩
   simp at h₂ ⊢
-  split at h₂
-  · simp at h₂
-  nm x c h₃; clear x
-  exact ih h₁ h₂
+  choose s₁ h₂ h₃ using h₂
+  use s₁, h₂
+  exact ih h₁ h₃
 
 theorem exi_simp_path_of_full_trs_eq {a b ts} (h : sys.trs a ts = (b, [])) :
 ∃ ts', sys.simp_path a ts' b := by
@@ -262,7 +262,7 @@ theorem simp_path'_of_cons_and_tr_eq_some {a b t ts}
 sys.simp_path' b ts := by
   reduce at h₁ h₂
   intro xs ys h₃ h₄ h₅
-  specialize h₁ (t :: xs) (t :: ys) (by simpa) (by simpa) (by simpa [h₂])
+  specialize h₁ (t :: xs) (t :: ys) (by simpa) (by simpa) (by simpa [trs, h₂])
   simp at h₁
   exact h₁
 
@@ -308,12 +308,9 @@ theorem simulate_eq_of_simulate_add_eq_add {f a b n m k}
   clear h
   induction n generalizing m a
   · simp at ih
-    split at ih
-    · simp at ih
-      simp [ih.1, ih.2]
-    simp at ih
+    simp [ih]
   nm n ih₁
-  simp
+  simp [simulate]
   split
   · nm x h₁
     rw [simulate_eq_of_tr_eq_none h₁] at ih
@@ -345,8 +342,8 @@ sys.simulate f (g 0) k = (g k, 0) := by
   cases n <;> simp at hk
   nm n
   specialize h₂ k # by linarith
-  rw [simulate_add]
-  simp [ih, h₂]
+  rw [simulate_add_one_full']
+  simp_all only [Prod.mk.injEq, and_true, exists_eq_left']
 
 theorem simulate_eq_of_iter {f : S → T} {n} (g : ℕ → S)
 (h₁ : ∀ k < n, sys.validTr (g k) (f # g k))
@@ -364,12 +361,11 @@ sys.hasTr (sys.trs a xs).1 := by
   · simp at h₃
   nm y ys
   clear h₃
-  simp [trs_append] at h₁
-  split_ifs at h₁ with h₂
-  · split at h₁ <;> simp at h₁
-    nm x c h₃; clear x
-    exact hasTr_of_eq_some h₃
+  rw [List.append_cons] at h₁
   simp at h₁
+  choose s₁ h₁ s₂ h₂ h₃ using h₁
+  rw [h₁]
+  use y, s₂
 
 @[simp]
 theorem not_validTr_iff {a t} : ¬sys.validTr a t ↔ sys.tr a t = none := by
@@ -384,19 +380,17 @@ sys.tr (sys.trs a # ts.take n).1 ts[n] = some (sys.trs a # ts.take # n + 1).1 :=
     cases ts
     · simp at h₁
     nm t ts
-    simp at h₂
-    split at h₂; simp at h₂
-    nm x b h₃; clear x
-    simp [h₃]
+    simp at h₂ ⊢
+    choose b h₂ h₃ using h₂
+    simp [trs, h₂]
   nm n ih
   cases ts
   · simp at h₁
   nm t ts
   simp at h₂
-  split at h₂; simp at h₂
-  nm x b h₃; clear x
-  simp [h₃]
-  exact @ih ts b (by rwa [←Nat.succ_lt_succ_iff]) h₂
+  choose b h₂ h₃ using h₂
+  simp [trs, h₂]
+  exact @ih ts b (by rwa [←Nat.succ_lt_succ_iff]) h₃
 
 theorem validTr_trs_list_take_of {ts : List T} {a n}
 (h₁ : n < ts.length) (h₂ : (sys.trs a ts).2 = []) :
@@ -457,7 +451,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   simp
   split_ifs with h₃
   · obtain ⟨c, h₃⟩ := h₃
-    rw [h₃]
+    symm; simp [trs, h₃]
   exfalso
   apply h₃; clear h₃
   apply validTr_trs_list_take_of
@@ -468,11 +462,9 @@ theorem simp_path_self_iff {a xs} : sys.simp_path a xs a ↔ xs = [] := by
   unfold simp_path simp_path'
   cases xs <;> simp
   nm x xs
-  intro h₁
-  split; simp
-  nm x b h₂; clear x
+  intro h₁ b h₂
   specialize h₁ [] (x :: xs)
-  simp [h₂] at h₁
+  simp [trs, h₂] at h₁
   contrapose! h₁
   rw [h₁]
 
@@ -484,16 +476,11 @@ theorem simp_path_nil_iff {a b} : sys.simp_path a [] b ↔ a = b := by
 theorem simp_path_singleton_iff {a b t} :
 sys.simp_path a [t] b ↔ a ≠ b ∧ sys.tr a t = some b := by
   simp [simp_path, simp_path']
-  split
-  · nm x h₁; clear x
-    simp [h₁]
-  nm x c h₁; clear x
-  simp [h₁]
-  rintro rfl
+  intro h₁
   constructor
   · rintro h₂ rfl
     specialize h₂ [] [t]
-    simp [h₁] at h₂
+    simp [trs, h₁] at h₂
   intro h₂ xs ys hx hy h₃
   cases xs
   · simp at h₃
@@ -502,11 +489,11 @@ sys.simp_path a [t] b ↔ a ≠ b ∧ sys.tr a t = some b := by
     nm y ys
     simp at hy
     rcases hy with ⟨rfl, rfl⟩
-    simp [h₁, h₂] at h₃
+    simp [trs, h₁, h₂] at h₃
   nm x xs
   simp at hx
   rcases hx with ⟨rfl, rfl⟩
-  simp [h₁] at h₃
+  simp [trs, h₁] at h₃
   cases ys
   · simp [h₃] at h₂
   nm y ys
@@ -522,7 +509,8 @@ sys.simp_path' a (ts ++ [t]) := by
   intro xs ys hx hy h₄
   by_cases h₅ : xs = ts ++ [t]
   · subst h₅; clear hx
-    simp [trs_append, ha₂, h₂] at h₄
+    rw [trs_append] at h₄
+    simp [trs, ha₂, h₂] at h₄
     symm
     by_contra h₆
     apply h₃ ys (List.prefix_of_prefix_snoc_and_ne hy h₆) h₄.symm
@@ -530,7 +518,8 @@ sys.simp_path' a (ts ++ [t]) := by
   clear h₅
   by_cases h₅ : ys = ts ++ [t]
   · subst h₅; clear hy
-    simp [trs_append, ha₂, h₂] at h₄
+    rw [trs_append] at h₄
+    simp [trs, ha₂, h₂] at h₄
     by_contra h₆
     exact h₃ xs hx h₄
   replace hy := List.prefix_of_prefix_snoc_and_ne hy h₅
@@ -551,7 +540,7 @@ theorem trs_snd_suffix {a xs} : (sys.trs a xs).2 <:+ xs := by
   induction xs generalizing a
   · rfl
   nm x xs ih
-  simp
+  simp [trs]
   split
   · rfl
   apply ih.trans
@@ -576,7 +565,7 @@ theorem exi_trs_nil_of_trs_eq {a ts r} (hr : sys.trs a ts = r) :
   induction ts generalizing a b rs
   · simp at hr; simp [hr.1]
   nm t ts ih
-  simp at hr
+  simp [trs] at hr
   split at hr
   · nm x h₁; clear x
     simp at hr
@@ -633,7 +622,7 @@ theorem exi_full_trs_of_simp_path' {a ts}
   simp
   simp [trs_append] at hr
   split_ifs at hr with h₁
-  · simp [h₁] at hr
+  · simp [trs, h₁] at hr
     split at hr <;> simp at hr <;> tauto
   simp at hr
   tauto
@@ -657,7 +646,8 @@ sys.simp_path' a (ts ++ [t]) ↔ sys.simp_path' a ts ∧
     intro b hb xs hx
     obtain ⟨c, hc⟩ := exi_full_trs_of_simp_path' h
     use c
-    simp [trs_append, hb] at hc
+    rw [trs_append] at hc
+    simp [trs, hb] at hc
     split at hc
     · simp at hc
     nm x d h₁; clear x
@@ -666,7 +656,8 @@ sys.simp_path' a (ts ++ [t]) ↔ sys.simp_path' a ts ∧
     use h₁
     specialize h xs (ts ++ [t])
     intro h₂
-    simp [hx, trs_append, hb, h₁, h₂] at h
+    rw [trs_append] at h
+    simp [hx, trs, hb, h₁, h₂] at h
     simp [h] at hx
   rintro ⟨h₁, h₂⟩ xs ys h₃ h₄ h₅
 
@@ -695,7 +686,8 @@ sys.simp_path' a (ts ++ [t]) ↔ sys.simp_path' a ts ∧
   specialize h₂ b hb xs h₃
   obtain ⟨c, hc, h₂⟩ := h₂
 
-  simp [trs_append, hb, hc] at h₅
+  rw [trs_append] at h₅
+  simp [trs, hb, hc] at h₅
   apply h₂; clear h₂
   ext1
   use h₅
@@ -716,9 +708,8 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts} [ha : sys.WF a]
     by
       by_contra! h₄
       rw [←Option.eq_none_iff_forall_ne_some] at h₄
-      have h₅ : sys.trs a (xs ++ [t]) = (b, [t]) :=
-        by
-          simp [trs_append, hb, h₄]
+      have h₅ : sys.trs a (xs ++ [t]) = (b, [t])
+      · rw [trs_append]; simp [trs, hb, h₄]
       have h₆ := trs_snd_eq_nil_of_prefix_and_eq_nil h₁ hh
       simp [h₅] at h₆
   clear! ts
@@ -758,14 +749,14 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts} [ha : sys.WF a]
     rw [h₄ k # by linarith] at h₂
     exact h₂
   rw [h₄ _ # by rfl]
-  simp [hb, hc]
+  simp [simulate, hb, hc]
 
 theorem exi_simulate_full_of_simulate_eq {f a n r}
 (hr : sys.simulate f a n = r) : ∃ k ≤ n, sys.simulate f a k = (r.1, 0) := by
   induction n generalizing a r
   · use 0; simp [←hr]
   nm n ih
-  dsimp at hr
+  simp [simulate] at hr
   split at hr
   · nm x h₁; clear x
     simp [simulate_eq_of_tr_eq_none h₁, ←hr]
@@ -798,19 +789,20 @@ sys.Acyclic a ↔ ∀ f [sys.SimFn f] n m,
   obtain ⟨xs, hx⟩ := exi_trs_of_reachable h₁
   obtain ⟨ys, hy⟩ := exi_trs_of_reachable h₂
   obtain ⟨zs, hz⟩ := hv # xs ++ t :: ys
-  have h₃ : ¬sys.simp_path' a zs :=
-    by
-      unfold simp_path'
-      push_neg
-      use xs, zs
-      simp [hz]
-      rw [trs_append]
-      simp [hx, hb, hy]
-  have h₄ : (sys.trs a zs).2 = [] :=
-    by
-      simp [hz]
-      rw [trs_append]
-      simp [hx, hb, hy]
+  have h₃ : ¬sys.simp_path' a zs
+  ·
+    unfold simp_path'
+    push_neg
+    use xs, zs
+    simp [hz]
+    rw [trs_append]
+    simp [trs, hx, hb, hy]
+  have h₄ : (sys.trs a zs).2 = []
+  ·
+    simp [hz]
+    subst hz
+    simp_all only [forall_const, Prod.mk.injEq, and_true, exists_eq_left',
+      Option.some.injEq, exists_eq']
   obtain ⟨f, hf, n, m, h₅, h₆⟩ := exi_cyclic_simulate_of_not_simp_path' h₃ h₄
   clear h₃ h₄
   use f, hf, n, m
@@ -851,7 +843,7 @@ theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited # S → T]
   · use sys.dflt_simFn, inferInstance, 0
     simp [h₁]
   nm t ts ih
-  simp at h₁
+  simp [trs] at h₁
   split at h₁
   · nm x h₂; clear x
     use sys.dflt_simFn, inferInstance, 0
@@ -960,19 +952,17 @@ theorem full_trs_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
 
   obtain ⟨c, hc⟩ : ∃ c, sys.trs a (xs ++ [y]) = (c, []) :=
     by
-      simp [Prod.ext_iff]
-      exact trs_snd_eq_nil_of_prefix_and_eq_nil
-        (by simp : xs ++ [y] <+: xs ++ [y] ++ ys) (by rw [h₂])
+      rw [trs_append_full] at h₂
+      simp at h₂ ⊢
+      obtain ⟨s₁, ⟨s₂, h₂, h₃⟩, h₄⟩ := h₂
+      use s₁, s₂, h₂
 
   rw [trs_append] at h₂
   simp [hc] at h₂
 
-  simp [trs_append, h₁] at hc
-  split at hc <;> simp at hc
-  nm x d h₃; clear x
-  symm at hc; subst hc
+  simp [h₁] at hc
 
-  apply @h.2 b c y _ h₃ _
+  apply @h.2 b c y _ hc _
   · exact reachable_of_fst_trs # congrArg (·.1) h₁
   · exact reachable_of_fst_trs # congrArg (·.1) h₂
 
@@ -989,7 +979,8 @@ sys.Acyclic a := by
   specialize h xs (xs ++ [t] ++ ys)
   simp [hx] at h
   rw [List.append_cons, trs_append] at h
-  simp [trs_append, hx, hb, hy] at h
+  rw [trs_append] at h
+  simp [trs, hx, hb, hy] at h
 
 theorem acyclic_def_full_trs_inj {a} [ha : sys.WF a] :
 sys.Acyclic a ↔ ∀ xs ys, xs <+: ys →
@@ -1006,7 +997,7 @@ sys.trs a (xs.take (xs.length - (sys.trs a xs).2.length)) =
   induction xs generalizing a
   · rfl
   nm x xs ih
-  simp
+  simp [trs]
   split
   · simp
   nm y b h₁; clear y
@@ -1083,11 +1074,9 @@ theorem simulate_finset_card_eq_of_acyclic
   induction n generalizing a
   · simp
   nm n ih
-  dsimp at h₁
-  split at h₁; simp at h₁
-  nm x b h₂; clear x
+  simp at h₁
+  choose b h₂ h₁ using h₁
   rw [Finset.mkRaw_fin_succ_eq_insert]
-  simp [h₂]
   have hb := acyclic_of_tr h₂
   have h₃ := simulate_snd_eq_zero_of_tr_and_eq_zero h₁ h₂
   rw [Finset.card_insert_of_notMem]
@@ -1153,6 +1142,17 @@ theorem simulate_exi_snd_pos_of_finite
       linarith
   rw [←h₆, h₄]
 
+@[simp]
+theorem wf_of_simulate {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
+  wf_of_reachable reachable_simulate
+
+instance {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
+  wf_of_simulate
+
+theorem wf_of_simulate_eq {s f n r} [hs : sys.WF s]
+(h : sys.simulate f s n = r) : sys.WF r.1 := by
+  subst r; simp
+
 theorem simulate_add_eq_left_iff {f} [hf : sys.SimFn f] {a b n m} [ha : sys.WF a] :
 sys.simulate f a (n + m) = (b, n) ↔ sys.simulate f a m = (b, 0) ∧
 (sys.validTr b (f b) → n = 0) := by
@@ -1165,17 +1165,11 @@ sys.simulate f a (n + m) = (b, n) ↔ sys.simulate f a m = (b, 0) ∧
     dsimp at h
     rw [←h]
     exact simulate_snd_eq_zero_of_hasTr ⟨_, h₁⟩
-  rw [add_comm];
-  simp [simulate_add, h]
-  rcases h with ⟨h₁, h₂⟩
-  cases n
-  · rfl
-  nm n
-  simp at h₂ ⊢
-  split
-  · rfl
-  nm x s h₃
-  simp [h₂] at h₃
+  rw [add_comm]
+  choose h₁ h₂ using h
+  have hb := wf_of_simulate_eq h₁
+  simp [simulate_add, h₁] at h₂ ⊢
+  tauto
 
 theorem simulate_add_eq_right_iff {f} [hf : sys.SimFn f] {a b n m} [ha : sys.WF a] :
 sys.simulate f a (n + m) = (b, m) ↔ sys.simulate f a n = (b, 0) ∧
@@ -1235,20 +1229,9 @@ sys.trs s ts₁ = (s', []) → sys.trs s ts₂ = (s', []) → ts₁ = ts₂ := b
   exact h
 
 @[simp]
-theorem wf_of_simulate {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
-  wf_of_reachable reachable_simulate
-
-instance {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
-  wf_of_simulate
-
-@[simp]
 theorem trs_eq_self_nil_iff_of_tree {s ts} [hs : sys.Tree s] :
 sys.trs s ts = (s, []) ↔ ts = [] := by
   use @hs.2 ts []; rintro rfl; rfl
-
-theorem wf_of_simulate_eq {s f n r} [hs : sys.WF s]
-(h : sys.simulate f s n = r) : sys.WF r.1 := by
-  subst r; simp
 
 theorem simulate_congr_rel {f g} {r : S → S → Prop} {a₁ a₂ n}
 [hf : sys.SimFn f] [hg : sys.SimFn g] [ha₁ : sys.WF a₁] [ha₂ : sys.WF a₂]
@@ -1262,7 +1245,7 @@ sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → (sys.hasTr b₁ ↔ sys.ha
     simp [h₁] at h₂
     replace h₂ := h₂.1
     simp only [tr_eq_none_iff_of_simFn, h₂]
-  simp
+  simp [simulate]
   split
   · nm x h₃; clear x
     use a₂
@@ -1303,8 +1286,7 @@ sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → sys.tr b₁ (f b₁) = som
     obtain ⟨c₁, hc₁⟩ : ∃ c₁, sys.tr b₁ (f b₁) = some c₁
     · rw [simulate_add] at h₆
       simp [hb₁] at h₆
-      split at h₆; simp at h₆
-      nm x c₁ h₇; use c₁
+      exact h₆
     specialize h₃ c₁ hb₁ hb₂ h₅ hc₁
     obtain ⟨c₂, hc₂, h₇⟩ := h₃
     simp [hasTr_of_eq_some hc₁, hasTr_of_eq_some hc₂]
@@ -1353,13 +1335,12 @@ theorem not_reachable_of_acyclic_and_simulate_and_lt {a b f k n}
   rcases r with ⟨c, r⟩
   simp at h₁ h₂ ⊢
   subst h₂
-  rw [simulate_add] at h₁
-  simp at h₁; split at h₁ <;> simp at h₁
-  nm x d h₄; clear x
-  specialize @h₃ c d (f c) (reachable_of_simulate_eq hr) h₄
+  choose s₁ h₁ h₂ using h₁
+  have h₄ := reachable_of_simulate_eq hr
+  have h₅ := reachable_of_simulate_eq h₂
+  specialize h₃ h₄ h₁
   contrapose! h₃
-  trans b; rotate_left; exact h₃
-  exact reachable_of_simulate_eq h₁
+  exact h₅.trans h₃
 
 theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.SimFn f]
 (h₁ : sys.simulate f a n = r) (h₂ : r.2 ≠ 0) : ¬sys.hasTr r.1 := by
@@ -1368,7 +1349,7 @@ theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.Si
   induction n generalizing a
   · simp [ne_symm' h₂] at h₁
   nm n ih
-  simp at h₁
+  simp [simulate] at h₁
   split at h₁
   · nm x h₃; clear x
     simp at h₁
@@ -1416,3 +1397,9 @@ sys.tr s' t = some s₁ := by
 theorem false_of_acyclic_and_reachable_and_tr {a b t} [ha : sys.Acyclic a]
 (h₁ : sys.Reachable a b) (h₂ : sys.tr b t = some a) : False := by
   rcases ha with ⟨ha, h₃⟩; exact h₃ h₁ h₂ h₁
+
+theorem fst_simulate_ind {f s} {p : S → Prop}
+(h : ∀ n s', sys.simulate f s n = (s', 0) → p s')
+(n : ℕ) : p # sys.simulate f s n |>.1 := by
+  rcases h₁ : sys.simulate f s n with ⟨s', r⟩
+  apply h; exact simulate_sub_eq_of h₁

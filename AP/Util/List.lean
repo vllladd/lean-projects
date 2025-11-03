@@ -1022,3 +1022,5 @@ xs.find? p = some (e x) ↔ (xs.map e.symm).find? (p ∘ e) = some x := by
   simp [find?_eq_some_iff_append]; constructor
   · rintro ⟨h₁, xs, ⟨ys, rfl⟩, h₂⟩; use e x; simp [h₁]; use xs; simpa
   · rintro ⟨x, ⟨h₁, xs, ⟨h₂, rfl⟩, h₃⟩, rfl⟩; simp [h₁]; use xs; simpa
+
+theorem cons_eq_append {x} : x :: xs = [x] ++ xs := rfl

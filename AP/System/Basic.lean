@@ -130,14 +130,22 @@ theorem reachable_ind_left {P : ∀ a b, sys.Reachable a b → Prop}
 {a b} (h : sys.Reachable a b) : P a b h := by
   induction h; exact h₁; apply h₂ <;> assumption
 
+@[simp]
+theorem trs_empty {s} : sys.trs s [] = (s, []) := rfl
+
+@[simp]
+theorem simulate_zero {f s} : sys.simulate f s 0 = (s, 0) := rfl
+
 theorem reachable_of_trs {a ts r} (h : sys.trs a ts = r) :
 sys.Reachable a r.1 := by
   rcases r with ⟨b, rs⟩
   replace h := congrArg (·.1) h
   dsimp at h ⊢
-  induction ts generalizing a b <;> simp at h
-  · rw [h]
+  induction ts generalizing a b
+  · simp at h
+    rw [h]
   nm t ts ih
+  simp [trs] at h
   split at h
   · simp at h
     rw [h]
@@ -157,7 +165,7 @@ theorem exi_trs_of_reachable {a b} (h : sys.Reachable a b) :
   obtain ⟨ts, ih⟩ := ih
   use t :: ts
   reduce at h₁
-  simpa [h₁]
+  simpa [trs, h₁]
 
 theorem reachable_iff_exi_trs {a b} :
 sys.Reachable a b ↔ ∃ ts, sys.trs a ts = (b, []) := by
@@ -174,7 +182,7 @@ if xs' ≠ [] then (s₁, xs' ++ ys) else (s₂, xs' ++ ys') := by
   induction xs generalizing s
   · simp
   nm x xs ih
-  simp
+  simp [trs]
   split
   · simp at ih ⊢
   nm m c h₁
@@ -186,7 +194,7 @@ sys.Reachable a (sys.trs b ts).1 := by
   induction ts generalizing b
   · exact h
   nm t ts ih
-  simp
+  simp [trs]
   split
   · exact h
   nm m c h₁
@@ -195,46 +203,6 @@ sys.Reachable a (sys.trs b ts).1 := by
 @[simp]
 theorem reachable_trs {s ts} : sys.Reachable s (sys.trs s ts).1 := by
   apply reachable_trs_aux; rfl
-
-theorem reachable_ind_right {P : ∀ a b, sys.Reachable a b → Prop}
-(h₁ : ∀ {a}, P a a # by rfl)
-(h₂ : ∀ {a b c t}, (hx : sys.Reachable a b) →
-  (hy : sys.tr b t = some c) → P a b hx → P a c (reachable_right hx hy))
-{a b} (h : sys.Reachable a b) : P a b h := by
-  classical
-  obtain ⟨ts, h₃⟩ := exi_trs_of_reachable h
-  induction ts using List.reverseRecOn generalizing a b
-  · simp at h₃
-    simp [h₃]
-    exact h₁
-  nm ts t ih
-  simp only [trs_append] at h₃
-  split_ifs at h₃ with h₄
-  · simp at h₃
-  simp at h₄
-  simp only [h₄, List.nil_append, Prod.mk.eta] at h₃
-  have h₅ := reachable_of_trs h₃
-  apply @h₂ a (sys.trs a ts).1 b t
-  · simp at h₃
-    split at h₃ <;> simp at h₃
-    nm m s h₆
-    rwa [←h₃]
-  · apply ih
-    ext1; rfl
-    simpa
-  · simp
-
-@[simp]
-theorem simulate_snd_le {f s n} : (sys.simulate f s n).2 ≤ n := by
-  induction n generalizing s
-  · rfl
-  nm n ih
-  simp
-  split
-  · rfl
-  nm m s₁ h₁
-  specialize @ih s₁
-  linarith
 
 theorem simulate_add {f s n m} :
 sys.simulate f s (n + m) =
@@ -249,6 +217,112 @@ if n' ≠ 0 then (s₁, n' + m) else (s₂, n' + m') := by
   split; simp [Nat.add_one_add]
   exact ih
 
+@[simp]
+theorem simulate_add_full {f s s₂ n m} : sys.simulate f s (n + m) = (s₂, 0) ↔
+∃ s₁, sys.simulate f s n = (s₁, 0) ∧ sys.simulate f s₁ m = (s₂, 0) := by
+  rw [simulate_add]
+  simp_all only [ne_eq, ite_not, zero_add, Prod.mk.eta]
+  apply Iff.intro
+  · intro a
+    split at a
+    rename_i h
+    apply Exists.intro
+    apply And.intro
+    ext : 1
+    on_goal 5 => rename_i h
+    on_goal 3 => exact a
+    · simp_all only
+    · simp_all only
+    simp_all only [Prod.mk.injEq, Nat.add_eq_zero, false_and, and_false]
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    simp_all only [↓reduceIte]
+
+@[simp]
+theorem trs_append_full {s s₂ ts₁ ts₂} : sys.trs s (ts₁ ++ ts₂) = (s₂, []) ↔
+∃ s₁, sys.trs s ts₁ = (s₁, []) ∧ sys.trs s₁ ts₂ = (s₂, []) := by
+  classical
+  rw [trs_append]
+  simp_all only [ne_eq, ite_not, List.nil_append, Prod.mk.eta]
+  apply Iff.intro
+  · intro a
+    split at a
+    rename_i h
+    apply Exists.intro
+    apply And.intro
+    ext : 1
+    on_goal 5 => rename_i h
+    on_goal 3 => exact a
+    · simp_all only
+    · ext i a_1 : 2
+      simp_all only [List.length_nil, not_lt_zero', not_false_eq_true, getElem?_neg, reduceCtorEq]
+    simp_all only [Prod.mk.injEq, List.append_eq_nil_iff, false_and, and_false]
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    simp_all only [↓reduceIte]
+
+@[simp]
+theorem trs_cons_full {s s₂ t ts} : sys.trs s (t :: ts) = (s₂, []) ↔
+∃ s₁, sys.tr s t = some s₁ ∧ sys.trs s₁ ts = (s₂, []) := by
+  simp [trs]
+  apply Iff.intro
+  · intro a
+    split at a
+    next x heq => simp_all only [Prod.mk.injEq, reduceCtorEq, and_false]
+    next x s₁ heq => simp_all only [Option.some.injEq, exists_eq_left']
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    simp_all only
+
+@[simp]
+theorem trs_snoc_full {s s₂ t ts} : sys.trs s (ts ++ [t]) = (s₂, []) ↔
+∃ s₁, sys.trs s ts = (s₁, []) ∧ sys.tr s₁ t = some s₂ := by
+  simp [trs]
+  apply Iff.intro
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    simp_all only [Prod.mk.injEq, and_true, exists_eq_left']
+    split at right
+    next x heq => simp_all only [Prod.mk.injEq, List.cons_ne_self, and_false]
+    next x s₁ heq => simp_all only [Prod.mk.injEq, and_true]
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    simp_all only [Prod.mk.injEq, and_true, exists_eq_left']
+
+theorem reachable_ind_right {P : ∀ a b, sys.Reachable a b → Prop}
+(h₁ : ∀ {a}, P a a # by rfl)
+(h₂ : ∀ {a b c t}, (hx : sys.Reachable a b) →
+  (hy : sys.tr b t = some c) → P a b hx → P a c (reachable_right hx hy))
+{a b} (h : sys.Reachable a b) : P a b h := by
+  classical
+  obtain ⟨ts, h₃⟩ := exi_trs_of_reachable h
+  induction ts using List.reverseRecOn generalizing a b
+  · simp at h₃
+    simp [h₃]
+    exact h₁
+  nm ts t ih
+  simp at h₃
+  choose s₁ h₃ h₄ using h₃
+  have h₅ := reachable_of_trs h₃
+  apply h₂ h₅ h₄ # ih h₅ h₃
+
+@[simp]
+theorem simulate_snd_le {f s n} : (sys.simulate f s n).2 ≤ n := by
+  induction n generalizing s
+  · rfl
+  nm n ih
+  simp [simulate]
+  split
+  · rfl
+  nm m s₁ h₁
+  specialize @ih s₁
+  linarith
+
 theorem simulate_snd_mono {f s n m} (h : n ≤ m) :
 (sys.simulate f s n).2 ≤ (sys.simulate f s m).2 := by
   classical
@@ -262,11 +336,11 @@ sys.simulate f s (n - (sys.simulate f s n).2) = ((sys.simulate f s n).1, 0) := b
   induction n generalizing s
   · rfl
   nm n ih
-  simp
+  simp [simulate]
   split; simp
   nm x s₁ h₁; clear x
   rw [Nat.add_one_sub simulate_snd_le]
-  simp [h₁]
+  simp [simulate, h₁]
   exact ih
 
 theorem simFn_def {f} : sys.SimFn f ↔ ∀ {s} [sys.WF s],
@@ -330,7 +404,7 @@ instance {a} [ha : sys.Tree a] : sys.WF a := wf_of_tree
 theorem simulate_eq_of_not_hasTr {f s n}
 (h : ¬sys.hasTr s) : sys.simulate f s n = (s, n) := by
   cases n; rfl; nm n
-  simp
+  simp [simulate]
   split; rfl
   nm x s' h₁; clear x
   exfalso
@@ -355,3 +429,196 @@ theorem simulate_snd_le_of_eq {f s s' r n} (h : sys.simulate f s n = (s', r)) : 
 theorem simulate_snd_ne_zero_of {f s s' r n m} (h : sys.simulate f s n = (s', r))
 (hr : r ≠ 0) (hm : n ≤ m) : (sys.simulate f s m).2 ≠ 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hm; rw [simulate_add, h]; simp [hr]
+
+@[simp]
+theorem snd_simulate_add_eq_zero_iff {f s n m} : (sys.simulate f s (n + m)).2 = 0 ↔
+∃ s₁ s₂, sys.simulate f s n = (s₁, 0) ∧ sys.simulate f s₁ m = (s₂, 0) := by
+  simp [simulate_add]
+  simp_all only [zero_add, Prod.mk.eta]
+  apply Iff.intro
+  · intro a
+    split at a
+    rename_i h
+    apply Exists.intro
+    apply And.intro
+    ext : 1
+    on_goal 5 => rename_i h
+    on_goal 3 => {
+      apply Exists.intro
+      · ext : 1
+        · simp_all only
+          rfl
+        · simp_all only
+          exact a
+    }
+    · simp_all only
+    · simp_all only
+    simp_all only [Nat.add_eq_zero, false_and]
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    obtain ⟨w_1, h⟩ := right
+    simp_all only [↓reduceIte]
+
+@[simp]
+theorem snd_trs_append_eq_nil_iff {s ts₁ ts₂} : (sys.trs s (ts₁ ++ ts₂)).2 = [] ↔
+∃ s₁ s₂, sys.trs s ts₁ = (s₁, []) ∧ sys.trs s₁ ts₂ = (s₂, []) := by
+  classical
+  simp [trs_append, Prod.ext_iff]
+  simp_all only [List.nil_append, Prod.mk.eta]
+  apply Iff.intro
+  · intro a
+    apply And.intro
+    · split at a
+      next h => simp_all only
+      next h => simp_all only [List.append_eq_nil_iff, false_and]
+    · split at a
+      next h => simp_all only
+      next h => simp_all only [List.append_eq_nil_iff, false_and]
+  · intro a
+    simp_all only [↓reduceIte]
+
+@[simp]
+theorem snd_trs_cons_eq_nil_iff {s t ts} : (sys.trs s (t :: ts)).2 = [] ↔
+∃ s₁, sys.tr s t = some s₁ ∧ (sys.trs s₁ ts).2 = [] := by
+  classical
+  simp [trs]
+  apply Iff.intro
+  · intro a
+    split at a
+    next x heq => simp_all only [reduceCtorEq]
+    next x s₁ heq => simp_all only [Option.some.injEq, exists_eq_left']
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    simp_all only
+
+@[simp]
+theorem snd_trs_snoc_eq_nil_iff {s t ts} : (sys.trs s (ts ++ [t])).2 = [] ↔
+∃ s₁ s₂, sys.trs s ts = (s₁, []) ∧ sys.tr s₁ t = some s₂ := by
+  simp [trs]
+  apply Iff.intro
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    obtain ⟨w_1, h⟩ := right
+    simp_all only [Prod.mk.injEq, and_true, exists_eq_left']
+    split at h
+    next x heq => simp_all only [Prod.mk.injEq, List.cons_ne_self, and_false]
+    next x s₁ heq => simp_all only [Prod.mk.injEq, and_true, Option.some.injEq, exists_eq']
+  · intro a
+    obtain ⟨w, h⟩ := a
+    obtain ⟨left, right⟩ := h
+    obtain ⟨w_1, h⟩ := right
+    simp_all only [Prod.mk.injEq, and_true, exists_eq_left', exists_eq']
+
+@[simp high]
+theorem simulate_succ_full {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
+∃ s₁, sys.tr s (f s) = some s₁ ∧ sys.simulate f s₁ n = (s₂, 0) := by
+  simp [simulate]; split
+  · simp_all only [Prod.mk.injEq, Nat.add_eq_zero, one_ne_zero, and_false, reduceCtorEq,
+      false_and, exists_false]
+  · simp_all only [Option.some.injEq, exists_eq_left']
+
+theorem simulate_succ_full' {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
+∃ s₁, sys.simulate f s n = (s₁, 0) ∧ sys.tr s₁ (f s₁) = some s₂ := by
+  rw [Nat.succ_eq_add_one, simulate_add_full]; simp
+
+@[simp high]
+theorem simulate_add_one_full {f s s₂ n} : sys.simulate f s (n + 1) = (s₂, 0) ↔
+∃ s₁, sys.tr s (f s) = some s₁ ∧ sys.simulate f s₁ n = (s₂, 0) :=
+  simulate_succ_full
+
+theorem simulate_add_one_full' {f s s₂ n} : sys.simulate f s (n + 1) = (s₂, 0) ↔
+∃ s₁, sys.simulate f s n = (s₁, 0) ∧ sys.tr s₁ (f s₁) = some s₂ :=
+  simulate_succ_full'
+
+@[simp]
+theorem simulate_one_of_snd_succ {f s s' r} :
+sys.simulate f s 1 = (s', r.succ) ↔ sys.tr s (f s) = none ∧ s = s' ∧ r = 0 := by
+  simp [simulate]
+  apply Iff.intro
+  · intro a
+    apply And.intro
+    · split at a
+      next x heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add]
+      next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero,
+        one_ne_zero, and_false]
+    · apply And.intro
+      · split at a
+        next x heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add]
+        next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero,
+          one_ne_zero, and_false]
+      · split at a
+        next x heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add]
+        next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero,
+          one_ne_zero, and_false]
+  · intro a
+    simp_all only [zero_add]
+    obtain ⟨left, right⟩ := a
+    obtain ⟨left_1, right⟩ := right
+    subst right left_1
+    simp_all only
+
+theorem simulate_one_of_snd_add_one {f s s' r} :
+sys.simulate f s 1 = (s', r + 1) ↔ sys.tr s (f s) = none ∧ s = s' ∧ r = 0 :=
+  simulate_one_of_snd_succ
+
+@[simp high]
+theorem snd_simulate_add_one_eq_zero_iff {f s n} : (sys.simulate f s (n + 1)).2 = 0 ↔
+∃ s₁, sys.tr s (f s) = some s₁ ∧ (sys.simulate f s₁ n).2 = 0 := by
+  simp [add_comm n 1, Prod.ext_iff]
+
+@[simp]
+theorem simulate_eq_snd_add_right_iff {f s s' n r} :
+sys.simulate f s n = (s', n + r) ↔ r = 0 ∧ s = s' ∧ (n = 0 ∨ sys.tr s (f s) = none) := by
+  cases n
+  · simp; tauto
+  nm n
+  simp [simulate]
+  split
+  · simp; tauto
+  nm x s₁ h; clear x
+  simp [h]
+  intro h₁
+  linarith [simulate_snd_le_of_eq h₁]
+
+@[simp]
+theorem simulate_eq_snd_add_left_iff {f s s' n r} :
+sys.simulate f s n = (s', r + n) ↔ r = 0 ∧ s = s' ∧ (n = 0 ∨ sys.tr s (f s) = none) := by
+  simp [add_comm r n]
+
+@[simp]
+theorem simulate_eq_same_iff {f s s' n} :
+sys.simulate f s n = (s', n) ↔ s = s' ∧ (n = 0 ∨ sys.tr s (f s) = none) := by
+  nth_rw 2 [show n = n + 0 by rfl]; rw [simulate_eq_snd_add_right_iff]; simp
+
+@[simp]
+theorem tr_simFn_eq_none_iff {f s} [hs : sys.WF s] [hf : sys.SimFn f] :
+sys.tr s (f s) = none ↔ ¬sys.hasTr s := by
+  constructor
+  · intro h₁ h₂
+    obtain ⟨s', h₃⟩ := hf.1 h₂
+    simp [h₁] at h₃
+  · rw [imp_iff_not']
+    simp [Option.ne_none_iff_exists']
+    intro s' h₁
+    use f s, s'
+
+theorem tr_eq_none_of_simulate_eq {f s s' n r}
+(h : sys.simulate f s n = (s', r + 1)) : sys.tr s' (f s') = none := by
+  induction n generalizing s
+  · simp at h
+  nm n ih
+  by_contra! h₁
+  replace h₁ := Option.exists_eq_some_of_ne_none h₁
+  choose s₁ h₁ using h₁
+  simp [simulate] at h
+  split at h
+  · nm x h₂; clear x
+    simp at h
+    rcases h with ⟨rfl, rfl⟩
+    simp [h₁] at h₂
+  nm x s₂ h₂; clear x
+  specialize ih h
+  simp [ih] at h₁

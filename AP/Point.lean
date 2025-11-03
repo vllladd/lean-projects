@@ -579,4 +579,4 @@ theorem forall_iff {p : Point α → Prop} : (∀ pt, p pt) ↔ ∀ x y, p ⟨x,
   ⟨λ h x y => h ⟨x, y⟩, λ h ⟨x, y⟩ => h x y⟩
 
 theorem exi_iff {p : Point α → Prop} : (∃ pt, p pt) ↔ ∃ x y, p ⟨x, y⟩ := by
-  rw [iff_iff_not]; push_neg; exact forall_iff
+  rw [iff_iff_not']; push_neg; exact forall_iff

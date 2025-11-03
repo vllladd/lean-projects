@@ -518,7 +518,7 @@ theorem initial_iff {s} : sys.Initial s ↔ initState s.pw s.aPos₀ = s := by
 theorem pw_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.pw = s.pw := by
   induction ps generalizing s; rfl
   nm p ps ih
-  simp; split; rfl
+  simp [System.trs]; split; rfl
   nm x s' h₁; clear x
   have h₂ := System.wf_of_tr h₁
   rw [ih, pw_eq_of_tr h₁]
@@ -581,8 +581,7 @@ sys.trs (s.setPw pw) ps = (s'.setPw pw, []) := by
   · simp at h₂; simp [h₂]
   nm p ps ih
   simp at h₂
-  split at h₂; simp at h₂
-  nm x s₁ h₃; clear x
+  choose s₁ h₃ h₂ using h₂
   simp [tr_setPw_eq_some_of h₁ h₃]
   have h₄ := System.wf_of_tr h₃
   refine' ih _ h₂
@@ -607,7 +606,7 @@ theorem hist_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.hist =
 (ps.take # ps.length - (sys.trs s ps).2.length).reverse ++ s.hist := by
   induction ps generalizing s; rfl
   nm p ps ih
-  simp
+  simp [System.trs]
   split; simp
   nm x s' h₁; clear x
   have hs' := System.wf_of_tr h₁
@@ -646,7 +645,8 @@ theorem exi_prev_of_hist_eq_cons {s p ps} [hs : sys.WF s]
     rw [←h₁] at h
     simp [H] at h
   nm ps' p' ih; clear ih
-  simp [System.trs_append] at h₁
+  rw [System.trs_append] at h₁
+  simp [System.trs] at h₁
   split_ifs at h₁ with h₂ <;> simp at h₁
   split at h₁ <;> simp at h₁
   nm x s₁ h₃; clear x
@@ -769,13 +769,12 @@ theorem AState.validTr_of_aWins {s} {st : Strat} [hs : AState s]
 (h : s.aWins st) : sys.validTr s (st.a.f s) := by
   specialize h 1
   simp at h
-  split at h; simp at h
-  nm x s' h₁; clear x
-  exact System.validTr_of_eq_some h₁
+  choose s' h using h
+  exact sys.validTr_of_eq_some h
 
 theorem AState.hasTr_of_aWins {s} {st : Strat} [hs : AState s]
 (h : s.aWins st) : sys.hasTr s :=
-  System.hasTr_of_validTr # validTr_of_aWins h
+  sys.hasTr_of_validTr # validTr_of_aWins h
 
 theorem setPw_eq_comm {s₁ s₂ : State} :
 s₁.setPw s₂.pw = s₂ ↔ s₂.setPw s₁.pw = s₁ := by
@@ -859,10 +858,9 @@ theorem AState.exi_prev {sa} [ha : AState sa] :
   simp [sys.trs_append, hr] at h₁
   split at h₁ <;> simp at h₁
   nm h₃
-  rcases h₁ with ⟨h₁, h₄⟩
-  split at h₄ <;> simp at h₄
-  nm x sa' h₅; clear x
+  rcases h₁ with ⟨h₁, h₄, sa', h₅⟩
   clear h₄
+  simp [System.trs] at h₁
   simp [h₅] at h₁
   subst h₁
   rcases r with ⟨s, r⟩
@@ -918,10 +916,12 @@ theorem State.length_hist_le_two_of_pw_eq_zero {s} [hs : sys.WF s]
 (h : s.pw = 0) : s.hist.length ≤ 2 := by
   obtain ⟨ps, h₁⟩ := wf_iff.mp hs
   cases ps; simp at h₁; rw [←h₁]; simp
-  nm p₁ ps; simp at h₁; split at h₁; simp at h₁; nm x s₁ h₂; clear x
+  nm p₁ ps; simp at h₁; choose s₁ h₂ h₁ using h₁
   cases ps; simp at h₁; subst h₁; simp [hist_eq_of_tr h₂]
-  nm p₂ ps; simp at h₁; split at h₁; simp at h₁; nm x s₂ h₃; clear x
-  have hs₁ : AState s₁; use sys.wf_of_tr h₂; simp [aTurn_eq_of_tr h₂]
+  nm p₂ ps; simp at h₁; choose s₂ h₃ h₁ using h₁
+  have hs₁ : AState s₁
+  · use sys.wf_of_tr h₂
+    simp [aTurn_eq_of_tr h₂]
   simp [hs₁.tr_eq_some_iff] at h₃
   rcases h₃ with ⟨⟨h₃, h₄, h₅⟩, rfl⟩
   simp [pw_eq_of_tr h₂, h, ne_symm' h₃] at h₅
@@ -971,7 +971,7 @@ s₁.aTurn = (s.aTurn == decide (Even # n - r)) := by
   induction n generalizing s
   · simp at h ⊢; simp [h]
   nm n ih
-  simp at h
+  simp [System.simulate] at h
   split at h
   · nm x h₁; clear x; simp at h; simp [h]
   nm x s' h₁; clear x
@@ -1087,9 +1087,8 @@ theorem State.exi_tr_reachable_of_mem_dropLast_hist {s p} [hs : sys.WF s]
   subst h₂
   simp at h₁
   rcases h₁ with ⟨h₁, h₂⟩
-  split at h₂; simp at h₂
-  nm x s₂ h₃; clear x
-  simp [h₃] at h₁
+  choose s₂ h₃ h₂ using h₂
+  simp [System.trs, h₃] at h₁
   refine ⟨s₁, ?_, ⟨_, h₃⟩, ?_⟩
   · rw [wf_iff]
     use xs
@@ -1106,7 +1105,7 @@ theorem State.exi_tr_reachable_of_mem_dropLast_hist {s p} [hs : sys.WF s]
       exact System.reachable_of_fst_trs h₁
   · rw [←h₁]
     apply sys.reachable_of_trs (ts := p :: ys)
-    simp [h₃]
+    simp [System.trs, h₃]
 
 @[simp] instance {s} [hs : sys.Initial s] : DState s := by
   use inferInstance; simp at hs; rw [←hs]; rfl
@@ -1152,7 +1151,7 @@ s₁.hist = (ps.take # ps.length - r.length).reverse ++ s.hist := by
   induction ps generalizing s r
   · simp_all only [System.trs, Prod.mk.injEq, List.nil_eq, List.length_nil,
     tsub_self, List.take_nil, List.reverse_nil, List.nil_append]
-  nm p ps ih; simp at h; split at h
+  nm p ps ih; simp [System.trs] at h; split at h
   · simp at h; rcases h with ⟨rfl, rfl⟩; simp
   nm x s' h₁; simp only [ih h, hist_eq_of_tr h₁, List.length_cons, Nat.succ_sub #
     sys.trs_snd_length_le_of_eq h, Nat.succ_eq_add_one, List.take_succ_cons,
@@ -1237,7 +1236,7 @@ theorem State.length_hist_eq_of_simulate_eq {s s' f n r}
   induction n generalizing s s'
   · simp at h; simp [h]
   nm n ih
-  simp at h
+  simp [System.simulate] at h
   split at h
   · nm x h₁; clear x
     simp at h

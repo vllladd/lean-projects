@@ -102,8 +102,7 @@ sys.WF # s.setHist # s.hist.take (s.hist.length - s₀.hist.length) ++ hist := b
     simpa
   nm p ps ih
   simp at h
-  split at h; simp at h
-  nm x s' h₁; clear x
+  choose s' h₁ h using h
   have h₂ := System.wf_of_tr h₁
   have h₃ : sys.tr (s₁.setHist # s₁.hist.take (s₁.hist.length - s₀.hist.length) ++ hist)
     p = some (s'.setHist # s'.hist.take (s'.hist.length - s₀.hist.length) ++ hist)

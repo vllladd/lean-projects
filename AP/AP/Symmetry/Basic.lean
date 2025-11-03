@@ -27,7 +27,7 @@ if s.hist = [] then s.aPos₀ else ft s.aPos₀ := by
   simp at h; simp [h]; intro h₁; simp [h₁] at h
 
 @[simp]
-theorem aTurn_sym_fs {s} {sym : sys.Symmetry} [hs : sys.WF s] (H : sym.WF) :
+theorem aTurn_sym_fs {s} {sym : sys.Symmetry} [hs : sys.WF s] [H : sym.WF] :
 (sym.fs s).aTurn = s.aTurn := by
   rw [State.wf_iff] at hs
   obtain ⟨ps, h⟩ := hs
@@ -38,8 +38,7 @@ theorem aTurn_sym_fs {s} {sym : sys.Symmetry} [hs : sys.WF s] (H : sym.WF) :
   · simp at h; rwa [←h]
   nm p ps ih
   simp at h
-  split at h; simp at h
-  nm x s' h₁; clear x
+  choose s' h₁ h using h
   have h₂ := h₁
   rw [sym.tr_eq] at h₁
   simp at h₁
@@ -49,8 +48,8 @@ theorem aTurn_sym_fs {s} {sym : sys.Symmetry} [hs : sys.WF s] (H : sym.WF) :
   rw [State.aTurn_eq_of_tr h₁, State.aTurn_eq_of_tr h₂, h₀]
 
 @[simp]
-theorem aTurn_sym_fs' {s} {sym : sys.Symmetry} [hs : sys.WF s] (H : sym.WF) :
-(sym.fs' s).aTurn = s.aTurn := by rw [←aTurn_sym_fs H]; simp
+theorem aTurn_sym_fs' {s} {sym : sys.Symmetry} [hs : sys.WF s] [H : sym.WF] :
+(sym.fs' s).aTurn = s.aTurn := by rw [←aTurn_sym_fs (H := H)]; simp
 
 def AStrat.sym (a : AStrat) (sym : sys.Symmetry) : AStrat where
   f := sym.simFn a.f

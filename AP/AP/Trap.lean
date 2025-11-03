@@ -18,7 +18,7 @@ theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
   have ht : sys.hasTr sa
   · specialize ih 1
     obtain ⟨a, h₁, h₂⟩ := ih
-    simp at h₂; split at h₂; simp at h₂; nm x sd h₃; clear x
+    simp at h₂; choose sd h₃ using h₂
     exact ⟨_, _, h₃⟩
   rw [skolemize'] at ih
   obtain ⟨f, hf⟩ := ih
@@ -30,9 +30,9 @@ theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
       specialize hf n
       rcases hf with ⟨h₁, h₂⟩
       cases n <;> simp; nm n
-      simp at h₂; split at h₂; simp at h₂; nm x sd h₃; clear x
+      simp at h₂; choose sd h₃ using h₂
       simp [ha.tr_eq_some_iff] at h₃
-      exact h₃.1.2.2
+      tauto
     intro n hn
     simp [hn]
   have h₂ := @Point.finite_setOf_dist_le sa.aPos sa.pw
@@ -125,7 +125,7 @@ theorem aPos_dist_le_of_simulate {s r f n} [hs : sys.WF s]
   induction n generalizing s r
   · simp at h; simp [←h]
   nm n ih
-  simp at h; split at h
+  simp [System.simulate] at h; split at h
   · nm x h₁; clear x
     subst h
     simp
@@ -314,8 +314,8 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
         simp [Set'.mem_ofSet h₁]
         right
         use k + 1, by linarith
-        rw [System.simulate_add]
-        simp [hs₁, hp, H₁']
+        rw [sys.simulate_add]
+        simp [System.simulate, hs₁, hp, H₁']
       have H₂ : a'.f s₂ = p
       · rw [←ha', ←hp]; apply aMimic_apply_eq_of hs₁ hs₂
         simpa [hp, AState.validTr_iff]
@@ -339,7 +339,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
           simp [←hS]
           use k + 1, by linarith
           rw [sys.simulate_add]
-          simp [hs₁, hp, H₁]
+          simp [System.simulate, hs₁, hp, H₁]
           rwa [Hs₁.aPos_eq_of_tr H₁]
         · generalize hm : (s₂.taken ∪ ps').max! + ⟨1, 0⟩ = m
           intro H₂

@@ -36,14 +36,12 @@ class SimFn (f : S → T) : Prop where
 def tr! (s : S) (t : T) : S :=
   (sys.tr s t).getD s
 
-@[simp]
 def trs {S T : Type u} (sys : System S T) (s : S) : List T → S × List T
 | [] => (s, [])
 | (t :: ts) => match sys.tr s t with
   | none => (s, t :: ts)
   | some s₁ => sys.trs s₁ ts
 
-@[simp]
 def simulate {S T : Type u} (sys : System S T) (f : S → T) (s : S) : ℕ → S × ℕ
 | 0 => (s, 0)
 | n + 1 => match sys.tr s # f s with
