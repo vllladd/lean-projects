@@ -63,8 +63,8 @@ def readAMove : IO (Option PointZ) := do
   let inp ← stdin.getLine
   pure # parseAMove ⟨inp.1.filter (· ∉ "\r\n".1)⟩
 
-instance {s} : Decidable # Edge.cnd₀ s := by
-  simp [Edge.cnd₀]; split <;> all_goals infer_instance
+-- instance {s} : Decidable # Edge.cnd₀ s := by
+--   simp [Edge.cnd₀]; split <;> all_goals infer_instance
 
 def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
   match n with
@@ -77,7 +77,7 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
     | true => do
       if !isFst then logb else pure ()
       IO.println s.toStr
-      IO.println # "\n" ++ if Edge.cnd₀ s then "Yes" else "No"
+      -- IO.println # "\n" ++ if Edge.cnd₀ s then "Yes" else "No"
       let p ← readAMove
       pure # p.map (s.aPos + ·)
     match p? with
@@ -108,4 +108,4 @@ theorem parseAMove_6 : parseAMove "6" = some Dir.right.point := by native_decide
 theorem parseAMove_2 : parseAMove "2" = some Dir.down.point := by native_decide
 theorem parseAMove_4 : parseAMove "4" = some Dir.left.point := by native_decide
 
-theorem cnd_state₀ : Edge.cnd₀ state₀ := by native_decide
+-- theorem cnd_state₀ : Edge.cnd₀ state₀ := by native_decide
