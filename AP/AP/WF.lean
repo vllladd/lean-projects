@@ -208,9 +208,8 @@ theorem State.exi_hist_wf_of_wfCnd {s} (h : WFCnd s) : ∃ hist, sys.WF # s.setH
     use [p]
     simp; rw [Option.iget_some]
     simp [sys, move, dMove, guard]
-    split_ifs with h₂
-    · subst h₂; cases h.aPos_not_mem_taken hp
-    simp
+    split_ands
+    · rintro rfl; exact h.aPos_not_mem_taken hp
     ext:1 <;> simp [ht]
     rw [Set'.eq_insert_empty_of_size_eq_one h₃ hp]
   have H₁ := h.aPos_not_mem_taken
