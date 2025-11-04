@@ -18,6 +18,21 @@ def cnd₀ (s : State) : Prop :=
   | 1 => (p₀ :: get 1).all (· ∈ s.taken)
   | d => 0 < d
 
+def cndComp₀ (arr : Array Bool) (offset : ℕ) (d : ℕ) : Bool :=
+  let f (i : ℕ) := arr[offset + i]?.iget
+  match d with
+  | 5 => f 2
+  | 4 => f 2 ∧ (f 1 ∨ f 3)
+  | 3 => 2 ≤ [f 1, f 2, f 3].countP id
+  | 2 => false
+  | 1 => f 1 ∧ f 2 ∧ f 3
+  | d => d ≠ 0
+
+def ptsArr (s : State) (start : ℤ) (len : ℕ) : Array Bool :=
+  ⟨List.range len |>.map # λ i => edge₀.getBorderPoint s.aPos (start + i) ∈ s.taken⟩
+
+-- #check 0 #exit
+
 theorem aPos_y_lt_zero_of_cnd₀ (h : cnd₀ s) : s.aPos.y < 0 := by
   simp [cnd₀, getBorderPoints, getBorderPoint₀, getBorderPoint] at h ⊢
   split at h <;> linarith
@@ -25,6 +40,28 @@ theorem aPos_y_lt_zero_of_cnd₀ (h : cnd₀ s) : s.aPos.y < 0 := by
 theorem cnd₀_of_aPos_y_le_neg_6 (h : s.aPos.y ≤ -6) : cnd₀ s := by
   simp [cnd₀, getBorderPoints, getBorderPoint₀, getBorderPoint] at h ⊢
   split <;> linarith
+
+theorem cnd₀_eq_cndComp₀ {s} : cnd₀ s = cndComp₀ (ptsArr s (-2) 5) 0 (-s.aPos.y).toNat := by
+  unfold ptsArr
+  by_cases h : 0 ≤ s.aPos.y
+  · have h₁ : ¬cnd₀ s
+    · contrapose! h
+      exact aPos_y_lt_zero_of_cnd₀ h
+    simp [h₁]
+    replace h : -s.aPos.y ≤ 0; linarith
+    rw [←Int.toNat_eq_zero] at h
+    simp [cndComp₀, h]
+  push_neg at h
+  simp [cnd₀, cndComp₀, getBorderPoints, getBorderPoint₀]
+  split <;> nm H h₁ <;> simp [h₁]
+  · simp [List.countP_cons]; ring_nf
+  · tauto
+  · nm x h₂ h₃ h₄; clear x
+    simp at H h₁ h₂ h₃ h₄
+    split <;> try omega
+    simp
+
+-- #check 0 #exit
 
 theorem cnd₀_of_tr_tr_aState {sa sd sa' p} {d : DStrat} [hsa : AState sa] [hd : d.WF]
 (hpw : sa.pw = 1) (h₀ : cnd₀ sa) (h₁ : sys.tr sa p = some sd)
