@@ -10,7 +10,7 @@ inductive Raw₀ (α β : Type*) [DecidableEq α] [Hashable α] where
 namespace Raw₀
 
 variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-  {t t₁ t₂ : Raw₀ α β}
+variable {t t₁ t₂ t₃ : Raw₀ α β}
 
 def val : Raw₀ α β → Option β
 | .mk val _ => val
@@ -40,14 +40,14 @@ inductive WF : Raw₀ α β → Prop where
   mp.WF → (∀ {k t}, mp.get? k = some t → ¬t.isEmpty) →
   (∀ {k t}, mp.get? k = some t → t.WF) → (mk val mp).WF
 
-theorem WF.mp {t : Raw₀ α β} (wf : t.WF) : t.mp.WF := by
+theorem WF.mp {t : Raw₀ α β} [wf : t.WF] : t.mp.WF := by
   cases wf; assumption
 
-theorem WF.wf_get? {t : Raw₀ α β} (wf : t.WF)
+theorem WF.wf_get? {t : Raw₀ α β} [wf : t.WF]
 {k t'} (h : t.mp.get? k = some t') : t'.WF := by
   cases wf; nm val mp h₁ h₂ h₃; exact h₃ h
 
-theorem WF.not_empty_get? {t : Raw₀ α β} (wf : t.WF)
+theorem WF.not_empty_get? {t : Raw₀ α β} [wf : t.WF]
 {k t'} (h : t.mp.get? k = some t') : ¬t'.isEmpty := by
   cases wf; nm val mp h₁ h₂ h₃; exact h₂ h
 
@@ -80,7 +80,7 @@ def depthAux (t : Raw₀ α β) : ℕ :=
     0 (λ _ _ n m => max n m)
     0 (λ _ _ _ n m => max (n + 1) m)
 
-theorem depthAux_le {t : Raw₀ α β} (wf : t.WF) {k t'}
+theorem depthAux_le {t : Raw₀ α β} [wf : t.WF] {k t'}
 (h : t.mp.get? k = some t') : t'.depthAux < t.depthAux := by
   classical
   rcases t with ⟨val, mp⟩
@@ -113,7 +113,7 @@ theorem depthAux_le {t : Raw₀ α β} (wf : t.WF) {k t'}
 
 theorem depthAux_le_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)}
 (wf : (mk val mp).WF) {k : α} {t : Raw₀ α β} (h : mp.get? k = some t) :
-t.depthAux < (mk val mp).depthAux := depthAux_le wf h
+t.depthAux < (mk val mp).depthAux := depthAux_le h
 
 set_option linter.unusedVariables false in
 def recAux {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) (wf : t.WF)
@@ -123,7 +123,7 @@ mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : γ t :=
   | .mk val mp => motive val mp wf.mp #
     λ i t h => t.recAux (wf.wf_get? h) motive
 termination_by t.depthAux
-decreasing_by exact depthAux_le wf h
+decreasing_by exact depthAux_le h
 
 def rec' {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) [wf : t.WF]
 (motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
@@ -137,7 +137,6 @@ def depth (t : Raw₀ α β) [wf : t.WF] : ℕ :=
 def empty : Raw₀ α β := ⟨none, ∅⟩
 
 instance : EmptyCollection (Raw₀ α β) := ⟨empty⟩
-
 theorem empty_def : (∅ : Raw₀ α β) = ⟨none, ∅⟩ := rfl
 
 instance : (∅ : Raw₀ α β).WF := by
@@ -161,8 +160,8 @@ theorem depth_mk {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF] :
 theorem depth_empty : (∅ : Raw₀ α β).depth = 0 := by
   simp [empty_def]
 
-theorem depth_le {t : Raw₀ α β} (wf : t.WF) {k t'}
-(h : t.mp.get? k = some t') : t'.depth (wf := wf.wf_get? h) < t.depth := by
+theorem depth_lt [wf : t.WF] {k t'} (h : t.mp.get? k = some t') :
+t'.depth (wf := wf.wf_get? h) < t.depth := by
   classical
   rcases t with ⟨val, mp⟩
   simp at h ⊢
