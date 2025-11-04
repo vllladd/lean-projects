@@ -173,8 +173,8 @@ fCase2 ((translate ⟨0, dy⟩).fs' s) (e.getBorderPoint₀ ((translate ⟨0, dy
 
 theorem defense_translate_of_down {dy} [H : Fact # e.dir = .down] :
 (e.translate ⟨0, dy⟩).defense = e.defense.sym (translate ⟨0, dy⟩) := by
-  simp only [defense, dist_translate, points_translate, Defense.sym, aPos_sym_of_basicSym',
-    Defense.mk.injEq, true_and]
+  simp only [defense, dist_translate, points_translate, Defense.sym, pw_fs'_of_basicSym,
+    aPos_sym_of_basicSym', Defense.mk.injEq, true_and]
   ext s p :2
   simp only [f, f', dist_translate, getBorderPoint₀_translate_of_down, decide_not,
     getBorderPoints_translate_of_down, List.find?_append, List.find?_map, Function.comp_def',

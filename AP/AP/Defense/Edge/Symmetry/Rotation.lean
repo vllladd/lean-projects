@@ -202,8 +202,8 @@ some (rotRight.ft' p) := by
 
 @[simp]
 theorem defense_rotRight : e.rotRight.defense = e.defense.sym rotRight := by
-  simp only [defense, dist_rotRight, points_rotRight, Defense.sym, aPos_sym_of_basicSym',
-    Defense.mk.injEq, true_and]
+  simp only [defense, dist_rotRight, points_rotRight, Defense.sym, pw_fs'_of_basicSym,
+    aPos_sym_of_basicSym', Defense.mk.injEq, true_and]
   ext s p :2
   simp only [f, f', dist_rotRight, getBorderPoint₀_rotRight, decide_not,
     getBorderPoints_rotRight, List.find?_append, List.find?_map, Function.comp_def',

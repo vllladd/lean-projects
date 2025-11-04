@@ -475,3 +475,4 @@ theorem validTr_defense : e.defense.ValidTr := by
 
 @[simp] theorem dir_edge₀ : edge₀.dir = .down := rfl
 @[simp] theorem offset_edge₀ : edge₀.offset = 0 := rfl
+@[simp] theorem dist_edge₀ {p} : edge₀.dist p = -p.y := by simp [dist]

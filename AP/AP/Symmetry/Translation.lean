@@ -45,7 +45,8 @@ instance {offset} : (translate offset).WF where
   initial_fs_iff := translate.cnd_initial_fs_iff
   tr_eq := translate.cnd_tr_eq
 
-@[simp] instance {offset} : BasicSym # translate offset where
+@[simp]
+instance {offset} : BasicSym # translate offset where
   exi_mkSym := by simp [translate]
 
 @[simp] theorem translate_ft_x {p offset} : (translate offset |>.ft p).x = p.x + offset.x := rfl

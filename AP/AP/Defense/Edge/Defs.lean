@@ -79,7 +79,7 @@ def f (e : Edge) (s : State) : Option PointZ := do
   return p
 
 def defense (e : Edge) : Defense where
-  cnd := λ s => 6 ≤ e.dist s.aPos
+  cnd := λ s => s.pw = 1 ∧ 6 ≤ e.dist s.aPos
   ps := e.points
   f := e.f
 

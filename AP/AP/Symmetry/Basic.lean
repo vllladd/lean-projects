@@ -230,3 +230,11 @@ instance {sym₁ sym₂} [H₁ : BasicSym sym₁] [H₂ : BasicSym sym₂] : Bas
   obtain ⟨ft₂, rfl⟩ := H₂.exi_mkSym
   use ft₁.comp ft₂
   ext <;> simp
+
+@[simp]
+theorem pw_fs_of_basicSym {s sym} [H : BasicSym sym] : (sym.fs s).pw = s.pw := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; rfl
+
+@[simp]
+theorem pw_fs'_of_basicSym {s sym} [H : BasicSym sym] : (sym.fs' s).pw = s.pw := by
+  obtain ⟨ft, rfl⟩ := H.exi_mkSym; rfl

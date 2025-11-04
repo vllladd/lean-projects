@@ -65,7 +65,7 @@ def cnd' (c : Corner) (s : State) : Prop := ∀ (p : PointZ),
   0 < d₁ → 0 < d₂ → d₁ ≤ 5 → d₂ ≤ 5 → p ∈ s.taken
 
 def cnd (c : Corner) (s : State) : Prop :=
-  6 ≤ c.dist s.aPos ∧ c.cnd' s
+  s.pw = 1 ∧ 6 ≤ c.dist s.aPos ∧ c.cnd' s
 
 def f (c : Corner) (s : State) : Option PointZ :=
   c.edge₁.defense.f s <|> c.edge₂.defense.f s
@@ -76,10 +76,10 @@ def defense (c : Corner) : Defense where
   f := c.f
 
 theorem cnd_defense_edge₁ {s} (h : c.cnd s) : c.edge₁.defense.cnd s :=
-  le_of_le_min_left h.1
+  ⟨h.1, le_of_le_min_left h.2.1⟩
 
 theorem cnd_defense_edge₂ {s} (h : c.cnd s) : c.edge₂.defense.cnd s :=
-  le_of_le_min_right h.1
+  ⟨h.1, le_of_le_min_right h.2.1⟩
 
 @[simp] theorem ps_defense : c.defense.ps = c.points := rfl
 @[simp] theorem f_defense : c.defense.f = c.f := rfl
@@ -133,7 +133,7 @@ theorem wf_defense : c.defense.WF := by
   generalize hr : sys.simulate (Strat.f ⟨a, e₁.st # e₂.st d⟩) s n = r at H₁
   have h₃ : sys.simulate (Strat.f ⟨a, e₂.st # e₁.st d⟩) s n = r
   · rw [←hr, ←Defense.simulate_st_comm]; subst he₁ he₂
-    intro s' h₃ p₁ p₂ h₄; have h₅ := c.cnd'_of_reachable h₃ h.2
+    intro s' h₃ p₁ p₂ h₄; have h₅ := c.cnd'_of_reachable h₃ h.2.2
     have hs' := sys.wf_of_reachable h₃
     simp [edge₂_eq_none_of_edge₁_eq_some h₅ h₄]
   rw [h₃] at H₂; clear h₃
