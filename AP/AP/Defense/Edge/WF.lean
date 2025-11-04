@@ -26,15 +26,32 @@ theorem cnd₀_of_aPos_y_le_neg_6 (h : s.aPos.y ≤ -6) : cnd₀ s := by
   simp [cnd₀, getBorderPoints, getBorderPoint₀, getBorderPoint] at h ⊢
   split <;> linarith
 
-include hpw in
-theorem cnd₀_simulatemul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
-[hs : AState s] [ha : a.WF] [hd : d.WF] (h₁ : cnd₀ s)
-(h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s (n * 2) = (s₁, 0)) : cnd₀ s₁ := by
-  induction n
-  · sorry
-  · sorry
+theorem cnd₀_of_tr_tr_aState {sa sd sa' p} {d : DStrat} [hsa : AState sa] [hd : d.WF]
+(hpw : sa.pw = 1) (h₀ : cnd₀ sa) (h₁ : sys.tr sa p = some sd)
+(h₂ : sys.tr sd (edge₀.defense.st d |>.f sd) = some sa') : cnd₀ sa' := by
+  sorry
 
 -- #check 0 #exit
+
+include hpw in
+theorem cnd₀_simulatemul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
+[hs : AState s] [hd : d.WF] (h₁ : cnd₀ s)
+(h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s (n * 2) = (s₁, 0)) : cnd₀ s₁ := by
+  induction n generalizing s₁
+  · simp at h₂; rwa [←h₂]
+  nm n ih
+  rw [Nat.succ_mul, sys.simulate_add_full] at h₂
+  simp at h₂
+  choose sa h₂ sd h₃ h₄ using h₂
+  have hsa := AState.of_simulate_mul_two_eq_full h₂
+  have hsd := DState.of_tr h₃
+  have hs₁ := AState.of_tr h₄
+  have hpw₁ : sa.pw = 1
+  · convert hpw.1 using 1
+    exact pw_eq_of_reachable # sys.reachable_of_simulate_eq h₂
+  specialize ih h₂
+  simp at h₃ h₄
+  exact cnd₀_of_tr_tr_aState hpw₁ ih h₃ h₄
 
 include hpw in
 theorem aPos_y_lt_zero_of_tr_aState_cnd₀ {s' p} [hs : AState s]
@@ -71,7 +88,7 @@ theorem aPos_y_lt_zero_of_tr_aState_cnd₀ {s' p} [hs : AState s]
 
 include hpw in
 theorem edge₀_simulate_full_aPos_y_lt_zero_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
-[hs : AState s] [ha : a.WF] [hd : d.WF] (h₁ : s.aPos.y ≤ -6)
+[hs : AState s] [hd : d.WF] (h₁ : s.aPos.y ≤ -6)
 (h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s n = (s₁, 0)) : s₁.aPos.y < 0 := by
   have H := cnd₀_of_aPos_y_le_neg_6 h₁
   induction n using Nat.mod_2_ind <;> nm n
@@ -89,14 +106,14 @@ theorem edge₀_simulate_full_aPos_y_lt_zero_of_aState {s₁} {a : AStrat} {d : 
 
 include hpw in
 theorem edge₀_simulate_aPos_y_lt_zero_of_aState {a : AStrat} {d : DStrat} {n}
-[hs : AState s] [ha : a.WF] [hd : d.WF] (h : s.aPos.y ≤ -6) :
+[hs : AState s] [hd : d.WF] (h : s.aPos.y ≤ -6) :
 sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s n |>.1.aPos.y < 0 := by
   apply sys.fst_simulate_ind (p := (·.aPos.y < 0)) _ n; clear n; intro n s' h₁
   exact edge₀_simulate_full_aPos_y_lt_zero_of_aState h h₁
 
 include hpw in
 theorem edge₀_simulate_aPos_y_lt_zero {a : AStrat} {d : DStrat} {n}
-[hs : sys.WF s] [ha : a.WF] [hd : d.WF] (h : s.aPos.y ≤ -6) :
+[hs : sys.WF s] [hd : d.WF] (h : s.aPos.y ≤ -6) :
 sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s n |>.1.aPos.y < 0 := by
   replace hs := s.aState_or_dState
   rcases hs with hs | hs
