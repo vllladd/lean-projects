@@ -56,7 +56,9 @@ def fCase2 (s : State) (p₀ : PointZ) (get : ℕ → List PointZ) : Option Poin
   let ps₂ := get 2
   let f := λ (ps₁ ps₂ : List PointZ) => do
     let p ← ps₁ |>.find? (· ∈ s.taken)
-    ps₂ |>.find? # λ p' => p' ∉ s.taken ∧ p'.dist p ≠ 1
+    let p' ← ps₂ |>.find? # λ (p' : PointZ) => p'.dist p ≠ 1
+    guard # p' ∉ s.taken
+    return p'
   f ps₁ ps₂ |>.elim (f ps₂ ps₁) some
 
 def f' (e : Edge) (s : State) : Option PointZ :=
@@ -66,8 +68,8 @@ def f' (e : Edge) (s : State) : Option PointZ :=
   let get := e.getBorderPoints pa
   match e.dist pa with
   | 5 => some p₀
-  | 4 => pick # p₀ :: get 1
-  | 3 => pick # get 1 ++ [p₀]
+  | 4 => pick # p₀ :: (get 1).take 1
+  | 3 => pick # get 1
   | 2 => fCase2 s p₀ get
   | 1 => pick # p₀ :: get 1
   | _ => none

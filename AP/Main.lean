@@ -77,7 +77,10 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
     | true => do
       if !isFst then logb else pure ()
       IO.println s.toStr
+      
       -- IO.println # "\n" ++ if Edge.cnd₀ s then "Yes" else "No"
+      IO.println # "\n" ++ repr (Edge.edge₀.dist s.aPos)
+      
       let p ← readAMove
       pure # p.map (s.aPos + ·)
     match p? with

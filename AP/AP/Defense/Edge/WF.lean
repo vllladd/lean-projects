@@ -31,6 +31,22 @@ def cndComp₀ (arr : Array Bool) (offset : ℕ) (d : ℕ) : Bool :=
 def ptsArr (s : State) (start : ℤ) (len : ℕ) : Array Bool :=
   ⟨List.range len |>.map # λ i => edge₀.getBorderPoint s.aPos (start + i) ∈ s.taken⟩
 
+-- theorem cnd₀_iff_f_edge₀_eq_none {s} [hs : sys.WF s] : cnd₀ s ↔ edge₀.f s = none := by
+--   simp [cnd₀, f, f', dist_edge₀, getBorderPoint₀, getBorderPoints, getBorderPoint]
+--   split <;> nm x h₁ <;> clear x <;> rw [neg_eq_iff_eq_neg] at h₁ <;> try rw [h₁]
+--   · simp only [Int.reduceNeg, neg_neg, Option.some.injEq, forall_eq',
+--       Classical.imp_iff_left_iff]
+--     simp only [Point.ext_iff, h₁, Int.reduceNeg, zero_eq_neg, OfNat.ofNat_ne_zero, and_false,
+--       not_false_eq_true, true_or]
+--   · simp only [Int.reduceNeg, neg_neg, List.find?_cons_eq_some, Bool.not_eq_eq_eq_not,
+--       Bool.not_true, decide_eq_false_iff_not, Bool.not_not, decide_eq_true_eq,
+--       List.find?_singleton, ite_not, Option.ite_none_left_eq_some, Option.some.injEq]
+--     constructor
+--     · rintro ⟨h₂, h₃⟩ ⟨x, y⟩
+--       simp only [Point.ext_iff, Int.reduceNeg, not_and]
+--       intro h₄ h₅
+--       aesop?
+
 -- #check 0 #exit
 
 theorem aPos_y_lt_zero_of_cnd₀ (h : cnd₀ s) : s.aPos.y < 0 := by

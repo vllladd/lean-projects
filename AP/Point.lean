@@ -420,7 +420,35 @@ theorem dist_add_left_cancel : (c + a).dist (c + b) = a.dist b := by
 theorem dist_add_right_cancel : (a + c).dist (b + c) = a.dist b := by
   rw [add_comm a, add_comm b]; simp
 
-include ha₃
+@[simp]
+theorem dist_add_cancel_left_left {a b c : Point α} : (c + a).dist (c + b) = a.dist b := by
+  simp [dist]
+
+@[simp]
+theorem dist_add_cancel_left_right {a b c : Point α} : (c + a).dist (b + c) = a.dist b := by
+  simp [dist]; noncomm_ring
+
+@[simp]
+theorem dist_add_cancel_right_left {a b c : Point α} : (a + c).dist (c + b) = a.dist b := by
+  simp [dist]; noncomm_ring
+
+@[simp]
+theorem dist_add_cancel_right_right {a b c : Point α} : (a + c).dist (b + c) = a.dist b := by
+  simp [dist]
+
+@[simp]
+theorem dist_neg_neg {a b : Point α} : (-a).dist (-b) = a.dist b := by
+  simp [dist]
+  rw [add_comm _ b.x, add_comm _ b.y, abs_sub_comm a.x, abs_sub_comm a.y]
+  simp_rw [←sub_eq_add_neg]
+
+@[simp]
+theorem dist_sub_cancel_left {a b c : Point α} : (c - a).dist (c - b) = a.dist b := by
+  simp [sub_eq_add_neg]
+
+@[simp]
+theorem dist_sub_cancel_right {a b c : Point α} : (a - c).dist (b - c) = a.dist b := by
+  simp [sub_eq_add_neg]
 
 end dist
 

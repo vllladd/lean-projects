@@ -59,3 +59,13 @@ instance {offset} : BasicSym # translate offset where
 
 @[simp] theorem translate_ft_mk' {offset x y} :
 (translate offset).ft' ⟨x, y⟩ = ⟨x - offset.x, y - offset.y⟩ := rfl
+
+@[simp]
+theorem translate_dist_translate {offset p₁ p₂} :
+(translate offset |>.ft p₁).dist (translate offset |>.ft p₂) = p₁.dist p₂ := by
+  simp [translate]
+
+@[simp]
+theorem translate_dist_translate' {offset p₁ p₂} :
+(translate offset |>.ft' p₁).dist (translate offset |>.ft' p₂) = p₁.dist p₂ := by
+  simp [translate]
