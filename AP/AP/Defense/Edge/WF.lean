@@ -8,14 +8,14 @@ omit hpw
 
 def cndCase2 (s : State) (p₀ : PointZ) (get : ℕ → List PointZ) : Prop :=
   p₀ ∈ s.taken ∧
-  let ps₁ := get 1
-  let ps₂ := get 2
-  let f := λ (ps₁ ps₂ : List PointZ) => do
+  let p := do
+    let ps₁ := get 2
+    let ps₂ := get 1
     let p ← ps₁ |>.find? (· ∈ s.taken)
-    let p' ← ps₂ |>.find? # λ (p' : PointZ) => p'.dist p ≠ 1
-    guard # p' ∉ s.taken
-    return p'
-  f ps₁ ps₂ |>.elim (f ps₂ ps₁) some |>.isNone
+    ps₂ |>.find? # λ (p' : PointZ) => p'.dist p ≠ 1
+  match p with
+  | none => True
+  | some p => p ∈ s.taken
 
 def cnd₀ (s : State) : Prop :=
   let pa := s.aPos
@@ -47,22 +47,32 @@ def ptsArr (s : State) (start : ℤ) (len : ℕ) : Array Bool :=
 theorem cndCase2_iff_fCase2_eq_none {s p₀ get} :
 cndCase2 s p₀ get ↔ fCase2 s p₀ get = none := by
   unfold cndCase2 fCase2
-  split_ifs with h
-  rotate_left; simp [h]
-  generalize hx :
-    (
-      have ps₁ := get 1;
-      have ps₂ := get 2;
-      have f := fun ps₁ ps₂ ↦ do
-        let p ← List.find? (fun x ↦ decide (x ∈ s.taken)) ps₁
-        let p' ← List.find? (fun p' ↦ decide (Point.dist p' p ≠ 1)) ps₂
-        guard (p' ∉ s.taken)
-        pure p';
-      ((f ps₁ ps₂).elim (f ps₂ ps₁) some)
-    ) = x
-  trans x.isNone = true
-  · simp [←hx, h]
-  simp
+  split_ifs with h₁
+  rotate_left; simp [h₁]
+  
+  suffices h : ∀ (ps₁ ps₂ : List PointZ),
+    (have p := do
+      let p ← List.find? (fun x ↦ decide (x ∈ s.taken)) ps₁
+      List.find? (fun p' ↦ decide (Point.dist p' p ≠ 1)) ps₂;
+    match p with
+    | none => True
+    | some p => p ∈ s.taken) ↔
+  (do
+    let p ← List.find? (fun x ↦ decide (x ∈ s.taken)) ps₁
+    let p' ← List.find? (fun p' ↦ decide (Point.dist p' p ≠ 1)) ps₂
+    guard (p' ∉ s.taken)
+    pure p') =
+    none
+  · simp [h₁] at h ⊢; apply h
+  intro ps₁ ps₂
+  
+  generalize ps₁.find? (fun x ↦ decide (x ∈ s.taken)) = p₁
+  rcases p₁ with ⟨⟩ | p₁ <;> simp
+  
+  generalize ps₂.find? (λ p' => !decide (p'.dist p₁ = 1)) = p₂
+  rcases p₂ with ⟨⟩ | p₂ <;> simp
+
+-- #check 0 #exit
 
 theorem cnd₀_iff_f_edge₀_eq_none_of_neg_y_aPos {s} [hs : sys.WF s] (h₀ : s.aPos.y < 0) :
 cnd₀ s ↔ edge₀.f s = none := by
@@ -111,11 +121,37 @@ cnd₀ s ↔ edge₀.f s = none := by
         tauto
   · clear x
     rw [cndCase2_iff_fCase2_eq_none]
-    generalize hm : fCase2 s { x := s.aPos.x, y := 0 } (edge₀.getBorderPoints s.aPos) = m
+    generalize h₂ : fCase2 s { x := s.aPos.x, y := 0 } (edge₀.getBorderPoints s.aPos) = m
     rcases m with ⟨⟩ | p
     · simp
     simp
-    sorry
+    split_ands
+    · rintro rfl
+      simp [fCase2] at h₂
+      split_ifs at h₂ with h₃ <;> simp at h₂
+      rotate_left
+      · simp [Point.ext_iff] at h₂
+        simp [←h₂] at h₁
+      choose p h₂ h₄ using h₂
+      clear h₂
+      simp [List.find?_eq_some_iff_append] at h₄
+      obtain ⟨h₄, xs, ⟨x, h₇⟩, h₈⟩ := h₄
+      simp [getBorderPoints, getBorderPoint] at h₇
+      cases xs <;> simp at h₇
+      · rw [←h₇.1] at h₁
+        simp at h₁
+      nm p₂ xs
+      cases xs <;> simp at h₇
+      simp at h₈
+      rcases h₇ with ⟨rfl, h₇, rfl⟩
+      rw [←h₇] at h₁
+      simp at h₁
+    · simp [fCase2] at h₂
+      split_ifs at h₂ with h₃ <;> simp at h₂
+      rotate_left
+      · rwa [←h₂]
+      choose p₁ h₂ h₄ h₅ using h₂
+      exact h₅
   · clear x
     rcases h : s.aPos with ⟨x, y⟩
     simp [h] at h₁; subst h₁
@@ -132,6 +168,30 @@ theorem aPos_y_lt_zero_of_cnd₀ (h : cnd₀ s) : s.aPos.y < 0 := by
 theorem cnd₀_of_aPos_y_le_neg_6 (h : s.aPos.y ≤ -6) : cnd₀ s := by
   simp [cnd₀, getBorderPoints, getBorderPoint₀, getBorderPoint] at h ⊢
   split <;> linarith
+
+theorem cnd₀_of_taken_subset {s s'} (h₁ : cnd₀ s) (h₃ : s'.aPos = s.aPos)
+(h₂ : s.taken ⊆ s'.taken) : cnd₀ s' := by
+  simp [cnd₀, h₃] at h₁ ⊢
+  replace h₂ := λ {x} => h₂ x
+  split at h₁ <;> nm x h₄
+  · exact h₂ h₁
+  · choose h₁ p h₅ h₆ using h₁
+    use h₂ h₁, p, h₅, h₂ h₆
+  · intro p h₅
+    specialize h₁ p h₅
+    exact h₂ h₁
+  · simp [cndCase2] at h₁ ⊢
+    rcases h₁ with ⟨h₁, h₅⟩
+    use h₂ h₁
+    sorry
+  · choose h₁ h₅ using h₁
+    use h₂ h₁
+    intro p h₆
+    specialize h₅ p h₆
+    use h₂ h₅
+  · exact h₁
+
+-- #check 0 #exit
 
 theorem cnd₀_eq_cndComp₀ {s} : cnd₀ s = cndComp₀ (ptsArr s (-2) 5) 0 (-s.aPos.y).toNat := by
   unfold ptsArr
@@ -158,6 +218,12 @@ theorem cnd₀_eq_cndComp₀ {s} : cnd₀ s = cndComp₀ (ptsArr s (-2) 5) 0 (-s
 theorem cnd₀_of_tr_tr_aState {sa sd sa' p} {d : DStrat} [hsa : AState sa] [hd : d.WF]
 (hpw : sa.pw = 1) (h₀ : cnd₀ sa) (h₁ : sys.tr sa p = some sd)
 (h₂ : sys.tr sd (edge₀.defense.st d |>.f sd) = some sa') : cnd₀ sa' := by
+  have hsd := DState.of_tr h₁
+  have hsa' := AState.of_tr h₂
+  by_cases h₃ : cnd₀ sd
+  · apply cnd₀_of_taken_subset h₃ # DState.aPos_eq_of_tr h₂
+    rw [DState.taken_eq_of_tr h₂]
+    sorry
   sorry
 
 -- #check 0 #exit

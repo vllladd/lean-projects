@@ -41,578 +41,65 @@ theorem of_eq_some_fCase2 {e : Edge} {s : State} {p : PointZ} (h₁ : e.dist s.a
   split at left
   next h =>
     split at left
+    next x
+      heq =>
+      simp_all only [Int.reduceNeg, decide_eq_true_eq, Option.bind_some, Option.bind_eq_some_iff',
+      ite_eq_right_iff,
+        reduceCtorEq, imp_false, Option.some.injEq, exists_const, exists_eq_right_right,
+        not_false_eq_true, and_true]
+      split at left
+      next x_1
+        heq_1 =>
+        simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
+          decide_eq_false_iff_not, Option.some.injEq]
+        subst left
+        simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
+        Nat.one_le_ofNat]
+      next x_1 heq_1 =>
+        split at left
+        next x_2
+          heq_2 =>
+          simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+          Bool.not_true,
+            decide_eq_false_iff_not, Option.some.injEq]
+          subst left
+          simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
+          Nat.one_le_ofNat]
+        next x_2 heq_2 =>
+          simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+          reduceCtorEq]
     next x heq =>
       split at left
-      next x_1 heq_1 =>
-        simp_all only [Int.reduceNeg, decide_eq_true_eq, Option.bind_some]
-        split at left
-        next x_2 heq_2 =>
-          split at left
-          next x_3 heq_3 =>
-            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-            decide_eq_false_iff_not,
-              Option.bind_some, ↓reduceIte, Option.bind_none, Option.elim_none, reduceCtorEq]
-          next x_3 heq_3 =>
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-              decide_eq_false_iff_not,
-                Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte, Option.bind_none,
-                Option.elim_none,
-                Option.bind_eq_some_iff', ite_eq_right_iff, reduceCtorEq, imp_false,
-                Option.some.injEq, exists_const]
-              obtain ⟨left, right_1⟩ := left
-              subst right_1
-              simp_all only [Int.reduceNeg, not_false_eq_true, getBorderPoint_inj,
-              exists_eq_right, abs_one,
-                Nat.one_le_ofNat]
-            next x_4 heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-              decide_eq_false_iff_not,
-                Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte, Option.bind_none,
-                Option.elim_none,
-                reduceCtorEq]
-        next x_2 heq_2 =>
-          split at left
-          next x_3 heq_3 =>
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-              decide_eq_true_eq, Bool.not_true,
-                decide_eq_false_iff_not, Option.bind_some, ↓reduceIte, Option.bind_none]
-              split at left
-              next h_1 => simp_all only [Int.reduceNeg, Option.bind_none, Option.elim_none,
-              reduceCtorEq]
-              next
-                h_1 =>
-                simp_all only [Int.reduceNeg, Option.bind_some, Option.elim_some,
-                Option.some.injEq,
-                  not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, Nat.abs_ofNat,
-                le_refl]
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_some]
-                split at left
-                next h_1 =>
-                  split at left
-                  next h_2 => simp_all only [Int.reduceNeg, Option.bind_none, Option.elim_none,
-                  reduceCtorEq]
-                  next
-                    h_2 =>
-                    simp_all only [Int.reduceNeg, Option.bind_none, Option.bind_some,
-                    Option.elim_none,
-                      Option.some.injEq, not_false_eq_true]
-                    subst left
-                    simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
-                    Nat.one_le_ofNat]
-                next h_1 =>
-                  split at left
-                  next
-                    h_2 =>
-                    simp_all only [Int.reduceNeg, Option.bind_some, Option.bind_none,
-                    Option.elim_some,
-                      Option.some.injEq, not_false_eq_true]
-                    subst left
-                    simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right,
-                    Nat.abs_ofNat, le_refl]
-                  next
-                    h_2 =>
-                    simp_all only [Int.reduceNeg, Option.bind_some, Option.elim_some,
-                    Option.some.injEq,
-                      not_false_eq_true]
-                    subst left
-                    simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right,
-                    Nat.abs_ofNat, le_refl]
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_some, Option.bind_none]
-                split at left
-                next h_1 => simp_all only [Int.reduceNeg, Option.bind_none, Option.elim_none,
-                reduceCtorEq]
-                next
-                  h_1 =>
-                  simp_all only [Int.reduceNeg, Option.bind_some, Option.elim_some,
-                  Option.some.injEq,
-                    not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right,
-                  Nat.abs_ofNat, le_refl]
-          next x_3 heq_3 =>
-            split at left
-            next x_4 heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-              decide_eq_true_eq, Bool.not_true,
-                decide_eq_false_iff_not, Option.bind_none, Option.bind_some, ↓reduceIte,
-                Option.elim_none,
-                reduceCtorEq]
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_none, Option.bind_some, Option.elim_none,
-                  Option.bind_eq_some_iff', ite_eq_right_iff, reduceCtorEq, imp_false,
-                  Option.some.injEq,
-                  exists_const]
-                obtain ⟨left, right_1⟩ := left
-                subst right_1
-                simp_all only [Int.reduceNeg, not_false_eq_true, getBorderPoint_inj,
-                exists_eq_right, abs_one,
-                  Nat.one_le_ofNat]
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq,
-                  Option.bind_none, Option.elim_none, reduceCtorEq]
-      next x_1 heq_1 =>
+      next x_1
+        heq_1 =>
+        simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, Option.bind_some,
+          Option.bind_eq_some_iff', ite_eq_right_iff, reduceCtorEq, imp_false, Option.some.injEq,
+          exists_const,
+          exists_eq_right_right, not_false_eq_true, and_true]
         split at left
         next x_2
           heq_2 =>
-          simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_eq_false_iff_not,
-          Option.bind_some]
-          split at left
-          next x_3 heq_3 =>
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-              decide_eq_false_iff_not,
-                Option.bind_some, ↓reduceIte, Option.bind_none, Option.elim_some, Option.some.injEq,
-                not_false_eq_true]
-              subst left
-              simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-              Nat.abs_ofNat, le_refl]
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                decide_eq_false_iff_not,
-                  Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte, Option.elim_some,
-                  Option.some.injEq, not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                Nat.abs_ofNat, le_refl]
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                decide_eq_false_iff_not,
-                  Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte,
-                  Option.bind_none, Option.elim_some,
-                  Option.some.injEq, not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                Nat.abs_ofNat, le_refl]
-          next x_3 heq_3 =>
-            split at left
-            next x_4 heq_4 =>
-              split at left
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_some, ↓reduceIte, Option.bind_none,
-                  Option.elim_none,
-                  reduceCtorEq]
-              next x_5 heq_5 =>
-                split at left
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_some, ↓reduceIte,
-                    Option.bind_none,
-                    Option.elim_none, Option.bind_eq_some_iff', ite_eq_right_iff, reduceCtorEq,
-                    imp_false,
-                    Option.some.injEq, exists_const]
-                  obtain ⟨left, right_1⟩ := left
-                  subst right_1
-                  simp_all only [Int.reduceNeg, not_false_eq_true, getBorderPoint_inj,
-                  exists_eq_right, abs_one,
-                    Nat.one_le_ofNat]
-                next x_6 heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_some, ↓reduceIte,
-                    Option.bind_none,
-                    Option.elim_none, reduceCtorEq]
-            next x_4 heq_4 =>
-              split at left
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_none, Option.bind_some, ↓reduceIte,
-                  Option.elim_none,
-                  reduceCtorEq]
-              next x_5 heq_5 =>
-                split at left
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_none, Option.bind_some,
-                    Option.elim_none,
-                    Option.bind_eq_some_iff', ite_eq_right_iff, reduceCtorEq, imp_false,
-                    Option.some.injEq,
-                    exists_const]
-                  obtain ⟨left, right_1⟩ := left
-                  subst right_1
-                  simp_all only [Int.reduceNeg, not_false_eq_true, getBorderPoint_inj,
-                  exists_eq_right, abs_one,
-                    Nat.one_le_ofNat]
-                next x_6 heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Option.bind_none, Option.elim_none, reduceCtorEq]
-        next x_2
-          heq_2 =>
-          simp_all only [Int.reduceNeg, decide_eq_true_eq, decide_eq_false_iff_not,
-          Option.bind_some,
-            Option.bind_none]
+          simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
+          decide_eq_false_iff_not,
+            Option.some.injEq]
+          subst left
+          simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
+          Nat.one_le_ofNat]
+        next x_2 heq_2 =>
           split at left
           next x_3
             heq_3 =>
-            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-            decide_eq_false_iff_not,
-              Option.bind_some, ↓reduceIte, Option.elim_some, Option.some.injEq, not_false_eq_true]
+            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+            Bool.not_true,
+              decide_eq_false_iff_not, Option.some.injEq]
             subst left
-            simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-            Nat.abs_ofNat, le_refl]
-          next x_3 heq_3 =>
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-              decide_eq_true_eq, Bool.not_true,
-                decide_eq_false_iff_not, Option.bind_some, ↓reduceIte, Option.elim_some,
-                Option.some.injEq,
-                not_false_eq_true]
-              subst left
-              simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, Nat.abs_ofNat,
-              le_refl]
-            next x_4 heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-              decide_eq_true_eq,
-                Option.bind_none, Option.elim_none, reduceCtorEq]
-    next x heq =>
-      split at left
-      next x_1 heq_1 =>
-        split at left
-        next x_2
-          heq_2 =>
-          simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq,
-          Option.bind_some]
-          split at left
-          next x_3 heq_3 =>
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-              decide_eq_false_iff_not,
-                Option.bind_some, ↓reduceIte, Option.bind_none, Option.elim_none, Option.some.injEq,
-                not_false_eq_true]
-              subst left
-              simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
-              Nat.one_le_ofNat]
-            next x_4 heq_4 =>
-              split at left
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                decide_eq_false_iff_not,
-                  Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte,
-                  Option.bind_none, Option.elim_none,
-                  reduceCtorEq]
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                decide_eq_false_iff_not,
-                  Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte,
-                  Option.bind_none, Option.elim_none,
-                  reduceCtorEq]
-          next x_3 heq_3 =>
-            split at left
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_some, ↓reduceIte]
-                split at left
-                next
-                  h_1 =>
-                  simp_all only [Int.reduceNeg, Option.bind_none, Option.elim_none,
-                  Option.some.injEq,
-                    not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                  abs_one,
-                    Nat.one_le_ofNat]
-                next
-                  h_1 =>
-                  simp_all only [Int.reduceNeg, Option.bind_some, Option.elim_some,
-                  Option.some.injEq,
-                    not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, Nat.abs_ofNat,
-                  le_refl]
-              next x_5 heq_5 =>
-                split at left
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_some, ↓reduceIte,
-                    Option.bind_none]
-                  split at left
-                  next h_1 => simp_all only [Int.reduceNeg, Option.bind_none, Option.elim_none,
-                  reduceCtorEq]
-                  next
-                    h_1 =>
-                    simp_all only [Int.reduceNeg, Option.bind_some, Option.elim_some,
-                    Option.some.injEq,
-                      not_false_eq_true]
-                    subst left
-                    simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right,
-                    Nat.abs_ofNat, le_refl]
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_some, Option.bind_none]
-                  split at left
-                  next h_1 => simp_all only [Int.reduceNeg, Option.bind_none, Option.elim_none,
-                  reduceCtorEq]
-                  next
-                    h_1 =>
-                    simp_all only [Int.reduceNeg, Option.bind_some, Option.elim_some,
-                      Option.some.injEq,
-                      not_false_eq_true]
-                    subst left
-                    simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right,
-                    Nat.abs_ofNat, le_refl]
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_none, Option.bind_some, ↓reduceIte,
-                  Option.elim_none,
-                  Option.some.injEq, not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                abs_one, Nat.one_le_ofNat]
-              next x_5 heq_5 =>
-                split at left
-                next x_6 heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_none, Option.bind_some,
-                    ↓reduceIte,
-                    Option.elim_none, reduceCtorEq]
-                next x_6 heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Option.bind_none, Option.elim_none, reduceCtorEq]
-        next x_2 heq_2 =>
-          split at left
-          next x_3
-            heq_3 =>
-            simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq,
-            Option.bind_some]
-            split at left
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                decide_eq_false_iff_not,
-                  Option.bind_some, ↓reduceIte, Option.elim_some, Option.some.injEq,
-                  not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                Nat.abs_ofNat, le_refl]
-              next x_5 heq_5 =>
-                split at left
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                  decide_eq_false_iff_not,
-                    Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte,
-                    Option.bind_none,
-                    Option.elim_some, Option.some.injEq, not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                  Nat.abs_ofNat, le_refl]
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-                  decide_eq_false_iff_not,
-                    Bool.not_false, decide_eq_true_eq, Option.bind_some, ↓reduceIte,
-                    Option.bind_none,
-                    Option.elim_some, Option.some.injEq, not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                  Nat.abs_ofNat, le_refl]
-            next x_4 heq_4 =>
-              split at left
-              next x_5 heq_5 =>
-                split at left
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_some, ↓reduceIte,
-                    Option.bind_none,
-                    Option.elim_none, Option.some.injEq, not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                    abs_one,
-                    Nat.one_le_ofNat]
-                next x_6 heq_6 =>
-                  split at left
-                  next x_7 heq_7 =>
-                    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                    decide_eq_true_eq,
-                      Bool.not_true, decide_eq_false_iff_not, Option.bind_some, ↓reduceIte,
-                      Option.bind_none,
-                      Option.elim_none, reduceCtorEq]
-                  next x_7 heq_7 =>
-                    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                    decide_eq_true_eq,
-                      Bool.not_true, decide_eq_false_iff_not, Option.bind_some, ↓reduceIte,
-                      Option.bind_none,
-                      Option.elim_none, reduceCtorEq]
-              next x_5 heq_5 =>
-                split at left
-                next x_6
-                  heq_6 =>
-                  simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                  decide_eq_true_eq,
-                    Bool.not_true, decide_eq_false_iff_not, Option.bind_none, Option.bind_some,
-                    ↓reduceIte,
-                    Option.elim_none, Option.some.injEq, not_false_eq_true]
-                  subst left
-                  simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-                  abs_one,
-                    Nat.one_le_ofNat]
-                next x_6 heq_6 =>
-                  split at left
-                  next x_7 heq_7 =>
-                    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                    decide_eq_true_eq,
-                      Bool.not_true, decide_eq_false_iff_not, Option.bind_none, Option.bind_some,
-                      ↓reduceIte,
-                      Option.elim_none, reduceCtorEq]
-                  next x_7 heq_7 =>
-                    simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                    decide_eq_true_eq,
-                      Option.bind_none, Option.elim_none, reduceCtorEq]
-          next x_3
-            heq_3 =>
-            simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq,
-            Option.bind_some,
-              Option.bind_none]
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-              decide_eq_false_iff_not,
-                Option.bind_some, ↓reduceIte, Option.elim_some, Option.some.injEq,
-                not_false_eq_true]
-              subst left
-              simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg,
-              Nat.abs_ofNat, le_refl]
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.bind_some, ↓reduceIte, Option.elim_some,
-                  Option.some.injEq,
-                  not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, Nat.abs_ofNat,
-                le_refl]
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq,
-                  Option.bind_none, Option.elim_none, reduceCtorEq]
-      next x_1 heq_1 =>
-        split at left
-        next x_2
-          heq_2 =>
-          simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq,
-          Option.bind_none,
-            Option.bind_some, Option.elim_none, Option.bind_eq_some_iff', ite_eq_right_iff,
-            reduceCtorEq, imp_false,
-            Option.some.injEq, exists_const, exists_eq_right_right, not_false_eq_true, and_true]
-          split at left
-          next x_3
-            heq_3 =>
-            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-            decide_eq_false_iff_not,
-              Option.some.injEq, not_false_eq_true]
-            subst left
-            simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
+            simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
             Nat.one_le_ofNat]
           next x_3 heq_3 =>
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-              decide_eq_true_eq, Bool.not_true,
-                decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
-              subst left
-              simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
-              Nat.one_le_ofNat]
-            next x_4 heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-              decide_eq_true_eq, reduceCtorEq]
-        next x_2 heq_2 =>
-          split at left
-          next x_3
-            heq_3 =>
-            simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq,
-            Option.bind_none,
-              Option.bind_some, Option.elim_none, Option.bind_eq_some_iff', ite_eq_right_iff,
-              reduceCtorEq, imp_false,
-              Option.some.injEq, exists_const, exists_eq_right_right, not_false_eq_true, and_true]
-            split at left
-            next x_4
-              heq_4 =>
-              simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-              decide_eq_false_iff_not,
-                Option.some.injEq, not_false_eq_true]
-              subst left
-              simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
-              Nat.one_le_ofNat]
-            next x_4 heq_4 =>
-              split at left
-              next x_5
-                heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, Bool.not_true,
-                  decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
-                subst left
-                simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
-                Nat.one_le_ofNat]
-              next x_5 heq_5 =>
-                simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false,
-                decide_eq_true_eq, reduceCtorEq]
-          next x_3 heq_3 =>
-            simp_all only [Int.reduceNeg, decide_eq_false_iff_not, Option.bind_none,
-              Option.elim_none, reduceCtorEq]
+            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
+            reduceCtorEq]
+      next x_1 heq_1 => simp_all only [Int.reduceNeg, decide_eq_false_iff_not, Option.bind_none,
+      reduceCtorEq]
   next h =>
     simp_all only [Option.some.injEq, not_false_eq_true]
     subst left
