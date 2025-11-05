@@ -68,7 +68,9 @@ def f' (e : Edge) (s : State) : Option PointZ :=
   let get := e.getBorderPoints pa
   match e.dist pa with
   | 5 => some p₀
-  | 4 => pick # p₀ :: (get 1).take 1
+  | 4 => let
+    xs := get 1
+    pick # p₀ :: if xs.any (· ∈ s.taken) then [] else xs
   | 3 => pick # get 1
   | 2 => fCase2 s p₀ get
   | 1 => pick # p₀ :: get 1

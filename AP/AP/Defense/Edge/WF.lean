@@ -6,6 +6,17 @@ variable {e e₁ e₂ : Edge}
 variable {s : State} [hpw : Fact # s.pw = 1]
 omit hpw
 
+def cndCase2 (s : State) (p₀ : PointZ) (get : ℕ → List PointZ) : Prop :=
+  p₀ ∈ s.taken ∧
+  let ps₁ := get 1
+  let ps₂ := get 2
+  let f := λ (ps₁ ps₂ : List PointZ) => do
+    let p ← ps₁ |>.find? (· ∈ s.taken)
+    let p' ← ps₂ |>.find? # λ (p' : PointZ) => p'.dist p ≠ 1
+    guard # p' ∉ s.taken
+    return p'
+  f ps₁ ps₂ |>.elim (f ps₂ ps₁) some |>.isNone
+
 def cnd₀ (s : State) : Prop :=
   let pa := s.aPos
   let p₀ := edge₀.getBorderPoint₀ pa
@@ -13,8 +24,8 @@ def cnd₀ (s : State) : Prop :=
   match edge₀.dist pa with
   | 5 => p₀ ∈ s.taken
   | 4 => p₀ ∈ s.taken ∧ (get 1).any (· ∈ s.taken)
-  | 3 => 2 ≤ (p₀ :: get 1).countP (· ∈ s.taken)
-  | 2 => False
+  | 3 => (get 1).all (· ∈ s.taken)
+  | 2 => cndCase2 s p₀ get
   | 1 => (p₀ :: get 1).all (· ∈ s.taken)
   | d => 0 < d
 
@@ -23,29 +34,94 @@ def cndComp₀ (arr : Array Bool) (offset : ℕ) (d : ℕ) : Bool :=
   match d with
   | 5 => f 2
   | 4 => f 2 ∧ (f 1 ∨ f 3)
-  | 3 => 2 ≤ [f 1, f 2, f 3].countP id
+  | 3 => f 1 ∧ f 3
   | 2 => false
   | 1 => f 1 ∧ f 2 ∧ f 3
   | d => d ≠ 0
 
+-- #check 0 #exit
+
 def ptsArr (s : State) (start : ℤ) (len : ℕ) : Array Bool :=
   ⟨List.range len |>.map # λ i => edge₀.getBorderPoint s.aPos (start + i) ∈ s.taken⟩
 
--- theorem cnd₀_iff_f_edge₀_eq_none {s} [hs : sys.WF s] : cnd₀ s ↔ edge₀.f s = none := by
---   simp [cnd₀, f, f', dist_edge₀, getBorderPoint₀, getBorderPoints, getBorderPoint]
---   split <;> nm x h₁ <;> clear x <;> rw [neg_eq_iff_eq_neg] at h₁ <;> try rw [h₁]
---   · simp only [Int.reduceNeg, neg_neg, Option.some.injEq, forall_eq',
---       Classical.imp_iff_left_iff]
---     simp only [Point.ext_iff, h₁, Int.reduceNeg, zero_eq_neg, OfNat.ofNat_ne_zero, and_false,
---       not_false_eq_true, true_or]
---   · simp only [Int.reduceNeg, neg_neg, List.find?_cons_eq_some, Bool.not_eq_eq_eq_not,
---       Bool.not_true, decide_eq_false_iff_not, Bool.not_not, decide_eq_true_eq,
---       List.find?_singleton, ite_not, Option.ite_none_left_eq_some, Option.some.injEq]
---     constructor
---     · rintro ⟨h₂, h₃⟩ ⟨x, y⟩
---       simp only [Point.ext_iff, Int.reduceNeg, not_and]
---       intro h₄ h₅
---       aesop?
+theorem cndCase2_iff_fCase2_eq_none {s p₀ get} :
+cndCase2 s p₀ get ↔ fCase2 s p₀ get = none := by
+  unfold cndCase2 fCase2
+  split_ifs with h
+  rotate_left; simp [h]
+  generalize hx :
+    (
+      have ps₁ := get 1;
+      have ps₂ := get 2;
+      have f := fun ps₁ ps₂ ↦ do
+        let p ← List.find? (fun x ↦ decide (x ∈ s.taken)) ps₁
+        let p' ← List.find? (fun p' ↦ decide (Point.dist p' p ≠ 1)) ps₂
+        guard (p' ∉ s.taken)
+        pure p';
+      ((f ps₁ ps₂).elim (f ps₂ ps₁) some)
+    ) = x
+  trans x.isNone = true
+  · simp [←hx, h]
+  simp
+
+theorem cnd₀_iff_f_edge₀_eq_none_of_neg_y_aPos {s} [hs : sys.WF s] (h₀ : s.aPos.y < 0) :
+cnd₀ s ↔ edge₀.f s = none := by
+  simp [cnd₀, f, f', dist_edge₀, getBorderPoint₀, getBorderPoints, getBorderPoint]
+  split <;> nm x h₁ <;> rw [neg_eq_iff_eq_neg] at h₁ <;> simp [h₁]
+  · simp only [Point.ext_iff, true_and]; omega
+  · rcases h : s.aPos with ⟨x, y⟩
+    simp [h] at h₁
+    simp [Point.ext_iff, Point.forall_iff]
+    constructor
+    · rintro ⟨h₂, h₃⟩ a b
+      split_ifs; simp [h₂]
+    · intro h₂
+      split_ifs at h₂ with h₄ <;> simp at h₂
+      · rcases h₄ with h₄ | h₄
+        all_goals
+          simp [h₄]
+          by_contra! h₅
+          simp [h₅] at h₂
+          subst h₂
+          simp at h₁
+      · simp at h₄
+        simp_all only [Int.reduceNeg, not_false_eq_true, true_and, false_and, or_false, or_self,
+          and_false]
+        subst h₁
+        rcases h₄ with ⟨h₃, h₄⟩
+        simp [←sub_eq_add_neg] at h₂ h₃
+        have h₅ := h₂ x 0
+        have h₆ := h₂ (x - 1) 0
+        simp at h₅
+        simp [h₃, h₅] at h₆
+  · rcases h : s.aPos with ⟨x, y⟩
+    simp [h] at h₁; subst h₁
+    simp [Point.ext_iff, ←sub_eq_add_neg, Point.forall_iff]
+    constructor
+    · rintro ⟨h₁, h₂⟩
+      simp [h₁, h₂]
+    · intro h₁
+      have h₂ := h₁ (x - 1) 0
+      split_ands
+      · by_contra! h₃
+        simp [h₃] at h₂
+      · by_contra! h₃
+        have h₄ := h₁ (x + 1) 0
+        simp [h₃] at h₄
+        tauto
+  · clear x
+    rw [cndCase2_iff_fCase2_eq_none]
+    generalize hm : fCase2 s { x := s.aPos.x, y := 0 } (edge₀.getBorderPoints s.aPos) = m
+    rcases m with ⟨⟩ | p
+    · simp
+    simp
+    sorry
+  · clear x
+    rcases h : s.aPos with ⟨x, y⟩
+    simp [h] at h₁; subst h₁
+    simp [Point.ext_iff, Point.forall_iff]
+    grind only [cases Or]
+  · split <;> simp_all [neg_eq_iff_eq_neg]
 
 -- #check 0 #exit
 
@@ -70,7 +146,7 @@ theorem cnd₀_eq_cndComp₀ {s} : cnd₀ s = cndComp₀ (ptsArr s (-2) 5) 0 (-s
   push_neg at h
   simp [cnd₀, cndComp₀, getBorderPoints, getBorderPoint₀]
   split <;> nm H h₁ <;> simp [h₁]
-  · simp [List.countP_cons]; ring_nf
+  · sorry
   · tauto
   · nm x h₂ h₃ h₄; clear x
     simp at H h₁ h₂ h₃ h₄

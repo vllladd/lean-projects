@@ -631,31 +631,46 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
     · apply And.intro
       on_goal 2 => {rfl}
       simp_all only [abs_zero, Nat.ofNat_nonneg]
-  · simp_all only [Int.reduceNeg, Nat.ofNat_pos, Int.reduceLE, not_false_eq_true, true_and]
+  ·
+    simp_all only [Int.reduceNeg, Nat.ofNat_pos, Int.reduceLE, not_false_eq_true, true_and]
     obtain ⟨left, right⟩ := h
     obtain ⟨left_1, right⟩ := right
     split at left
-    rename_i x_1 heq_1
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-      Option.some.injEq, not_false_eq_true]
-    subst left
-    apply Exists.intro
-    apply And.intro
-    on_goal 4 => rename_i x_1 heq_1
-    on_goal 4 => split at left
-    on_goal 4 => rename_i x_2 heq_2
-    on_goal 5 => rename_i x_2 heq_2
-    on_goal 2 => { rfl }
-    · simp_all only [abs_zero, Nat.ofNat_nonneg]
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg,
-      Bool.not_true, decide_eq_false_iff_not, Option.some.injEq, not_false_eq_true]
-    subst left
-    apply Exists.intro
-    · apply And.intro
-      on_goal 2 => { rfl }
-      · simp_all only [Int.reduceNeg, abs_neg, abs_one, Nat.one_le_ofNat]
-    simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg,
-      reduceCtorEq]
+    next x_1
+      heq_1 =>
+      simp_all only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
+      Option.some.injEq,
+        not_false_eq_true]
+      subst left
+      simp_all only [getBorderPoint_inj, exists_eq_right, abs_zero, Nat.ofNat_nonneg]
+    next x_1 heq_1 =>
+      split at left
+      next h =>
+        simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg,
+        List.find?_nil,
+          reduceCtorEq]
+      next
+        h =>
+        simp_all only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq, Int.reduceNeg,
+          List.find?_cons_eq_some, Bool.not_true, decide_eq_false_iff_not, Bool.not_not,
+          List.find?_singleton,
+          ite_not, Option.ite_none_left_eq_some, Option.some.injEq]
+        cases left with
+        | inl h_1 =>
+          simp_all only [Int.reduceNeg]
+          obtain ⟨left, right_1⟩ := h_1
+          subst right_1
+          simp_all only [Int.reduceNeg, not_false_eq_true, getBorderPoint_inj, exists_eq_right,
+          abs_neg, abs_one,
+            Nat.one_le_ofNat]
+        | inr h_2 =>
+          simp_all only [Int.reduceNeg]
+          obtain ⟨left, right_1⟩ := h_2
+          obtain ⟨left_2, right_1⟩ := right_1
+          subst right_1
+          simp_all only [Int.reduceNeg, not_false_eq_true, getBorderPoint_inj, exists_eq_right,
+          abs_one,
+            Nat.one_le_ofNat]
   · simp_all only [Int.reduceNeg, Nat.ofNat_pos, Int.reduceLE, not_false_eq_true, true_and]
     obtain ⟨left, right⟩ := h
     obtain ⟨left_1, right⟩ := right

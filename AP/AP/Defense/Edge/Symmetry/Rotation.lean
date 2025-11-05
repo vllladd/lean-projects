@@ -91,15 +91,34 @@ theorem defense_rotRight : e.rotRight.defense = e.defense.sym rotRight := by
     aPos_sym_of_basicSym', Defense.mk.injEq, true_and]
   ext s p :2
   simp only [f, f', dist_rotRight, getBorderPoint₀_rotRight, decide_not, getBorderPoints_rotRight,
-    List.find?_map, Function.comp_def', ne_eq, Option.pure_def, Option.bind_eq_bind,
-    Option.bind_eq_some_iff', Option.guard_eq_some', Option.some.injEq, exists_const, ↓existsAndEq,
-    and_true, aPos_sym_of_basicSym', taken_sym_of_basicSym', Set'.mem_map, not_exists, not_and,
-    Option.map_bind, Function.comp_apply, Option.map_some, ft_eq_iff, EmbeddingLike.apply_eq_iff_eq,
-    forall_ne_iff_not, and_congr_left_iff, and_imp]
+    List.any_map, Function.comp_def', List.any_eq_true, decide_eq_true_eq, List.find?_map, ne_eq,
+    Option.pure_def, Option.bind_eq_bind, Option.bind_eq_some_iff', Option.guard_eq_some',
+    Option.some.injEq, exists_const, ↓existsAndEq, and_true, aPos_sym_of_basicSym',
+    taken_sym_of_basicSym', Set'.mem_map, not_exists, not_and, Option.map_bind, Function.comp_apply,
+    Option.map_some, ft_eq_iff, EmbeddingLike.apply_eq_iff_eq, forall_ne_iff_not,
+    and_congr_left_iff, and_imp]
   intro h₁ h₂
   split <;> try simp [ft'_eq_iff, ft_eq_iff]
-  · simp only [getBorderPoints, Nat.cast_one, Int.reduceNeg, List.map_cons, List.map_nil,
-      List.take_succ_cons, List.take_zero, List.find?_singleton, Bool.not_eq_eq_eq_not,
-      Bool.not_true, decide_eq_false_iff_not, ite_not, Option.ite_none_left_eq_some,
-      Option.some.injEq, ft_eq_iff]
+  · nm x h₃; clear x
+    split_ifs with h₄; simp
+    simp only [getBorderPoint₀, Point.ext_iff, rotRight_ft'_x, rotRight_ft'_y, getBorderPoints,
+      Nat.cast_one, Int.reduceNeg, List.map_cons, List.map_nil, List.find?_cons_eq_some,
+      Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, rotRight_ft_x,
+      neg_eq_iff_eq_neg, rotRight_ft_y, Bool.not_not, decide_eq_true_eq, List.find?_singleton,
+      ite_not, Option.ite_none_left_eq_some, Option.some.injEq]
+    rw [iff_iff_eq]
+    congr 2
+    generalize e.getBorderPoint (rotRight.ft' s.aPos) = g
+    simp_all
+    apply Iff.intro
+    · intro a
+      cases a with
+      | inl h => simp_all only [Int.reduceNeg, not_false_eq_true, and_self, false_and, or_false]
+      | inr h_1 => simp_all only [Int.reduceNeg, not_true_eq_false, false_and, not_false_eq_true,
+        and_self, or_true]
+    · intro a
+      cases a with
+      | inl h => simp_all only [Int.reduceNeg, not_false_eq_true, and_self, false_and, or_false]
+      | inr h_1 => simp_all only [Int.reduceNeg, not_true_eq_false, false_and, not_false_eq_true,
+        and_self, or_true]
   apply defense_sym_of_down_fCase2 <;> simp
