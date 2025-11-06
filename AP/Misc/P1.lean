@@ -356,50 +356,31 @@ theorem aux₁ {r N n c : ℕ} {a : ℕ → ℕ} (h₂ : ∀ (n : ℕ), a n ≤ 
 (H₁ : ∀ (k : ℕ), N ≤ k → k ≤ n → (∏ i ∈ range k, a i : ℝ) ^ (k : ℝ)⁻¹ = c) : a n ≤ c := by
   by_contra! h₆
   replace h₆ : ∃ δ, 1 ≤ δ ∧ δ < r ∧ a n = c + δ
-  · use a n - c
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt h₆
-    simp [hk]
-    ring_nf
-    split_ands
-    · omega
-    · suffices h : 1 + k < r; omega
-      apply lt_of_lt_of_le (b := c + k + 1)
-      · linarith
-      rw [←hk]
-      apply h₂
-    · omega
-  obtain ⟨δ, h₆, h₇, h₈⟩ := h₆
-  have hn₁ : n ≠ 0
-  · linarith
+  · use a n - c; obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt h₆
+    simp [hk]; ring_nf; split_ands <;> try omega
+    suffices h : 1 + k < r; omega
+    apply lt_of_lt_of_le (b := c + k + 1)
+    linarith; rw [←hk]; apply h₂
+  obtain ⟨δ, h₆, h₇, h₈⟩ := h₆; have hn₁ : n ≠ 0; linarith
   have h₉ := H₁ n (by linarith) (by linarith)
-  rw [Real.rpow_inv_eq] at h₉ <;> try positivity
-  obtain ⟨c₁, hc₁⟩ := h₃ (n + 1)
-  rw [prod_range_succ, h₉, h₈] at hc₁
-  have H₂ : (c : ℝ) < c₁
+  rw [Real.rpow_inv_eq] at h₉ <;> try positivity;; obtain ⟨c₁, hc₁⟩ := h₃ (n + 1)
+  rw [prod_range_succ, h₉, h₈] at hc₁; have H₂ : (c : ℝ) < c₁
   · rw [←hc₁, Real.lt_rpow_inv_iff_of_pos, Nat.cast_add, Nat.cast_add, Nat.cast_one,
       Real.rpow_add, mul_lt_mul_iff_right₀, Real.rpow_one, lt_add_iff_pos_right] <;> positivity
   have H₃ : (c₁ : ℝ) < c + 1
   · rw [←hc₁, Real.rpow_inv_lt_iff_of_pos, Nat.cast_add, mul_add] <;> try positivity
     have h : (c : ℝ) ^ (n : ℝ) * c = c ^ ((n + 1 : ℕ) : ℝ)
     · rw [Nat.cast_add, Nat.cast_one, Real.rpow_add, Real.rpow_one]; positivity
-    rw [h]; clear h
-    simp only [Real.rpow_natCast]
+    rw [h]; simp only [Real.rpow_natCast]
     apply lt_of_lt_of_le (b := (c : ℝ) ^ (n + 1) + (c : ℝ) ^ n * n)
-    · simp; rw [mul_lt_mul_iff_right₀] <;> try positivity
-      simp; linarith
-    rw [add_comm (c : ℝ)]
-    rw [Commute.add_pow # by simp [Commute]]
-    rw [show n + 1 + 1 = 1 + 1 + n by ring_nf]
-    rw [sum_range_add, sum_range_add]
+    · simp; rw [mul_lt_mul_iff_right₀] <;> try positivity;; simp; linarith
+    rw [add_comm (c : ℝ), Commute.add_pow $ by simp [Commute],
+      show n + 1 + 1 = 1 + 1 + n by ring_nf, sum_range_add, sum_range_add]
     simp only [range_one, one_pow, one_mul, sum_singleton, tsub_zero, Nat.choose_zero_right,
       Nat.cast_one, mul_one, add_zero, add_tsub_cancel_right, Nat.choose_one_right, Nat.cast_add,
       Nat.reduceAdd, add_assoc, add_le_add_iff_left]
-    rw [mul_add]
-    simp only [mul_one, add_assoc, le_add_iff_nonneg_right]
-    positivity
-  simp at H₂
-  replace H₃ : c₁ < c + 1; exact_mod_cast H₃
-  omega
+    rw [mul_add]; simp only [mul_one, add_assoc, le_add_iff_nonneg_right]; positivity
+  simp at H₂; norm_cast at H₃; omega
 
 theorem aux₂ {r N n c : ℕ} {w : ℝ} {a : ℕ → ℕ}
 (h₃ : ∀ (n : ℕ), ∃ (k : ℕ), (∏ i ∈ range n, (a i : ℝ)) ^ (n : ℝ)⁻¹ = k)
@@ -410,24 +391,12 @@ theorem aux₂ {r N n c : ℕ} {w : ℝ} {a : ℕ → ℕ}
 (H₁ : ∀ (k : ℕ), N ≤ k → k ≤ n → (∏ i ∈ range k, a i : ℝ) ^ (k : ℝ)⁻¹ = c) : c ≤ a n := by
   by_contra! h₆
   replace h₆ : ∃ δ, 1 ≤ δ ∧ δ < c ∧ a n = c - δ
-  · use c - a n
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt h₆
-    simp [hk]
-    ring_nf
-    split_ands
-    · omega
-    · linarith [h₁ n]
-    · omega
-  obtain ⟨δ, h₆, h₇, h₈⟩ := h₆
-  have hn₁ : n ≠ 0
-  · linarith
+  · use c - a n; obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt h₆
+    simp [hk]; ring_nf; split_ands <;> try omega;; linarith [h₁ n]
+  obtain ⟨δ, h₆, h₇, h₈⟩ := h₆; have hn₁ : n ≠ 0; linarith
   have h₉ := H₁ n (by linarith) (by linarith)
-  rw [Real.rpow_inv_eq] at h₉ <;> try positivity
-  obtain ⟨c₁, hc₁⟩ := h₃ (n + 1)
-  rw [prod_range_succ, h₉, h₈] at hc₁
-  have H₀ : c ≠ 0
-  · linarith
-  have H₂ : (c₁ : ℝ) < c
+  rw [Real.rpow_inv_eq] at h₉ <;> try positivity;; obtain ⟨c₁, hc₁⟩ := h₃ (n + 1)
+  rw [prod_range_succ, h₉, h₈] at hc₁; have H₀ : c ≠ 0; linarith; have H₂ : (c₁ : ℝ) < c
   · rw [←hc₁, Real.rpow_inv_lt_iff_of_pos, Nat.cast_add, Nat.cast_sub, Nat.cast_one,
       Real.rpow_add, mul_lt_mul_iff_right₀, Real.rpow_one, sub_lt_self_iff]
     all_goals first | positivity | linarith
@@ -436,150 +405,67 @@ theorem aux₂ {r N n c : ℕ} {w : ℝ} {a : ℕ → ℕ}
       <;> try first | positivity | (try simp); linarith
     have h : (c : ℝ) ^ (n : ℝ) * c = c ^ ((n + 1 : ℕ) : ℝ)
     · rw [Nat.cast_add, Nat.cast_one, Real.rpow_add, Real.rpow_one]; positivity
-    rw [h]; clear h
-    simp only [Real.rpow_natCast]
-    replace h₈ : a n + δ = c; omega
+    rw [h]; simp only [Real.rpow_natCast]; replace h₈ : a n + δ = c; omega
     replace h₈ : (a n + δ : ℝ) = c; exact_mod_cast h₈
     rw [show (δ : ℝ) = c - a n by linarith]
-    cases c; simp at H₀; clear H₀; nm c
-    simp
-    have hc₂ : 1 ≤ c
-    · cases c
-      · simp at h₇
-        subst h₇
-        simp at h₆
-      simp
-    convert_to _ < (c + 1 : ℝ) ^ n * a n
-    · ring_nf
+    cases c; simp at H₀; clear H₀; rename_i c; simp
+    have hc₂ : 1 ≤ c; cases c <;> simp at h₇ ⊢; subst h₇; simp at h₆
+    convert_to _ < (c + 1 : ℝ) ^ n * a n; ring_nf
     suffices h : (1 : ℝ) < a n / c * (1 + 1 / c) ^ n
     · suffices h₁ : (c : ℝ) ^ (n + 1) * (a n / c * (1 + 1 / c) ^ n) ≤ (c + 1) ^ n * (a n)
-      · apply lt_of_lt_of_le _ h₁
-        field_simp at h ⊢
-        exact h
-      clear h
-      rw [pow_succ]
-      field_simp
-      simp_rw [←Real.rpow_natCast]
-      rw [Real.div_rpow] <;> try positivity
-      field_simp
-      simp
+      · apply lt_of_lt_of_le _ h₁; field_simp at h ⊢; exact h
+      rw [pow_succ]; field_simp; simp_rw [←Real.rpow_natCast]
+      rw [Real.div_rpow] <;> try positivity;; field_simp; simp
     have G₁ : (c : ℝ) ≤ r * a n
-    · suffices h : c ≤ r * a n; exact_mod_cast h
-      trans c + 1; simp
-      apply h₅.trans
-      simp
-      right
-      specialize h₁ n
-      linarith
+    · norm_cast; trans c + 1; simp; apply h₅.trans; simp; right; linarith [h₁ n]
     suffices h :  (1 : ℝ) < 1 / r * (1 + 1 / ↑c) ^ n
-    · field_simp at h ⊢
-      apply lt_of_le_of_lt G₁
-      rwa [mul_lt_mul_iff_left₀]
-      simp
-      linarith [h₁ n]
+    · field_simp at h ⊢; apply lt_of_le_of_lt G₁
+      rwa [mul_lt_mul_iff_left₀]; simp; linarith [h₁ n]
     suffices h : (1 : ℝ) < 1 / r * (1 + 1 / r) ^ n
-    · field_simp at h ⊢
-      apply lt_of_lt_of_le h; clear h
+    · field_simp at h ⊢; apply lt_of_lt_of_le h
       rw [pow_le_pow_iff_left₀] <;> try positivity
-      field_simp
-      ring_nf
-      rw [add_comm]
-      simp
-      linarith
+      field_simp; ring_nf; rw [add_comm]; simp; linarith
     suffices h : (r : ℝ) < (1 + 1 / r) ^ n
     · field_simp at h ⊢; exact h
     have G₁ : Real.logb (1 + 1 / r) r < n
     · replace hn : (N : ℝ) ≤ n; exact_mod_cast hn
-      apply lt_of_lt_of_le _ hn
-      apply lt_of_le_of_lt _ hN
-      rw [←hw]
-      trans w - 1
-      rotate_left
-      · rw [←hw]
-        simp
-      rw[ ←hw]
-      simp
+      apply lt_of_lt_of_le _ hn; apply lt_of_le_of_lt _ hN; rw [←hw]
+      trans w - 1 <;> rw [←hw] <;> simp
     apply lt_of_le_of_lt (b := (1 + 1 / r : ℝ) ^ (Real.logb (1 + 1 / r) r))
-    rotate_left
-    · simp_rw [←Real.rpow_natCast]
-      rwa [Real.rpow_lt_rpow_left_iff]
-      field_simp; simp
-    rw [Real.rpow_logb] <;> try positivity
-    simp
-    linarith
-  simp at H₂
-  replace H₃ : c - 1 < c₁; exact_mod_cast H₃
-  omega
+    rw [Real.rpow_logb] <;> try positivity;; simp; linarith
+    simp_rw [←Real.rpow_natCast]; rwa [Real.rpow_lt_rpow_left_iff]; field_simp; simp
+  simp at H₂; replace H₃ : c - 1 < c₁; exact_mod_cast H₃; omega
 
 theorem aux₃ {r : ℕ} {a : ℕ → ℕ} (h₁ : ∀ n, a n ≠ 0) (h₂ : ∀ n, a n ≤ r)
 (h₃ : ∀ n, ∃ (k : ℕ), (∏ i ∈ range n, a i : ℝ) ^ (n : ℝ)⁻¹ = k) :
 ∃ c N, ∀ n, N ≤ n → a n = c := by
   generalize hw : max (r : ℝ) (Real.logb (1 + 1 / r) r) + 1 = w
   obtain ⟨N, hN⟩ := exists_nat_gt w
-  have hr : 1 ≤ r
-  · cases r
-    · simp at h₂
-      simp [h₂] at h₁
-    simp
-  have hrw : r < w
-  · rw [←hw]; simp
-  have hrN : r < N
-  · suffices h : (r : ℝ) < N; exact_mod_cast h
-    linarith
-  have h0N : 0 < N
-  · linarith
-  obtain ⟨c, hc⟩ := h₃ N
-  use c, N
+  have hr : 1 ≤ r; cases r <;> simp at h₂ ⊢; simp [h₂] at h₁
+  have hrw : r < w; rw [←hw]; simp
+  have hrN : r < N; suffices h : (r : ℝ) < N; exact_mod_cast h; linarith
+  have h0N : 0 < N; linarith; obtain ⟨c, hc⟩ := h₃ N; use c, N
   suffices h : ∀ n, N ≤ n → (∀ k, N ≤ k → k < n → a k = c) → a n = c
-  · intro n hn
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
-    induction n using Nat.strong_induction_on
-    nm n ih
-    apply h
-    · omega
-    · intro k h₄ h₅
-      obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₄; clear h₄
-      apply ih
-      omega
-  intro n hn H
-  simp [←Nat.one_le_iff_ne_zero] at h₁
-  have h₄ : 1 ≤ c
+  · intro n hn; obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
+    induction n using Nat.strong_induction_on; rename_i n ih; apply h
+    omega; intro k h₄ h₅; obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₄; apply ih; omega
+  intro n hn H; simp [←Nat.one_le_iff_ne_zero] at h₁; have h₄ : 1 ≤ c
   · suffices h : (1 : ℝ) ≤ c; exact_mod_cast h
-    rw [←hc]
-    rw [Real.le_rpow_inv_iff_of_pos] <;> try positivity
-    simp
-    apply one_le_prod_of_forall_one_le
-    simp
-    intro i hi
-    apply h₁
+    rw [←hc, Real.le_rpow_inv_iff_of_pos] <;> try positivity
+    simp; apply one_le_prod_of_forall_one_le; simp; intros; apply h₁
   have h₅ : c ≤ r
   · suffices h : (c : ℝ) ≤ r; exact_mod_cast h
-    rw [←hc]
-    rw [Real.rpow_inv_le_iff_of_pos] <;> try positivity
+    rw [←hc, Real.rpow_inv_le_iff_of_pos] <;> try positivity
     convert_to _ ≤ ∏ i ∈ range N, (r : ℝ); simp
-    apply Finset.prod_le_prod
-    · simp
-    simp
-    intro i hi
-    linarith [h₂ i]
+    apply Finset.prod_le_prod <;> simp; intro i hi; linarith [h₂ i]
   rw [Real.rpow_inv_eq] at hc <;> try positivity
   have H₁ : ∀ k, N ≤ k → k ≤ n → (∏ i ∈ range k, a i : ℝ) ^ (k : ℝ)⁻¹ = c
-  · intro k hk₁ hk₂
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hk₁; clear hk₁
-    rw [prod_range_add, Real.mul_rpow] <;> try positivity
-    simp
-    rw [hc]
-    have h₆ : ∏ i ∈ range k, (a # N + i : ℝ) = (c : ℝ) ^ k
-    · trans ∏ i ∈ range k, c
-      rotate_left; simp
-      apply prod_congr rfl
-      simp
-      intro m hm
-      apply H
-      · simp
-      linarith
-    rw [h₆]; clear h₆
-    simp_rw [←Real.rpow_natCast]
+  · intro k hk₁ hk₂; obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hk₁; clear hk₁
+    rw [prod_range_add, Real.mul_rpow] <;> try positivity;; simp; rw [hc]
+    have h₆ : ∏ i ∈ range k, (a $ N + i : ℝ) = (c : ℝ) ^ k
+    · trans ∏ i ∈ range k, c; rotate_left; simp; apply prod_congr rfl
+      simp; intros; apply H; simp; linarith
+    rw [h₆, ←Real.rpow_natCast]
     rw [←Real.mul_rpow, Real.rpow_inv_eq, ←Real.rpow_add] <;> try positivity
   apply le_antisymm
   · apply aux₁ <;> assumption
