@@ -3,6 +3,8 @@ import AP.Util.Function
 
 import Init.Data.List.Perm
 import Init.Data.List.Sublist
+import Mathlib.Data.List.Range
+import Mathlib.Data.List.Intervals
 
 instance {α : Type*} [ha : LinearOrder α] : Std.LawfulOrderMax α where
   max_eq_or := by simp [le_total]
@@ -1024,3 +1026,107 @@ xs.find? p = some (e x) ↔ (xs.map e.symm).find? (p ∘ e) = some x := by
   · rintro ⟨x, ⟨h₁, xs, ⟨h₂, rfl⟩, h₃⟩, rfl⟩; simp [h₁]; use xs; simpa
 
 theorem cons_eq_append {x} : x :: xs = [x] ++ xs := rfl
+
+attribute [simp] List.nodup_range
+
+theorem getElem?_eq_of_getElem_eq
+{i j} {hi : i < xs.length} {hj : j < ys.length} (h : xs[i] = ys[j]) : xs[i]? = ys[j]? := by
+  rw [getElem?_eq_getElem hi, getElem?_eq_getElem hj, h]
+
+theorem getElem_eq_of_getElem?_eq
+{i j} {hi : i < xs.length} {hj : j < ys.length} (h : xs[i]? = ys[j]?) : xs[i] = ys[j] := by
+  simp_rw [getElem_eq_getElem?_get, h]
+
+theorem getElem_eq_iff_getElem?_eq
+{i j} {hi : i < xs.length} {hj : j < ys.length} : xs[i] = ys[j] ↔ xs[i]? = ys[j]? :=
+  ⟨getElem?_eq_of_getElem_eq, getElem_eq_of_getElem?_eq⟩
+
+theorem nodup_iff_getElem_ne_getElem :
+xs.Nodup ↔ ∀ i j (hi : i < xs.length) (hj : j < xs.length), i < j → xs[i] ≠ xs[j] := by
+  rw [nodup_iff_getElem?_ne_getElem?]
+  apply forall_congr'; intro i
+  apply forall_congr'; intro j
+  constructor
+  · intro h h₁ h₂ h₃
+    specialize h h₃ h₂
+    contrapose! h
+    exact getElem?_eq_of_getElem_eq h
+  · intro h h₁ h₂
+    specialize h (by linarith) h₂ h₁
+    contrapose! h
+    exact getElem_eq_of_getElem?_eq h
+
+theorem nodup_flatMap_flatMap_pair [ha : LinearOrder α]
+{r : α → α → Prop} [hp : DecidableRel r]
+(hxs : xs.Nodup) (hys : ys.Nodup) :
+(xs.flatMap (λ x => ys.flatMap # λ y =>
+if x < y ∧ r x y then [(x, y)] else [])).Nodup := by
+  classical
+  by_cases h₀ : IsEmpty α; simp; push_neg at h₀; replace h₀ := h₀.inhabited
+  rw [nodup_flatMap]
+  symm; split_ands
+  · unfold Function.onFun Disjoint
+    simp
+    induction xs
+    · simp
+    nm x xs ih
+    simp at hxs ⊢
+    rcases hxs with ⟨h₁, h₂⟩
+    specialize ih h₂
+    simp [ih]; clear ih
+    intros; simp_all only
+  intro x hx
+  rw [nodup_flatMap]
+  symm; split_ands
+  · unfold Function.onFun Disjoint
+    simp
+    induction ys
+    · simp
+    nm y hy ih
+    simp at hys ⊢
+    rcases hys with ⟨h₁, h₂⟩
+    specialize ih h₂
+    simp [ih]; clear ih
+    intros; rintro rfl; simp_all only
+  intro y hy
+  split_ifs <;> simp
+
+theorem nodup_flatMap_flatMap_upair [ha : LinearOrder α]
+{r : α → α → Prop} [hp : DecidableRel r]
+(hxs : xs.Nodup) (hys : ys.Nodup) :
+(xs.flatMap (λ x => ys.flatMap # λ y =>
+if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
+  classical
+  by_cases h₀ : IsEmpty α; simp; push_neg at h₀; replace h₀ := h₀.inhabited
+  generalize hA : (λ x => ys.flatMap # λ y =>
+    if x < y ∧ r x y then [({x, y} : Set α)] else []) = A
+  symm at hA
+  rw [funext_iff] at hA
+  generalize hf : (λ (s : Set α) =>
+    ( Classical.epsilon # λ x => x ∈ s ∧ ∀ y ∈ s, x ≤ y
+    , Classical.epsilon # λ x => x ∈ s ∧ ∀ y ∈ s, y ≤ x
+    )) = f
+  generalize hB : (xs.flatMap A).map f = B
+  suffices h : B.Nodup
+  · subst hB; exact Nodup.of_map _ h
+  replace hB : B = xs.flatMap (λ x => ys.flatMap # λ y =>
+    if x < y ∧ r x y then [(x, y)] else [])
+  · subst hB
+    rw [map_flatMap]
+    congr
+    ext x :1
+    rw [hA]
+    rw [map_flatMap]
+    clear! hA
+    congr
+    ext y :1
+    rw [apply_ite (f := map f)]
+    simp
+    split_ifs with h₁ <;> simp
+    replace h₁ := h₁.1
+    subst hf
+    simp
+    have h₂ := le_of_lt h₁
+    rw [epsilon_eq_of (x := x), epsilon_eq_of (x := y)] <;> simp [h₂]
+    all_goals intro h₃; apply le_antisymm <;> assumption
+  subst hB; exact nodup_flatMap_flatMap_pair hxs hys

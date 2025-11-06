@@ -6,6 +6,7 @@ import AP.Util.Rat
 import AP.Util.Real
 import AP.Util.Prod
 import AP.Util.Char
+import AP.Util.Sym2
 import AP.Util.Equiv
 import AP.Util.Array
 import AP.Util.Sigma

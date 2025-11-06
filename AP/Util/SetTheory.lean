@@ -550,3 +550,24 @@ theorem Set.finite_int_abs_le {n : ℤ} : {k | |k| ≤ n}.Finite := by
 theorem Set.finite_int_abs_sub_le {c d : ℤ} : {a | |a - c| ≤ d}.Finite := by
   apply finite_filter_of_bijective (p := (|· - c| ≤ d)) (f := (· + c))
   exact AddGroup.addRight_bijective c; simp
+
+@[simp]
+theorem Set.finite_toSet_list {α : Type*} {xs : List α} : xs.toSet.Finite := by
+  classical
+  apply Set.finite_of_subset_finset xs.toFinset; simp
+
+@[simp]
+instance {α : Type*} {xs : List α} : Finite xs.toSet := by
+  apply Fintype.finite; apply Set.Finite.fintype; simp
+
+theorem Set.ncard_toSet_list_of_nodup {α : Type*} {xs : List α}
+(h : xs.Nodup) : xs.toSet.ncard = xs.length := by
+  classical
+  induction xs
+  · simp
+  nm x xs ih
+  simp at h ⊢
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  rw [Set.ncard_insert_eq_ite]
+  simpa [h₁]
