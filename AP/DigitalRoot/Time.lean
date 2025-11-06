@@ -181,6 +181,20 @@ theorem freqTimeDig'_eq_some_of_freqTimeDig_eq_some {d}
     iterate 2 cases xs; simp at h₃; nm x xs
     simp [Prod.ext_iff]
 
+@[simp]
+theorem freqTimeCount_eq_zero_iff {n} : freqTimeCount 10 n = 0 ↔ 10 ≤ n := by
+  symm; use freqTimeCount_eq_zero_of_base_le
+  intro h
+  simp [freqTimeCount, Set'.count_eq_zero_iff] at h
+  simp [timeSet] at h
+  contrapose! h
+  use ⟨⟨0, by simp⟩, ⟨n, by linarith⟩⟩
+  simpa
+
+@[simp]
+theorem freqTimeCount_pos_iff {n} : 0 < freqTimeCount 10 n ↔ n < 10 := by
+  rw [iff_iff_not']; simp
+
 theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
 (h : freqTimeDig' 10 = some d) : freqTimeDig 10 = some d := by
   unfold freqTimeDig; simp
@@ -194,23 +208,84 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
   rcases h with ⟨h, h₂⟩
   symm at h₂; subst h₂
   
-  have h₂ : ∃ d₁, p d₁
-  · sorry
+  generalize hA : (freqTimeMp 10).toList.mergeSort (λ a b => b.2 ≤ a.2) = A at h₁
   
-  have h₃ := Classical.epsilon_spec h₂
-  rw [hd₁] at h₃; clear hd₁
-  subst hp
-  dsimp at h₂
-  rcases h₃ with ⟨h₃, h₄⟩
+  have H₁ : ∀ x y, (x, y) ∈ A → x < 10
+  · intro x y h₃
+    simp [←hA] at h₃
+    replace h₃ := Map.mem_of_get?_eq_some h₃
+    simp at h₃
+    exact h₃
   
-  rw [le_iff_eq_or_lt] at h₃
-  rcases h₃ with rfl | h₃
-  · specialize h₄ 0
-    simp at h₄
+  have H₃ : ∀ x y, (x, y) ∈ A → freqTimeCount 10 x = y
+  · intro x y h₃
+    have h₃' := h₃
+    simp [←hA] at h₃
+    rw [get?_freqTimeMp_eq] at h₃
+    simp at h₃; exact h₃
+    exact H₁ _ y h₃'
   
-  sorry
-
--- #check 0 #exit
+  have H₂ : A.Sorted (λ a b => b.2 ≤ a.2)
+  ·
+    rw [←hA]
+    have h₂ := (freqTimeMp 10).toList.sorted_mergeSort (le := λ a b => b.2 ≤ a.2)
+    specialize h₂ _ _
+    · simp only [decide_eq_true_eq, Prod.forall, forall_const]
+      intro a b c h₂ h₃; exact h₃.trans h₂
+    · simp only [Bool.or_eq_true, decide_eq_true_eq, le_total, implies_true]
+    simp at h₂
+    exact h₂
+  
+  suffices h₂ : p d
+  · have h₃ := Classical.epsilon_spec ⟨_, h₂⟩
+    rw [hd₁] at h₃; clear hd₁
+    subst hp
+    use h₂
+    rcases h₂ with ⟨h₂, h₄⟩
+    rcases h₃ with ⟨h₃, h₅⟩
+    by_contra! h₆
+    specialize h₄ _ h₆
+    specialize h₅ _ # ne_symm' h₆
+    linarith
+  
+  clear! d₁
+  
+  rw [←hp]
+  dsimp
+  split_ands
+  · apply le_of_lt
+    apply H₁ _ b
+    simp [h₁]
+  intro d' h₂
+  
+  by_cases h₀ : 10 ≤ d'
+  · rw [freqTimeCount_eq_zero_of_base_le h₀]
+    simp
+    apply H₁ _ b
+    simp [h₁]
+  push_neg at h₀
+  
+  simp [h₁] at H₂
+  have h₃ := H₃ d b
+  simp [h₁] at h₃
+  subst h₃
+  rcases H₂ with ⟨⟨h₃, h₄⟩, h₅, h₆⟩
+  
+  have h₇ : (d', freqTimeCount 10 d') ∈ A
+  · rw [←hA]
+    simp
+    rwa [get?_freqTimeMp_eq]
+  
+  replace h : e < freqTimeCount 10 d
+  · omega
+  clear h₃
+  
+  apply lt_of_le_of_lt _ h
+  
+  simp [h₁, h₂] at h₇
+  rcases h₇ with ⟨h₇, h₈⟩ | h₇
+  · rw [h₈]
+  exact h₅ _ _ h₇
 
 theorem freqTimeDig_eq_freqTimeDig' : freqTimeDig 10 = freqTimeDig' 10 := by
   ext d; constructor
@@ -219,3 +294,10 @@ theorem freqTimeDig_eq_freqTimeDig' : freqTimeDig 10 = freqTimeDig' 10 := by
 
 theorem freqTimeDig_10_eq_some_5 : freqTimeDig 10 = some 5 := by
   rw [freqTimeDig_eq_freqTimeDig']; native_decide
+
+theorem toList_freqTimeMp_eq : (freqTimeMp 10).toList =
+(List.range 10).zip [1, 159, 159, 160, 161, 162, 161, 160, 159, 158] := by
+  native_decide
+
+theorem sum_freqTimeMp_eq_24_mul_60 : (freqTimeMp 10 |>.toList.map (·.snd) |>.sum) = 24 * 60 := by
+  rw [toList_freqTimeMp_eq]; native_decide
