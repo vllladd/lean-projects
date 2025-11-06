@@ -483,29 +483,12 @@ theorem cntrex₁ : ¬∀ {a : ℕ → ℕ}
   push_neg
   use λ n => if n = 0 then 0 else if Odd n then 1 else 2
   split_ands
-  · simp
-    intro n
-    split_ifs <;> norm_num
-  · intro n hn
-    use 0
-    simp
-    cases n
-    · simp at hn
-    rename_i n
-    simp
-    symm
-    apply prod_eq_zero (i := 0)
-    · simp
-    · simp
-  · simp
-    intro c N hc hn
-    by_cases h₁ : c = 1
-    · use N * 2, by linarith
-      simp [hn]
-      aesop
-    · use N * 2 + 1, by linarith
-      simp
-      rwa [eq_comm]
+  · simp; intro n; split_ifs <;> norm_num
+  · intro n hn; use 0; simp; cases n <;> simp at hn ⊢
+    symm; apply Finset.prod_eq_zero (i := 0) <;> simp
+  · simp; intro c N hc hn; by_cases h₁ : c = 1
+    · use N * 2, by linarith;; simp [hn]; aesop
+    · use N * 2 + 1, by linarith;; simp; rwa [eq_comm]
 
 theorem main_alt_pnat {a : PNat → PNat}
 (h₁ : ∀ n : PNat, (a n).val ≤ 2025)
