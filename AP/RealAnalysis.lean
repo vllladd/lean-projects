@@ -7,3 +7,4 @@ import AP.RealAnalysis.Cauchy
 import AP.RealAnalysis.Rational
 import AP.RealAnalysis.Filter
 import AP.RealAnalysis.Completeness
+import AP.RealAnalysis.Series

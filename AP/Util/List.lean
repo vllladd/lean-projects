@@ -1130,3 +1130,62 @@ if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
     rw [epsilon_eq_of (x := x), epsilon_eq_of (x := y)] <;> simp [h₂]
     all_goals intro h₃; apply le_antisymm <;> assumption
   subst hB; exact nodup_flatMap_flatMap_pair hxs hys
+
+theorem getElem_scanl {f : β → α → β} {z i} {hi : i < (xs.scanl f z).length} :
+(xs.scanl f z)[i] = (xs.take i).foldl f z := by
+  induction xs generalizing z i <;> simp; rename_i x xs ih; cases i <;> simp [ih]
+
+theorem take_scanl {f : β → α → β} {z n} :
+(xs.scanl f z).take (n + 1) = (xs.take n).scanl f z := by
+  induction xs generalizing z n; simp; rename_i x xs ih; cases n <;> simp [ih]
+
+theorem drop_scanl {f : β → α → β} {z n} (hn : n ≤ xs.length) :
+(xs.scanl f z).drop n = (xs.drop n).scanl f (xs.take n |>.foldl f z) := by
+  induction xs generalizing z n; simp at hn; simp [hn]
+  rename_i x xs ih; cases n <;> simp; rename_i n; simp at hn; apply ih; exact hn
+
+theorem mem_scanl_iff_exists_prefix {f : β → α → β} {z x} :
+x ∈ xs.scanl f z ↔ ∃ ys, ys <+: xs ∧ ys.foldl f z = x := by
+  induction xs generalizing z; simp [eq_comm]; rename_i y xs ih; simp [ih]; constructor
+  · rintro (rfl | ⟨ys, h₁, h₂⟩); use []; simp; use y :: ys; simp [h₁, h₂]
+  · rintro ⟨ys, h₁, rfl⟩; cases ys; simp; rename_i y' ys; right
+    simp at h₁; rcases h₁ with ⟨rfl, h₁⟩; use ys; simpa
+
+@[simp]
+theorem mem_scanl_iff_exists_take {f : β → α → β} {z x} :
+x ∈ xs.scanl f z ↔ ∃ n, (xs.take n).foldl f z = x := by
+  simp_rw [mem_scanl_iff_exists_prefix, prefix_iff_eq_take]; constructor
+  · rintro ⟨ys, h₁, rfl⟩; generalize ys.length = n at h₁; simp [h₁]
+  · rintro ⟨n, rfl⟩; use xs.take n; simp
+
+@[simp]
+theorem foldl_add_length {L : List (List α)} {z} :
+L.foldl (· + ·.length) z = (L.map length).sum + z := by
+  induction L generalizing z <;> simp; rename_i xs L ih; rw [ih]; omega
+
+theorem findIdx_le_of_getElem {i} {hi : i < xs.length} {p : α → Bool}
+(h : p xs[i]) : xs.findIdx p ≤ i := by
+  induction xs generalizing i; simp at hi; rename_i x xs ih; simp [findIdx_cons, cond]
+  split <;> rename_i x h₁; simp; cases i; simp [h₁] at h; simp at h ⊢; exact ih h
+
+theorem getElem_eq_getElem_zero_drop {i} {hi : i < xs.length} :
+xs[i] = (xs.drop i)[0]'(by simpa) := by simp
+
+theorem drop_add {n m} : xs.drop (n + m) = (xs.drop n).drop m :=
+  drop_drop.symm
+
+theorem drop_add' {n m} : xs.drop (n + m) = (xs.drop m).drop n := by
+  rw [add_comm, drop_drop]
+
+theorem lt_length_of_getElem?_eq_some {i x} (h : xs[i]? = some x) : i < xs.length := by
+  rw [getElem?_eq_some_iff] at h; tauto
+
+theorem eq_append_getElem {i} (h : i < xs.length) :
+xs = xs.take i ++ xs[i] :: xs.drop (i + 1) := by simp
+
+theorem sum_take_le_sum {xs : List ℕ} {n} : (xs.take n).sum ≤ xs.sum := by
+  induction xs generalizing n <;> simp; rename_i x xs ih; cases n <;> simp [ih]
+
+theorem findIdx_eq_zero_iff {p : α → Bool} :
+xs.findIdx p = 0 ↔ xs = [] ∨ ∃ (h : 0 < xs.length), p xs[0] := by
+  cases xs <;> simp; rw [findIdx_eq] <;> simp
