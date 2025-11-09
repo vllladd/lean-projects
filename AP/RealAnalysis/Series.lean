@@ -5,6 +5,8 @@ namespace RealAnalysis
 def series (a : ℕ → ℝ) (n : ℕ) : ℝ :=
   ∑ i ∈ Finset.range n, a i
 
+theorem series_eq {a} : series a = λ n => ∑ i ∈ Finset.range n, a i := rfl
+
 @[simp]
 theorem series_zero {a} : series a 0 = 0 := by
   simp [series]
@@ -66,7 +68,7 @@ theorem inv_add_tendsTo_zero {x : ℝ} : tendsTo (λ n => (n + x)⁻¹) 0 := by
   _ = e * e⁻¹ := by rw [mul_inv_cancel₀]; positivity
   _ < _ := by nlinarith
 
-theorem add_div_add_tendsTo_one {x y : ℝ} (hy : 0 < y) :
+theorem add_div_add_tendsTo_one_aux₁ {x y : ℝ} (hy : 0 < y) :
 tendsTo (λ n => (n + x) / (n + y)) 1 := by
   rw [show x = y + (x - y) by ring_nf]
   simp_rw [←add_assoc]
@@ -81,8 +83,22 @@ tendsTo (λ n => (n + x) / (n + y)) 1 := by
   apply tendsTo_mul tendsTo_const
   simp
 
-theorem div_add_tendsTo_one {x : ℝ} (h : 0 < x) : tendsTo (λ n => n / (n + x)) 1 := by
-  convert add_div_add_tendsTo_one (x := 0) h; simp
+@[simp]
+theorem add_div_add_tendsTo_one {x y : ℝ} : tendsTo (λ n => (n + x) / (n + y)) 1 := by
+  choose k hk using exists_nat_gt |y|
+  rw [←tendsTo_drop_iff (k := k)]
+  simp [add_comm k, add_assoc]
+  apply add_div_add_tendsTo_one_aux₁
+  rw [abs_lt] at hk
+  linarith
+
+@[simp]
+theorem add_div_tendsTo_one {x : ℝ} : tendsTo (λ n => (n + x) / n) 1 := by
+  convert add_div_add_tendsTo_one (y := 0); simp
+
+@[simp]
+theorem div_add_tendsTo_one {x : ℝ} : tendsTo (λ n => n / (n + x)) 1 := by
+  convert add_div_add_tendsTo_one (x := 0); simp
 
 theorem leibniz_sum {n} : ∑ i ∈ Finset.range n, (1 : ℝ) / ((i + 1) * (i + 2)) = n / (n + 1) := by
   induction n
@@ -94,4 +110,4 @@ theorem leibniz_sum {n} : ∑ i ∈ Finset.range n, (1 : ℝ) / ((i + 1) * (i + 
   ring_nf
 
 theorem leibniz_series_tendsTo : tendsTo (series λ n => 1 / ((n + 1) * (n + 2))) 1 := by
-  unfold series; simp_rw [leibniz_sum]; apply div_add_tendsTo_one; norm_num
+  simp_rw [series_eq, leibniz_sum]; simp
