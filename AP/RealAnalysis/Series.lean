@@ -115,3 +115,41 @@ theorem leibniz_sum' {n} : ∑ i ∈ Finset.range n,
 
 theorem leibniz_series_tendsTo : tendsTo (series λ n => 1 / ((n + 1) * (n + 2))) 1 := by
   simp_rw [series_eq, leibniz_sum]; simp
+
+theorem series_le_of_le {a b n} (h₁ : ∀ n, a n ≤ b n) : series a n ≤ series b n := by
+  dsimp [series]
+  apply Finset.sum_le_sum
+  intro n hn
+  apply h₁
+
+theorem converges_of_monoLe_and_forall_le_add {a b x} (h₁ : converges b)
+(h₂ : monoLe a) (h₃ : ∀ n, a n ≤ b n + x) : converges a := by
+  apply converges_of_monoLe_and_bounded_top h₂; use ub b + x; intro n
+  apply h₃ n |>.trans # le_of_lt _; simp; apply lt_ub_of_converges h₁
+
+theorem converges_of_monoLe_and_forall_le {a b} (h₁ : converges b)
+(h₂ : monoLe a) (h₃ : ∀ n, a n ≤ b n) : converges a := by
+  convert converges_of_monoLe_and_forall_le_add (x := 0) h₁ h₂ _; simpa
+
+theorem series_add {a n k} : series a (n + k) =
+∑ i ∈ Finset.range n, a i + series (a # n + ·) k := by
+  simp [series, Finset.sum_range_add]
+
+theorem converges_basel {x} : converges # series # λ n => (1 / (n + x) ^ 2) := by
+  choose k hk using exists_nat_gt # |x| + 2
+  generalize hy : ∑ i ∈ Finset.range k, (1 : ℝ) / (i + x) ^ 2 = y
+  rw [←converges_drop_iff (k := k)]
+  apply converges_of_monoLe_and_forall_le_add (x := y) ⟨_, leibniz_series_tendsTo⟩
+  · rw [monoLe_iff_le_succ]; intro n
+    simp [Nat.add_one_add, series_succ]; positivity
+  intro n
+  rw [add_comm, series_add, add_comm _ y, hy]
+  simp
+  apply series_le_of_le
+  clear n
+  intro n
+  field_simp
+  have h₁ := add_abs_nonneg x
+  rw [div_le_iff₀ # by rw [sq_pos_iff]; linarith]
+  ring_nf
+  nlinarith
