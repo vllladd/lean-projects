@@ -39,3 +39,59 @@ theorem tendsTo_zero_of_converges_series {a} (h : converges (series a)) : tendsT
   _ = |a n + x - x| := by simp
   _ ≤ |a n + x| + |x| := by rw [sub_eq_add_neg]; apply abs_add_le _ _ |>.trans; simp
   _ < _ := by rw [add_comm _ x]; linarith
+
+@[simp]
+theorem inv_add_tendsTo_zero {x : ℝ} : tendsTo (λ n => (n + x)⁻¹) 0 := by
+  rw [tendsTo_iff_eps_lt_one]
+  intro e he he₁
+  simp
+  choose N h₁ using exists_nat_gt # e⁻¹ + |x|
+  use N
+  intro n hn
+  replace hn : (N : ℝ) ≤ n; exact_mod_cast hn
+  have h₃ : e⁻¹ < n - |x|
+  · calc
+    _ < n - |x| := by linarith
+    _ ≤ _ := by simp
+  have h₄ : e⁻¹ < n + x
+  · apply lt_of_lt_of_le h₃
+    rw [sub_eq_add_neg, add_le_add_iff_left]
+    exact neg_abs_le x
+  have h₂ : 0 < n + x
+  · calc
+    _ < e⁻¹ := by positivity
+    _ ≤ _ := by linarith
+  rw [inv_lt_iff_one_lt_mul₀, abs_of_pos] <;> try positivity
+  calc
+  _ = e * e⁻¹ := by rw [mul_inv_cancel₀]; positivity
+  _ < _ := by nlinarith
+
+theorem add_div_add_tendsTo_one {x y : ℝ} (hy : 0 < y) :
+tendsTo (λ n => (n + x) / (n + y)) 1 := by
+  rw [show x = y + (x - y) by ring_nf]
+  simp_rw [←add_assoc]
+  have h : ∀ (n : ℕ) x, (n + y + x) / (n + y) = 1 + x / (n + y)
+  · intro n x
+    rw [same_add_div]
+    positivity
+  simp_rw [h]; clear h
+  nth_rw 2 [show (1 : ℝ) = 1 + 0 by norm_num]
+  apply tendsTo_add tendsTo_const
+  rw [show 0 = (x - y) * 0 by simp]
+  apply tendsTo_mul tendsTo_const
+  simp
+
+theorem div_add_tendsTo_one {x : ℝ} (h : 0 < x) : tendsTo (λ n => n / (n + x)) 1 := by
+  convert add_div_add_tendsTo_one (x := 0) h; simp
+
+theorem leibniz_sum {n} : ∑ i ∈ Finset.range n, (1 : ℝ) / ((i + 1) * (i + 2)) = n / (n + 1) := by
+  induction n
+  · simp
+  nm n ih
+  rw [Finset.sum_range_succ, ih]; clear ih
+  simp
+  field_simp
+  ring_nf
+
+theorem leibniz_series_tendsTo : tendsTo (series λ n => 1 / ((n + 1) * (n + 2))) 1 := by
+  unfold series; simp_rw [leibniz_sum]; apply div_add_tendsTo_one; norm_num
