@@ -109,5 +109,9 @@ theorem leibniz_sum {n} : ∑ i ∈ Finset.range n, (1 : ℝ) / ((i + 1) * (i + 
   field_simp
   ring_nf
 
+theorem leibniz_sum' {n} : ∑ i ∈ Finset.range n,
+(1 : ℝ) / ((i + 1) * (i + 2)) = 1 - 1 / (n + 1) := by
+  rw [leibniz_sum]; field_simp; simp
+
 theorem leibniz_series_tendsTo : tendsTo (series λ n => 1 / ((n + 1) * (n + 2))) 1 := by
   simp_rw [series_eq, leibniz_sum]; simp

@@ -278,3 +278,6 @@ theorem forall_ne_iff_not' {α : Type*} {p : α → Prop} {x : α} : (∀ y, p y
 
 theorem iff_iff_not' {P Q : Prop} : (P ↔ Q) ↔ (¬P ↔ ¬Q) := by tauto
 theorem imp_iff_not' {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto
+
+instance {P} [H : Fact P] : Decidable P := .isTrue H.1
+instance {P} [H : Fact P] : Fact (Fact P) := ⟨H⟩

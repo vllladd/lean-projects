@@ -7,6 +7,7 @@ import AP.RealAnalysis
 import AP.DigitalRoot
 import AP.Physics
 import AP.Knowledge
+import AP.Inference
 
 namespace AP
 
