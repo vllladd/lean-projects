@@ -746,20 +746,25 @@ def mapWith (xs : List α) (f : (x : α) → x ∈ xs → β) : List β :=
   | [] => []
   | x :: ys => f x (by simp) :: ys.mapWith (λ y h₁ => f y # by simp [h₁])
 
-def inhabited_of_ne_nil (h : xs ≠ []) : Inhabited α :=
+open Classical in noncomputable
+def dfltMapWith (f : (x : α) → x ∈ xs → β) (h : xs ≠ []) : β :=
   match h₁ : xs with
   | [] => by simp at h
-  | x :: _ => ⟨x⟩
+  | x :: _ => Nonempty.some ⟨f x # by simp⟩
 
-def inhabited_mapWith_of_ne_nil (f : (x : α) → x ∈ xs → β) (h : xs ≠ []) : Inhabited β :=
-  match h₁ : xs with
-  | [] => by simp at h
-  | x :: _ => ⟨f x # by simp⟩
+theorem dfltMapWith_eq_dfltMapWith {f₁ f₂ : (x : α) → x ∈ xs → β}
+{h : xs ≠ []} : dfltMapWith f₁ h = dfltMapWith f₂ h := by
+  cases xs; simp at h; nm x xs; simp [dfltMapWith]
+
+@[simp]
+theorem dfltMapWith_eq_some_of_nonempty [hb : Nonempty β] {f : (x : α) → x ∈ xs → β}
+{h : xs ≠ []} : dfltMapWith f h = hb.some := by
+  cases xs; simp at h; simp [dfltMapWith]
 
 theorem mapWith_eq_map [ha : DecidableEq α] {f : (x : α) → x ∈ xs → β} :
 xs.mapWith f = if h : xs = [] then [] else
 xs.map (λ x => if h₁ : x ∈ xs then f x h₁ else
-inhabited_mapWith_of_ne_nil f h |>.default) := by
+dfltMapWith f h) := by
   induction xs; rfl
   clear! xs; nm x xs ih
   simp [ih]; clear ih
@@ -1189,3 +1194,7 @@ theorem sum_take_le_sum {xs : List ℕ} {n} : (xs.take n).sum ≤ xs.sum := by
 theorem findIdx_eq_zero_iff {p : α → Bool} :
 xs.findIdx p = 0 ↔ xs = [] ∨ ∃ (h : 0 < xs.length), p xs[0] := by
   cases xs <;> simp; rw [findIdx_eq] <;> simp
+
+theorem max?_eq_max?_of_mem_iff [ha : LinearOrder α]
+(h : ∀ x, x ∈ xs ↔ x ∈ ys) : xs.max? = ys.max? := by
+  ext; simp [max?_eq_some_iff, h]

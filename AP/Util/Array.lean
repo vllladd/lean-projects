@@ -77,15 +77,20 @@ xs.foldlWith f z = xs.toList.foldl (λ acc x => if h : x ∈ xs then f acc x h e
 def mapWith (xs : Array α) (f : (x : α) → x ∈ xs → β) : Array β :=
   ⟨xs.toList.mapWith # λ x h => f x # by simp at h; exact h⟩
 
-def inhabited_of_ne_nil (h : xs ≠ #[]) : Inhabited α :=
+open Classical in noncomputable
+def dfltMapWith (f : (x : α) → x ∈ xs → β) (h : xs ≠ #[]) : β :=
   match h₁ : xs with
   | ⟨[]⟩ => by simp at h
-  | ⟨x :: _⟩ => ⟨x⟩
+  | ⟨x :: _⟩ => Nonempty.some ⟨f x # by simp⟩
 
-def inhabited_mapWith_of_ne_nil (f : (x : α) → x ∈ xs → β) (h : xs ≠ #[]) : Inhabited β :=
-  match h₁ : xs with
-  | ⟨[]⟩ => by simp at h
-  | ⟨x :: _⟩ => ⟨f x # by simp⟩
+theorem dfltMapWith_eq_dfltMapWith {f₁ f₂ : (x : α) → x ∈ xs → β}
+{h : xs ≠ #[]} : dfltMapWith f₁ h = dfltMapWith f₂ h := by
+  rcases xs with ⟨⟨⟩ | ⟨x, xs⟩⟩; simp at h; simp [dfltMapWith]
+
+@[simp]
+theorem dfltMapWith_eq_some_of_nonempty [hb : Nonempty β] {f : (x : α) → x ∈ xs → β}
+{h : xs ≠ #[]} : dfltMapWith f h = hb.some := by
+  rcases xs with ⟨⟨⟩ | ⟨x, xs⟩⟩; simp at h; simp [dfltMapWith]
 
 theorem mapWith_eq_mapWith_toList {f : (x : α) → x ∈ xs → β} :
 xs.mapWith f = ⟨xs.toList.mapWith # λ x h => f x # by simp at h; exact h⟩ := rfl
@@ -94,8 +99,22 @@ xs.mapWith f = ⟨xs.toList.mapWith # λ x h => f x # by simp at h; exact h⟩ :
 theorem mapWith_mk {xs : List α} {f : (x : α) → x ∈ Array.mk xs → β} :
 (Array.mk xs).mapWith f = ⟨xs.mapWith (λ x h => f x # by simpa)⟩ := rfl
 
+theorem ext_iff' : xs = ys ↔ xs.toList = ys.toList :=
+  toList_inj.symm
+
 theorem mapWith_eq_map [ha : DecidableEq α] {f : (x : α) → x ∈ xs → β} :
 xs.mapWith f = if h : xs = #[] then #[] else
 xs.map (λ x => if h₁ : x ∈ xs then f x h₁ else
-inhabited_mapWith_of_ne_nil f h |>.default) := by
-  rcases xs with ⟨xs⟩; simp [xs.mapWith_eq_map]; cases xs <;> simp
+dfltMapWith f h) := by
+  rcases xs with xs
+  rw [ext_iff']
+  rw [mapWith_eq_mapWith_toList]
+  dsimp
+  rw [List.mapWith_eq_map]
+  simp
+  split_ifs with h₁; rfl
+  simp
+  intro x hx
+  split_ifs
+  rfl
+  

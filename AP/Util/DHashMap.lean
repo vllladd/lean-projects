@@ -742,45 +742,6 @@ f acc x.1 x.2 # mem_toList_iff_get?_eq_some wf |>.mp h) z := by
   rw [List.foldlWith_eq_foldl]
   exact foldWith_eq_foldl_toList
 
--- include wf in
--- theorem foldl_max_eq_max?_map {γ : Type*} [hc : LinearOrder γ] {f : (i : α) → β i → γ} {z : γ} :
--- mp.fold (λ acc i x => max acc (f i x)) z =
--- (mp.map f |>.toList.map (·.2) |>.max?.elim z # max z) := by
---   classical
---   -- rw [foldl_eq_foldr_reverse]
---   -- have h₁ : (λ x y => max y (f x)) = (λ x => max (f x))
---   -- · ext x y; rw [max_comm]
---   -- rw [h₁]; clear h₁
---   -- rw [foldr_max_eq_max?_map]
---   -- simp
---   rw [Raw.fold_eq_foldl_toList wf]
---   rw [List.foldl_max_eq_max?_map]
---   congr 1
---   apply List.max?_eq_max?_of_perm
---   symm
---   have h := mp.toList_map wf (f := f)
--- 
--- #check 0 #exit
--- 
--- theorem foldlWith_max_eq_max?_mapWith [hb : LinearOrder β]
--- {f : (x : α) → x ∈ xs → β} {z : β} :
--- xs.foldlWith (λ acc x h => max acc (f x h)) z =
--- (xs.mapWith f).max?.elim z (max z) := by
---   classical
---   generalize hn : xs.length = n
---   induction n generalizing xs f z
---   · simp at hn; subst hn; rfl
---   nm n ih
---   cases xs; simp at hn; nm x xs
---   simp at hn ⊢
---   rw [ih hn]; clear! n
---   suffices h₁ : ∀ (m : Option β) x, m.elim (max z x) (max (max z x)) =
---     max z (m.elim x (max x)); apply h₁
---   rintro (_ | m) x; rfl
---   apply max_assoc
--- 
--- #check 0 #exit
-
 end Raw
 
 end foldWith

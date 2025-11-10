@@ -667,6 +667,27 @@ theorem nodup_erase [ha : DecidableEq α] {x} (h : xs.Nodup) : (xs.erase x).Nodu
 theorem sorted_erase [ha : DecidableEq α] {r x} (h : xs.Sorted r) : (xs.erase x).Sorted r :=
   sorted_of_sorted_and_sublist h erase_sublist
 
+theorem Perm.mapWith {f : (x : α) → x ∈ xs → β} (h : xs ~ ys) :
+xs.mapWith f ~ ys.mapWith (λ x h₁ => f x # h.mem_iff.mpr h₁) := by
+  classical
+  simp_rw [mapWith_eq_map]
+  split_ifs with h₁ h₂ h₂; rfl
+  iterate 2
+    rw [eq_nil_iff_length_eq_zero] at h₁ h₂; simp [←h.length_eq, h₁] at h₂
+  have h₃ : Nonempty β
+  · cases xs; simp at h₁; nm x xs
+    use f x # by simp
+  simp
+  have h : (λ (x : α) => if h₄ : x ∈ ys then f x # h.mem_iff.mpr h₄ else h₃.some) =
+    (λ (x : α) => if h₄ : x ∈ xs then f x h₄ else h₃.some)
+  ·
+    ext x
+    rw! (castMode := .all) [h.mem_iff]
+    split_ifs <;> rfl
+  rw [h]; clear h
+  apply Perm.map
+  exact h
+
 end List namespace Finset
 
 variable {α β γ : Type*} {s : Finset α}

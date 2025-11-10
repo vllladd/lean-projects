@@ -12,7 +12,7 @@ structure Raw (α β : Type*) [DecidableEq α] [Hashable α] where
 namespace Raw
 
 variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable {t t₁ t₂ t₃ : Raw α β}
+variable {t t' t₁ t₂ t₃ : Raw α β}
 
 @[simp] instance : t.inner.WF := t.wf
 
@@ -49,18 +49,9 @@ def depth (t : Raw α β) : ℕ :=
   t.rec' (γ := λ _ => ℕ) # λ _ mp wf f => (mp.foldWith wf.mp · 0) # λ acc i x h₂ =>
   max acc # 1 + f i ⟨_, wf.get? h₂⟩ h₂
 
-instance : SizeOf # Raw α β where
-  sizeOf := depth
-
-theorem sizeOf_def : sizeOf t = t.depth := rfl
-
 @[simp]
 theorem depth_empty : (∅ : Raw α β).depth = 0 := by
   simp [empty_def, Raw₀.empty_def, depth]
-
-@[simp]
-theorem sizeOf_empty : sizeOf (∅ : Raw α β) = 0 :=
-  depth_empty
 
 def val (t : Raw α β) : Option β :=
   t.inner.val
@@ -73,7 +64,6 @@ def get? (t : Raw α β) (k : α) : Option (Raw α β) :=
   | none => none
   | some t' => some ⟨t', t.wf.get? h⟩
 
-@[simp]
 theorem get?_eq_some_iff {k t'} :
 t.get? k = some t' ↔ t.inner.mp.get? k = t'.inner := by
   simp [get?]
@@ -101,11 +91,18 @@ theorem depth_eq_depth_inner : t.depth = t.inner.depth := by
   rwa [ih]
 
 theorem depth_lt {k t'} (h : t.get? k = some t') : t'.depth < t.depth := by
-  simp_rw [depth_eq_depth_inner]; simp at h; exact Raw₀.depth_lt h
-
-theorem sizeOf_lt {k t'} (h : t.get? k = some t') : sizeOf t' < sizeOf t :=
-  depth_lt h
+  simp_rw [depth_eq_depth_inner]; simp [get?_eq_some_iff] at h; exact Raw₀.depth_lt h
 
 @[simp]
 theorem depth_mk {raw : Raw₀ α β} [wf : raw.WF] : (Raw.mk raw wf).depth = raw.depth := by
   simp [depth_eq_depth_inner]
+
+@[simp]
+theorem get?_mp_inner_eq_some_inner_iff {k} :
+t.inner.mp.get? k = some t'.inner ↔ t.get? k = some t' := by
+  simp [get?]
+  split
+  · nm h
+    simp [h]
+  nm t₁ h
+  cases t'; simp [h]

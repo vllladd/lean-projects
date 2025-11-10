@@ -5,13 +5,13 @@ namespace Trie.Raw
 open Std
 
 variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable {t t₁ t₂ t₃ : Raw α β}
+variable {t t' t₁ t₂ t₃ : Raw α β}
 
 def Equiv (t₁ t₂ : Raw α β) : Prop :=
   (∀ k a, t₁.get? k = some a → ∃ (b : Raw α β) (_ : t₂.get? k = some b), a.Equiv b) ∧
   (∀ k b, t₂.get? k = some b → ∃ (a : Raw α β) (_ : t₁.get? k = some a), a.Equiv b)
-termination_by max (sizeOf t₁) (sizeOf t₂)
-decreasing_by all_goals nm h₁ h₂; have h₁ := sizeOf_lt h₁; have h₂ := sizeOf_lt h₂; omega
+termination_by max (depth t₁) (depth t₂)
+decreasing_by all_goals nm h₁ h₂; have h₁ := depth_lt h₁; have h₂ := depth_lt h₂; omega
 
 @[refl, simp]
 theorem Equiv.refl : t.Equiv t := by
@@ -92,57 +92,50 @@ theorem depth_eq : t₁.depth = t₂.depth := by
   simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop] at h
   rcases h with ⟨h₁, h₂⟩
   rcases t₂ with ⟨⟨val', mp'⟩, wf'⟩
+  have wfmp := wf.mp
+  have wfmp' := wf'.mp
   dsimp at *
-  
   simp
   simp_rw [DHashMap.Raw.foldWith_eq_foldlWith_toList]
   simp_rw [List.foldlWith_max_eq_max?_mapWith]
   congr 1
-  apply List.max?_eq_max?_of_perm
-  simp_rw [List.mapWith_eq_map]
-  
-  have wfmp := wf.mp
-  have wfmp' := wf'.mp
-  dsimp at wfmp wfmp'
-  
-  split_ifs with h₃ h₄ h₄
-  · rfl
-  ·
-    exfalso
-    cases h : mp'.toList; simp [h] at h₄
-    nm x xs
-    replace h := congrArg (x ∈ ·) h
-    simp at h
-    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp'] at h
-    rcases x with ⟨x, t₁⟩
-    dsimp at h
-    specialize h₂ _ ⟨_, wf'.get? h⟩ h
-    choose y h₂ h₅ using h₂
-    rw [←DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp] at h₂
-    simp [h₃] at h₂
-  ·
-    exfalso
-    rename' h₃ => h₄, h₄ => h₃
-    cases h : mp.toList; simp [h] at h₄
-    nm x xs
-    replace h := congrArg (x ∈ ·) h
-    simp at h
-    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp] at h
-    rcases x with ⟨x, t₁⟩
-    dsimp at h
-    specialize h₁ _ ⟨_, wf.get? h⟩ h
-    choose y h₁ h₅ using h₁
-    rw [←DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp'] at h₁
-    simp [h₃] at h₁
-  
-  sorry
-  
-  -- suffices h : ∀ (z₁ z₂ : ℕ),
-  --   (λ (p : (_ : α) × Raw₀ α β) => if h₁ : p ∈ mp.toList then 1 + p.2.depth
-  --     (wf := wf.of_mem_toList h₁) else z₁) =
-  --   (λ (p : (_ : α) × Raw₀ α β) => if h₁ : p ∈ mp'.toList then 1 + p.2.depth
-  --     (wf := wf'.of_mem_toList h₁) else z₂)
-  -- ·
-  --   
-  --   rw [h, List.map_perm_map_iff_loc]; clear h
-  --   · sorry
+  apply List.max?_eq_max?_of_mem_iff
+  intro d
+  simp
+  constructor
+  · rintro ⟨k, t₂, h₃, rfl⟩
+    simp
+    use k
+    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp] at h₃
+    specialize h₁ k ⟨t₂, wf.get? h₃⟩ h₃
+    obtain ⟨t₃, h₁, h₄⟩ := h₁
+    use t₃.1
+    use by rwa [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp']
+    specialize @ih k ⟨t₂, wf.get? h₃⟩ h₃ t₃ h₄
+    simp at ih
+    simp [ih, ←depth_eq_depth_inner]
+  · rintro ⟨k, t₂, h₃, rfl⟩
+    simp
+    use k
+    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp'] at h₃
+    specialize h₂ k ⟨t₂, wf'.get? h₃⟩ h₃
+    obtain ⟨t₃, h₂, h₄⟩ := h₂
+    use t₃.1
+    use by rwa [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp]
+    rw [←depth_eq_depth_inner]
+    specialize @ih k t₃ h₂ ⟨t₂, wf'.get? h₃⟩ h₄
+    simp [ih]
+
+theorem get? {k t} (h : t₁.get? k = some t) : ∃ t', t₂.get? k = some t' ∧ t'.Equiv t := by
+  unfold Equiv at H
+  replace H := H.1
+  specialize H k t h
+  choose t' h₁ h₂ using H
+  use t', h₁, h₂.symm
+
+theorem get?' {k t} (h : t₂.get? k = some t) : ∃ t', t₁.get? k = some t' ∧ t'.Equiv t := by
+  unfold Equiv at H
+  replace H := H.2
+  specialize H k t h
+  choose t' h₁ h₂ using H
+  use t'

@@ -10,7 +10,7 @@ inductive Raw₀ (α β : Type*) [DecidableEq α] [Hashable α] where
 namespace Raw₀
 
 variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable {t t₁ t₂ t₃ : Raw₀ α β}
+variable {t t' t₁ t₂ t₃ : Raw₀ α β}
 
 def val : Raw₀ α β → Option β
 | .mk val _ => val
