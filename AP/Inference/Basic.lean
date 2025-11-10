@@ -8,15 +8,15 @@ inductive Stat where
 | imp : Stat → Stat → Stat
 deriving Inhabited, DecidableEq
 
-inductive Proof' : Type where
-| ax₁ : Stat → Stat → Proof'
-| ax₂ : Stat → Stat → Stat → Proof'
-| ax₃ : Stat → Stat → Proof'
-| mp : Proof' → Proof' → Proof'
+inductive ProofD : Type where
+| ax₁ : Stat → Stat → ProofD
+| ax₂ : Stat → Stat → Stat → ProofD
+| ax₃ : Stat → Stat → ProofD
+| mp : ProofD → ProofD → ProofD
 deriving Inhabited, DecidableEq
 
 @[simp]
-def Proof'.stat (p : Proof') : Option Stat :=
+def ProofD.stat (p : ProofD) : Option Stat :=
   match p with
   | .ax₁ P Q => some # .imp P # .imp Q P
   | .ax₂ P Q R => some # .imp
@@ -30,21 +30,21 @@ def Proof'.stat (p : Proof') : Option Stat :=
     | _, _ => none
 
 structure Proof (e : Stat) : Prop where
-  h : ∃ (p : Proof'), p.stat = some e
+  h : ∃ (p : ProofD), p.stat = some e
 
 -----
 
 theorem ax₁ (P Q : Stat) : Proof # .imp P # .imp Q P := by
-  use Proof'.ax₁ P Q; rfl
+  use ProofD.ax₁ P Q; rfl
 
 theorem ax₂ (P Q R : Stat) : Proof # .imp (.imp P # .imp Q R) # .imp (.imp P Q) # .imp P R := by
-  use Proof'.ax₂ P Q R; rfl
+  use ProofD.ax₂ P Q R; rfl
 
 theorem ax₃ (P Q : Stat) : Proof # .imp (.imp (.not P) (.not Q)) # .imp Q P := by
-  use Proof'.ax₃ P Q; rfl
+  use ProofD.ax₃ P Q; rfl
 
 theorem mp {P Q} (h₁ : Proof # .imp P Q) (h₂ : Proof P) : Proof Q := by
-  obtain ⟨p₁, h₁⟩ := h₁; obtain ⟨p₂, h₂⟩ := h₂; use Proof'.mp p₁ p₂; simpa [h₁]
+  obtain ⟨p₁, h₁⟩ := h₁; obtain ⟨p₂, h₂⟩ := h₂; use ProofD.mp p₁ p₂; simpa [h₁]
 
 theorem mp' {P Q} (h₁ : Proof P) (h₂ : Proof # .imp P Q) : Proof Q :=
   mp h₂ h₁
@@ -63,14 +63,14 @@ def Stat.subst (s : Stat) (i : ℕ) (s' : Stat) : Stat :=
   | .imp a b => .imp (a.subst i s') (b.subst i s')
 
 @[simp]
-def Proof'.subst (p : Proof') (i : ℕ) (s : Stat) : Proof' :=
+def ProofD.subst (p : ProofD) (i : ℕ) (s : Stat) : ProofD :=
   match p with
   | .ax₁ P Q => .ax₁ (P.subst i s) (Q.subst i s)
   | .ax₂ P Q R => .ax₂ (P.subst i s) (Q.subst i s) (R.subst i s)
   | .ax₃ P Q => .ax₃ (P.subst i s) (Q.subst i s)
   | .mp p₁ p₂ => .mp (p₁.subst i s) (p₂.subst i s)
 
-theorem Proof'.stat_subst_eq_some_of {s s' i} {p : Proof'}
+theorem ProofD.stat_subst_eq_some_of {s s' i} {p : ProofD}
 (h : p.stat = some s) : (p.subst i s').stat = some (s.subst i s') := by
   induction p generalizing s
   any_goals try simp at h; simp [←h]
@@ -89,16 +89,16 @@ theorem Proof.subst_of {s s' i} (h : Proof s) : Proof # s.subst i s' := by
   obtain ⟨p, h⟩ := h; use p.subst i s', p.stat_subst_eq_some_of h
 
 open Classical in noncomputable
-def Proof'.shortest (p : Proof') : Proof' :=
+def ProofD.shortest (p : ProofD) : ProofD :=
   Classical.epsilon # λ p₁ => p₁.stat = p.stat ∧
-  ∀ (p₂ : Proof'), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂
+  ∀ (p₂ : ProofD), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂
 
-theorem Proof'.shortest_spec {p : Proof'} : p.shortest.stat = p.stat ∧
-∀ (p' : Proof'), p'.stat = p.stat → sizeOf p.shortest ≤ sizeOf p' := by
+theorem ProofD.shortest_spec {p : ProofD} : p.shortest.stat = p.stat ∧
+∀ (p' : ProofD), p'.stat = p.stat → sizeOf p.shortest ≤ sizeOf p' := by
   unfold shortest
-  apply Classical.epsilon_spec (p := λ (p₁ : Proof') => p₁.stat = p.stat ∧
-    ∀ (p₂ : Proof'), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂)
-  have h₁ : ∃ (n : ℕ) (p' : Proof'), p'.stat = p.stat ∧ sizeOf p' = n
+  apply Classical.epsilon_spec (p := λ (p₁ : ProofD) => p₁.stat = p.stat ∧
+    ∀ (p₂ : ProofD), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂)
+  have h₁ : ∃ (n : ℕ) (p' : ProofD), p'.stat = p.stat ∧ sizeOf p' = n
   · simp
   replace h₁ := Nat.exi_least_of_exi h₁
   obtain ⟨n, ⟨p', h₁, rfl⟩, h₂⟩ := h₁
@@ -109,15 +109,15 @@ theorem Proof'.shortest_spec {p : Proof'} : p.shortest.stat = p.stat ∧
   exact h₂ _ h₄ _ h₃ rfl
 
 @[simp]
-theorem Proof'.stat_shortest {p : Proof'} : p.shortest.stat = p.stat :=
+theorem ProofD.stat_shortest {p : ProofD} : p.shortest.stat = p.stat :=
   shortest_spec.1
 
-theorem Proof.exi_shortest {s} {h : Proof s} : ∃ (p₁ : Proof'), p₁.stat = some s ∧
-∀ (p₂ : Proof'), p₂.stat = some s → sizeOf p₁ ≤ sizeOf p₂ := by
+theorem Proof.exi_shortest {s} {h : Proof s} : ∃ (p₁ : ProofD), p₁.stat = some s ∧
+∀ (p₂ : ProofD), p₂.stat = some s → sizeOf p₁ ≤ sizeOf p₂ := by
   obtain ⟨p, h⟩ := h
   use p.shortest
   rw [←h]
-  exact Proof'.shortest_spec
+  exact ProofD.shortest_spec
 
 -- @[simp]
 -- theorem Proof.not_var {i} : ¬Proof (.var i) := by

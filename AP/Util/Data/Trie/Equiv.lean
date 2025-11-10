@@ -83,16 +83,66 @@ namespace Equiv
 variable (H : t₁.Equiv t₂)
 include H
 
--- theorem depth_eq : t₁.depth = t₂.depth := by
---   classical
---   revert t₂
---   apply t₁.ind
---   intro val mp wf ih t₂ h
---   unfold Equiv at h
---   simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop] at h
---   rcases h with ⟨h₁, h₂⟩
---   rcases t₂ with ⟨⟨val', mp'⟩, wf'⟩
---   unfold depth
---   simp only [rec'_mk]
---   simp_rw [DHashMap.Raw.foldWith_eq_foldl_toList]
---   sorry
+theorem depth_eq : t₁.depth = t₂.depth := by
+  classical
+  revert t₂
+  apply t₁.ind
+  intro val mp wf ih t₂ h
+  unfold Equiv at h
+  simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop] at h
+  rcases h with ⟨h₁, h₂⟩
+  rcases t₂ with ⟨⟨val', mp'⟩, wf'⟩
+  dsimp at *
+  
+  simp
+  simp_rw [DHashMap.Raw.foldWith_eq_foldlWith_toList]
+  simp_rw [List.foldlWith_max_eq_max?_mapWith]
+  congr 1
+  apply List.max?_eq_max?_of_perm
+  simp_rw [List.mapWith_eq_map]
+  
+  have wfmp := wf.mp
+  have wfmp' := wf'.mp
+  dsimp at wfmp wfmp'
+  
+  split_ifs with h₃ h₄ h₄
+  · rfl
+  ·
+    exfalso
+    cases h : mp'.toList; simp [h] at h₄
+    nm x xs
+    replace h := congrArg (x ∈ ·) h
+    simp at h
+    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp'] at h
+    rcases x with ⟨x, t₁⟩
+    dsimp at h
+    specialize h₂ _ ⟨_, wf'.get? h⟩ h
+    choose y h₂ h₅ using h₂
+    rw [←DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp] at h₂
+    simp [h₃] at h₂
+  ·
+    exfalso
+    rename' h₃ => h₄, h₄ => h₃
+    cases h : mp.toList; simp [h] at h₄
+    nm x xs
+    replace h := congrArg (x ∈ ·) h
+    simp at h
+    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp] at h
+    rcases x with ⟨x, t₁⟩
+    dsimp at h
+    specialize h₁ _ ⟨_, wf.get? h⟩ h
+    choose y h₁ h₅ using h₁
+    rw [←DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp'] at h₁
+    simp [h₃] at h₁
+  
+  sorry
+  
+  -- suffices h : ∀ (z₁ z₂ : ℕ),
+  --   (λ (p : (_ : α) × Raw₀ α β) => if h₁ : p ∈ mp.toList then 1 + p.2.depth
+  --     (wf := wf.of_mem_toList h₁) else z₁) =
+  --   (λ (p : (_ : α) × Raw₀ α β) => if h₁ : p ∈ mp'.toList then 1 + p.2.depth
+  --     (wf := wf'.of_mem_toList h₁) else z₂)
+  -- ·
+  --   
+  --   rw [h, List.map_perm_map_iff_loc]; clear h
+  --   · sorry

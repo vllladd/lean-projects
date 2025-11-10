@@ -47,7 +47,7 @@ theorem empty_def : (∅ : Raw α β) = ⟨∅, inferInstance⟩ := rfl
 
 def depth (t : Raw α β) : ℕ :=
   t.rec' (γ := λ _ => ℕ) # λ _ mp wf f => (mp.foldWith wf.mp · 0) # λ acc i x h₂ =>
-  max acc # 1 + f i ⟨_, wf.wf_get? h₂⟩ h₂
+  max acc # 1 + f i ⟨_, wf.get? h₂⟩ h₂
 
 instance : SizeOf # Raw α β where
   sizeOf := depth
@@ -71,7 +71,7 @@ theorem val_mk {inner wf} : (⟨inner, wf⟩ : Raw α β).val = inner.val := rfl
 def get? (t : Raw α β) (k : α) : Option (Raw α β) :=
   match h : t.inner.mp.get? k with
   | none => none
-  | some t' => some ⟨t', t.wf.wf_get? h⟩
+  | some t' => some ⟨t', t.wf.get? h⟩
 
 @[simp]
 theorem get?_eq_some_iff {k t'} :
@@ -97,7 +97,7 @@ theorem depth_eq_depth_inner : t.depth = t.inner.depth := by
   simp only [depth, rec'_mk] at ih ⊢
   congr
   ext i k t' h
-  specialize ih k ⟨_, wf.wf_get? h⟩
+  specialize ih k ⟨_, wf.get? h⟩
   rwa [ih]
 
 theorem depth_lt {k t'} (h : t.get? k = some t') : t'.depth < t.depth := by
@@ -105,3 +105,7 @@ theorem depth_lt {k t'} (h : t.get? k = some t') : t'.depth < t.depth := by
 
 theorem sizeOf_lt {k t'} (h : t.get? k = some t') : sizeOf t' < sizeOf t :=
   depth_lt h
+
+@[simp]
+theorem depth_mk {raw : Raw₀ α β} [wf : raw.WF] : (Raw.mk raw wf).depth = raw.depth := by
+  simp [depth_eq_depth_inner]
