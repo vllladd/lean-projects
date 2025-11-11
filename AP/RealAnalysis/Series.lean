@@ -153,3 +153,90 @@ theorem converges_basel {x} : converges # series # λ n => (1 / (n + x) ^ 2) := 
   rw [div_le_iff₀ # by rw [sq_pos_iff]; linarith]
   ring_nf
   nlinarith
+
+@[simp]
+theorem subseq_add_right {k : ℕ} : subseq (· + k) := by
+  rw [subseq_iff_lt_add_one]; omega
+
+@[simp]
+theorem subseq_add_left {k : ℕ} : subseq (k + ·) := by
+  rw [subseq_iff_lt_add_one]; omega
+
+@[simp]
+theorem subseq_mul_right {k : ℕ} (h : k ≠ 0) : subseq (· * k) := by
+  rw [subseq_iff_lt_add_one]; cases k; simp at h; ring_nf; omega
+
+@[simp]
+theorem subseq_mul_left {k : ℕ} (h : k ≠ 0) : subseq (k * ·) := by
+  rw [subseq_iff_lt_add_one]; cases k; simp at h; ring_nf; omega
+
+theorem pow_tendsTo_zero_of_pos_and_lt_one {x : ℝ}
+(h₁ : 0 < x) (h₂ : x < 1) : tendsTo (x ^ ·) 0 := by
+  generalize ha : (x ^ ·) = a
+  replace ha : ∀ n, a n = x ^ n
+  · simp [←ha]
+  have h₃ : monoGt a
+  · rw [monoGt_iff_succ_lt]
+    intro n
+    simp [ha]
+    rw [pow_lt_pow_iff_right_of_lt_one₀] <;> linarith
+  have h₄ : ∀ n, 0 < a n
+  · intro n
+    rw [ha]
+    positivity
+  have h₅ := converges_of_monoGt_and_bounded_bottom h₃
+  specialize h₅ _
+  · use 0
+    intro n
+    exact le_of_lt # h₄ n
+  choose L h₅ using h₅
+  have h₆ : tendsTo (λ n => a # n * 2) L
+  · apply tendsTo_subseq h₅
+    simp
+  have h₇ : tendsTo (λ n => a # n * 2) (L ^ 2)
+  · simp_rw [ha, pow_mul, ←ha]
+    exact tendsTo_pow h₅
+  have h := tendsTo_unique h₆ h₇
+  convert h₅
+  symm
+  replace h : L * (L - 1) = 0
+  · nlinarith
+  simp at h
+  rcases h with h | h; exact h
+  exfalso
+  simp [sub_eq_iff_eq_add] at h
+  subst h
+  contrapose h₅; clear h₅
+  simp [tendsTo, eventually]
+  use 1 - x, by linarith
+  intro N
+  use N + 1, by simp
+  rw [ha]
+  rw [abs_of_neg]
+  rotate_left
+  · simp
+    rwa [pow_lt_one_iff_of_nonneg]
+    linarith; simp
+  simp
+  suffices h : x ^ (N + 1) ≤ x ^ 1
+  · linarith
+  rw [pow_le_pow_iff_right_of_lt_one₀ h₁ h₂]
+  simp
+
+theorem geom_series_eq {x : ℝ} {n : ℕ} (h : x ≠ 1) :
+series (x ^ ·) n = (1 - x ^ n) / (1 - x) := by
+  rw [series, Finset.sum_geom_eq h]
+
+theorem geom_series_eq_ext {x : ℝ} (h : x ≠ 1) :
+series (x ^ ·) = λ n => (1 - x ^ n) / (1 - x) := by
+  ext n; exact geom_series_eq h
+
+theorem geom_series_tendsTo {x : ℝ} (h₁ : 0 < x) (h₂ : x < 1) :
+tendsTo (series (x ^ ·)) # 1 / (1 - x) := by
+  rw [geom_series_eq_ext # by linarith]
+  apply tendsTo_div
+  · linarith
+  · nth_rw 2 [show (1 : ℝ) = 1 - 0 by norm_num]
+    apply tendsTo_sub tendsTo_const
+    exact pow_tendsTo_zero_of_pos_and_lt_one h₁ h₂
+  · exact tendsTo_const

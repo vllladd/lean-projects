@@ -94,87 +94,21 @@ end P3 namespace P4 -----
 
 open Finset
 
-variable {b n : ℕ} (hb : 2 ≤ b) (hn : 1 ≤ n)
-include hb hn
-
-def f (b n : ℕ) : ℕ :=
-  ∑ k ∈ range n, b ^ k
-
-def g (b n : ℕ) : ℕ :=
-  ∑ k ∈ range n, k * b ^ k
-
-omit hn in
-theorem base_sub_one_ne_zero : (b : ℝ) - 1 ≠ 0 := by
-  cases b; simp at hb; nm b; simp; rintro rfl; simp at hb
-
-omit hn in
-theorem one_sub_base_ne_zero : 1 - (b : ℝ) ≠ 0 := by
-  have h := base_sub_one_ne_zero hb; contrapose! h; linarith
-
-theorem f_eq : (f b n : ℝ) = (1 - b ^ n) / (1 - b) := by
-  have h : (f b n : ℝ) = b * f b n + 1 - b ^ n
-  · calc
-    _ = (∑ k ∈ range n, b ^ k : ℝ) := by rw [f]; simp
-    _ = 1 + ∑ k ∈ range (n - 1), b ^ (k + 1) := by
-      cases n; simp at hn; nm n; simp
-      rw [sum_range_succ']; ring_nf
-    _ = 1 + ∑ k ∈ range n, b ^ (k + 1) - b ^ n := by
-      cases n; simp at hn; nm n
-      simp; rw [sum_range_succ]; ring_nf
-    _ = 1 + b * ∑ k ∈ range n, b ^ k - b ^ n := by
-      congr; simp_rw [pow_succ, ←sum_mul]; ring_nf; simp
-    _ = _ := by rw [←f]; ring_nf
-  have h₁ := one_sub_base_ne_zero hb
-  field_simp; linarith
-
-theorem g_eq' : (g b n : ℝ) = (b * f b n - n * b ^ n) / (1 - b) := by
-  have h₁ := one_sub_base_ne_zero hb
-  have h : (g b n : ℝ) = -n * b ^ n + b * g b n + b * f b n
-  · calc
-    _ = (∑ k ∈ range n, k * b ^ k : ℝ) := by rw [g]; simp
-    _ = ∑ k ∈ range (n - 1), (k + 1) * b ^ (k + 1) := by
-      cases n; simp at hn; nm n; simp
-      rw [sum_range_succ']; simp
-    _ = -n * b ^ n + ∑ k ∈ range n, (k + 1) * b ^ (k + 1) := by
-      cases n; simp at hn; nm n; simp
-      rw [sum_range_succ]; ring_nf; congr; ext; ring_nf
-    _ = -n * b ^ n + b * ∑ k ∈ range n, (k + 1) * b ^ k := by
-      congr; simp; simp_rw [pow_succ, ←mul_assoc, ←sum_mul]
-      ring_nf; congr; ext; ring_nf
-    _ = -n * b ^ n + (b * ∑ k ∈ range n, k * b ^ k + b * f b n) := by
-      congr; simp; simp_rw [add_mul]
-      rw [sum_add_distrib, mul_add]; congr; simp [f]
-    _ = -n * b ^ n + b * g b n + b * f b n := by rw [←g]; ring_nf
-  field_simp; linarith
-
-theorem g_eq : (g b n : ℝ) = (b ^ n * (n * b - n - b) + b) / (1 - b) ^ 2 := by
-  have h := g_eq' hb hn
-  rw [f_eq hb hn] at h
-  have h₁ := one_sub_base_ne_zero hb
-  field_simp at h ⊢
-  linarith
-
-theorem main : (∑ k ∈ range n, (n - k : ℝ) * b ^ k) * (b - 2) + n =
+theorem main {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
+(∑ k ∈ range n, (n - k : ℝ) * b ^ k) * (b - 2) + n =
 ∑ k ∈ range n, (b - n + k : ℝ) * b ^ k := by
   convert_to (∑ k ∈ range n, (n * b ^ k - k * b ^ k : ℝ)) * (b - 2 : ℝ) + n =
     ∑ k ∈ range n, ((b - n : ℝ) * b ^ k + k * b ^ k)
   · simp [sub_mul]
   · simp [add_mul, sub_mul]
-  convert_to ((n * ∑ k ∈ range n, b ^ k : ℝ) -
+  convert_to (n * ∑ k ∈ range n, (b ^ k : ℝ) -
     ∑ k ∈ range n, (k : ℝ) * b ^ k) * (b - 2 : ℝ) + n =
     (b - n : ℝ) * (∑ k ∈ range n, (b : ℝ) ^ k) + ∑ k ∈ range n, (k : ℝ) * b ^ k
   · simp [mul_sum]
   · simp [sum_add_distrib, mul_sum]
-  have hf : ∑ k ∈ range n, (b : ℝ) ^ k = f b n; simp [f]
-  have hg : ∑ k ∈ range n, (k : ℝ) * b ^ k = g b n; simp [g]
-  simp; rw [hf, hg]; clear hf hg
-  rw [f_eq hb hn, g_eq hb hn]
-  have h₁ := one_sub_base_ne_zero hb
-  field_simp
-  generalize (b : ℝ) = b
-  generalize (n : ℝ) = n
-  nm x y; clear! x y
-  ring_nf
+  have hb' : 1 - b ≠ 0; grind
+  rw [sum_geom_eq hb, sum_add_geom_eq hb]
+  field_simp; ring_nf
 
 end P4 namespace P5 -----
 
@@ -304,7 +238,7 @@ theorem integral_exp {a b : ℝ} : ∫ x in a..b, x.exp ∂μ = b.exp - a.exp :=
   · intros; apply Real.hasDerivAt_exp
   · apply integrable_of_continuous; continuity
 
-set_option maxHeartbeats 1000000
+set_option maxHeartbeats 1000000 in
 theorem main : ∫ x in 0..(1 + √2).log,
 (((x.exp - (-x).exp) / 2) ^ 3 * ((x.exp + (-x).exp) / 2) ^ 11) ∂μ = 107 / 28 := by
   rw [integral_congr (g := λ x => (x.exp - (-x).exp) ^ 3 / 2 ^ 3 *

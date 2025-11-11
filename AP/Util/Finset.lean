@@ -748,3 +748,53 @@ theorem one_le_prod_of_forall_one_le {ι : Type*} {s : Finset ι} {f : ι → �
   rcases h with ⟨h₁, h₂⟩
   specialize ih h₂
   nlinarith
+
+theorem sum_geom_eq {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
+∑ k ∈ range n, b ^ k = (1 - b ^ n) / (1 - b) := by
+  by_cases hn : n = 0; simp [hn]; replace hn : 1 ≤ n; omega
+  have h : ∑ k ∈ range n, b ^ k = b * ∑ k ∈ range n, b ^ k + 1 - b ^ n
+  · calc
+    _ = (∑ k ∈ range n, b ^ k : ℝ) := by simp
+    _ = 1 + ∑ k ∈ range (n - 1), b ^ (k + 1) := by
+      cases n; simp at hn; nm n; simp
+      rw [sum_range_succ']; ring_nf
+    _ = 1 + ∑ k ∈ range n, b ^ (k + 1) - b ^ n := by
+      cases n; simp at hn; nm n
+      simp; rw [sum_range_succ]; ring_nf
+    _ = 1 + b * ∑ k ∈ range n, b ^ k - b ^ n := by
+      congr; simp_rw [pow_succ, ←sum_mul]; ring_nf
+    _ = _ := by ring_nf
+  generalize ∑ k ∈ range n, b ^ k = x at h ⊢
+  have h₁ : 1 - b ≠ 0; grind
+  field_simp; linarith
+
+theorem sum_add_geom_eq' {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
+∑ k ∈ range n, k * b ^ k = (b * ∑ k ∈ range n, b ^ k - n * b ^ n) / (1 - b) := by
+  by_cases hn : n = 0; simp [hn]; replace hn : 1 ≤ n; omega
+  have h : ∑ k ∈ range n, k * b ^ k = -n * b ^ n +
+    b * ∑ k ∈ range n, k * b ^ k + b * ∑ k ∈ range n, b ^ k
+  · calc
+    _ = (∑ k ∈ range n, k * b ^ k : ℝ) := by simp
+    _ = ∑ k ∈ range (n - 1), (k + 1) * b ^ (k + 1) := by
+      cases n; simp at hn; nm n; simp
+      rw [sum_range_succ']; simp
+    _ = -n * b ^ n + ∑ k ∈ range n, (k + 1) * b ^ (k + 1) := by
+      cases n; simp at hn; nm n; simp
+      rw [sum_range_succ]; ring_nf; congr; ext; ring_nf
+    _ = -n * b ^ n + b * ∑ k ∈ range n, (k + 1) * b ^ k := by
+      congr; simp_rw [pow_succ, ←mul_assoc, ←sum_mul]
+      ring_nf; congr; ext; ring_nf
+    _ = -n * b ^ n + (b * ∑ k ∈ range n, k * b ^ k + b * ∑ k ∈ range n, b ^ k) := by
+      congr; simp_rw [add_mul]
+      rw [sum_add_distrib, mul_add]; congr; simp
+    _ = -n * b ^ n + b * ∑ k ∈ range n, k * b ^ k + b * ∑ k ∈ range n, b ^ k := by ring_nf
+  have h₁ : 1 - b ≠ 0; grind
+  field_simp; linarith
+
+theorem sum_add_geom_eq {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
+∑ k ∈ range n, k * b ^ k = (b ^ n * (n * b - n - b) + b) / (1 - b) ^ 2 := by
+  have h := sum_add_geom_eq' (n := n) hb
+  rw [sum_geom_eq hb] at h
+  have h₁ : 1 - b ≠ 0; grind
+  field_simp at h ⊢
+  linarith

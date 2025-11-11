@@ -885,3 +885,7 @@ theorem size_ofList_of_nodup {xs : List α} (h : xs.Nodup) : (ofList xs).size = 
 theorem size_ofFinset {s : Finset α} : (ofFinset s).size = s.card := by
   simp [ofFinset, size_ofList_of_nodup]
   change s.val.toList.length = s.card; simp
+
+@[simp]
+theorem subset_insert {x} : s ⊆ s.insert x := by
+  intro y hy; simp [hy]
