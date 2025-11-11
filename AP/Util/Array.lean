@@ -117,4 +117,14 @@ dfltMapWith f h) := by
   intro x hx
   split_ifs
   rfl
-  
+
+theorem getElem?_extract_add {n k i} (h : i < k) : (xs.extract n # n + k)[i]? = xs[n + i]? := by
+  rw [getElem?_extract]
+  split_ifs with h₁
+  · rfl
+  simp at h₁
+  rcases h₁ with h₁ | h₁
+  · linarith
+  symm
+  simp
+  rwa [add_comm]
