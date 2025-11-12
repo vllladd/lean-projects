@@ -14,7 +14,7 @@ def isCauchyAlt₂ (a : ℕ → ℝ) : Prop :=
 def isCauchyAlt₃ (a : ℕ → ℝ) : Prop :=
   ∀ ε, 0 < ε → ∃ N, ∀ i, N ≤ i → ∀ j, i ≤ j → |a i - a j| < ε
 
-theorem isCauchy_iff_isCauchyAlt₁ {a} : isCauchy a ↔ isCauchyAlt₁ a := by
+theorem isCauchy_iff_alt₁ {a} : isCauchy a ↔ isCauchyAlt₁ a := by
   constructor <;> intro h e he
   · specialize h e he
     obtain ⟨N, h⟩ := h
@@ -28,7 +28,7 @@ theorem isCauchy_iff_isCauchyAlt₁ {a} : isCauchy a ↔ isCauchyAlt₁ a := by
     intro i j hi hj
     exact Real.abs_sub_lt_of_lt_lt_half (h i hi) (h j hj)
 
-theorem isCauchy_iff_isCauchyAlt₂ {a} : isCauchy a ↔ isCauchyAlt₂ a := by
+theorem isCauchy_iff_alt₂ {a} : isCauchy a ↔ isCauchyAlt₂ a := by
   constructor; all_goals
     intro h e he
     specialize h e he
@@ -36,8 +36,8 @@ theorem isCauchy_iff_isCauchyAlt₂ {a} : isCauchy a ↔ isCauchyAlt₂ a := by
     use N
     tauto
 
-theorem isCauchy_iff_isCauchyAlt₃ {a} : isCauchy a ↔ isCauchyAlt₃ a := by
-  rw [isCauchy_iff_isCauchyAlt₂]; constructor
+theorem isCauchy_iff_alt₃ {a} : isCauchy a ↔ isCauchyAlt₃ a := by
+  rw [isCauchy_iff_alt₂]; constructor
   all_goals
     intro h e he
     specialize h e he
@@ -53,7 +53,7 @@ theorem isCauchy_iff_isCauchyAlt₃ {a} : isCauchy a ↔ isCauchyAlt₃ a := by
     rw [min_eq_right h₁, max_eq_left h₁, abs_sub_comm] at h; exact h
 
 theorem isCauSeq_of_isCauchy {a : ℕ → ℚ} (h : isCauchy (a ·)) : IsCauSeq abs a := by
-  rw [isCauchy_iff_isCauchyAlt₁] at h
+  rw [isCauchy_iff_alt₁] at h
   intro e (he : 0 < e)
   specialize h e # by exact_mod_cast he
   obtain ⟨N, h⟩ := h
@@ -64,7 +64,7 @@ theorem isCauSeq_of_isCauchy {a : ℕ → ℚ} (h : isCauchy (a ·)) : IsCauSeq 
   exact_mod_cast h
 
 theorem isCauchy_of_isCauSeq {a : ℕ → ℚ} (h : IsCauSeq abs a) : isCauchy (a ·) := by
-  rw [isCauchy_iff_isCauchyAlt₁]
+  rw [isCauchy_iff_alt₁]
   intro e (he : 0 < e)
   obtain ⟨e', he', h₁⟩ := exists_pos_rat_lt he
   specialize h e' he'
@@ -129,7 +129,7 @@ theorem isFakeCauchy_sqrt : isFakeCauchy (√·) := by
   linarith
 
 theorem isCauchy_of_converges {a} (h : converges a) : isCauchy a := by
-  rw [isCauchy_iff_isCauchyAlt₁]
+  rw [isCauchy_iff_alt₁]
   obtain ⟨L, h⟩ := h
   intro e he
   specialize h (e / 2) (by positivity)
@@ -140,7 +140,7 @@ theorem isCauchy_of_converges {a} (h : converges a) : isCauchy a := by
   exact Real.abs_sub_lt_of_lt_lt_half (h n hn) # h N # by rfl
 
 theorem bounded_of_isCauchy {a} (h : isCauchy a) : bounded a := by
-  rw [isCauchy_iff_isCauchyAlt₁] at h
+  rw [isCauchy_iff_alt₁] at h
   specialize h 1 # by norm_num
   obtain ⟨N, h⟩ := h
   use 1 + |a N| + ∑ i ∈ Finset.range N, |a i|
@@ -232,7 +232,7 @@ theorem isCauchy_neg {a} : isCauchy (-a) ↔ isCauchy a := by
 
 theorem isCauchy_of_monoLe_and_bounded_top {a}
 (h₁ : monoLe a) (h₂ : ∃ M, ∀ n, a n ≤ M) : isCauchy a := by
-  rw [isCauchy_iff_isCauchyAlt₁]
+  rw [isCauchy_iff_alt₁]
   intro e he
   have h₃ := λ n => le_lub_of_bounded_top (n := n) h₂
   obtain ⟨N, h₄⟩ := exi_lub_sub_lt_of_bounded_top h₂ he

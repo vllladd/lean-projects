@@ -132,8 +132,12 @@ theorem converges_of_monoLe_and_forall_le {a b} (h₁ : converges b)
   convert converges_of_monoLe_and_forall_le_add (x := 0) h₁ h₂ _; simpa
 
 theorem series_add {a n k} : series a (n + k) =
-∑ i ∈ Finset.range n, a i + series (a # n + ·) k := by
+series a n + series (a # n + ·) k := by
   simp [series, Finset.sum_range_add]
+
+theorem series_add' {a n k} : series a (n + k) =
+series a k + series (a # k + ·) n := by
+  rw [add_comm, series_add]
 
 theorem converges_basel {x} : converges # series # λ n => (1 / (n + x) ^ 2) := by
   choose k hk using exists_nat_gt # |x| + 2
@@ -143,7 +147,9 @@ theorem converges_basel {x} : converges # series # λ n => (1 / (n + x) ^ 2) := 
   · rw [monoLe_iff_le_succ]; intro n
     simp [Nat.add_one_add, series_succ]; positivity
   intro n
-  rw [add_comm, series_add, add_comm _ y, hy]
+  rw [add_comm, series_add, add_comm _ y]
+  rw [←series] at hy
+  rw [hy]
   simp
   apply series_le_of_le
   clear n
@@ -240,3 +246,74 @@ tendsTo (series (x ^ ·)) # 1 / (1 - x) := by
     apply tendsTo_sub tendsTo_const
     exact pow_tendsTo_zero_of_pos_and_lt_one h₁ h₂
   · exact tendsTo_const
+
+def absConv (a : ℕ → ℝ) : Prop :=
+  converges # series (|a ·|)
+
+theorem limit_le_limit_of_forall_le {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
+(h₃ : ∀ n, a n ≤ b n) : L ≤ M := by
+  have h₄ := tendsTo_sub h₂ h₁
+  have h₅ : 0 ≤ M - L
+  · apply le_limit_of_forall_le h₄; simpa
+  linarith
+
+example : ¬∀ {a L}, tendsTo (|a ·|) L ↔ 0 ≤ L ∧ tendsTo a L := by
+  push_neg
+  use λ n => if Even n then 1 else -1
+  use 1
+  simp
+  left
+  split_ands
+  · simp_rw [apply_ite]
+    simp
+    exact tendsTo_const
+  intro h
+  replace h := converges_of_tendsTo h
+  contrapose h
+  apply not_converges_alternating
+  norm_num
+
+theorem tendsTo_zero_of_abs_tendsTo_zero {a} (h : tendsTo (|a ·|) 0) : tendsTo a 0 := by
+  intro e he
+  specialize h e he
+  choose N h using h
+  use N
+  intro n hn
+  specialize h n hn
+  simp at h ⊢; exact h
+
+theorem abs_tendsTo_zero_iff {a} : tendsTo (|a ·|) 0 ↔ tendsTo a 0 := by
+  use tendsTo_zero_of_abs_tendsTo_zero; convert tendsTo_abs; simp
+
+theorem le_limit_of_monoLe {a L n} (h₁ : tendsTo a L) (h₂ : monoLe a) : a n ≤ L := by
+  by_contra! h₃
+  specialize h₁ ((a n - L) / 2) (by linarith)
+  choose N h₁ using h₁
+  specialize h₁ (N + n) (by linarith)
+  have h₄ : a n ≤ a (N + n)
+  · apply h₂; simp
+  rw [abs_of_pos # by linarith] at h₁
+  linarith
+
+@[simp]
+theorem monoLe_series_abs {a : ℕ → ℝ} : monoLe # series (|a ·|) := by
+  simp [monoLe_iff_le_succ, series_succ]
+
+theorem abs_series_le_series_abs {a : ℕ → ℝ} {n} : |series a n| ≤ series (|a ·|) n :=
+  Finset.abs_sum_le_sum_abs _ _
+
+theorem converges_series_of_absConv {a} (h : absConv a) : converges (series a) := by
+  rw [absConv] at h
+  rw [converges_iff_isCauchy, isCauchy_iff_alt₁] at h ⊢
+  intro e he
+  specialize h e he
+  choose N h using h
+  use N
+  intro n hn
+  specialize h n hn
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
+  rw [series_add] at h ⊢
+  ring_nf at h ⊢
+  apply lt_of_le_of_lt abs_series_le_series_abs
+  apply lt_of_le_of_lt _ h
+  apply le_abs_self
