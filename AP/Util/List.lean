@@ -1198,3 +1198,18 @@ xs.findIdx p = 0 ↔ xs = [] ∨ ∃ (h : 0 < xs.length), p xs[0] := by
 theorem max?_eq_max?_of_mem_iff [ha : LinearOrder α]
 (h : ∀ x, x ∈ xs ↔ x ∈ ys) : xs.max? = ys.max? := by
   ext; simp [max?_eq_some_iff, h]
+
+@[simp]
+theorem getD_getElem?_replicate {n i : ℕ} {x : α} : (replicate n x)[i]?.getD x = x := by
+  rw [getElem?_def]; split_ifs <;> simp
+
+@[simp]
+theorem getD_getElem?_append_replicate {n i : ℕ} {x : α} :
+(xs ++ replicate n x)[i]?.getD x = xs[i]?.getD x := by
+  rw [getElem?_append]; split_ifs with h <;> simp
+  push_neg at h
+  rw [getElem?_eq_none h]
+  rfl
+
+theorem take_eq_self_of_le {n} (h : xs.length ≤ n) : xs.take n = xs := by
+  simpa

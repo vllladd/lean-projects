@@ -10,35 +10,68 @@ theorem cndComp₀_of_ptsArr_subset_aux₁ {arr₁ arr₂ : Array Bool} {d : ℕ
 (h₁ : cndComp₀ arr₁ 0 d) (h₂ : arr₁.size = 5) (h₃ : arr₂.size = 5)
 (h₄ : ∀ i < arr₁.size, arr₁[i]? = some true → arr₂[i]? = some true) :
 cndComp₀ arr₂ 0 d := by
-  sorry
-
--- #check 0 #exit
+  rw [cndComp₀_eq_cndComp₀_min_6] at h₁ ⊢
+  generalize hn : min 6 d = n at h₁ ⊢
+  replace hn : n ≤ 6; simp [←hn]
+  generalize hm : (⟨n, by omega⟩ : Fin 7) = m
+  rw [show n = m.1 by simp [←hm]] at h₁ ⊢
+  clear! n d
+  revert arr₁
+  revert arr₂
+  revert m
+  native_decide
 
 theorem cndComp₀_of_ptsArr_subset_aux₂ {arr₁ arr₂ : Array Bool} {d : ℕ}
 (h₁ : cndComp₀ arr₁ 0 d) (h₂ : arr₁.size ≤ 5) (h₃ : arr₂.size ≤ 5)
 (h₄ : ∀ i < arr₁.size, arr₁[i]? = some true → arr₂[i]? = some true) :
 cndComp₀ arr₂ 0 d := by
-  sorry
-
--- #check 0 #exit
+  rw [cndComp₀_eq_cndComp₀_append (n := 5 - arr₁.size)] at h₁
+  rw [cndComp₀_eq_cndComp₀_append (n := 5 - arr₂.size)]
+  obtain ⟨k₁, h₅⟩ := Nat.exists_eq_add_of_le h₂
+  obtain ⟨k₂, h₆⟩ := Nat.exists_eq_add_of_le h₃
+  apply cndComp₀_of_ptsArr_subset_aux₁ h₁ (by simp [h₅]) (by simp [h₆])
+  simp [h₅]
+  intro i hi h₇
+  rw [List.getElem?_append] at h₇ ⊢
+  split_ifs at h₇ with h₈
+  rotate_left
+  · push_neg at h₈
+    simp [List.getElem?_eq_some_iff] at h₇
+  simp only [Array.length_toList, Array.getElem?_toList] at *
+  split_ifs with h₉
+  · apply h₄ <;> assumption
+  push_neg at h₉
+  exfalso
+  specialize h₄ i h₈ h₇
+  rw [Array.getElem?_eq_some_iff] at h₄
+  choose H h₄ using h₄
+  linarith
 
 theorem cndComp₀_of_ptsArr_subset {arr₁ arr₂ : Array Bool} {offset d : ℕ}
-(h₁ : cndComp₀ arr₁ offset d) (h₂ : arr₁.size = arr₂.size)
+(h₁ : cndComp₀ arr₁ offset d)
 (h₃ : ∀ i < arr₁.size, arr₁[i]? = some true → arr₂[i]? = some true) :
 cndComp₀ arr₂ offset d := by
   rw [cndComp₀_eq_cndComp₀_extract] at h₁ ⊢
   apply cndComp₀_of_ptsArr_subset_aux₂ h₁ (by grind) (by grind)
   intro i h₄ h₅
   simp at h₄
-  sorry
-
--- #check 0 #exit
+  rw [←Nat.add_lt_iff_lt_sub_right, lt_min_iff] at h₄
+  have h₆ : i < arr₁.size
+  · linarith
+  have h₇ : i < 5
+  · linarith
+  clear h₄
+  rw [Array.getElem?_extract_add h₇] at h₅ ⊢
+  have h₈ : offset + i < arr₁.size
+  · rw [Array.getElem?_eq_some_iff] at h₅
+    exact h₅.1
+  exact h₃ _ h₈ h₅
 
 theorem cnd₀_of_taken_subset {s s'} (h₁ : cnd₀ s) (h₃ : s'.aPos = s.aPos)
 (h₂ : s.taken ⊆ s'.taken) : cnd₀ s' := by
   rw [cnd₀_iff_cndComp₀] at h₁ ⊢
   rw [h₃]
-  apply cndComp₀_of_ptsArr_subset h₁ # by simp
+  apply cndComp₀_of_ptsArr_subset h₁
   simp
   rintro i - h₄
   simp [ptsArr] at h₄ ⊢
@@ -47,40 +80,6 @@ theorem cnd₀_of_taken_subset {s s'} (h₁ : cnd₀ s) (h₃ : s'.aPos = s.aPos
   simp [getBorderPoint] at h₄ ⊢
   apply h₂
   rwa [h₃]
-
--- #check 0 #exit
-
-theorem cnd₀_of_tr_tr_aState {sa sd sa' p} {d : DStrat} [hsa : AState sa] [hd : d.WF]
-(hpw : sa.pw = 1) (h₀ : cnd₀ sa) (h₁ : sys.tr sa p = some sd)
-(h₂ : sys.tr sd (edge₀.defense.st d |>.f sd) = some sa') : cnd₀ sa' := by
-  have hsd := DState.of_tr h₁
-  have hsa' := AState.of_tr h₂
-  by_cases h₃ : cnd₀ sd
-  · apply cnd₀_of_taken_subset h₃ # DState.aPos_eq_of_tr h₂
-    simp [DState.taken_eq_of_tr h₂]
-  sorry
-
--- #check 0 #exit
-
-include hpw in
-theorem cnd₀_simulatemul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
-[hs : AState s] [hd : d.WF] (h₁ : cnd₀ s)
-(h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s (n * 2) = (s₁, 0)) : cnd₀ s₁ := by
-  induction n generalizing s₁
-  · simp at h₂; rwa [←h₂]
-  nm n ih
-  rw [Nat.succ_mul, sys.simulate_add_full] at h₂
-  simp at h₂
-  choose sa h₂ sd h₃ h₄ using h₂
-  have hsa := AState.of_simulate_mul_two_eq_full h₂
-  have hsd := DState.of_tr h₃
-  have hs₁ := AState.of_tr h₄
-  have hpw₁ : sa.pw = 1
-  · convert hpw.1 using 1
-    exact pw_eq_of_reachable # sys.reachable_of_simulate_eq h₂
-  specialize ih h₂
-  simp at h₃ h₄
-  exact cnd₀_of_tr_tr_aState hpw₁ ih h₃ h₄
 
 include hpw in
 theorem aPos_y_lt_zero_of_tr_aState_cnd₀ {s' p} [hs : AState s]
@@ -115,9 +114,54 @@ theorem aPos_y_lt_zero_of_tr_aState_cnd₀ {s' p} [hs : AState s]
   · convert H₁; linarith
   · convert H₃; linarith
 
+theorem cnd₀_of_tr_tr_aState {sa sd sa' pa pd} [hsa : AState sa]
+[hpw : Fact # sa.pw = 1] (h₀ : cnd₀ sa) (h₁ : sys.tr sa pa = some sd)
+(h₂ : sys.tr sd pd = some sa') (h₃ : edge₀.f sd = some pd) : cnd₀ sa' := by
+  have hsd := DState.of_tr h₁
+  have hsa' := AState.of_tr h₂
+  sorry
+
+-- #check 0 #exit
+
+theorem cnd₀_of_tr_tr_st_aState {sa sd sa' p} {d : DStrat} [hsa : AState sa]
+[hpw : Fact # sa.pw = 1] (h₀ : cnd₀ sa) (h₁ : sys.tr sa p = some sd)
+(h₂ : sys.tr sd (edge₀.defense.st d |>.f sd) = some sa') : cnd₀ sa' := by
+  have hsd := DState.of_tr h₁
+  have hsa' := AState.of_tr h₂
+  by_cases h₃ : cnd₀ sd
+  · apply cnd₀_of_taken_subset h₃ # DState.aPos_eq_of_tr h₂
+    simp [DState.taken_eq_of_tr h₂]
+  have h₄ := aPos_y_lt_zero_of_cnd₀ h₀
+  have h₅ := aPos_y_lt_zero_of_tr_aState_cnd₀ h₀ h₁
+  rw [cnd₀_iff_f_edge₀_eq_none_of_neg_aPos_y h₅] at h₃
+  simp [Option.ne_none_iff_exists'] at h₃
+  choose pd h₃ using h₃
+  simp [Defense.st, defense, h₃] at h₂
+  exact cnd₀_of_tr_tr_aState h₀ h₁ h₂ h₃
+
+include hpw in
+theorem cnd₀_simulatemul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
+[hs : AState s] (h₁ : cnd₀ s)
+(h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s (n * 2) = (s₁, 0)) : cnd₀ s₁ := by
+  induction n generalizing s₁
+  · simp at h₂; rwa [←h₂]
+  nm n ih
+  rw [Nat.succ_mul, sys.simulate_add_full] at h₂
+  simp at h₂
+  choose sa h₂ sd h₃ h₄ using h₂
+  have hsa := AState.of_simulate_mul_two_eq_full h₂
+  have hsd := DState.of_tr h₃
+  have hs₁ := AState.of_tr h₄
+  have hpw₁ : sa.pw = 1
+  · convert hpw.1 using 1
+    exact pw_eq_of_reachable # sys.reachable_of_simulate_eq h₂
+  specialize ih h₂
+  simp at h₃ h₄
+  exact cnd₀_of_tr_tr_st_aState (hpw := ⟨hpw₁⟩) ih h₃ h₄
+
 include hpw in
 theorem edge₀_simulate_full_aPos_y_lt_zero_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
-[hs : AState s] [hd : d.WF] (h₁ : s.aPos.y ≤ -6)
+[hs : AState s] (h₁ : s.aPos.y ≤ -6)
 (h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s n = (s₁, 0)) : s₁.aPos.y < 0 := by
   have H := cnd₀_of_aPos_y_le_neg_6 h₁
   induction n using Nat.mod_2_ind <;> nm n
@@ -135,14 +179,14 @@ theorem edge₀_simulate_full_aPos_y_lt_zero_of_aState {s₁} {a : AStrat} {d : 
 
 include hpw in
 theorem edge₀_simulate_aPos_y_lt_zero_of_aState {a : AStrat} {d : DStrat} {n}
-[hs : AState s] [hd : d.WF] (h : s.aPos.y ≤ -6) :
+[hs : AState s] (h : s.aPos.y ≤ -6) :
 sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s n |>.1.aPos.y < 0 := by
   apply sys.fst_simulate_ind (p := (·.aPos.y < 0)) _ n; clear n; intro n s' h₁
   exact edge₀_simulate_full_aPos_y_lt_zero_of_aState h h₁
 
 include hpw in
 theorem edge₀_simulate_aPos_y_lt_zero {a : AStrat} {d : DStrat} {n}
-[hs : sys.WF s] [hd : d.WF] (h : s.aPos.y ≤ -6) :
+[hs : sys.WF s] (h : s.aPos.y ≤ -6) :
 sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s n |>.1.aPos.y < 0 := by
   replace hs := s.aState_or_dState
   rcases hs with hs | hs

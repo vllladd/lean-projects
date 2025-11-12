@@ -29,82 +29,6 @@ theorem getBorderPoint_inj {p z₁ z₂} :
 e.getBorderPoint p z₁ = e.getBorderPoint p z₂ ↔ z₁ = z₂ := by
   cases h : e.dir <;> simp [getBorderPoint, h]
 
-theorem of_eq_some_fCase2 {e : Edge} {s : State} {p : PointZ} (h₁ : e.dist s.aPos = 2)
-(h₂ : fCase2 s (e.getBorderPoint s.aPos 0) (e.getBorderPoints s.aPos) = some p ∧
-¬p = s.aPos ∧ p ∉ s.taken) : 0 < e.dist s.aPos ∧ e.dist s.aPos ≤ 5 ∧ p ∉ s.taken ∧
-∃ z, |z| ≤ 2 ∧ e.getBorderPoint s.aPos z = p := by
-  unfold fCase2 at h₂
-  simp [getBorderPoints, List.find?_cons, guard] at h₂ ⊢
-  simp_all only [Int.reduceNeg, Nat.ofNat_pos, Int.reduceLE, not_false_eq_true, true_and]
-  obtain ⟨left, right⟩ := h₂
-  obtain ⟨left_1, right⟩ := right
-  split at left
-  next h =>
-    split at left
-    next x
-      heq =>
-      simp_all only [Int.reduceNeg, decide_eq_true_eq, Option.bind_some, Option.bind_eq_some_iff',
-      ite_eq_right_iff,
-        reduceCtorEq, imp_false, Option.some.injEq, exists_const, exists_eq_right_right,
-        not_false_eq_true, and_true]
-      split at left
-      next x_1
-        heq_1 =>
-        simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-          decide_eq_false_iff_not, Option.some.injEq]
-        subst left
-        simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
-        Nat.one_le_ofNat]
-      next x_1 heq_1 =>
-        split at left
-        next x_2
-          heq_2 =>
-          simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
-          Bool.not_true,
-            decide_eq_false_iff_not, Option.some.injEq]
-          subst left
-          simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
-          Nat.one_le_ofNat]
-        next x_2 heq_2 =>
-          simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
-          reduceCtorEq]
-    next x heq =>
-      split at left
-      next x_1
-        heq_1 =>
-        simp_all only [Int.reduceNeg, decide_eq_false_iff_not, decide_eq_true_eq, Option.bind_some,
-          Option.bind_eq_some_iff', ite_eq_right_iff, reduceCtorEq, imp_false, Option.some.injEq,
-          exists_const,
-          exists_eq_right_right, not_false_eq_true, and_true]
-        split at left
-        next x_2
-          heq_2 =>
-          simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_true,
-          decide_eq_false_iff_not,
-            Option.some.injEq]
-          subst left
-          simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
-          Nat.one_le_ofNat]
-        next x_2 heq_2 =>
-          split at left
-          next x_3
-            heq_3 =>
-            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
-            Bool.not_true,
-              decide_eq_false_iff_not, Option.some.injEq]
-            subst left
-            simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
-            Nat.one_le_ofNat]
-          next x_3 heq_3 =>
-            simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
-            reduceCtorEq]
-      next x_1 heq_1 => simp_all only [Int.reduceNeg, decide_eq_false_iff_not, Option.bind_none,
-      reduceCtorEq]
-  next h =>
-    simp_all only [Option.some.injEq, not_false_eq_true]
-    subst left
-    simp_all only [getBorderPoint_inj, exists_eq_right, abs_zero, Nat.ofNat_nonneg]
-
 theorem of_eq_some {s p} (h : e.defense.f s = some p) :
 0 < e.dist s.aPos ∧ e.dist s.aPos ≤ 5 ∧ p ∉ s.taken ∧
 ∃ (z : ℤ), |z| ≤ 2 ∧ e.getBorderPoint s.aPos z = p := by
@@ -183,7 +107,26 @@ theorem of_eq_some {s p} (h : e.defense.f s = some p) :
       · simp_all only [Int.reduceNeg, abs_one, Nat.one_le_ofNat]
     simp_all only [Int.reduceNeg, Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq,
       reduceCtorEq]
-  · nm x h₁; exact of_eq_some_fCase2 h₁ h
+  · nm x h₁
+    simp_all only [Int.reduceNeg, Nat.ofNat_pos, Int.reduceLE, not_false_eq_true, true_and]
+    obtain ⟨left, right⟩ := h
+    obtain ⟨left_1, right⟩ := right
+    split at left
+    next h =>
+      simp_all only [Int.reduceNeg, Option.some.injEq, not_false_eq_true, and_true]
+      subst left
+      simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_neg, abs_one,
+        Nat.one_le_ofNat]
+    next h =>
+      split at left
+      next
+        h_1 =>
+        simp_all only [Int.reduceNeg, not_and, Decidable.not_not, Option.some.injEq,
+          not_false_eq_true, true_and]
+        subst left
+        simp_all only [Int.reduceNeg, getBorderPoint_inj, exists_eq_right, abs_one,
+          Nat.one_le_ofNat]
+      next h_1 => simp_all only [Int.reduceNeg, not_and, Decidable.not_not, reduceCtorEq]
   · simp_all only [Int.reduceNeg, zero_lt_one, Nat.one_le_ofNat, not_false_eq_true, true_and]
     obtain ⟨left, right⟩ := h
     obtain ⟨left_1, right⟩ := right

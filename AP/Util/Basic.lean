@@ -16,6 +16,8 @@ import AP.Util.Fintype
 import AP.Util.Algebra
 import AP.Util.Quotient
 import AP.Util.Multiset
+import AP.Util.ListBool
+import AP.Util.ArrayBool
 import AP.Util.SetTheory
 import AP.Util.Eventuality
 import AP.Util.ExtDHashMap

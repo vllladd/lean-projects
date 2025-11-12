@@ -121,4 +121,29 @@ theorem defense_rotRight : e.rotRight.defense = e.defense.sym rotRight := by
       | inl h => simp_all only [Int.reduceNeg, not_false_eq_true, and_self, false_and, or_false]
       | inr h_1 => simp_all only [Int.reduceNeg, not_true_eq_false, false_and, not_false_eq_true,
         and_self, or_true]
-  apply defense_sym_of_down_fCase2 <;> simp
+  apply Iff.intro
+  · intro a
+    split
+    next h =>
+      simp_all only [Int.reduceNeg, not_false_eq_true, and_self, ↓reduceIte, Option.some.injEq,
+        and_true]
+      subst a
+      simp_all only [Int.reduceNeg, System.Symmetry.ft'_ft]
+    next
+      h =>
+      simp_all only [Int.reduceNeg, ↓reduceIte, Option.ite_none_right_eq_some, Option.some.injEq,
+        not_and,
+        Decidable.not_not, not_false_eq_true, and_self]
+      obtain ⟨left, right⟩ := a
+      obtain ⟨left, right_1⟩ := left
+      subst right
+      simp_all only [Int.reduceNeg, not_false_eq_true, System.Symmetry.ft'_ft]
+  · intro a
+    split
+    next h =>
+      simp_all only [Int.reduceNeg, not_false_eq_true, and_self, ↓reduceIte, Option.some.injEq,
+        System.Symmetry.ft_ft', and_true]
+    next h =>
+      simp_all only [Int.reduceNeg, ↓reduceIte, Option.ite_none_right_eq_some, Option.some.injEq,
+        not_and,
+        Decidable.not_not, System.Symmetry.ft_ft', not_false_eq_true, and_self]

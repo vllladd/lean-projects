@@ -64,9 +64,35 @@ theorem defense_translate_of_down {dy} [H : Fact # e.dir = .down] :
   · nm x h₃; clear x
     split_ifs with h₄; simp
     simp only [getBorderPoint₀, getBorderPoint, dir_eq_of_down, translate_ft'_x, sub_zero, add_zero,
-      Point.ext_iff, translate_ft'_y, eq_sub_iff_add_eq, getBorderPoints, Nat.cast_one,
-      Int.reduceNeg, List.map_cons, List.map_nil, List.find?_cons_eq_some, Bool.not_eq_eq_eq_not,
-      Bool.not_true, decide_eq_false_iff_not, translate_ft_x, translate_ft_y, Bool.not_not,
+      translate_ft_mk, Point.ext_iff, translate_ft'_y, eq_sub_iff_add_eq, getBorderPoints,
+      Nat.cast_one, Int.reduceNeg, List.map_cons, List.map_nil, List.find?_cons_eq_some,
+      Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Bool.not_not,
       decide_eq_true_eq, List.find?_singleton, ite_not, Option.ite_none_left_eq_some,
       Option.some.injEq]
-  apply defense_sym_of_down_fCase2 <;> simp
+  simp_all only [dir_eq_of_down, instFactTrue_aP, Int.reduceNeg]
+  apply Iff.intro
+  · intro a
+    split
+    next h =>
+      simp_all only [Int.reduceNeg, not_false_eq_true, and_self, ↓reduceIte, Option.some.injEq,
+        and_true]
+      subst a
+      simp_all only [Int.reduceNeg, System.Symmetry.ft'_ft]
+    next
+      h =>
+      simp_all only [Int.reduceNeg, ↓reduceIte, Option.ite_none_right_eq_some, Option.some.injEq,
+        not_and,
+        Decidable.not_not, not_false_eq_true, and_self]
+      obtain ⟨left, right⟩ := a
+      obtain ⟨left, right_1⟩ := left
+      subst right
+      simp_all only [Int.reduceNeg, not_false_eq_true, System.Symmetry.ft'_ft]
+  · intro a
+    split
+    next h =>
+      simp_all only [Int.reduceNeg, not_false_eq_true, and_self, ↓reduceIte, Option.some.injEq,
+        System.Symmetry.ft_ft', and_true]
+    next h =>
+      simp_all only [Int.reduceNeg, ↓reduceIte, Option.ite_none_right_eq_some, Option.some.injEq,
+        not_and,
+        Decidable.not_not, System.Symmetry.ft_ft', not_false_eq_true, and_self]
