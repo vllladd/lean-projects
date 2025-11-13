@@ -1,5 +1,5 @@
 #!/bin/bash
 clear
 
-lake build
+time lake build
 echo ""
