@@ -16,6 +16,15 @@ variable {t t' t₁ t₂ t₃ : Raw α β}
 
 @[simp] instance : t.inner.WF := t.wf
 
+def val (t : Raw α β) : Option β :=
+  t.inner.val
+
+def mp (t : Raw α β) : DHashMap.Raw α (λ _ => Raw₀ α β) :=
+  t.inner.mp
+
+@[simp] theorem val_mk {inner wf} : (⟨inner, wf⟩ : Raw α β).val = inner.val := rfl
+@[simp] theorem mp_mk {inner wf} : (⟨inner, wf⟩ : Raw α β).mp = inner.mp := rfl
+
 set_option linter.unusedVariables false
 def rec' {γ : Raw α β → Sort*}
 (motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)) wf,
@@ -53,19 +62,13 @@ def depth (t : Raw α β) : ℕ :=
 theorem depth_empty : (∅ : Raw α β).depth = 0 := by
   simp [empty_def, Raw₀.empty_def, depth]
 
-def val (t : Raw α β) : Option β :=
-  t.inner.val
-
-@[simp]
-theorem val_mk {inner wf} : (⟨inner, wf⟩ : Raw α β).val = inner.val := rfl
-
 def get? (t : Raw α β) (k : α) : Option (Raw α β) :=
-  match h : t.inner.mp.get? k with
+  match h : t.mp.get? k with
   | none => none
   | some t' => some ⟨t', t.wf.get? h⟩
 
 theorem get?_eq_some_iff {k t'} :
-t.get? k = some t' ↔ t.inner.mp.get? k = t'.inner := by
+t.get? k = some t' ↔ t.mp.get? k = t'.inner := by
   simp [get?]
   apply Iff.intro
   · intro a
@@ -100,9 +103,32 @@ theorem depth_mk {raw : Raw₀ α β} [wf : raw.WF] : (Raw.mk raw wf).depth = ra
 @[simp]
 theorem get?_mp_inner_eq_some_inner_iff {k} :
 t.inner.mp.get? k = some t'.inner ↔ t.get? k = some t' := by
-  simp [get?]
+  simp [get?, mp]
   split
   · nm h
     simp [h]
   nm t₁ h
   cases t'; simp [h]
+
+@[simp]
+theorem WF.mp : t.mp.WF := by
+  simp [Raw.mp]
+
+theorem get?_mp {k} : t.mp.get? k = (t.get? k).map (·.1) := by
+  ext x
+  simp [get?]
+  constructor
+  · intro h
+    rw! [h]
+    simp
+  · rintro ⟨a, h, rfl⟩
+    split at h <;> simp at h
+    simpa [←h]
+
+theorem mem_of_get?_eq_some {k x} (h : t.get? k = some x) : k ∈ t.mp := by
+  rw [get?_eq_some_iff] at h; exact t.mp.mem_of_get?_eq_some (by simp) h
+
+theorem mem_mp_iff_get?_eq_some {k} : k ∈ t.mp ↔ ∃ x, t.get? k = some x := by
+  rw [t.mp.mem_iff_isSome_get? # by simp]
+  rw [Option.isSome_iff_exists]
+  simp [get?_mp]

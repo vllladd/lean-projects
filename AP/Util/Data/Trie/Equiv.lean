@@ -18,7 +18,7 @@ theorem Equiv.refl : t.Equiv t := by
   apply t.ind
   intro val mp wf ih
   unfold Equiv
-  simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop]
+  simp only [get?_eq_some_iff, exists_prop]
   split_ands; all_goals
     intro k a h
     use a, h, ih k a h
@@ -29,7 +29,7 @@ theorem Equiv.symm (h : t₁.Equiv t₂) : t₂.Equiv t₁ := by
   apply t₁.ind
   intro val mp wf ih t₂ h
   unfold Equiv at h ⊢
-  simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop] at h ⊢
+  simp only [get?_eq_some_iff, exists_prop] at h ⊢
   rcases h with ⟨h₁, h₂⟩
   split_ands <;> intro k a h
   · specialize h₂ _ _ h
@@ -50,7 +50,7 @@ theorem Equiv.trans (h₁ : t₁.Equiv t₂) (h₂ : t₂.Equiv t₃) : t₁.Equ
   apply t₁.ind
   intro val mp wf ih t₂ t₃ h₁ h₂
   unfold Equiv at h₁ h₂ ⊢
-  simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop] at h₁ h₂ ⊢
+  simp only [get?_eq_some_iff, exists_prop] at h₁ h₂ ⊢
   rcases h₁ with ⟨h₁, h₃⟩
   rcases h₂ with ⟨h₂, h₄⟩
   split_ands <;> intro k a h
@@ -89,7 +89,7 @@ theorem depth_eq : t₁.depth = t₂.depth := by
   apply t₁.ind
   intro val mp wf ih t₂ h
   unfold Equiv at h
-  simp only [get?_eq_some_iff, Raw₀.mp_mk, exists_prop] at h
+  simp only [get?_eq_some_iff, exists_prop] at h
   rcases h with ⟨h₁, h₂⟩
   rcases t₂ with ⟨⟨val', mp'⟩, wf'⟩
   have wfmp := wf.mp
@@ -139,3 +139,71 @@ theorem get?' {k t} (h : t₂.get? k = some t) : ∃ t', t₁.get? k = some t' �
   specialize H k t h
   choose t' h₁ h₂ using H
   use t'
+
+theorem mem {k} : k ∈ t₁.mp ↔ k ∈ t₂.mp := by
+  iterate 2 rw [DHashMap.Raw.mem_iff_isSome_get? # by simp]
+  simp [Option.isSome_iff_exists, get?_mp]
+  constructor <;> rintro ⟨x, h⟩
+  · choose y h₁ h₂ using H.get? h; use y
+  · choose y h₁ h₂ using H.get?' h; use y
+
+theorem size_mp : t₁.mp.size = t₂.mp.size := by
+  apply DHashMap.Raw.size_eq_size_of_mem_iff_mem (by simp) (by simp)
+  simp [H.mem]
+
+omit H in
+theorem iff_alt' : t₁.Equiv t₂ ↔ t₁.mp.size = t₂.mp.size ∧
+∀ k x, t₁.get? k = some x → ∃ y, t₂.get? k = some y ∧ x.Equiv y := by
+  nth_rw 1 [Equiv]
+  simp
+  constructor <;> rintro ⟨h₁, h₂⟩
+  · have H : t₁.Equiv t₂
+    · unfold Equiv
+      simp
+      exact ⟨h₁, h₂⟩
+    use H.size_mp
+  use h₂
+  intro k y h₃
+  suffices h₄ : k ∈ t₁.mp
+  · rw [t₁.mp.mem_iff_isSome_get? # by simp] at h₄
+    rw [Option.isSome_iff_exists] at h₄
+    simp [get?_mp] at h₄
+    choose x h₄ using h₄
+    specialize h₂ _ _ h₄
+    choose y' h₂ h₆ using h₂
+    simp [h₃] at h₂
+    subst h₂
+    use x
+  replace h₃ := mem_of_get?_eq_some h₃
+  apply t₁.mp.subset_of_size_eq_and_subset (by simp) (by simp) h₁ _ h₃
+  clear! k
+  simp [mem_mp_iff_get?_eq_some]
+  intro k x h
+  specialize h₂ _ _ h
+  choose y h₂ h₃ using h₂
+  use y
+
+omit H in
+def Alt (t₁ t₂ : Raw α β) : Prop :=
+  t₁.mp.size = t₂.mp.size ∧
+  (∀ k a, t₁.get? k = some a → ∃ (b : Raw α β) (_ : t₂.get? k = some b), Alt a b)
+termination_by max (depth t₁) (depth t₂)
+decreasing_by all_goals nm h₁ h₂; have h₁ := depth_lt h₁; have h₂ := depth_lt h₂; omega
+
+omit H in
+theorem iff_alt : t₁.Equiv t₂ ↔ Alt t₁ t₂ := by
+  fun_induction Equiv
+  clear! t₁ t₂
+  nm t₁ t₂ ih₁ ih₂
+  unfold Alt
+  rw [←Equiv, iff_alt']
+  constructor <;> rintro ⟨h₁, h₂⟩
+  all_goals
+    use h₁
+    intro k x h₃
+    specialize h₂ _ _ h₃
+    specialize ih₁ _ _ h₃
+    choose y h₂ h₄ using h₂
+    specialize ih₁ _ h₂
+    use y, h₂
+    tauto

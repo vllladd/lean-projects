@@ -40,6 +40,7 @@ inductive WF : Raw₀ α β → Prop where
   mp.WF → (∀ {k t}, mp.get? k = some t → ¬t.isEmpty) →
   (∀ {k t}, mp.get? k = some t → t.WF) → (mk val mp).WF
 
+@[simp]
 theorem WF.mp {t : Raw₀ α β} [wf : t.WF] : t.mp.WF := by
   cases wf; assumption
 

@@ -742,6 +742,35 @@ f acc x.1 x.2 # mem_toList_iff_get?_eq_some wf |>.mp h) z := by
   rw [List.foldlWith_eq_foldl]
   exact foldWith_eq_foldl_toList
 
+theorem size_eq_size_of_mem_iff_mem {mp₁ mp₂ : DHashMap.Raw α β}
+(wf₁ : mp₁.WF) (wf₂ : mp₂.WF) (h : ∀ k, k ∈ mp₁ ↔ k ∈ mp₂) : mp₁.size = mp₂.size := by
+  classical
+  rw [←length_keys wf₁, ←length_keys wf₂]
+  replace h : ∀ p, p ∈ mp₁.keys ↔ p ∈ mp₂.keys
+  · intro p
+    rw [mem_keys wf₁, mem_keys wf₂]
+    apply h
+  apply List.length_eq_of_subset_and_nodup (nodup_keys wf₁) (nodup_keys wf₂)
+  all_goals intro x; simp [h]
+
+theorem mem_of_get?_eq_some {k x} (wf : mp.WF) (h : mp.get? k = some x) : k ∈ mp := by
+  rw [get?_eq_some_iff wf] at h; exact h.1
+
+theorem subset_of_size_eq_and_subset {mp₁ mp₂ : DHashMap.Raw α β} {x}
+(wf₁ : mp₁.WF) (wf₂ : mp₂.WF) (h₁ : mp₁.size = mp₂.size)
+(h₂ : ∀ x ∈ mp₁, x ∈ mp₂) (hx : x ∈ mp₂) : x ∈ mp₁ := by
+  simp [←mem_keys wf₁]
+  rw [←mem_keys wf₂] at hx
+  replace h₂ : ∀ x ∈ mp₁.keys, x ∈ mp₂.keys
+  · clear! x
+    intro x
+    rw [mem_keys wf₁, mem_keys wf₂]
+    apply h₂
+  rw [←length_keys wf₁, ←length_keys wf₂] at h₁
+  exact List.subset_of_nodup_and_subset_and_length_eq (nodup_keys wf₁) h₂ h₁ hx
+
+-- #check 0 #exit
+
 end Raw
 
 end foldWith
