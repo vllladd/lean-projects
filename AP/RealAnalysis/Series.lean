@@ -295,6 +295,13 @@ theorem le_limit_of_monoLe {a L n} (h₁ : tendsTo a L) (h₂ : monoLe a) : a n 
   rw [abs_of_pos # by linarith] at h₁
   linarith
 
+theorem limit_le_of_monoGe {a L n} (h₁ : tendsTo a L) (h₂ : monoGe a) : L ≤ a n := by
+  replace h₁ := tendsTo_neg h₁
+  replace h₂ : monoLe (-a); simpa
+  suffices h : (-a) n ≤ -L
+  · simp at h; exact h
+  exact le_limit_of_monoLe h₁ h₂
+
 @[simp]
 theorem monoLe_series_abs {a : ℕ → ℝ} : monoLe # series (|a ·|) := by
   simp [monoLe_iff_le_succ, series_succ]
@@ -317,3 +324,142 @@ theorem converges_series_of_absConv {a} (h : absConv a) : converges (series a) :
   apply lt_of_le_of_lt abs_series_le_series_abs
   apply lt_of_le_of_lt _ h
   apply le_abs_self
+
+theorem series_sub_series_of_le {a n m} (h : n ≤ m) :
+series a m - series a n = ∑ i ∈ Finset.Ico n m, a i := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
+  rw [series_add]
+  ring_nf
+  rw [series, Finset.range_eq_Ico, Finset.sum_Ico_add, add_comm m]
+  simp
+
+theorem sum_range_mul_two_alternating {a : ℕ → ℝ} {m : ℕ} :
+∑ k ∈ Finset.range (m * 2), (-1) ^ k * a k =
+∑ k ∈ Finset.range m, (a (k * 2) - a (k * 2 + 1)) := by
+  induction m
+  · simp
+  nm m ih
+  simp [Nat.succ_mul, Finset.sum_range_succ]
+  rw [ih]; clear ih
+  rw [Finset.sum_sub_distrib]
+  ring_nf
+
+theorem subseq_le_of_le {σ i j} (h₁ : subseq σ)  (h₂ : i ≤ j) : σ i ≤ σ j := by
+  rw [le_iff_eq_or_lt] at h₂
+  rcases h₂ with rfl | h₂; rfl
+  apply le_of_lt
+  apply h₁
+  exact h₂
+
+theorem monoLe_subseq {a σ} (h₁ : monoLe a) (h₂ : subseq σ) : monoLe (a # σ ·) := by
+  intro i j h; apply h₁; exact subseq_le_of_le h₂ h
+
+theorem monoGe_subseq {a σ} (h₁ : monoGe a) (h₂ : subseq σ) : monoGe (a # σ ·) := by
+  intro i j h; apply h₁; exact subseq_le_of_le h₂ h
+
+theorem monoLt_subseq {a σ} (h₁ : monoLt a) (h₂ : subseq σ) : monoLt (a # σ ·) := by
+  intro i j h; apply h₁; apply h₂; exact h
+
+theorem monoGt_subseq {a σ} (h₁ : monoGt a) (h₂ : subseq σ) : monoGt (a # σ ·) := by
+  intro i j h; apply h₁; apply h₂; exact h
+
+theorem converges_series_alternating_of_monoGe.aux₁ {a n} (h₁ : monoGe a) (h₂ : tendsTo a 0) :
+0 ≤ a n := limit_le_of_monoGe h₂ h₁
+
+theorem converges_series_alternating_of_monoGe.aux₂ {a n} {f : ℕ → ℕ} (h₁ : monoGe a) :
+0 ≤ ∑ k ∈ Finset.range n, (a (f k) - a (f k + 1)) := by
+  apply Finset.sum_nonneg
+  intro n hn
+  simp
+  apply h₁
+  simp
+
+theorem converges_series_alternating_of_monoGe.aux₃ {a n} (h₁ : monoGe a) (h₂ : tendsTo a 0) :
+0 ≤ ∑ k ∈ Finset.range n, (-1) ^ k * a k := by
+  induction n using Nat.mod_2_ind <;> nm m
+  · rw [sum_range_mul_two_alternating]; exact aux₂ h₁
+  · rw [Finset.sum_range_succ, sum_range_mul_two_alternating]
+    apply le_add_of_le_of_nonneg
+    · exact aux₂ h₁
+    · simp; apply aux₁ h₁ h₂
+
+theorem converges_series_alternating_of_monoGe.aux₄ {a n} (h₁ : monoGe a) (h₂ : tendsTo a 0) :
+∑ k ∈ Finset.range n, (-1) ^ k * a k ≤ a 0 := by
+  cases n
+  · simp; exact aux₁ h₁ h₂
+  nm n
+  induction n using Nat.mod_2_ind <;> nm m
+  · rw [Finset.sum_range_succ']
+    simp [pow_succ]
+    rw [sum_range_mul_two_alternating]
+    exact aux₂ h₁
+  · rw [Finset.sum_range_succ', Finset.sum_range_succ]
+    simp
+    trans 0
+    rotate_left; exact aux₁ h₁ h₂
+    simp [pow_succ]
+    rw [sum_range_mul_two_alternating]
+    exact aux₂ h₁
+
+theorem converges_series_alternating_of_monoGe {a} (h₁ : monoGe a) (h₂ : tendsTo a 0) :
+converges # series # λ n => (-1) ^ n * a n := by
+  have h₃ := @converges_series_alternating_of_monoGe.aux₁ (h₁ := h₁) (h₂ := h₂)
+  have h₄ : ∀ (ε : ℝ), 0 < ε → ∃ N, ∀ n, N ≤ n → a n < ε
+  · intro e he
+    specialize h₂ e he
+    choose N h₂ using h₂
+    use N
+    intro n hn
+    specialize h₂ n hn
+    simp at h₂
+    rw [abs_of_nonneg # h₃ n] at h₂
+    exact h₂
+  have h₅ := @converges_series_alternating_of_monoGe.aux₂ (h₁ := h₁)
+  have h₆ := @converges_series_alternating_of_monoGe.aux₃ (h₁ := h₁) (h₂ := h₂)
+  have h₇ := @converges_series_alternating_of_monoGe.aux₄ (h₁ := h₁) (h₂ := h₂)
+  have h₈ : ∀ (m n : ℕ), m * 2 ≤ n →
+    |∑ k ∈ Finset.range (m * 2), (-1) ^ k * a k -
+    ∑ k ∈ Finset.range n, (-1) ^ k * a k| ≤ a (m * 2)
+  · intro m n hn
+    generalize hx : ∑ k ∈ Finset.range (m * 2), (-1) ^ k * a k = x
+    generalize hb : (a # m * 2 + ·) = b
+    obtain ⟨σ, H₁, H₂⟩ : ∃ σ, subseq σ ∧ b = (a # σ ·)
+    · use (m * 2 + ·); simp [hb]
+    have H₃ : monoGe b
+    · rw [H₂]; exact monoGe_subseq h₁ H₁
+    have H₄ : tendsTo b 0
+    · rw [H₂]; exact tendsTo_subseq h₂ H₁
+    have H₅ : ∀ n, ∑ k ∈ Finset.range (m * 2 + n), (-1) ^ k * a k =
+      x + ∑ k ∈ Finset.range n, (-1) ^ k * b k
+    · clear! n
+      intro n
+      rw [←hb]
+      cases n
+      · simpa
+      nm n
+      simp
+      rw [Finset.sum_range_add, hx]
+      simp [pow_add]
+    have H₆ : b 0 = a (m * 2)
+    · simp [←hb]
+    have H₇ := @converges_series_alternating_of_monoGe.aux₂ (h₁ := H₃)
+    have H₈ := @converges_series_alternating_of_monoGe.aux₃ (h₁ := H₃) (h₂ := H₄)
+    have H₉ := @converges_series_alternating_of_monoGe.aux₄ (h₁ := H₃) (h₂ := H₄)
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
+    rw [H₅]
+    simp
+    rw [abs_of_nonneg # H₈ _, ←H₆]
+    apply H₉
+  rw [converges_iff_isCauchy, isCauchy_iff_alt₁]
+  intro e he
+  specialize h₄ e he
+  choose N h₄ using h₄
+  use N * 2
+  intro n hn
+  have h₉ := h₄ n (by linarith)
+  simp only [series]
+  apply lt_of_le_of_lt (b := a (N * 2))
+  rotate_left
+  · apply h₄; simp
+  specialize h₈ N n (by linarith)
+  rwa [abs_sub_comm]
