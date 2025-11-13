@@ -469,5 +469,8 @@ def str : String :=
   "255595554340002067589313271523577830191196596094711854197118431909085196913640620453018" ++
   "302653191350879052866034986086305405433067"
 
-example : 2346567523 ^ 23 == String.toNat str := by
+def validNatStr (s : String) : Bool :=
+  s.toNat.toStr = str
+
+example : validNatStr str ∧ 2346567523 ^ 23 = str.toNat := by
   native_decide
