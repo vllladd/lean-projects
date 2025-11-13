@@ -469,10 +469,5 @@ def str : String :=
   "255595554340002067589313271523577830191196596094711854197118431909085196913640620453018" ++
   "302653191350879052866034986086305405433067"
 
-def result : Option Bool := do
-  let a : ℕ := 2346567523 ^ 23
-  let b ← String.toNat str
-  return a == b
-
-example : result = some true := by
+example : 2346567523 ^ 23 == String.toNat str := by
   native_decide
