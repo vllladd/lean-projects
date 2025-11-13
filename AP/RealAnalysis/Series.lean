@@ -463,14 +463,3 @@ converges # series # λ n => (-1) ^ n * a n := by
   · apply h₄; simp
   specialize h₈ N n (by linarith)
   rwa [abs_sub_comm]
-
-def str : String :=
-  "331100837982292323619056588434265887885667915749810996549305223092652907762043548398207" ++
-  "255595554340002067589313271523577830191196596094711854197118431909085196913640620453018" ++
-  "302653191350879052866034986086305405433067"
-
-def validNatStr (s : String) : Bool :=
-  s.toNat.toStr = str
-
-example : validNatStr str ∧ 2346567523 ^ 23 = str.toNat := by
-  native_decide
