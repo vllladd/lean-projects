@@ -12,6 +12,7 @@ import AP.Util.Array
 import AP.Util.Sigma
 import AP.Util.Order
 import AP.Util.Option
+import AP.Util.String
 import AP.Util.Fintype
 import AP.Util.Algebra
 import AP.Util.Quotient

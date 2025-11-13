@@ -1,0 +1,207 @@
+import AP.Util.Finset
+
+theorem isValidChar_toUInt32_of {n : ℕ} (h : n.isValidChar) : n.toUInt32.isValidChar := by
+  unfold UInt32.isValidChar
+  simp
+  unfold Nat.isValidChar at h ⊢
+  omega
+
+def Char.ofCharCode (n : ℕ) : Char :=
+  if h : n.isValidChar then ⟨_, isValidChar_toUInt32_of h⟩ else default
+
+def Nat.toStr' (xs : List Char) (n : ℕ) : List Char :=
+  if n = 0 then xs else
+    let d := n % 10
+    let n' := n / 10
+    let c := Char.ofCharCode # '0'.toNat + d
+    Nat.toStr' (c :: xs) n'
+
+def Nat.toStr (n : ℕ) : String :=
+  if n = 0 then "0" else ⟨n.toStr' []⟩
+
+@[simp]
+theorem Nat.toStr'_zero {xs} : Nat.toStr' xs 0 = xs := by
+  simp [Nat.toStr']
+
+theorem Char.ofCharCode_eq_of_valid {n : ℕ} (h : n.isValidChar) :
+Char.ofCharCode n = ⟨_, isValidChar_toUInt32_of h⟩ := by
+  simp [Char.ofCharCode, h]
+
+namespace String
+
+def toNat' (cs : List Char) (n : ℕ) : ℕ :=
+  cs.foldl (λ n c => n * 10 + (c.toNat - '0'.toNat)) n
+
+def toNat (s : String) : ℕ :=
+  String.toNat' s.1 0
+
+theorem isValidChar_of_lt {n : ℕ} (h : n < 0xd800) : n.isValidChar := by
+  simp [Nat.isValidChar, h]
+
+theorem Char.ofCharCode_eq_of_lt {n : ℕ} (h : n < 0xd800) :
+Char.ofCharCode n = ⟨_, isValidChar_toUInt32_of # isValidChar_of_lt h⟩ := by
+  simp [Char.ofCharCode, isValidChar_of_lt h]
+
+theorem isValidChar_of_lt_base {n : ℕ} (h : n < 10) :
+('0'.toNat + n).toUInt32.isValidChar := by
+  simp
+  apply isValidChar_of_lt
+  simp
+  rw [Nat.mod_eq_of_lt] <;> omega
+
+theorem isValidChar_mod_base (n : ℕ) :
+('0'.toNat + n % 10).toUInt32.isValidChar := by
+  apply isValidChar_of_lt_base; omega
+
+theorem Nat.toStr_of_lt_base {n} (h : n < 10) :
+Nat.toStr n = ⟨[⟨_, isValidChar_of_lt_base h⟩]⟩ := by
+  rw [Nat.toStr]
+  split_ifs with h₁
+  · subst h₁; rfl
+  simp only [↓Char.isValue, String.mk.injEq]
+  rw [Nat.toStr']
+  simp [h₁]
+  rw [Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
+  simp
+  rw [Char.ofCharCode_eq_of_lt # by omega]
+  simp
+
+@[simp]
+theorem Nat.toStr_base : Nat.toStr 10 = "10" := by
+  native_decide
+
+theorem Nat.toStr'_append {xs ys n} : Nat.toStr' (xs ++ ys) n = Nat.toStr' xs n ++ ys := by
+  induction n using Nat.strong_induction_on generalizing xs ys
+  nm n ih
+  by_cases h : n = 0
+  · subst h
+    simp
+  nth_rw 1 [Nat.toStr']
+  nth_rw 2 [Nat.toStr']
+  simp [h]
+  simp_rw [←List.cons_append]
+  apply ih
+  omega
+
+theorem Nat.toStr'_eq_append {xs n} : Nat.toStr' xs n = Nat.toStr' [] n ++ xs := by
+  rw [←Nat.toStr'_append]; simp
+
+theorem Nat.toStr_of_base_lt {n : ℕ} (h : 10 < n) :
+Nat.toStr n = Nat.toStr (n / 10) ++ ⟨[⟨_, isValidChar_mod_base n⟩]⟩ := by
+  nth_rw 1 [Nat.toStr]
+  rw [if_neg # by omega]
+  simp only [↓Char.isValue, Char.reduceToNat, Nat.toUInt32_eq, UInt32.ofNat_add, UInt32.reduceOfNat,
+    String.ext_iff, String.data_append]
+  rw [Nat.toStr']
+  rw [if_neg # by omega]
+  simp
+  rw [Nat.toStr'_eq_append, Nat.toStr]
+  rw [if_neg # by omega]
+  simp
+  rw [Char.ofCharCode_eq_of_lt # by omega]
+  simp
+
+@[simp]
+theorem endPos_nil : "".endPos = ⟨0⟩ := rfl
+
+@[simp]
+theorem foldl_nil {α : Type*} {f : α → Char → α} {z : α} : "".foldl f z = z := by
+  simp [foldl, foldlAux]
+
+@[simp]
+theorem Pos.zero_add_pos {x : String.Pos} : 0 + x = x := by
+  rcases x with ⟨n⟩
+  change Pos.mk _ = _
+  simp
+
+@[simp]
+theorem Pos.zero_add_char {c : Char} : (0 : Pos) + c = ⟨c.utf8Size⟩ := by
+  change Pos.mk _ = _; simp
+
+@[simp]
+theorem endPos_cons {c cs} : endPos ⟨c :: cs⟩ = endPos ⟨cs⟩ + c := rfl
+
+@[simp]
+theorem get_nil {p} : "".get p = default := by
+  rfl
+
+@[simp]
+theorem next_nil {p} : "".next p = ⟨p.1 + 1⟩ := by
+  simp [next]; rfl
+
+theorem foldlAux_nil {α : Type*} {f : α → Char → α} {z : α} {p₁ p₂} (h : p₁ ≤ p₂) :
+"".foldlAux f p₁ p₂ z = z := by
+  unfold foldlAux
+  simp
+  intro h₁
+  contrapose! h₁
+  exact h
+
+attribute [simp] Char.utf8Size_pos
+
+@[simp]
+theorem Char.toNat_mk {n : UInt32} {h} : (⟨n, h⟩ : Char).toNat = n.toNat := rfl
+
+@[simp]
+theorem toNat_nil : String.toNat "" = 0 := rfl
+
+@[simp]
+theorem toNat'_nil {n} : String.toNat' [] n = n := rfl
+
+theorem toNat'_cons' {c cs n} :
+String.toNat' (c :: cs) n = String.toNat' cs (n * 10 + (c.toNat - '0'.toNat)) := by
+  dsimp [String.toNat']
+
+theorem toNat'_add {cs n m} :
+String.toNat' cs (n + m) = n * 10 ^ cs.length + String.toNat' cs m := by
+  induction cs generalizing n m
+  · simp
+  nm c cs ih
+  simp [String.toNat'_cons', ih]
+  ring_nf
+
+theorem toNat'_eq_add {cs n} :
+String.toNat' cs n = n * 10 ^ cs.length + String.toNat' cs 0 := by
+  simp [←String.toNat'_add]
+
+@[simp]
+theorem toNat_cons {c cs} :
+String.toNat ⟨c :: cs⟩ = (c.toNat - '0'.toNat) * 10 ^ cs.length + String.toNat ⟨cs⟩ := by
+  dsimp [String.toNat]
+  rw [String.toNat'_cons', String.toNat'_eq_add]
+  ring_nf
+  simp
+  ring_nf
+
+@[simp]
+theorem mk_append {cs : List Char} {s : String} : ⟨cs⟩ ++ s = ⟨cs ++ s.1⟩ := rfl
+
+@[simp]
+theorem length_data {s : String} : s.data.length = s.length := rfl
+
+theorem toNat_append {s₁ s₂ : String} :
+String.toNat (s₁ ++ s₂) = String.toNat s₁ * 10 ^ s₂.length + String.toNat s₂ := by
+  rcases s₁ with ⟨cs⟩
+  simp
+  rename' s₂ => s
+  induction cs generalizing s
+  · simp
+  nm c cs ih
+  simp [ih]
+  ring_nf
+
+theorem toNat_Nat.toStr {n} : String.toNat (Nat.toStr n) = n := by
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h : n < 10
+  · rw [Nat.toStr_of_lt_base h]
+    simp
+    apply Nat.sub_eq_of_eq_add
+    rw [Nat.mod_eq_of_lt] <;> omega
+  push_neg at h
+  rw [le_iff_eq_or_lt] at h
+  rcases h with rfl | h
+  · native_decide
+  rw [Nat.toStr_of_base_lt h]
+  simp [String.toNat_append]
+  rw [ih] <;> omega
