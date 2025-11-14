@@ -172,3 +172,75 @@ theorem abs_sub_le_of_le_le_half {a b c d : ℝ}
   _ = |a - c - (b - c)| := by ring_nf
   _ ≤ |a - c| + |b - c| := abs_sub _ _
   _ ≤ _ := by linarith
+
+theorem sqrt_add {a b : ℝ} (h₁ : 0 ≤ b) (h₂ : b ≤ a) :
+√(a + b) = √((a + √(a ^ 2 - b ^ 2)) / 2) + √((a - √(a ^ 2 - b ^ 2)) / 2) := by
+  have h₃ : 0 ≤ a; linarith
+  have h₄ : 0 ≤ (a - √(a ^ 2 - b ^ 2)) / 2
+  · apply div_nonneg _ # by norm_num
+    simp
+    rw [sqrt_le_iff]
+    simp
+    split_ands <;> positivity
+  have h₅ : 0 ≤ (a + √(a ^ 2 - b ^ 2)) / 2
+  · apply h₄.trans
+    rw [div_le_div_iff_of_pos_right] <;> try positivity
+    rw [sub_eq_add_neg]
+    simp
+  have h₆ : 0 ≤ a ^ 2 - b ^ 2
+  · nlinarith
+  rw [←sq_eq_sq₀, sq_sqrt, add_sq, sq_sqrt, sq_sqrt] <;> try positivity
+  ring_nf
+  simp
+  symm
+  rw [←sqrt_mul] <;> try positivity
+  ring_nf
+  field_simp
+  rw [sq_sqrt] <;> try positivity
+  ring_nf
+  field_simp
+  norm_num
+  rwa [sqrt_sq]
+
+theorem sqrt_sub {a b : ℝ} (h₁ : 0 ≤ b) (h₂ : b ≤ a) :
+√(a - b) = √((a + √(a ^ 2 - b ^ 2)) / 2) - √((a - √(a ^ 2 - b ^ 2)) / 2) := by
+  have h₃ : 0 ≤ a; linarith
+  have h₄ : 0 ≤ (a - √(a ^ 2 - b ^ 2)) / 2
+  · apply div_nonneg _ # by norm_num
+    simp
+    rw [sqrt_le_iff]
+    simp
+    split_ands <;> positivity
+  have h₀ : 0 ≤ (a + √(a ^ 2 - b ^ 2)) / 2 - (a - √(a ^ 2 - b ^ 2)) / 2
+  · simp
+    rw [div_le_div_iff_of_pos_right] <;> try positivity
+    rw [sub_eq_add_neg]
+    simp
+  have h₈ : 0 ≤ √((a + √(a ^ 2 - b ^ 2)) / 2) - √((a - √(a ^ 2 - b ^ 2)) / 2)
+  · simp only [sub_nonneg] at h₀ ⊢
+    exact sqrt_le_sqrt h₀
+  have h₅ : 0 ≤ (a + √(a ^ 2 - b ^ 2)) / 2
+  · linarith
+  have h₆ : 0 ≤ a ^ 2 - b ^ 2
+  · nlinarith
+  have h₇ : 0 ≤ a - b; linarith
+  rw [←sq_eq_sq₀, sq_sqrt, sub_sq, sq_sqrt, sq_sqrt] <;> try positivity
+  ring_nf
+  simp
+  symm
+  rw [←sqrt_mul] <;> try positivity
+  ring_nf
+  field_simp
+  rw [sq_sqrt] <;> try positivity
+  ring_nf
+  field_simp
+  norm_num
+  rwa [sqrt_sq]
+
+theorem sqrt_add_sqrt {a b : ℝ} (h₁ : 0 ≤ b) (h₂ : √b ≤ a) :
+√(a + √b) = √((a + √(a ^ 2 - b)) / 2) + √((a - √(a ^ 2 - b)) / 2) := by
+  rw [sqrt_add, sq_sqrt] <;> try first | positivity | linarith
+
+theorem sqrt_sub_sqrt {a b : ℝ} (h₁ : 0 ≤ b) (h₂ : √b ≤ a) :
+√(a - √b) = √((a + √(a ^ 2 - b)) / 2) - √((a - √(a ^ 2 - b)) / 2) := by
+  rw [sqrt_sub, sq_sqrt] <;> try first | positivity | linarith
