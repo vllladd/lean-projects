@@ -244,3 +244,11 @@ theorem sqrt_add_sqrt {a b : ℝ} (h₁ : 0 ≤ b) (h₂ : √b ≤ a) :
 theorem sqrt_sub_sqrt {a b : ℝ} (h₁ : 0 ≤ b) (h₂ : √b ≤ a) :
 √(a - √b) = √((a + √(a ^ 2 - b)) / 2) - √((a - √(a ^ 2 - b)) / 2) := by
   rw [sqrt_sub, sq_sqrt] <;> try first | positivity | linarith
+
+@[simp]
+theorem sq_sqrt_nat {n : ℕ} : √ofNat(n) ^ 2 = ofNat(n) := by
+  rw [Real.ofNat_eq, sq_sqrt]; simp
+
+@[simp]
+theorem sqrt_sq_nat {n : ℕ} : √(ofNat(n) ^ 2) = ofNat(n) := by
+  rw [Real.ofNat_eq, sqrt_sq]; simp

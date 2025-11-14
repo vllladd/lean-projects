@@ -15,6 +15,7 @@ import AP.Util.Option
 import AP.Util.String
 import AP.Util.Fintype
 import AP.Util.Algebra
+import AP.Util.Complex
 import AP.Util.Quotient
 import AP.Util.Multiset
 import AP.Util.ListBool
