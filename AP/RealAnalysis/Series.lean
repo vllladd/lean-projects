@@ -362,6 +362,10 @@ theorem monoLt_subseq {a σ} (h₁ : monoLt a) (h₂ : subseq σ) : monoLt (a # 
 theorem monoGt_subseq {a σ} (h₁ : monoGt a) (h₂ : subseq σ) : monoGt (a # σ ·) := by
   intro i j h; apply h₁; apply h₂; exact h
 
+theorem limit_eq_of_sub_tendsTo_zero {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
+(h₃ : tendsTo (a - b) 0) : L = M := by
+  linarith [tendsTo_unique h₃ # tendsTo_sub h₁ h₂]
+
 theorem converges_series_alternating_of_monoGe.aux₁ {a n} (h₁ : monoGe a) (h₂ : tendsTo a 0) :
 0 ≤ a n := limit_le_of_monoGe h₂ h₁
 
@@ -463,6 +467,82 @@ converges # series # λ n => (-1) ^ n * a n := by
   specialize h₈ N n (by linarith)
   rwa [abs_sub_comm]
 
-theorem limit_eq_of_sub_tendsTo_zero {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
-(h₃ : tendsTo (a - b) 0) : L = M := by
-  linarith [tendsTo_unique h₃ # tendsTo_sub h₁ h₂]
+@[simp]
+theorem neg_series' {a} : -series a = series (-a) := by
+  ext n; simp [series]
+
+@[simp]
+theorem neg_series {a n} : -series a n = series (-a) n := by
+  simp [series]
+
+theorem converges_series_alternating_of_monoLe {a} (h₁ : monoLe a) (h₂ : tendsTo a 0) :
+converges # series # λ n => (-1) ^ n * a n := by
+  replace h₁ := monoGe_neg.mpr h₁
+  replace h₂ := tendsTo_neg h₂
+  simp at h₂
+  have h₃ := converges_series_alternating_of_monoGe h₁ h₂
+  simp at h₃
+  rw [←converges_neg]
+  simpa
+
+theorem converges_series_alternating_of_monoGt {a} (h₁ : monoGt a) (h₂ : tendsTo a 0) :
+converges # series # λ n => (-1) ^ n * a n :=
+  converges_series_alternating_of_monoGe (monoGe_of_monoGt h₁) h₂
+
+theorem converges_series_alternating_of_monoLt {a} (h₁ : monoLt a) (h₂ : tendsTo a 0) :
+converges # series # λ n => (-1) ^ n * a n :=
+  converges_series_alternating_of_monoLe (monoLe_of_monoLt h₁) h₂
+
+theorem series_drop_eq {a N} :
+series (a # N + ·) = λ n => series a (N + n) - series a N := by
+  ext n
+  simp_rw [series]
+  trans ∑ k ∈ Finset.Ico N (N + n), a k
+  · simp [Finset.sum_Ico_eq_sum_range]
+  · simp [Finset.sum_Ico_eq_sub]
+
+theorem series_drop_tendsTo_of {a L N} (h : tendsTo (series a) L) :
+tendsTo (series (a # N + ·)) (L - series a N) := by
+  rw [series_drop_eq]; apply tendsTo_sub # tendsTo_drop_of h; simp
+
+theorem series_drop_tendsTo_iff {a L N} :
+tendsTo (series (a # N + ·)) L ↔ tendsTo (series a) (L + series a N) := by
+  rw [series_drop_eq]
+  constructor <;> intro h
+  · nth_rw 1 [show series a = (λ n => series a n - series a N + series a N) by simp]
+    apply tendsTo_add _ # by simp
+    rwa [←tendsTo_drop_iff (a := λ n => series a n - series a N) (k := N)]
+  · rw [show L = L + series a N - series a N by simp]
+    apply tendsTo_add _ # by simp
+    exact tendsTo_drop_of h
+
+theorem converges_series_drop_iff {a N} :
+converges (series (a # N + ·)) ↔ converges (series a) := by
+  constructor <;> rintro ⟨L, h⟩
+  · rw [series_drop_tendsTo_iff] at h; exact ⟨_, h⟩
+  · use L - series a N; simpa [series_drop_tendsTo_iff]
+
+theorem converges_series_alternating_of_monoLe_drop {a N}
+(h₁ : monoLe (a # N + ·)) (h₂ : tendsTo a 0) : converges # series # λ n => (-1) ^ n * a n := by
+  replace h₂ := tendsTo_drop_of h₂ (k := N)
+  rw [←converges_series_drop_iff (N := N)]
+  have h₃ := converges_series_alternating_of_monoLe h₁ h₂ (a := λ n => a # N + n)
+  simp at h₃
+  induction N using Nat.mod_2_ind <;> nm N <;> simp [pow_add]; exact h₃
+  replace h₃ := converges_neg.mpr h₃; simp at h₃; exact h₃
+
+theorem converges_series_alternating_of_monoGe_drop {a N}
+(h₁ : monoGe (a # N + ·)) (h₂ : tendsTo a 0) : converges # series # λ n => (-1) ^ n * a n := by
+  replace h₁ := monoLe_neg.mpr h₁
+  replace h₂ := tendsTo_neg h₂
+  simp at h₂
+  have h₃ := converges_series_alternating_of_monoLe_drop h₁ h₂
+  simp at h₃ ⊢; apply converges_neg.mp; simpa
+
+theorem converges_series_alternating_of_monoLt_drop {a N}
+(h₁ : monoLt (a # N + ·)) (h₂ : tendsTo a 0) : converges # series # λ n => (-1) ^ n * a n :=
+  converges_series_alternating_of_monoLe_drop (monoLe_of_monoLt h₁) h₂
+
+theorem converges_series_alternating_of_monoGt_drop {a N}
+(h₁ : monoGt (a # N + ·)) (h₂ : tendsTo a 0) : converges # series # λ n => (-1) ^ n * a n :=
+  converges_series_alternating_of_monoGe_drop (monoGe_of_monoGt h₁) h₂
