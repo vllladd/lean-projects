@@ -463,3 +463,7 @@ converges # series # λ n => (-1) ^ n * a n := by
   · apply h₄; simp
   specialize h₈ N n (by linarith)
   rwa [abs_sub_comm]
+
+theorem limit_eq_of_sub_tendsTo_zero {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
+(h₃ : tendsTo (a - b) 0) : L = M := by
+  linarith [tendsTo_unique h₃ # tendsTo_sub h₁ h₂]
