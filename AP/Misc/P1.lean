@@ -501,43 +501,27 @@ theorem main_alt_pnat {a : PNat → PNat}
 
 end P10 namespace P11
 
-open Complex
-
+open Complex in
 example {x : ℂ} : √2 + √x = 2 ↔ x = 6 - 4 * √2 := by
-  have h₁ : 4 * Real.sqrt 2 ≤ 6
-  · rw [←sq_le_sq₀] <;> try positivity
-    rw [mul_pow]
-    norm_num
-  by_cases h : x.nnr
-  · rw [←eq_sub_iff_add_eq', sqrt_eq_iff_eq_sq_of_nnr h # by simp [nnr]; linarith]
-    clear h
-    revert x
-    simp
-    rw [pow_two]
-    ring_nf at h₁ ⊢
-    apply eq_of_re_eq_re (by simp) (by simp)
+  rw [←eq_sub_iff_add_eq']
+  conv_lhs => rw [eq_iff_and_apply (f := (· ^ 2))]
+  simp [sub_sq]
+  ring_nf
+  simp
+  rintro rfl
+  rw [show 6 - √2 * 4 = (2 - √2) ^ 2 by simp [sub_sq]; ring_nf]
+  rw [sqrt_eq_iff_eq_sq_of_nnr]
+  · simp [pow_two]; ring_nf
     simp
     ring_nf
-  simp at h
-  convert_to _ ↔ False
-  · simp
-    rintro rfl
-    contrapose! h; clear h
-    simpa [nnr]
-  clear h₁
-  simp
-  apply ne_of_congr (·.im = 0)
-  simp
-  contrapose! h
-  rw [sqrt_im_eq_zero_iff] at h
-  exact h
+    simp [nnr]
+    rw [←sq_le_sq₀] <;> try positivity
+    ring_nf
+    simp
+    norm_num
+  simp [nnr]
 
-end P11
-
-namespace P12
-
-open Real
-
+open Real in
 example : √(6 - 4 * √2) = 2 - √2 := by
   have h : 4 * √2 ≤ 6
   · rw [←sq_le_sq₀] <;> try positivity

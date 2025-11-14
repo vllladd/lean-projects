@@ -110,7 +110,6 @@ theorem nnr_of_sqrt_im_eq_zero {x : ℂ} (h : (√x).im = 0) : x.nnr := by
       push_neg at h₁
       rw [Real.le_sqrt] <;> try positivity
       simp
-      positivity
   · exfalso
     push_neg at h₂
     rw [Real.sin_half_eq_neg_sqrt _ # by linarith] at h
@@ -136,3 +135,31 @@ theorem nnr_of_sqrt_im_eq_zero {x : ℂ} (h : (√x).im = 0) : x.nnr := by
 
 theorem sqrt_im_eq_zero_iff {x : ℂ} : (√x).im = 0 ↔ x.nnr :=
   ⟨λ h => nnr_of_sqrt_im_eq_zero h, λ h => sqrt_im_of_nnr h⟩
+
+theorem nnr_add {a b : ℂ} (ha : a.nnr) (hb : b.nnr) : (a + b).nnr := by
+  simp [nnr] at ha hb ⊢; constructor <;> linarith
+
+theorem nnr_mul {a b : ℂ} (ha : a.nnr) (hb : b.nnr) : (a * b).nnr := by
+  simp [nnr] at ha hb ⊢; constructor <;> nlinarith
+
+theorem sqrt_mul_of_nnr {a b : ℂ} (ha : a.nnr) (hb : b.nnr) : √(a * b) = √a * √b := by
+  apply eq_of_re_eq_re
+  · rw [sqrt_im_eq_zero_iff]
+    exact nnr_mul ha hb
+  · simp [sqrt_re_of_nnr ha, sqrt_im_of_nnr ha, sqrt_re_of_nnr hb, sqrt_im_of_nnr hb]
+  simp [sqrt_re_of_nnr ha, sqrt_im_of_nnr ha, sqrt_re_of_nnr hb, sqrt_im_of_nnr hb]
+  rw [sqrt_re_of_nnr # nnr_mul ha hb]
+  simp
+  rcases a, b with ⟨⟨a, x⟩, ⟨b, y⟩⟩
+  rcases ha, hb with ⟨⟨ha, rfl⟩, ⟨hb, rfl⟩⟩
+  simp
+
+theorem sqrt_sq_of_nnr {a : ℂ} (h : a.nnr) : √(a ^ 2) = a := by
+  rw [pow_two, sqrt_mul_of_nnr h h]
+  apply eq_of_re_eq_re _ h.2 <;> simp [sqrt_re_of_nnr h, sqrt_im_of_nnr h, h.1]
+
+@[simp]
+theorem sqrt_sq_nat {n : ℕ} : √(ofNat(n) ^ 2) = ofNat(n) := by
+  simp_rw [ofNat_eq]
+  apply sqrt_sq_of_nnr
+  simp

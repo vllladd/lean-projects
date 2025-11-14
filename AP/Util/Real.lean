@@ -252,3 +252,47 @@ theorem sq_sqrt_nat {n : ℕ} : √ofNat(n) ^ 2 = ofNat(n) := by
 @[simp]
 theorem sqrt_sq_nat {n : ℕ} : √(ofNat(n) ^ 2) = ofNat(n) := by
   rw [Real.ofNat_eq, sqrt_sq]; simp
+
+theorem sqrt_eq_of_neg {a : ℝ} (h : a < 0) : √a = 0 := by
+  simp [sqrt, toNNReal, max_eq_right_of_lt h]
+
+theorem sqrt_eq_of_nonpos {a : ℝ} (h : a ≤ 0) : √a = 0 := by
+  rw [le_iff_eq_or_lt] at h; rcases h with rfl | h; simp; exact sqrt_eq_of_neg h
+
+attribute [simp] sq_nonneg
+
+@[simp]
+theorem le_sq_self_iff {a : ℝ} : a ≤ a ^ 2 ↔ a ≤ 0 ∨ 1 ≤ a := by
+  constructor
+  · intro h
+    rw [or_iff_not_imp_left]
+    intro h₁
+    nlinarith
+  · rintro (h | h)
+    · apply h.trans
+      simp
+    nlinarith
+
+@[simp]
+theorem lt_sq_self_iff {a : ℝ} : a < a ^ 2 ↔ a < 0 ∨ 1 < a := by
+  constructor
+  · intro h
+    rw [or_iff_not_imp_left]
+    intro h₁
+    nlinarith
+  · rintro (h | h)
+    · apply lt_of_lt_of_le h
+      simp
+    nlinarith
+
+@[simp]
+theorem sqrt_le_self_iff {a : ℝ} : √a ≤ a ↔ a = 0 ∨ 1 ≤ a := by
+  by_cases h : a < 0
+  · rw [sqrt_eq_of_neg h]
+    simp [ne_of_lt h]
+    constructor <;> intro h <;> linarith
+  push_neg at h
+  simp [sqrt_le_iff, h]
+  rw [le_iff_eq_or_lt] at h
+  rcases h with rfl | h; simp
+  simp [not_le_of_gt h, ne_symm' # ne_of_lt h]

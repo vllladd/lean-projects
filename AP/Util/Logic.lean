@@ -281,3 +281,7 @@ theorem imp_iff_not' {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto
 
 instance {P} [H : Fact P] : Decidable P := .isTrue H.1
 instance {P} [H : Fact P] : Fact (Fact P) := ⟨H⟩
+
+theorem eq_iff_and_apply {α β : Type*} {x y : α} (f : α → β) :
+x = y ↔ x = y ∧ f x = f y := by
+  simp_all only [iff_self_and, implies_true]

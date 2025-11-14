@@ -78,9 +78,9 @@ tendsTo (λ n => (n + x) / (n + y)) 1 := by
     positivity
   simp_rw [h]; clear h
   nth_rw 2 [show (1 : ℝ) = 1 + 0 by norm_num]
-  apply tendsTo_add tendsTo_const
+  apply tendsTo_add # by simp
   rw [show 0 = (x - y) * 0 by simp]
-  apply tendsTo_mul tendsTo_const
+  apply tendsTo_mul # by simp
   simp
 
 @[simp]
@@ -145,7 +145,7 @@ theorem converges_basel {x} : converges # series # λ n => (1 / (n + x) ^ 2) := 
   rw [←converges_drop_iff (k := k)]
   apply converges_of_monoLe_and_forall_le_add (x := y) ⟨_, leibniz_series_tendsTo⟩
   · rw [monoLe_iff_le_succ]; intro n
-    simp [Nat.add_one_add, series_succ]; positivity
+    simp [Nat.add_one_add, series_succ]
   intro n
   rw [add_comm, series_add, add_comm _ y]
   rw [←series] at hy
@@ -243,9 +243,9 @@ tendsTo (series (x ^ ·)) # 1 / (1 - x) := by
   apply tendsTo_div
   · linarith
   · nth_rw 2 [show (1 : ℝ) = 1 - 0 by norm_num]
-    apply tendsTo_sub tendsTo_const
+    apply tendsTo_sub # by simp
     exact pow_tendsTo_zero_of_pos_and_lt_one h₁ h₂
-  · exact tendsTo_const
+  · simp
 
 def absConv (a : ℕ → ℝ) : Prop :=
   converges # series (|a ·|)
@@ -266,7 +266,6 @@ example : ¬∀ {a L}, tendsTo (|a ·|) L ↔ 0 ≤ L ∧ tendsTo a L := by
   split_ands
   · simp_rw [apply_ite]
     simp
-    exact tendsTo_const
   intro h
   replace h := converges_of_tendsTo h
   contrapose h

@@ -32,9 +32,6 @@ noncomputable def ub (a : ℕ → ℝ) : ℝ :=
 
 -----
 
-theorem tendsTo_const {L} : tendsTo (λ _ => L) L := by
-  intro e he; use 0; simpa
-
 theorem tendsTo_unique {a L₁ L₂}
 (h₁ : tendsTo a L₁) (h₂ : tendsTo a L₂) : L₁ = L₂ := by
   by_contra! h₃
@@ -55,6 +52,19 @@ theorem tendsTo_unique {a L₁ L₂}
   replace h₂ := abs_lt.mp h₂ |>.1
   simp at h₂
   linarith
+
+theorem tendsTo_const {L} : tendsTo (λ _ => L) L := by
+  intro e he; use 0; simpa
+
+@[simp]
+theorem tendsTo_const_iff {L M} : tendsTo (λ _ => L) M ↔ L = M := by
+  have h₁ := @tendsTo_const L
+  symm; constructor; rintro rfl; exact h₁
+  intro h₂; exact tendsTo_unique h₁ h₂
+
+@[simp]
+theorem tendsTo_const_nat_iff {n : ℕ} {L} : tendsTo ofNat(n) L ↔ ofNat(n) = L :=
+  tendsTo_const_iff
 
 theorem tendsTo_drop_iff' {a L k} : tendsTo (a # · + k) L ↔ tendsTo a L := by
   constructor
@@ -136,19 +146,6 @@ theorem ofNat_seq_eq {n : ℕ} : (OfNat.ofNat n : ℕ → ℝ) = λ _ => ↑n :=
 theorem cast_seq_eq {n : ℕ} : (n : ℕ → ℝ) = λ _ => ↑n := by
   ext i; iterate 2 cases n; simp; nm n
   change ((n + 2 : ℕ) : ℝ) = _; ring_nf
-
-@[simp]
-theorem tendsTo_const_cast {n : ℕ} : tendsTo n n := by
-  simp [cast_seq_eq, tendsTo_const]
-
-theorem tendsTo_const_ofNat {n : ℕ} : tendsTo (OfNat.ofNat n) n := by
-  simp [ofNat_seq_eq, tendsTo_const]
-
-theorem tendsTo_const_ofNat_iff {n : ℕ} {L : ℝ} :
-tendsTo (OfNat.ofNat n) L ↔ L = n := by
-  have h := @tendsTo_const_ofNat n
-  use λ h₁ => tendsTo_unique h₁ h
-  rintro rfl; exact h
 
 theorem tendsTo_neg {a L} (h : tendsTo a L) : tendsTo (-a) (-L) := by
   intro e he; specialize h e he; obtain ⟨N, h⟩ := h
@@ -476,8 +473,8 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
     suffices : 0 < 1 + max |lb a₁| |lb a₂|; linarith
     suffices : 0 ≤ max |lb a₁| |lb a₂|; linarith
     simp
-  have h₃ := @tendsTo_add a₁ (λ _ => m) L₁ m h₁ tendsTo_const
-  have h₄ := @tendsTo_add a₂ (λ _ => m) L₂ m h₂ tendsTo_const
+  have h₃ := @tendsTo_add a₁ (λ _ => m) L₁ m h₁ # by simp
+  have h₄ := @tendsTo_add a₂ (λ _ => m) L₂ m h₂ # by simp
   rw [hb₁] at h₃
   rw [hb₂] at h₄
   have H₄ : 1 < L₁ + m
@@ -510,12 +507,12 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
   have h₅ : L₁ * L₂ = (L₁ + m) * (L₂ + m) -
     m * ((L₁ + m) + (L₂ + m)) + m ^ 2; ring_nf
   rw [h₅]; clear h₅
-  have h₅ : tendsTo b₁ (L₁ + m); subst hb₁; exact tendsTo_add h₁ tendsTo_const
-  have h₆ : tendsTo b₂ (L₂ + m); subst hb₂; exact tendsTo_add h₂ tendsTo_const
-  apply tendsTo_add _ tendsTo_const
+  have h₅ : tendsTo b₁ (L₁ + m); subst hb₁; exact tendsTo_add h₁ # by simp
+  have h₆ : tendsTo b₂ (L₂ + m); subst hb₂; exact tendsTo_add h₂ # by simp
+  apply tendsTo_add _ # by simp
   apply tendsTo_sub
   rotate_left
-  · apply tendsTo_mul_aux₁ tendsTo_const (tendsTo_add h₅ h₆) _ H₃
+  · apply tendsTo_mul_aux₁ (by simp) (tendsTo_add h₅ h₆) _ H₃
     · linarith
     · intro i
       specialize H₁ i
@@ -659,8 +656,7 @@ theorem converges_inv {a} (ha : converges a) (h : limit a ≠ 0) : converges a�
   use L⁻¹; exact tendsTo_inv h ha
 
 theorem tendsTo_pow {a L} {k : ℕ} (h : tendsTo a L) : tendsTo (a ^ k) (L ^ k) := by
-  induction k; simp; exact tendsTo_const
-  nm k hk; simp [pow_add]; exact tendsTo_mul hk h
+  induction k; simp; nm k hk; simp [pow_add]; exact tendsTo_mul hk h
 
 theorem converges_pow {a} {k : ℕ} (ha : converges a) : converges (a ^ k) := by
   obtain ⟨L, ha⟩ := ha; use L ^ k, tendsTo_pow ha
@@ -695,7 +691,7 @@ theorem tendsTo_subseq {a σ L} (h₁ : tendsTo a L)
 
 theorem exi_subseq_tendsTo_of_neg_one_pow :
 ∃ σ L, subseq σ ∧ tendsTo (((-1 : ℝ) ^ ·) ∘ σ) L := by
-  use (· * 2), 1, λ i j h => by linarith;; simp; exact tendsTo_const
+  use (· * 2), 1, λ i j h => by linarith, by simp
 
 theorem bounded_drop_iff {a k} : bounded (a # · + k) ↔ bounded a := by
   symm; constructor <;> rintro ⟨M, h⟩
@@ -752,5 +748,10 @@ theorem tendsTo_limit_iff_converges {a} : tendsTo a (limit a) ↔ converges a :=
   · use limit a
   · exact tendsTo_limit_of_converges h
 
+@[simp]
 theorem converges_const {x : ℝ} : converges (λ _ => x) :=
-  ⟨_, tendsTo_const⟩
+  ⟨x, by simp⟩
+
+@[simp]
+theorem converges_const_nat {n : ℕ} : converges ofNat(n) :=
+  converges_const

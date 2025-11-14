@@ -100,12 +100,21 @@ theorem eval_zero : (0 : RationalFn ι).eval F = 0 := by
   simp [zero_def, zero]
 
 @[simp]
-theorem eval_ofNat_zero : (ofNat 0 : RationalFn ι).eval F = 0 := by
+theorem eval_ofNat_zero' : (ofNat 0).eval F = 0 := by
   simp [ofNat]
 
 @[simp]
-theorem eval_ofNat_succ {n} : (ofNat (n + 1) : RationalFn ι).eval F =
-(ofNat n : RationalFn ι).eval F + 1 := rfl
+theorem eval_ofNat_succ' {n} : (ofNat (n + 1)).eval F = (ofNat n).eval F + 1 := by
+  simp [ofNat]
+
+@[simp]
+theorem eval_ofNat_zero : (ofNat(0) : RationalFn ι).eval F = 0 :=
+  eval_ofNat_zero'
+
+@[simp]
+theorem eval_ofNat_succ {n} : (ofNat(n + 1) : RationalFn ι).eval F =
+(ofNat(n) : RationalFn ι).eval F + 1 :=
+  eval_ofNat_succ'
 
 include ha₃ in @[simp]
 theorem eval_pow_zero : (a ^ 0).eval F = 1 := by
@@ -124,12 +133,20 @@ theorem cnd_div : (a / b).cnd F ↔ a.cnd F ∧ b.eval F ≠ 0 ∧ b.cnd F := by
   simp [div_def, div]
 
 @[simp]
-theorem cnd_zero : (0 : RationalFn ι).cnd F := by
-  simp [zero_def, zero]
+theorem cnd_zero' : (ofNat 0).cnd F := by
+  simp [ofNat, zero_def, zero]
 
 @[simp]
-theorem cnd_ofNat {n} : (ofNat n : RationalFn ι).cnd F := by
-  induction n <;> simp_all [ofNat]
+theorem cnd_ofNat' {n} : (ofNat n).cnd F := by
+  induction n; simp; simpa [ofNat]
+
+@[simp]
+theorem cnd_zero : (ofNat(0) : RationalFn ι).cnd F :=
+  cnd_zero'
+
+@[simp]
+theorem cnd_ofNat {n} : (ofNat(n) : RationalFn ι).cnd F :=
+  cnd_ofNat'
 
 @[simp]
 theorem cnd_pow {n : ℕ} : (a ^ n).cnd F ↔ a.cnd F := by
@@ -141,7 +158,7 @@ theorem tendsTo_of_rationalFn {ι : Type*} {A : ι → ℕ → ℝ} {L : ι → 
 {f : RationalFn ι} (h₁ : ∀ i, tendsTo (A i) (L i)) (h₂ : f.cnd L) :
 tendsTo (f.eval A) (f.eval L) := by
   induction f
-  · exact tendsTo_const
+  · simp
   · apply h₁
   · nm a ih; exact tendsTo_neg # ih h₂
   · nm a ih; exact tendsTo_inv h₂.1 # ih h₂.2
@@ -154,6 +171,5 @@ tendsTo ((a ^ 2 + 2 * a + b) / (3 * b + 2 - a ^ 2))
 ((L ^ 2 + 2 * L + M) / (3 * M + 2 - L ^ 2)) := by
   revert h; obtain ⟨f, hf⟩ := @hv (RationalFn # Fin 2) #
     (.var 0 ^ 2 + 2 * .var 0 + .var 1) / (3 * .var 1 + 2 - .var 0 ^ 2)
-  simp only [Real.ofNat_eq, seq_ofNat_eq, RationalFn.ofNat_def] at hf ⊢
   convert_to f.cnd ![L, M] → tendsTo (f.eval ![a, b]) (f.eval ![L, M]) using 0
   simp [hf]; ring_nf; apply tendsTo_of_rationalFn; intro i; fin_cases i <;> simpa
