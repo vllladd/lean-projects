@@ -46,3 +46,13 @@ theorem ne_none_of_eq_some {α : Type*} {m : Option α} {x : α}
 theorem map_elim_fn_some {α β : Type*} {f : α → β} {x y : Option α} :
 (x.elim y some).map f = (x.map f).elim (y.map f) some := by
   cases x <;> rfl
+
+@[simp]
+theorem elim_init_bool_false_eq_true_iff {α : Type*} {m : Option α} {f : α → Bool} :
+m.elim false f = true ↔ ∃ x, m = some x ∧ f x := by
+  cases m <;> simp
+
+@[simp]
+theorem elim_init_false_iff {α : Type*} {m : Option α} {f : α → Prop} :
+m.elim False f ↔ ∃ x, m = some x ∧ f x := by
+  cases m <;> simp

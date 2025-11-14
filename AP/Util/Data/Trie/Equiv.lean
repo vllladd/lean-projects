@@ -207,3 +207,82 @@ theorem iff_alt : t₁.Equiv t₂ ↔ Alt t₁ t₂ := by
     specialize ih₁ _ h₂
     use y, h₂
     tauto
+
+end Equiv
+
+def equivComp (t₁ t₂ : Raw α β) : Bool :=
+  t₁.mp.size == t₂.mp.size &&
+  t₁.mp.foldWith (by simp) (λ (acc : Bool) k t₀' h => acc &&
+    let t₁' : Raw α β := ⟨_, t₁.wf.get? h⟩
+    match _ : t₂.get? k with
+    | none => false
+    | some t₂' => t₁'.equivComp t₂'
+  ) true
+termination_by max (depth t₁) (depth t₂)
+decreasing_by
+  nm h₁; simp
+  by_cases h₂ : t₁.depth ≤ t₂.depth
+  · right
+    split_ands
+    · apply _root_.lt_of_lt_of_le _ h₂
+      rw [depth_eq_depth_inner]
+      exact Raw₀.depth_lt h
+    · exact depth_lt h₁
+  · push_neg at h₂
+    left
+    split_ands
+    · rw [depth_eq_depth_inner]
+      exact Raw₀.depth_lt h
+    · apply h₂.trans'
+      exact depth_lt h₁
+
+theorem equivComp_eq : t₁.equivComp t₂ =
+(t₁.mp.size == t₂.mp.size &&
+t₁.mp.foldWith (by simp) (λ (acc : Bool) k t₀' h => acc &&
+((t₂.get? k).elim false # equivComp ⟨_, t₁.wf.get? h⟩)) true) := by
+  nth_rw 1 [equivComp]
+  simp
+  simp_rw [Option.elim]
+  congr
+  ext acc k x h
+  congr
+  split
+  next heq => simp_all only
+  next t₂' heq => simp_all only
+
+theorem equiv_iff_equivComp : t₁.Equiv t₂ ↔ t₁.equivComp t₂ := by
+  revert t₂; apply t₁.ind; clear t₁
+  intro val mp wf ih t₂
+  rw [Equiv.iff_alt', equivComp_eq]
+  simp
+  intro h₁
+  rw [mp.foldWith_bool_and_iff_forall]
+  simp
+  apply forall_congr'; intro k
+  simp [get?_eq_some_iff]
+  constructor
+  · intro h₂ x h₃
+    specialize h₂ ⟨x, wf.get? h₃⟩ h₃
+    choose t' h₂ h₄ using h₂
+    use t', h₂
+    rwa [←@ih k ⟨_, wf.get? h₃⟩ h₃]
+  · intro h₂ x h₃
+    specialize h₂ x.1 h₃
+    choose t' h₂ h₄ using h₂
+    use t', h₂
+    rwa [@ih k ⟨_, wf.get? h₃⟩ h₃]
+
+instance : Decidable # t₁.Equiv t₂ :=
+  decidable_of_bool _ equiv_iff_equivComp.symm
+
+@[simp]
+theorem equivComp_eq_decide_equiv : t₁.equivComp t₂ = decide (t₁.Equiv t₂) := by
+  simp [equiv_iff_equivComp]
+
+theorem equivComp_eq_of_equiv2 {a₁ b₁ a₂ b₂ : Raw α β}
+(h₁ : a₁.Equiv a₂) (h₂ : b₁.Equiv b₂) : a₁.equivComp b₁ = a₂.equivComp b₂ := by
+  simp; exact ⟨λ h => h₁.symm.trans # h.trans h₂, λ h => h₁.trans # h.trans h₂.symm⟩
+
+theorem equivComp_eq_of_equiv2_expl (a₁ b₁ a₂ b₂ : Raw α β)
+(h₁ : a₁.Equiv a₂) (h₂ : b₁.Equiv b₂) : a₁.equivComp b₁ = a₂.equivComp b₂ :=
+  equivComp_eq_of_equiv2 h₁ h₂

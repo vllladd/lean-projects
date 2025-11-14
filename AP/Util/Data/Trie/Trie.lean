@@ -56,3 +56,18 @@ theorem depth_lt {k} (h : t.get? k = some t') : t'.depth < t.depth := by
   intro a h₁ (h₂ : a.Equiv t')
   rw [←h₂.depth_eq]
   exact Raw.depth_lt h₁
+
+def eqComp (t₁ t₂ : Trie α β) : Bool :=
+  t₁.inner.liftOn₂ t₂.1 Raw.equivComp Raw.equivComp_eq_of_equiv2_expl
+
+theorem eq_iff_eqComp : t₁ = t₂ ↔ t₁.eqComp t₂ := by
+  rcases t₁, t₂ with ⟨⟨t⟩, ⟨t'⟩⟩
+  induction t, t' using Quotient.inductionOn₂
+  simp [eqComp]; rfl
+
+instance : DecidableEq (Trie α β) :=
+  λ _ _ => decidable_of_bool _ eq_iff_eqComp.symm
+
+@[simp]
+theorem eqComp_iff_decide_eq : t₁.eqComp t₂ ↔ decide (t₁ = t₂) := by
+  simp [eq_iff_eqComp]

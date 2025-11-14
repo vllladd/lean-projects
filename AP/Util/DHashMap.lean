@@ -257,9 +257,8 @@ theorem equiv_iff_decideEquiv [hb : ∀ i, DecidableEq # β i]
   rw [List.perm_iff_subset_of_nodup (by simp) (by simp)]
   generalize hx : m₁.toList = xs
   generalize hy : m₂.toList = ys
-  simp [Sigma.eta, List.find?_eq_some_iff_getElem, decide_true,
-    Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not,
-    true_and, List.foldl_and_eq_all, List.all_eq_true,
+  simp only [Sigma.eta, List.find?_eq_some_iff_getElem, decide_true, Bool.not_eq_eq_eq_not,
+    Bool.not_true, decide_eq_false_iff_not, true_and, List.foldl_bool_and_eq_all, List.all_eq_true,
     decide_eq_true_eq]
   have hnx : xs.Nodup := by simp [←hx]
   have hny : ys.Nodup := by simp [←hy]
@@ -399,7 +398,7 @@ def all (mp : DHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
 
 @[simp]
 theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
-  simp [all, fold_eq_foldl_toList, List.foldl_and_eq_all]
+  simp [all, fold_eq_foldl_toList, List.foldl_bool_and_eq_all]
   rw [Bool.eq_iff_iff]; simp
 
 @[simp]
@@ -768,6 +767,24 @@ theorem subset_of_size_eq_and_subset {mp₁ mp₂ : DHashMap.Raw α β} {x}
     apply h₂
   rw [←length_keys wf₁, ←length_keys wf₂] at h₁
   exact List.subset_of_nodup_and_subset_and_length_eq (nodup_keys wf₁) h₂ h₁ hx
+
+theorem foldWith_and_iff_forall {mp : DHashMap.Raw α β}
+{f : (i : α) → (x : β i) → mp.get? i = some x → Prop} (wf : mp.WF) :
+mp.foldWith wf (λ acc i x h => acc ∧ f i x h) True ↔
+∀ i x (h : mp.get? i = some x), f i x h := by
+  classical
+  simp only [foldWith_eq_foldlWith_toList, List.foldlWith_and_iff_forall,
+    mem_toList_iff_get?_eq_some wf]
+  exact ⟨λ h i x => h ⟨i, x⟩, λ h ⟨i, x⟩ => h i x⟩
+
+theorem foldWith_bool_and_iff_forall {mp : DHashMap.Raw α β}
+{f : (i : α) → (x : β i) → mp.get? i = some x → Bool} (wf : mp.WF) :
+mp.foldWith wf (λ acc i x h => acc && f i x h) true ↔
+∀ i x (h : mp.get? i = some x), f i x h := by
+  classical
+  simp only [foldWith_eq_foldlWith_toList, List.foldlWith_bool_and_iff_forall,
+    mem_toList_iff_get?_eq_some wf]
+  exact ⟨λ h i x => h ⟨i, x⟩, λ h ⟨i, x⟩ => h i x⟩
 
 -- #check 0 #exit
 

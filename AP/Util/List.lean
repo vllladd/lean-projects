@@ -484,11 +484,6 @@ theorem perm_cons_reverse_iff {α : Type*} {xs ys : List α} {y} :
 xs ~ y :: ys.reverse ↔ xs ~ y :: ys := by
   rw [perm_comm]; nth_rw 2 [perm_comm]; simp
 
-theorem foldl_and_eq_all {p : α → Bool} :
-xs.foldl (λ a x => a && p x) true = xs.all p := by
-  induction xs using List.reverseRecOn; simp
-  nm xs x ih; simp [ih]
-
 theorem mem_iff_mem_iff_subset {α : Type*} {xs ys : List α} :
 (∀ x, x ∈ xs ↔ x ∈ ys) ↔ xs ⊆ ys ∧ ys ⊆ xs := by
   unfold instHasSubset List.Subset
@@ -1188,6 +1183,9 @@ theorem lt_length_of_getElem?_eq_some {i x} (h : xs[i]? = some x) : i < xs.lengt
 theorem eq_append_getElem {i} (h : i < xs.length) :
 xs = xs.take i ++ xs[i] :: xs.drop (i + 1) := by simp
 
+theorem take_eq_self_of_le {n} (h : xs.length ≤ n) : xs.take n = xs := by
+  simpa
+
 theorem sum_take_le_sum {xs : List ℕ} {n} : (xs.take n).sum ≤ xs.sum := by
   induction xs generalizing n <;> simp; rename_i x xs ih; cases n <;> simp [ih]
 
@@ -1211,5 +1209,55 @@ theorem getD_getElem?_append_replicate {n i : ℕ} {x : α} :
   rw [getElem?_eq_none h]
   rfl
 
-theorem take_eq_self_of_le {n} (h : xs.length ≤ n) : xs.take n = xs := by
-  simpa
+-----
+
+theorem foldl_bool_iff_foldl_prop {f : Bool → α → Bool} {z : Bool} :
+xs.foldl f z ↔ xs.foldl (α := Prop) (λ acc x => f (acc = true) x) z := by
+  induction xs generalizing z; simp; nm x xs ih; simp [ih]
+
+theorem foldl_prop_iff_foldl_bool [H : ∀ P, Decidable P] {f : Prop → α → Prop} {z : Prop} :
+xs.foldl f z ↔ xs.foldl (α := Bool) (λ acc x => f acc x) z := by
+  induction xs generalizing z; simp; nm x xs ih; simp [ih]
+
+theorem foldl_bool_and_eq_all {p : α → Bool} :
+xs.foldl (λ a x => a && p x) true = xs.all p := by
+  induction xs using List.reverseRecOn; simp; nm x xs ih; simp [ih]
+
+theorem foldl_bool_and_iff_forall {p : α → Bool} :
+xs.foldl (λ a x => a && p x) true ↔ ∀ x ∈ xs, p x := by
+  simp [foldl_bool_and_eq_all]
+
+theorem foldl_and_iff_forall {p : α → Prop} :
+xs.foldl (λ a x => a ∧ p x) True ↔ ∀ x ∈ xs, p x := by
+  classical simp [foldl_prop_iff_foldl_bool, foldl_bool_and_eq_all]
+
+-----
+
+theorem foldlWith_bool_iff_foldlWith_prop {f : Bool → (x : α) → x ∈ xs → Bool} {z : Bool} :
+xs.foldlWith f z ↔ xs.foldlWith (β := Prop) (λ acc x h => f (acc = true) x h) z := by
+  induction xs generalizing z; simp; nm x xs ih; simp [ih]
+
+theorem foldlWith_prop_iff_foldlWith_bool [H : ∀ P, Decidable P]
+{f : Prop → (x : α) → x ∈ xs → Prop} {z : Prop} :
+xs.foldlWith f z ↔ xs.foldlWith (β := Bool) (λ acc x h => f acc x h) z := by
+  induction xs generalizing z; simp; nm x xs ih; simp [ih]
+
+theorem foldlWith_bool_and_iff_forall {p : (x : α) → x ∈ xs → Bool} :
+xs.foldlWith (λ a x h => a && p x h) true ↔ ∀ (x : α) (h : x ∈ xs), p x h := by
+  induction xs using List.reverseRecOn; simp; nm x xs ih; simp [ih]
+  apply Iff.intro
+  · intro a x_1 h
+    obtain ⟨left, right⟩ := a
+    cases h with
+    | inl h_1 => simp_all only
+    | inr h_2 =>
+      subst h_2
+      simp_all only
+  · intro a
+    simp_all only [true_or, implies_true, or_true, and_self]
+
+theorem foldlWith_and_iff_forall {p : (x : α) → x ∈ xs → Prop} :
+xs.foldlWith (λ a x h => a ∧ p x h) True ↔ ∀ (x : α) (h : x ∈ xs), p x h := by
+  classical simp [foldlWith_prop_iff_foldlWith_bool, foldlWith_bool_and_iff_forall]
+
+-----
