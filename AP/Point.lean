@@ -437,7 +437,7 @@ theorem dist_add_cancel_right_right {a b c : Point α} : (a + c).dist (b + c) = 
   simp [dist]
 
 @[simp]
-theorem dist_neg_neg {a b : Point α} : (-a).dist (-b) = a.dist b := by
+theorem neg_dist_neg {a b : Point α} : (-a).dist (-b) = a.dist b := by
   simp [dist]
   rw [add_comm _ b.x, add_comm _ b.y, abs_sub_comm a.x, abs_sub_comm a.y]
   simp_rw [←sub_eq_add_neg]
@@ -449,6 +449,26 @@ theorem dist_sub_cancel_left {a b c : Point α} : (c - a).dist (c - b) = a.dist 
 @[simp]
 theorem dist_sub_cancel_right {a b c : Point α} : (a - c).dist (b - c) = a.dist b := by
   simp [sub_eq_add_neg]
+
+@[simp]
+theorem dist_nonneg [ha₃ : AddLeftMono α] [ha₄ : AddRightMono α]
+{a b : Point α} : 0 ≤ a.dist b := by
+  unfold dist
+  rw [max_eq_ite]
+  split_ifs with h <;> simp
+
+@[simp]
+theorem abs_dist [ha₃ : AddLeftMono α] [ha₄ : AddRightMono α]
+{a b : Point α} : |a.dist b| = a.dist b := by
+  apply abs_of_nonneg; simp
+
+@[simp]
+theorem int_dist_lt_one_iff {a b : PointZ} : a.dist b < 1 ↔ a = b := by
+  rw [←abs_dist, Int.abs_lt_one_iff]; simp
+
+@[simp]
+theorem int_dist_le_one_iff {a b : PointZ} : a.dist b ≤ 1 ↔ a = b ∨ a.dist b = 1 := by
+  simp [le_iff_eq_or_lt]; tauto
 
 end dist
 

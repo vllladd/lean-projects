@@ -1,5 +1,16 @@
 import AP.AP.Defense.Edge.Cnd
 
+namespace Array
+
+variable {α : Type*} {xs ys : Array α}
+
+theorem set_eq_set! {i x h} : xs.set i x h = xs.set! i x := by
+  unfold Array.set! Array.setIfInBounds; simp [h]
+
+-- #check 0 #exit
+
+end Array
+
 namespace AP.Edge
 
 variable {e e₁ e₂ : Edge}
@@ -119,6 +130,121 @@ theorem cnd₀_of_tr_tr_aState {sa sd sa' pa pd} [hsa : AState sa]
 (h₂ : sys.tr sd pd = some sa') (h₃ : edge₀.f sd = some pd) : cnd₀ sa' := by
   have hsd := DState.of_tr h₁
   have hsa' := AState.of_tr h₂
+  
+  obtain ⟨m, hpa⟩ := exi_aMove₀_of_tr_eq_some h₁
+  
+  obtain ⟨y, hy⟩ : ∃ (y : Fin 7), sa.aPos.y = -y
+  · obtain ⟨y, hy⟩ := exi_fin_y_of_f_eq_some h₃
+    by_cases H₁ : y = 0
+    · subst H₁
+      simp at hy
+      simp [f, f', hy] at h₃
+    rw [AState.aPos_eq_of_tr h₁] at hy
+    have H₂ := aMove₀_dist_eq_one sa.aPos m
+    rw [hpa] at H₂
+    rw [Point.dist] at H₂
+    replace H₂ := le_of_eq H₂
+    rw [max_le_iff] at H₂
+    replace H₂ := H₂.2
+    rw [abs_le] at H₂
+    rcases H₂ with ⟨H₂, H₃⟩
+    use ⟨(-sa.aPos.y).toNat, by omega⟩
+    simp
+    rw [show (0 : ℤ)= -0 by simp]
+    rw [Int.neg_max_neg]
+    simp
+    omega
+
+  generalize hxs : ptsArr sa (-3) 7 = xs
+  rw [cnd₀_iff_cndComp₀] at h₀
+  have h : ptsArr sa (-2) 5 = xs.extract 1 6
+  · simp [←hxs]
+  rw [h] at h₀; clear h
+  obtain hpd := f₀_eq_of_f_eq_some h₃
+  generalize h₄ : (1 + pa.x - sa.aPos.x).toNat = offset
+  generalize hys : xs.extract offset (offset + 5) = ys
+  
+  have H₁ : ptsArr sd (-2) 5 = ys
+  · subst hxs h₄ hpa hys
+    simp only [Int.reduceNeg, extract_ptsArr, Int.ofNat_toNat, Int.sub_nonneg, le_one_add_aMove₀_x,
+      sup_of_le_left]
+    rw [min_eq_right]
+    rotate_left
+    · simp only [Nat.reduceLeDiff, Int.toNat_le, Nat.cast_ofNat, tsub_le_iff_right,
+      one_add_aMove₀_le_two_add_x]
+    simp only [Int.reduceNeg, add_tsub_cancel_left]
+    ring_nf
+    rw [ptsArr_eq_of_taken_eq # hsa.taken_eq_of_tr h₁, hsa.aPos_eq_of_tr h₁]
+    ring_nf
+  rw [H₁, hsa.aPos_eq_of_tr h₁] at hpd
+  rw [cnd₀_iff_cndComp₀]
+  
+  have h₅ : offset + 5 ≤ xs.size
+  · subst h₄ hxs hpa; simp
+  
+  have h₆ : ys.size = 5
+  · subst hys
+    simp
+    rw [min_eq_left h₅]
+    simp
+  
+  generalize hk : f₀ ys 0 (-pa.y).toNat = k at hpd
+  
+  have h₇ : k < 5
+  · simp [←hk]
+  
+  have h : ptsArr sa' (-2) 5 = ys.set k true
+  ·
+    rw [ptsArr_eq_of_aPos_eq_and_taken_eq_insert]
+    rotate_left
+    · exact hsd.aPos_eq_of_tr h₂
+    · exact hsd.taken_eq_of_tr h₂
+    · subst hpd
+      simp [getBorderPoint]
+      use k - 2
+      split_ands
+      · rw [abs_le]
+        omega
+      rw [AState.aPos_eq_of_tr h₁]
+      ring_nf
+    rw! [AState.aPos_eq_of_tr h₁]
+    subst hpd
+    simp
+    ring_nf
+    simp
+    rw! [H₁]
+  rw [h]; clear h
+  
+  have H₂ : xs.size = 7
+  · simp [←hxs]
+  
+  rw [DState.aPos_eq_of_tr h₂, AState.aPos_eq_of_tr h₁]
+  
+  have H : y = 2 ∧ m = 0 ∧
+    [  xs[0]!
+    , !xs[1]!
+    ,  xs[2]!
+    , !xs[3]!
+    ,  xs[4]!
+    ,  xs[5]!
+    ,  xs[6]!
+    ].all id
+  · sorry
+  
+  rw [Array.set_eq_set!]
+  simp only [Int.reduceNeg, aMove₀] at *
+  clear h₁ h₂ hxs h₇ h₅ H₁ h₆ h₃
+  subst hpa hpd hys h₄ hk
+  clear hpw hsa hsd hsa'
+  simp only [hy, neg_neg, Int.toNat_natCast, Point.x_add, Point.y_add, neg_add_rev,
+    Array.set!_eq_setIfInBounds] at *
+  clear hy
+  ring_nf at *
+  clear sa sd sa'
+  
+  revert y m h₀
+  revert xs
+  -- native_decide
   sorry
 
 -- #check 0 #exit
@@ -140,7 +266,7 @@ theorem cnd₀_of_tr_tr_st_aState {sa sd sa' p} {d : DStrat} [hsa : AState sa]
   exact cnd₀_of_tr_tr_aState h₀ h₁ h₂ h₃
 
 include hpw in
-theorem cnd₀_simulatemul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
+theorem cnd₀_simulate_mul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} {n}
 [hs : AState s] (h₁ : cnd₀ s)
 (h₂ : sys.simulate (Strat.f ⟨a, edge₀.defense.st d⟩) s (n * 2) = (s₁, 0)) : cnd₀ s₁ := by
   induction n generalizing s₁
@@ -166,10 +292,10 @@ theorem edge₀_simulate_full_aPos_y_lt_zero_of_aState {s₁} {a : AStrat} {d : 
   have H := cnd₀_of_aPos_y_le_neg_6 h₁
   induction n using Nat.mod_2_ind <;> nm n
   · apply aPos_y_lt_zero_of_cnd₀
-    apply cnd₀_simulatemul_two_full_of_aState H h₂
+    apply cnd₀_simulate_mul_two_full_of_aState H h₂
   rw [sys.simulate_succ_full'] at h₂
   choose s' h₂ h₃ using h₂
-  have h₄ := cnd₀_simulatemul_two_full_of_aState H h₂
+  have h₄ := cnd₀_simulate_mul_two_full_of_aState H h₂
   have hs' := AState.of_simulate_mul_two_eq_full h₂
   have h₅ : s'.pw = s.pw
   · apply pw_eq_of_reachable
