@@ -155,16 +155,16 @@ theorem cnd₀_of_tr_tr_aState {sa sd sa' pa pd} [hsa : AState sa]
     simp
     omega
 
-  generalize hxs : ptsArr sa (-3) 7 = xs
+  generalize hxs : edge₀.ptsArr sa (-3) 7 = xs
   rw [cnd₀_iff_cndComp₀] at h₀
-  have h : ptsArr sa (-2) 5 = xs.extract 1 6
+  have h : edge₀.ptsArr sa (-2) 5 = xs.extract 1 6
   · simp [←hxs]
   rw [h] at h₀; clear h
   obtain hpd := f₀_eq_of_f_eq_some h₃
   generalize h₄ : (1 + pa.x - sa.aPos.x).toNat = offset
   generalize hys : xs.extract offset (offset + 5) = ys
   
-  have H₁ : ptsArr sd (-2) 5 = ys
+  have H₁ : edge₀.ptsArr sd (-2) 5 = ys
   · subst hxs h₄ hpa hys
     simp only [Int.reduceNeg, extract_ptsArr, Int.ofNat_toNat, Int.sub_nonneg, le_one_add_aMove₀_x,
       sup_of_le_left]
@@ -178,7 +178,6 @@ theorem cnd₀_of_tr_tr_aState {sa sd sa' pa pd} [hsa : AState sa]
     ring_nf
   rw [H₁, hsa.aPos_eq_of_tr h₁] at hpd
   rw [cnd₀_iff_cndComp₀]
-  
   have h₅ : offset + 5 ≤ xs.size
   · subst h₄ hxs hpa; simp
   
@@ -193,7 +192,7 @@ theorem cnd₀_of_tr_tr_aState {sa sd sa' pa pd} [hsa : AState sa]
   have h₇ : k < 5
   · simp [←hk]
   
-  have h : ptsArr sa' (-2) 5 = ys.set k true
+  have h : edge₀.ptsArr sa' (-2) 5 = ys.set k true
   ·
     rw [ptsArr_eq_of_aPos_eq_and_taken_eq_insert]
     rotate_left

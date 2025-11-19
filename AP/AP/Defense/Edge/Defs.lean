@@ -50,6 +50,34 @@ def getBorderPoint₀ (e : Edge) (p : PointZ) : PointZ :=
 def getBorderPoints (e : Edge) (p : PointZ) (d : ℕ) : List PointZ :=
   [e.getBorderPoint p (-d : ℤ), e.getBorderPoint p d]
 
+def ptsArr (e : Edge) (s : State) (start : ℤ) (len : ℕ) : Array Bool :=
+  ⟨List.range len |>.map # λ i => e.getBorderPoint s.aPos (start + i) ∈ s.taken⟩
+
+-- def f₃ (p : PointZ) (f : ℕ → Bool) : Option ℕ :=
+--   sorry
+-- 
+-- def f₂ (p : PointZ) (arr : Array Bool) (offset : ℕ) : Option ℕ :=
+--   f₃ p # λ i => arr[offset + i]?.getD false
+-- 
+-- def f₁ (e : Edge) (s : State) : Option PointZ := do
+--   let i ← f₂ s.aPos (e.ptsArr s (-2) 5) 0
+--   return e.getBorderPoint s.aPos (i - 2)
+-- 
+-- def f (e : Edge) (s : State) : Option PointZ := do
+--   let p ← e.f₁ s
+--   guard # p ≠ s.aPos
+--   guard # p ∉ s.taken
+--   return p
+-- 
+-- def defense (e : Edge) : Defense where
+--   cnd := λ s => s.pw = 1 ∧ 6 ≤ e.dist s.aPos
+--   ps := e.points
+--   f := e.f
+-- 
+-- def edge₀ : Edge where
+--   dir := .down
+--   offset := 0
+
 def f' (e : Edge) (s : State) : Option PointZ :=
   let pa := s.aPos
   let p₀ := e.getBorderPoint₀ pa

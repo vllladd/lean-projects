@@ -36,9 +36,6 @@ def f₀ (arr : Array Bool) (offset : ℕ) (d : ℕ) : ℕ :=
   | 1 => if !f 2 then 2 else if !f 1 then 1 else 3
   | _ => 0
 
-def ptsArr (s : State) (start : ℤ) (len : ℕ) : Array Bool :=
-  ⟨List.range len |>.map # λ i => edge₀.getBorderPoint s.aPos (start + i) ∈ s.taken⟩
-
 def aMove₀' (m : Fin 8) : PointZ :=
   match m with
   | 0 => ⟨-1, -1⟩
@@ -62,7 +59,7 @@ variable {s : State} [hpw : Fact # s.pw = 1]
 omit hpw
 
 @[simp]
-theorem size_ptsArr {s offset n} : (ptsArr s offset n).size = n := by
+theorem size_ptsArr {s offset n} : (edge₀.ptsArr s offset n).size = n := by
   simp [ptsArr]
 
 theorem cnd₀_iff_f_edge₀_eq_none_of_neg_aPos_y {s} (h₀ : s.aPos.y < 0) :
@@ -182,7 +179,7 @@ theorem cnd₀_of_aPos_y_le_neg_6 (h : s.aPos.y ≤ -6) : cnd₀ s := by
   simp [cnd₀, getBorderPoints, getBorderPoint₀, getBorderPoint] at h ⊢
   split <;> linarith
 
-theorem cnd₀_iff_cndComp₀ {s} : cnd₀ s ↔ cndComp₀ (ptsArr s (-2) 5) 0 (-s.aPos.y).toNat := by
+theorem cnd₀_iff_cndComp₀ {s} : cnd₀ s ↔ cndComp₀ (edge₀.ptsArr s (-2) 5) 0 (-s.aPos.y).toNat := by
   unfold ptsArr
   by_cases h : 0 ≤ s.aPos.y
   · have h₁ : ¬cnd₀ s
@@ -231,11 +228,11 @@ cndComp₀ arr offset d = cndComp₀ arr offset (min 6 d) := by
   rw [min_eq_right_of_lt h]
 
 @[simp]
-theorem ptsArr_eq_empty_iff {s z n} : ptsArr s z n = #[] ↔ n = 0 := by
+theorem ptsArr_eq_empty_iff {s z n} : e.ptsArr s z n = #[] ↔ n = 0 := by
   simp [ptsArr]
 
 @[simp]
-theorem ptsArr_zero {s z} : ptsArr s z 0 = #[] := rfl
+theorem ptsArr_zero {s z} : e.ptsArr s z 0 = #[] := rfl
 
 theorem getBorderPoint_add {p n m} :
 edge₀.getBorderPoint p (n + m) = edge₀.getBorderPoint p n + ⟨m, 0⟩ := by
@@ -243,7 +240,7 @@ edge₀.getBorderPoint p (n + m) = edge₀.getBorderPoint p n + ⟨m, 0⟩ := by
 
 @[simp]
 theorem extract_ptsArr {s z n i j} :
-(ptsArr s z n).extract i j = ptsArr s (z + i) (min n j - i) := by
+(edge₀.ptsArr s z n).extract i j = edge₀.ptsArr s (z + i) (min n j - i) := by
   rw [←Nat.sub_min_sub_right]
   by_cases h : j < i
   · rw [Array.extract_eq_empty_of_le # by omega]
@@ -296,13 +293,13 @@ theorem exi_aMove₀_of_tr_eq_some {s' p} [hs : AState s]
   exact exi_aMove₀_of_dist_eq_one h₃
 
 theorem f₀_eq_of_f_eq_some {p} (h : edge₀.f s = some p) :
-⟨s.aPos.x - 2 + f₀ (ptsArr s (-2) 5) 0 (-s.aPos.y).toNat, 0⟩ = p := by
+⟨s.aPos.x - 2 + f₀ (edge₀.ptsArr s (-2) 5) 0 (-s.aPos.y).toNat, 0⟩ = p := by
   ext <;> dsimp
   rotate_left
   · symm
     obtain ⟨-, -, -, z, -, rfl⟩ := of_eq_some h
     simp [getBorderPoint]
-  generalize ha : ptsArr s (-2) 5 = arr
+  generalize ha : edge₀.ptsArr s (-2) 5 = arr
   have H₁ : arr.size = 5; simp [←ha]
   have H₂ : ∀ {i : ℕ} (hi : i < 5 := by norm_num), arr[i]?.getD false =
     decide (edge₀.getBorderPoint s.aPos (i - 2) ∈ s.taken)
@@ -425,7 +422,7 @@ theorem f₀_lt_5 {arr offset d} : f₀ arr offset d < 5 := by
   split <;> (try split_ifs) <;> simp
 
 theorem ptsArr_eq_of_taken_eq {s s' : State} {z n} (h : s'.taken = s.taken) :
-ptsArr s' z n = ptsArr s (z + s'.aPos.x - s.aPos.x) n := by
+edge₀.ptsArr s' z n = edge₀.ptsArr s (z + s'.aPos.x - s.aPos.x) n := by
   unfold ptsArr
   simp only [h, getBorderPoint, dir_edge₀, instFactTrue_aP, dir_eq_of_down, offset_edge₀,
     List.pure_def, List.bind_eq_flatMap, List.flatMap_fn_singletonc, List.map_map,
@@ -434,7 +431,7 @@ ptsArr s' z n = ptsArr s (z + s'.aPos.x - s.aPos.x) n := by
 
 theorem ptsArr_eq_of_aPos_eq_and_taken_eq_insert.proof₁ {s s' : State} {p}
 (h₁ : s'.taken = s.taken.insert p) (h₃ : ∃ (z : ℤ), |z| ≤ 2 ∧ edge₀.getBorderPoint s.aPos z = p) :
-(p.x - s.aPos.x + 2).toNat < (ptsArr s (-2) 5).size := by
+(p.x - s.aPos.x + 2).toNat < (edge₀.ptsArr s (-2) 5).size := by
   obtain ⟨z, h₃, h₄⟩ := h₃
   simp [getBorderPoint] at h₄
   subst h₄
@@ -445,7 +442,7 @@ theorem ptsArr_eq_of_aPos_eq_and_taken_eq_insert.proof₁ {s s' : State} {p}
 theorem ptsArr_eq_of_aPos_eq_and_taken_eq_insert {s s' : State} {p}
 (h₂ : s'.aPos = s.aPos) (h₁ : s'.taken = s.taken.insert p)
 (h₃ : ∃ (z : ℤ), |z| ≤ 2 ∧ edge₀.getBorderPoint s.aPos z = p) :
-ptsArr s' (-2) 5 = (ptsArr s (-2) 5).set (p.x - s.aPos.x + 2).toNat true
+edge₀.ptsArr s' (-2) 5 = (edge₀.ptsArr s (-2) 5).set (p.x - s.aPos.x + 2).toNat true
 (ptsArr_eq_of_aPos_eq_and_taken_eq_insert.proof₁ h₁ h₃) := by
   unfold ptsArr
   obtain ⟨z, h₃, h₄⟩ := h₃
