@@ -223,12 +223,12 @@ theorem match_decide_eq_ite {α : Type*} {P} [H : Decidable P] {x y : α} :
 @[simp]
 theorem choose?_eq_some_iff {α : Type*} {p : α → Prop} {x}
 [hp : Decidable # ∃ x, p x] : choose? p = some x ↔ p x ∧
-haveI : Inhabited α := ⟨x⟩; Classical.epsilon p = x := by
-  have h₁ : Inhabited α := ⟨x⟩; simp [choose?]; constructor
+haveI : Nonempty α := ⟨x⟩; Classical.epsilon p = x := by
+  have h₁ : Nonempty α := ⟨x⟩; simp [choose?]; constructor
   · rintro ⟨h₂, rfl⟩; use h₂.choose_spec, choose_eq_epsilon h₂ |>.symm
   · rintro ⟨h₂, h₃⟩; use ⟨_, h₂⟩; rwa [choose_eq_epsilon ⟨_, h₂⟩]
 
-theorem epsilon_eq_of_exiu {α : Type*} [ha : Inhabited α] {p : α → Prop} {x}
+theorem epsilon_eq_of_exiu {α : Type*} [ha : Nonempty α] {p : α → Prop} {x}
 (h₁ : p x) (h₂ : ∃! x, p x) : Classical.epsilon p = x := by
   have hp : p = λ y => x = y
   · ext y; obtain ⟨z, h₂, h₃⟩ := h₂
@@ -238,7 +238,7 @@ theorem epsilon_eq_of_exiu {α : Type*} [ha : Inhabited α] {p : α → Prop} {x
   have h₃ := Classical.epsilon_spec h₂
   dsimp at h₃; subst hp; simp at h₃; exact h₃.symm
 
-theorem epsilon_eq_of {α : Type*} [ha : Inhabited α] {p : α → Prop} {x}
+theorem epsilon_eq_of {α : Type*} [ha : Nonempty α] {p : α → Prop} {x}
 (h₁ : p x) (h₂ : ∀ y, p y → y = x) : Classical.epsilon p = x := by
   apply epsilon_eq_of_exiu h₁; use x
 
@@ -289,9 +289,9 @@ x = y ↔ x = y ∧ f x = f y := by
 @[simp]
 theorem epsilon_eq_left {α : Type*} {x : α} [ha : Nonempty α] :
 Classical.epsilon (λ y => y = x) = x := by
-  have := ha.inhabited; apply epsilon_eq_of <;> simp
+  apply epsilon_eq_of <;> simp
 
 @[simp]
 theorem epsilon_eq_right {α : Type*} {x : α} [ha : Nonempty α] :
 Classical.epsilon (λ y => x = y) = x := by
-  have := ha.inhabited; apply epsilon_eq_of <;> simp
+  apply epsilon_eq_of <;> simp

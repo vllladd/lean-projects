@@ -63,79 +63,197 @@ theorem converges_rment_iff {a σ} (h₁ : Rment σ) :
 converges (a # σ ·) ↔ converges a := by
   apply exists_congr; simp [tendsTo_rment_iff h₁]
 
+theorem exi_lt_sum_of_monoLe {a L} (h₁ : ¬converges a) (h₂ : monoLe a) : ∃ N, L < a N := by
+  contrapose! h₁; apply converges_of_monoLe_and_bounded_top h₂ ⟨L, h₁⟩
+
+theorem exi_lt_sum_of_monoGe {a L} (h₁ : ¬converges a) (h₂ : monoGe a) : ∃ N, a N < L := by
+  contrapose! h₁; apply converges_of_monoGe_and_bounded_bottom h₂ ⟨L, h₁⟩
+
+def CondConv (a : ℕ → ℝ) : Prop :=
+  converges (series a) ∧ ¬AbsConv a
+
+theorem absConv_drop_of {a N} (h : AbsConv a) : AbsConv (a # N + ·) := by
+  unfold AbsConv at h ⊢; rwa [converges_series_drop_iff (a := (|a ·|))]
+
+theorem absConv_drop_iff {a N} : AbsConv (a # N + ·) ↔ AbsConv a := by
+  exact converges_series_drop_iff (a := (|a ·|))
+
+theorem condConv_drop_of {a N} (h : CondConv a) : CondConv (a # N + ·) := by
+  unfold CondConv at h ⊢; rwa [converges_series_drop_iff, absConv_drop_iff]
+
+theorem condConv_drop_iff {a N} : CondConv (a # N + ·) ↔ CondConv a := by
+  unfold CondConv; rw [converges_series_drop_iff, absConv_drop_iff]
+
+theorem absConv_neg {a} : AbsConv (-a) ↔ AbsConv a := by
+  simp [AbsConv]
+
+theorem condConv_neg {a} : CondConv (-a) ↔ CondConv a := by
+  unfold CondConv; rw [←neg_series', converges_neg, absConv_neg]
+
+def Infp (a : ℕ → ℝ) (p : ℝ → Prop) : Prop :=
+  ∀ N, ∃ n, N ≤ n ∧ p (a n)
+
+theorem infp_iff_infinite {a p} : Infp a p ↔ {n | p # a n}.Infinite := by
+  simp_rw [Set.infinite_iff_exists_gt, Set.mem_setOf_eq]
+  constructor; all_goals
+    intro h N
+    specialize h # N + 1
+    choose n h₁ h₂ using h
+    use n, by omega, by omega
+
+open Classical in noncomputable
+def mkSubseq (a : ℕ → ℝ) (p : ℝ → Prop) (n : ℕ) : ℕ :=
+  match n with
+  | 0 => Nat.findRaw (p # a ·)
+  | n + 1 =>
+    let k := mkSubseq a p n
+    k + 1 + Nat.findRaw (p # a # k + 1 + ·)
+
+theorem subseq_mkSubseq {a p} : Subseq (mkSubseq a p) := by
+  rw [subseq_iff_lt_add_one]
+  intro n
+  rw [mkSubseq]
+  omega
+
+theorem exi_add_of_infp {a p N} (h : Infp a p) : ∃ n, p (a # N + n) := by
+  specialize h N
+  choose n h₁ h₂ using h
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₁
+  use n
+
+theorem exi_of_infp {a p} (h : Infp a p) : ∃ n, p (a n) := by
+  convert exi_add_of_infp h (N := 0); simp
+
+theorem mkSubseq_spec {a p n} (h : Infp a p) : p # a # mkSubseq a p n := by
+  cases n <;> rw [mkSubseq]
+  · exact Nat.findRaw_spec (P := (p # a ·)) # exi_of_infp h
+  nm n; apply Nat.findRaw_spec (P := λ k => p (a (mkSubseq a p n + 1 + k)))
+  exact exi_add_of_infp h
+
+theorem apply_of_mkSubseq_eq {a p n k} (h : Infp a p)
+(h₁ : mkSubseq a p k = n) : p (a n) := by
+  subst h₁; exact mkSubseq_spec h
+
+theorem infp_drop_of {a p N} (h : Infp a p) : Infp (a # N + ·) p := by
+  intro M
+  specialize h (N + M)
+  choose n h₁ h₂ using h
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
+  use n + M, by omega
+  ring_nf at h₂ ⊢
+  exact h₂
+
+theorem infp_of_drop {a p N} (h : Infp (a # N + ·) p) : Infp a p := by
+  intro M
+  specialize h M
+  choose n h₁ h₂ using h
+  use N + n, by omega
+
+theorem infp_drop_iff {a p N} : Infp (a # N + ·) p ↔ Infp a p :=
+   ⟨infp_of_drop, infp_drop_of⟩
+
 -- #check 0 #exit
 
--- series of `a` diverges and it is monotone
--- then for any real `L` there exists a prefix of `a` that is larger than `L`
---   suppose that there exists some `L` that is upper bound of series of `a`
---   since the series is antitone and has upper bound, it converges
---   contradiction
+theorem exi_mkSubseq_eq_of_apply {a p n} (h : Infp a p)
+(h₁ : p (a n)) : ∃ k, mkSubseq a p k = n := by
+  sorry
 
--- series of `a` diverges and it is antitone
--- then for any real `L` there exists a prefix of `a` that is smaller than `L`
---   ditto
+-- #check 0 #exit
 
--- given sequence `a` of real numbers
--- given that series of `a` is conditionally convergent (series converges, but not absolutely)
--- than for any real `L` there exists a rearrangement of `a` whose series converges to `L`
---   suppose that series of `a` converges to `M`
---   `a` has infinitely many positive elements (for any `N` there exists `n >= N`
---       such that `a n > 0`)
---     suppose the opposite
---     there exists N such that after `N` all elements are nonnpositive
---     drop the first N elements of `a` to obtain sequence `b`
---     `b` is also conditionally convergent
---     absolute series of `b` is equal to `-b`
---     we have that `b` (and hence `-b`) converges, but `-b` (being absolute) diverges
---     contradiction
---   similarly, infinitely many elements of `a` are negative
---   there exists a subsequence of `a` called `a+` that contains exactly positive elements of `a`
---   similarly applies for `a-`
---   series of `a+` is monotone
---   series of `a-` is antitone
---   series of `a+` and series of `a-` cannot both converge
---     suppose that series of `a+` converges to `X`
---     suppose that series of `a-` converges to `-Y`
---     absolute series of `a` is bounded above by `X + Y`
---     since it is monotone and bounded above, it converges
---     contradiction
---   series of `a+` diverges
---     suppose that it converges to some `X`
---     series of `a-` must diverge
---     since series of `a-` diverges and it is antitone,
---       there exists a prefix of `a-` whose sum is smaller than `M - 2 * X - 1`
---     there exists a prefix of `a` whose sum is smaller than `M - X - 1`
---     all subsequent elements of the series of `a` are smaller than `M - 1`
---     therefore series of `a` cannot converge to `M`
---     contradiction
---   similarly `a-` diverges
---   we construct the rearrangement recursively
---     we start from the empty list and the sum `0`
---     in the `n`-th iteration (starting from `n = 0`) we do the following
---       consume the first unconsumed element `x` of `a+`
---       consume the first unconsumed element `y` of `a-`
---       add `x + y` to the current sum
---       let the current sum be `s`
---       let `d = |s - L|`
---       if `s <= L - 1 / (n + 2)`
---         let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
---           and all elements are unconsumed
---         consume the shortest prefix of `a+` starting from `N`
---           whose sum is larger than `L - 1 / (n + 2)`
---         the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
---       if `s >= L + 1 / (n + 2)`
---         ditto
---       let `s` be the new sum
---       we now have `|s - L| < 1 / (n + 1)`
---     the `n`-th element of the rearrangement is obtained by constructing the list
---       in `n + 1` iterations and taking the `n`-th element
---     let `f : N -> N` be a function that maps `n` to the index representing the
---       end of the `n`-th generation
---     for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
---       at distance from `L` at most `1 / (n + 1)`
---     elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
---       are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
---     moreover, all elements or series of rearrangement of `a` after `f n`
---       are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
---     since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
---       the series of rearrangement of `a` tends to `L`
+theorem apply_iff_exi_mkSubseq_eq {a p n} (h : Infp a p) : p (a n) ↔ ∃ k, mkSubseq a p k = n :=
+  ⟨exi_mkSubseq_eq_of_apply h, λ ⟨_, h₁⟩ => apply_of_mkSubseq_eq h h₁⟩
+
+theorem exi_subseq_of_infp {a p} (h : Infp a p) :
+∃ σ, Subseq σ ∧ ∀ n, p (a n) ↔ ∃ k, σ k = n :=
+  ⟨_, subseq_mkSubseq, λ _ => apply_iff_exi_mkSubseq_eq h⟩
+
+-- #check 0 #exit
+
+theorem infp_pos_of_condConv {a} (h : CondConv a) : Infp a (0 < ·) := by
+  intro N
+  -- suppose the opposite
+  by_contra! h₃
+  -- there exists `N` such that after `N` all elements are nonnpositive
+  -- drop the first `N` elements of `a` to obtain sequence `b`
+  generalize hb : (a # N + ·) = b
+  -- `b` is also conditionally convergent
+  have h₄ : CondConv b; rwa [←hb, condConv_drop_iff]
+  -- absolute `b` is equal to `-b`
+  have h₅ : |b| = -b
+  · subst hb
+    rw [abs_of_nonpos]
+    intro n
+    apply h₃
+    simp
+  -- we have that series `b` (and hence series `-b`) converges
+  have h₆ := h₄.1
+  -- but `-b` (being absolute) diverges
+  have h₇ : ¬converges (series b)
+  · rw [←converges_neg, neg_series', ←h₅]; exact h₄.2
+  -- contradiction
+  contradiction
+
+theorem infp_neg_of_condConv {a} (h : CondConv a) : Infp a (· < 0) := by
+  intro N; rw [←condConv_neg] at h
+  have h₁ := infp_pos_of_condConv h N
+  simp at h₁; exact h₁
+
+theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
+∃ σ, Rment σ ∧ tendsTo (series (a # σ ·)) L := by
+  -- suppose that series of `a` converges to `M`
+  obtain ⟨⟨M, h₁⟩, h₂⟩ := id h
+  -- infinitely many elements of `a` are positive
+  have h₃ := infp_pos_of_condConv h
+  -- infinitely many elements of `a` are negative
+  have h₄ := infp_neg_of_condConv h
+  -- there exists a subsequence of `a` called `a+` that contains exactly positive elements of `a`
+  -- similarly applies for `a-`
+  -- series of `a+` is monotone
+  -- series of `a-` is antitone
+  -- series of `a+` and series of `a-` cannot both converge
+  --   suppose that series of `a+` converges to `X`
+  --   suppose that series of `a-` converges to `-Y`
+  --   absolute series of `a` is bounded above by `X + Y`
+  --   since it is monotone and bounded above, it converges
+  --   contradiction
+  -- series of `a+` diverges
+  --   suppose that it converges to some `X`
+  --   series of `a-` must diverge
+  --   since series of `a-` diverges and it is antitone,
+  --     there exists a prefix of `a-` whose sum is smaller than `M - 2 * X - 1`
+  --   there exists a prefix of `a` whose sum is smaller than `M - X - 1`
+  --   all subsequent elements of the series of `a` are smaller than `M - 1`
+  --   therefore series of `a` cannot converge to `M`
+  --   contradiction
+  -- similarly `a-` diverges
+  -- we construct the rearrangement recursively
+  --   we start from the empty list and the sum `0`
+  --   in the `n`-th iteration (starting from `n = 0`) we do the following
+  --     consume the first unconsumed element `x` of `a+`
+  --     consume the first unconsumed element `y` of `a-`
+  --     add `x + y` to the current sum
+  --     let the current sum be `s`
+  --     let `d = |s - L|`
+  --     if `s <= L - 1 / (n + 2)`
+  --       let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
+  --         and all elements are unconsumed
+  --       consume the shortest prefix of `a+` starting from `N`
+  --         whose sum is larger than `L - 1 / (n + 2)`
+  --       the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
+  --     if `s >= L + 1 / (n + 2)`
+  --       ditto
+  --     let `s` be the new sum
+  --     we now have `|s - L| < 1 / (n + 1)`
+  --   the `n`-th element of the rearrangement is obtained by constructing the list
+  --     in `n + 1` iterations and taking the `n`-th element
+  --   let `f : N -> N` be a function that maps `n` to the index representing the
+  --     end of the `n`-th generation
+  --   for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
+  --     at distance from `L` at most `1 / (n + 1)`
+  --   elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
+  --     are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+  --   moreover, all elements or series of rearrangement of `a` after `f n`
+  --     are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+  --   since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
+  --     the series of rearrangement of `a` tends to `L`
+  sorry

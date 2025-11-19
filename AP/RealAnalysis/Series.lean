@@ -247,7 +247,7 @@ tendsTo (series (x ^ ·)) # 1 / (1 - x) := by
     exact pow_tendsTo_zero_of_pos_and_lt_one h₁ h₂
   · simp
 
-def absConv (a : ℕ → ℝ) : Prop :=
+def AbsConv (a : ℕ → ℝ) : Prop :=
   converges # series (|a ·|)
 
 theorem limit_le_limit_of_forall_le {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
@@ -308,8 +308,8 @@ theorem monoLe_series_abs {a : ℕ → ℝ} : monoLe # series (|a ·|) := by
 theorem abs_series_le_series_abs {a : ℕ → ℝ} {n} : |series a n| ≤ series (|a ·|) n :=
   Finset.abs_sum_le_sum_abs _ _
 
-theorem converges_series_of_absConv {a} (h : absConv a) : converges (series a) := by
-  rw [absConv] at h
+theorem converges_series_of_absConv {a} (h : AbsConv a) : converges (series a) := by
+  rw [AbsConv] at h
   rw [converges_iff_isCauchy, isCauchy_iff_alt₁] at h ⊢
   intro e he
   specialize h e he
