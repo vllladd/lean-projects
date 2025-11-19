@@ -285,3 +285,13 @@ instance {P} [H : Fact P] : Fact (Fact P) := ⟨H⟩
 theorem eq_iff_and_apply {α β : Type*} {x y : α} (f : α → β) :
 x = y ↔ x = y ∧ f x = f y := by
   simp_all only [iff_self_and, implies_true]
+
+@[simp]
+theorem epsilon_eq_left {α : Type*} {x : α} [ha : Nonempty α] :
+Classical.epsilon (λ y => y = x) = x := by
+  have := ha.inhabited; apply epsilon_eq_of <;> simp
+
+@[simp]
+theorem epsilon_eq_right {α : Type*} {x : α} [ha : Nonempty α] :
+Classical.epsilon (λ y => x = y) = x := by
+  have := ha.inhabited; apply epsilon_eq_of <;> simp

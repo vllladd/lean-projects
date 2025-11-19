@@ -798,3 +798,30 @@ theorem sum_add_geom_eq {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
   have h₁ : 1 - b ≠ 0; grind
   field_simp at h ⊢
   linarith
+
+section
+
+variable {α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+variable {β : Type*} [hb₁ : LinearOrder β] [hb₂ : Semiring β]
+  [hb₃ : AddLeftMono β] [hb₄ : AddLeftReflectLE β]
+variable {s : Finset α}
+
+omit ha₂ ha₃ in
+theorem le_sum_of_mem {f : α → β} {x : α}
+(h₁ : ∀ x ∈ s, 0 ≤ f x) (h₂ : x ∈ s) : f x ≤ ∑ i ∈ s, f i := by
+  induction s using Finset.induction
+  · simp at h₂
+  clear! s
+  nm y s h₃ ih
+  simp at h₁ h₂
+  rcases h₁ with ⟨h₁, h₄⟩
+  specialize ih h₄
+  rw [sum_insert h₃]
+  rcases h₂ with rfl | h₂
+  · rw [le_add_iff_nonneg_right]
+    exact sum_nonneg h₄
+  specialize ih h₂
+  apply ih.trans
+  rwa [le_add_iff_nonneg_left]
+
+end
