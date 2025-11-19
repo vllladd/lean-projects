@@ -1,0 +1,78 @@
+import AP.RealAnalysis.Coherence
+
+namespace RealAnalysis
+
+-- series of `a` diverges and it is monotone
+-- then for any real `L` there exists a prefix of `a` that is larger than `L`
+--   suppose that there exists some `L` that is upper bound of series of `a`
+--   since the series is antitone and has upper bound, it converges
+--   contradiction
+
+-- series of `a` diverges and it is antitone
+-- then for any real `L` there exists a prefix of `a` that is smaller than `L`
+--   ditto
+
+-- given sequence `a` of real numbers
+-- given that series of `a` is conditionally convergent (series converges, but not absolutely)
+-- than for any real `L` there exists a rearrangement of `a` whose series converges to `L`
+--   suppose that series of `a` converges to `M`
+--   `a` has infinitely many positive elements (for any `N` there exists `n >= N`
+--       such that `a n > 0`)
+--     suppose the opposite
+--     there exists N such that after `N` all elements are nonnpositive
+--     drop the first N elements of `a` to obtain sequence `b`
+--     `b` is also conditionally convergent
+--     absolute series of `b` is equal to `-b`
+--     we have that `b` (and hence `-b`) converges, but `-b` (being absolute) diverges
+--     contradiction
+--   similarly, infinitely many elements of `a` are negative
+--   there exists a subsequence of `a` called `a+` that contains exactly positive elements of `a`
+--   similarly applies for `a-`
+--   series of `a+` is monotone
+--   series of `a-` is antitone
+--   series of `a+` and series of `a-` cannot both converge
+--     suppose that series of `a+` converges to `X`
+--     suppose that series of `a-` converges to `-Y`
+--     absolute series of `a` is bounded above by `X + Y`
+--     since it is monotone and bounded above, it converges
+--     contradiction
+--   series of `a+` diverges
+--     suppose that it converges to some `X`
+--     series of `a-` must diverge
+--     since series of `a-` diverges and it is antitone,
+--       there exists a prefix of `a-` whose sum is smaller than `M - 2 * X - 1`
+--     there exists a prefix of `a` whose sum is smaller than `M - X - 1`
+--     all subsequent elements of the series of `a` are smaller than `M - 1`
+--     therefore series of `a` cannot converge to `M`
+--     contradiction
+--   similarly `a-` diverges
+--   we construct the rearrangement recursively
+--     we start from the empty list and the sum `0`
+--     in the `n`-th iteration (starting from `n = 0`) we do the following
+--       consume the first unconsumed element `x` of `a+`
+--       consume the first unconsumed element `y` of `a-`
+--       add `x + y` to the current sum
+--       let the current sum be `s`
+--       let `d = |s - L|`
+--       if `s <= L - 1 / (n + 2)`
+--         let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
+--           and all elements are unconsumed
+--         consume the shortest prefix of `a+` starting from `N`
+--           whose sum is larger than `L - 1 / (n + 2)`
+--         the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
+--       if `s >= L + 1 / (n + 2)`
+--         ditto
+--       let `s` be the new sum
+--       we now have `|s - L| < 1 / (n + 1)`
+--     the `n`-th element of the rearrangement is obtained by constructing the list
+--       in `n + 1` iterations and taking the `n`-th element
+--     let `f : N -> N` be a function that maps `n` to the index representing the
+--       end of the `n`-th generation
+--     for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
+--       at distance from `L` at most `1 / (n + 1)`
+--     elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
+--       are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+--     moreover, all elements or series of rearrangement of `a` after `f n`
+--       are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+--     since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
+--       the series of rearrangement of `a` tends to `L`
