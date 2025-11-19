@@ -161,19 +161,19 @@ theorem converges_basel {x} : converges # series # λ n => (1 / (n + x) ^ 2) := 
   nlinarith
 
 @[simp]
-theorem subseq_add_right {k : ℕ} : subseq (· + k) := by
+theorem subseq_add_right {k : ℕ} : Subseq (· + k) := by
   rw [subseq_iff_lt_add_one]; omega
 
 @[simp]
-theorem subseq_add_left {k : ℕ} : subseq (k + ·) := by
+theorem subseq_add_left {k : ℕ} : Subseq (k + ·) := by
   rw [subseq_iff_lt_add_one]; omega
 
 @[simp]
-theorem subseq_mul_right {k : ℕ} (h : k ≠ 0) : subseq (· * k) := by
+theorem subseq_mul_right {k : ℕ} (h : k ≠ 0) : Subseq (· * k) := by
   rw [subseq_iff_lt_add_one]; cases k; simp at h; ring_nf; omega
 
 @[simp]
-theorem subseq_mul_left {k : ℕ} (h : k ≠ 0) : subseq (k * ·) := by
+theorem subseq_mul_left {k : ℕ} (h : k ≠ 0) : Subseq (k * ·) := by
   rw [subseq_iff_lt_add_one]; cases k; simp at h; ring_nf; omega
 
 theorem pow_tendsTo_zero_of_pos_and_lt_one {x : ℝ}
@@ -343,23 +343,23 @@ theorem sum_range_mul_two_alternating {a : ℕ → ℝ} {m : ℕ} :
   rw [Finset.sum_sub_distrib]
   ring_nf
 
-theorem subseq_le_of_le {σ i j} (h₁ : subseq σ)  (h₂ : i ≤ j) : σ i ≤ σ j := by
+theorem subseq_le_of_le {σ i j} (h₁ : Subseq σ)  (h₂ : i ≤ j) : σ i ≤ σ j := by
   rw [le_iff_eq_or_lt] at h₂
   rcases h₂ with rfl | h₂; rfl
   apply le_of_lt
   apply h₁
   exact h₂
 
-theorem monoLe_subseq {a σ} (h₁ : monoLe a) (h₂ : subseq σ) : monoLe (a # σ ·) := by
+theorem monoLe_subseq {a σ} (h₁ : monoLe a) (h₂ : Subseq σ) : monoLe (a # σ ·) := by
   intro i j h; apply h₁; exact subseq_le_of_le h₂ h
 
-theorem monoGe_subseq {a σ} (h₁ : monoGe a) (h₂ : subseq σ) : monoGe (a # σ ·) := by
+theorem monoGe_subseq {a σ} (h₁ : monoGe a) (h₂ : Subseq σ) : monoGe (a # σ ·) := by
   intro i j h; apply h₁; exact subseq_le_of_le h₂ h
 
-theorem monoLt_subseq {a σ} (h₁ : monoLt a) (h₂ : subseq σ) : monoLt (a # σ ·) := by
+theorem monoLt_subseq {a σ} (h₁ : monoLt a) (h₂ : Subseq σ) : monoLt (a # σ ·) := by
   intro i j h; apply h₁; apply h₂; exact h
 
-theorem monoGt_subseq {a σ} (h₁ : monoGt a) (h₂ : subseq σ) : monoGt (a # σ ·) := by
+theorem monoGt_subseq {a σ} (h₁ : monoGt a) (h₂ : Subseq σ) : monoGt (a # σ ·) := by
   intro i j h; apply h₁; apply h₂; exact h
 
 theorem limit_eq_of_sub_tendsTo_zero {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
@@ -426,7 +426,7 @@ converges # series # λ n => (-1) ^ n * a n := by
   · intro m n hn
     generalize hx : ∑ k ∈ Finset.range (m * 2), (-1) ^ k * a k = x
     generalize hb : (a # m * 2 + ·) = b
-    obtain ⟨σ, H₁, H₂⟩ : ∃ σ, subseq σ ∧ b = (a # σ ·)
+    obtain ⟨σ, H₁, H₂⟩ : ∃ σ, Subseq σ ∧ b = (a # σ ·)
     · use (m * 2 + ·); simp [hb]
     have H₃ : monoGe b
     · rw [H₂]; exact monoGe_subseq h₁ H₁

@@ -287,7 +287,7 @@ theorem bwSubseq_lt_of_lt {a : ℕ → ℝ} {M : ℚ} {i j : ℕ} (h : ∀ n, |a
   linarith
 
 theorem subseq_bwSubseq {a : ℕ → ℝ} {M : ℚ} (h : ∀ n, |a n| < M) :
-subseq # bwSubseq a M := λ _ _ => bwSubseq_lt_of_lt h
+Subseq # bwSubseq a M := λ _ _ => bwSubseq_lt_of_lt h
 
 theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ} (hy : y₁ < y₂) :
 (bwSeq a y₁ y₂ n).1 < (bwSeq a y₁ y₂ m).2 := by
@@ -327,7 +327,7 @@ bwLimit a M h ≤ (bwSeq a (-M) M n).2 := by
   exact le_of_lt # bwSeq_fst_lt_snd hM
 
 theorem exi_converges_subseq_of_bounded {a} (h : bounded a) :
-∃ σ, subseq σ ∧ converges (a ∘ σ) := by
+∃ σ, Subseq σ ∧ converges (a ∘ σ) := by
   obtain ⟨M', h⟩ := h
   unfold boundedBy at h
   obtain ⟨M, h₁⟩ := exists_rat_gt M'
@@ -335,7 +335,7 @@ theorem exi_converges_subseq_of_bounded {a} (h : bounded a) :
   · intro n; specialize h n; linarith
   clear! M'
   let σ := bwSubseq a M
-  have hσ : subseq σ := subseq_bwSubseq h
+  have hσ : Subseq σ := subseq_bwSubseq h
   use σ, subseq_bwSubseq h, bwLimit a M h
   have hM' : 0 < M; have h₁ := pos_of_abs_lt # h 0; simp at h₁; exact h₁
   have hM : -M < M; linarith

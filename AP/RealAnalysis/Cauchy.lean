@@ -158,7 +158,7 @@ theorem bounded_of_isCauchy {a} (h : isCauchy a) : bounded a := by
   apply abs_sub_abs_le_abs_sub
 
 theorem tendsTo_of_isCauchy_and_subseq_tendsTo {a σ L}
-(hσ : subseq σ) (ha : isCauchy a) (h : tendsTo (a ∘ σ) L) : tendsTo a L := by
+(hσ : Subseq σ) (ha : isCauchy a) (h : tendsTo (a ∘ σ) L) : tendsTo a L := by
   intro e he
   specialize ha (e / 2) # by positivity
   obtain ⟨N₁, ha⟩ := ha
@@ -172,7 +172,7 @@ theorem tendsTo_of_isCauchy_and_subseq_tendsTo {a σ L}
   · apply h; linarith
 
 theorem tendsTo_of_converges_and_subseq_tendsTo {a σ L}
-(hσ : subseq σ) (ha : converges a) (h : tendsTo (a ∘ σ) L) : tendsTo a L :=
+(hσ : Subseq σ) (ha : converges a) (h : tendsTo (a ∘ σ) L) : tendsTo a L :=
   tendsTo_of_isCauchy_and_subseq_tendsTo hσ (isCauchy_of_converges ha) h
 
 theorem converges_of_isCauchy {a} (h : isCauchy a) : converges a := by

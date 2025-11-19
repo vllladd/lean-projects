@@ -67,7 +67,7 @@ theorem unBddCnd_drop_iff {a p k} : unBddCnd p (a # k + ·) ↔ unBddCnd p a := 
   use n + k, by linarith
   rwa [add_comm]
 
-theorem subseq_filterSubseq {a p} (h : unBddCnd p a) : subseq (filterSubseq p a) := by
+theorem subseq_filterSubseq {a p} (h : unBddCnd p a) : Subseq (filterSubseq p a) := by
   rw [subseq_iff_lt_add_one]
   intro n
   simp
@@ -165,7 +165,7 @@ theorem pos_natFindRaw_add_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ 
   apply Nat.findRaw_pos_of; simp; exact exi_cnd_add_of_lt_limit h₁ h₂
 
 theorem subseq_monoLtSubseq {a L} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
-subseq # monoLtSubseq a := by
+Subseq # monoLtSubseq a := by
   rw [subseq_iff_lt_add_one]
   intro n
   simp
@@ -180,13 +180,13 @@ monoLt (a ∘ monoLtSubseq a) := by
   exact apply_natFindRaw_add_of_lt_limit h₁ h₂
   
 theorem exi_monoLt_subseq_of_forall_lt_limit {a L} (h₁ : tendsTo a L)
-(h₂ : ∀ n, a n < L) : ∃ σ, subseq σ ∧ monoLt (a ∘ σ) := by
+(h₂ : ∀ n, a n < L) : ∃ σ, Subseq σ ∧ monoLt (a ∘ σ) := by
   use monoLtSubseq a
   use subseq_monoLtSubseq h₁ h₂
   use monoLt_monoLtSubseq h₁ h₂
 
 theorem exi_monoLe_subseq_of_forall_le_limit {a L} (h₁ : tendsTo a L)
-(h₂ : ∀ n, a n ≤ L) : ∃ σ, subseq σ ∧ monoLe (a ∘ σ) := by
+(h₂ : ∀ n, a n ≤ L) : ∃ σ, Subseq σ ∧ monoLe (a ∘ σ) := by
   by_cases h₃ : unBddCnd (· < L) a
   rotate_left
   · simp [unBddCnd, unBddCnd'] at h₃
@@ -210,7 +210,7 @@ theorem exi_monoLe_subseq_of_forall_le_limit {a L} (h₁ : tendsTo a L)
   exact monoLe_of_monoLt h₆
 
 theorem exi_monoLe_subseq_of_unBddCnd_le_limit {a L} (h₁ : tendsTo a L)
-(h₂ : unBddCnd (· ≤ L) a) : ∃ σ, subseq σ ∧ monoLe (a ∘ σ) := by
+(h₂ : unBddCnd (· ≤ L) a) : ∃ σ, Subseq σ ∧ monoLe (a ∘ σ) := by
   have h₃ := tendsTo_filter h₁ h₂
   have h₄ : ∀ n, filter (· ≤ L) a n ≤ L
   · intro n; apply apply_filter h₂
@@ -219,7 +219,7 @@ theorem exi_monoLe_subseq_of_unBddCnd_le_limit {a L} (h₁ : tendsTo a L)
   use filterSubseq (· ≤ L) a ∘ σ, subseq_comp (subseq_filterSubseq h₂) h₅, h₆
 
 theorem exi_monoLt_subseq_of_unBddCnd_lt_limit {a L} (h₁ : tendsTo a L)
-(h₂ : unBddCnd (· < L) a) : ∃ σ, subseq σ ∧ monoLt (a ∘ σ) := by
+(h₂ : unBddCnd (· < L) a) : ∃ σ, Subseq σ ∧ monoLt (a ∘ σ) := by
   have h₃ := tendsTo_filter h₁ h₂
   have h₄ : ∀ n, filter (· < L) a n < L
   · intro n; apply apply_filter h₂
@@ -228,7 +228,7 @@ theorem exi_monoLt_subseq_of_unBddCnd_lt_limit {a L} (h₁ : tendsTo a L)
   use filterSubseq (· < L) a ∘ σ, subseq_comp (subseq_filterSubseq h₂) h₅, h₆
 
 theorem exi_monoGe_subseq_of_unBddCnd_limit_le {a L} (h₁ : tendsTo a L)
-(h₂ : unBddCnd (L ≤ ·) a) : ∃ σ, subseq σ ∧ monoGe (a ∘ σ) := by
+(h₂ : unBddCnd (L ≤ ·) a) : ∃ σ, Subseq σ ∧ monoGe (a ∘ σ) := by
   replace h₁ : tendsTo (-a) (-L); exact tendsTo_neg h₁
   replace h₂ : unBddCnd (· ≤ -L) (-a)
   · intro n
@@ -241,7 +241,7 @@ theorem exi_monoGe_subseq_of_unBddCnd_limit_le {a L} (h₁ : tendsTo a L)
   exact h₄
 
 theorem exi_monoGt_subseq_of_unBddCnd_limit_lt {a L} (h₁ : tendsTo a L)
-(h₂ : unBddCnd (L < ·) a) : ∃ σ, subseq σ ∧ monoGt (a ∘ σ) := by
+(h₂ : unBddCnd (L < ·) a) : ∃ σ, Subseq σ ∧ monoGt (a ∘ σ) := by
   replace h₁ : tendsTo (-a) (-L); exact tendsTo_neg h₁
   replace h₂ : unBddCnd (· < -L) (-a)
   · intro n
@@ -271,14 +271,14 @@ theorem isPeak_iff_alt₁ {a k} : isPeak a k ↔ ∀ n, k < n → a n ≤ a k :=
 def unBddPeaks (a : ℕ → ℝ) : Prop :=
   unBddCnd' # isPeak a
 
-theorem exi_drop_eq_subseq {a : ℕ → ℝ} {k} : ∃ σ, subseq σ ∧ (a # k + ·) = (a ∘ σ) := by
+theorem exi_drop_eq_subseq {a : ℕ → ℝ} {k} : ∃ σ, Subseq σ ∧ (a # k + ·) = (a ∘ σ) := by
   use (k + ·)
   simp
   intro i j h
   simpa
 
 theorem exi_monoLe_subseq_of_not_unBddPeaks {a} (h : ¬unBddPeaks a) :
-∃ σ, subseq σ ∧ monoLe (a ∘ σ) := by
+∃ σ, Subseq σ ∧ monoLe (a ∘ σ) := by
   simp [unBddPeaks, unBddCnd', isPeak] at h
   choose N h using h
   change ∀ n, N ≤ n → ∃ k, n ≤ k ∧ a n < a k at h
@@ -290,7 +290,7 @@ theorem exi_monoLe_subseq_of_not_unBddPeaks {a} (h : ¬unBddPeaks a) :
     use k - N, by omega
     rw [←Nat.add_sub_assoc # by linarith]
     simpa
-  suffices h₁ : ∃ σ, subseq σ ∧ monoLe ((a # N + ·) ∘ σ)
+  suffices h₁ : ∃ σ, Subseq σ ∧ monoLe ((a # N + ·) ∘ σ)
   · choose σ h₁ h₂ using h₁
     use (N + ·) ∘ σ
     refine ⟨?_, h₂⟩
@@ -315,7 +315,7 @@ theorem exi_monoLe_subseq_of_not_unBddPeaks {a} (h : ¬unBddPeaks a) :
   apply h₂
 
 theorem exi_monoGe_subseq_of_unBddPeaks {a} (h : unBddPeaks a) :
-∃ σ, subseq σ ∧ monoGe (a ∘ σ) := by
+∃ σ, Subseq σ ∧ monoGe (a ∘ σ) := by
   simp [unBddPeaks, unBddCnd'_iff_alt₁, isPeak] at h
   replace h : ∀ N, ∃ n, N < n ∧ ∀ k, a (n + k) ≤ a n
   · intro N
@@ -338,7 +338,7 @@ theorem exi_monoGe_subseq_of_unBddPeaks {a} (h : unBddPeaks a) :
   rw [h₃]
   apply h₂
 
-theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
+theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, Subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
   by_cases h : unBddPeaks a
   · choose σ h₁ h₂ using exi_monoGe_subseq_of_unBddPeaks h; use σ, h₁; right; exact h₂
   · choose σ h₁ h₂ using exi_monoLe_subseq_of_not_unBddPeaks h; use σ, h₁; left; exact h₂

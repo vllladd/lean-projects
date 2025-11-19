@@ -1,6 +1,114 @@
 import AP.RealAnalysis.Coherence
 
+section logic
+
+@[simp]
+theorem epsilon_eq_left {α : Type*} {x : α} [ha : Nonempty α] :
+Classical.epsilon (λ y => y = x) = x := by
+  have := ha.inhabited; apply epsilon_eq_of <;> simp
+
+@[simp]
+theorem epsilon_eq_right {α : Type*} {x : α} [ha : Nonempty α] :
+Classical.epsilon (λ y => x = y) = x := by
+  have := ha.inhabited; apply epsilon_eq_of <;> simp
+
+-- #check 0 #exit
+
+end logic
+
+namespace Finset
+
+variable {α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+variable {β : Type*} [hb₁ : LinearOrder β] [hb₂ : Semiring β]
+  [hb₃ : AddLeftMono β] [hb₄ : AddLeftReflectLE β]
+variable {s : Finset α}
+
+omit ha₂ ha₃ in
+theorem le_sum_of_mem {f : α → β} {x : α}
+(h₁ : ∀ x ∈ s, 0 ≤ f x) (h₂ : x ∈ s) : f x ≤ ∑ i ∈ s, f i := by
+  induction s using Finset.induction
+  · simp at h₂
+  clear! s
+  nm y s h₃ ih
+  simp at h₁ h₂
+  rcases h₁ with ⟨h₁, h₄⟩
+  specialize ih h₄
+  rw [sum_insert h₃]
+  rcases h₂ with rfl | h₂
+  · rw [le_add_iff_nonneg_right]
+    exact sum_nonneg h₄
+  specialize ih h₂
+  apply ih.trans
+  rwa [le_add_iff_nonneg_left]
+
+-- #check 0 #exit
+
+end Finset
+
 namespace RealAnalysis
+
+def Rment (σ : ℕ → ℕ) : Prop :=
+  σ.Bijective
+
+noncomputable
+def rinv (σ : ℕ → ℕ) (n : ℕ) : ℕ :=
+  Classical.epsilon # λ k => σ k = n
+
+theorem rment_eq_iff {σ n m} (h : Rment σ) : σ n = σ m ↔ n = m := by
+  symm; constructor; rintro rfl; rfl
+  intro h₁; exact h.1 h₁
+
+theorem rinv_cancel_left {σ n} (h : Rment σ) : rinv σ (σ n) = n := by
+  simp [rinv, rment_eq_iff h]
+
+theorem rinv_cancel_right {σ n} (h : Rment σ) : σ (rinv σ n) = n := by
+  unfold rinv
+  apply Classical.epsilon_spec (p := λ k => σ k = n)
+  apply h.2
+
+theorem rment_rinv {σ} (h : Rment σ) : Rment (rinv σ) := by
+  constructor
+  · intro n m h₁
+    replace h₁ := congrArg σ h₁
+    simp_rw [rinv_cancel_right h] at h₁
+    exact h₁
+  · intro n
+    use σ n
+    rw [rinv_cancel_left h]
+
+theorem tendsTo_rment_of {a σ L} (h₁ : Rment σ)
+(h₂ : tendsTo a L) : tendsTo (a # σ ·) L := by
+  intro e he
+  dsimp
+  specialize h₂ e he
+  choose N h₂ using h₂
+  dsimp at h₂
+  use ∑ i ∈ Finset.range N, rinv σ i + 1
+  intro n hn
+  apply h₂; clear h₂
+  by_contra! h₃
+  have h₄ : rinv σ (σ n) ≤ ∑ i ∈ Finset.range N, rinv σ i
+  · apply Finset.le_sum_of_mem <;> simp [h₃]
+  rw [rinv_cancel_left h₁] at h₄
+  omega
+
+theorem tendsTo_rment_iff {a σ L} (h₁ : Rment σ) :
+tendsTo (a # σ ·) L ↔ tendsTo a L := by
+  symm; use tendsTo_rment_of h₁
+  intro h₂
+  replace h₂ := tendsTo_rment_of (rment_rinv h₁) h₂
+  simp_rw [rinv_cancel_right h₁] at h₂
+  exact h₂
+
+theorem converges_rment_of {a σ} (h₁ : Rment σ)
+(h₂ : converges a) : converges (a # σ ·) := by
+  choose L h₂ using h₂; use L, tendsTo_rment_of h₁ h₂
+
+theorem converges_rment_iff {a σ} (h₁ : Rment σ) :
+converges (a # σ ·) ↔ converges a := by
+  apply exists_congr; simp [tendsTo_rment_iff h₁]
+
+-- #check 0 #exit
 
 -- series of `a` diverges and it is monotone
 -- then for any real `L` there exists a prefix of `a` that is larger than `L`

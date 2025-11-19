@@ -104,7 +104,7 @@ theorem monoGt_neg {a} : monoGt (-a) ↔ monoLt a := by
 
 theorem misc₂ : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ}
 (_ : monoLe a) (_ : ∀ n, n ≤ τ n) (_ : ∀ n, τ n ≤ σ n)
-(_ : ∀ n, ε ≤ |a (σ n) - a (τ n)|), subseq τ ∨ subseq σ := by
+(_ : ∀ n, ε ≤ |a (σ n) - a (τ n)|), Subseq τ ∨ Subseq σ := by
   push_neg
   use (·)
   use λ n => n + if Even n then 1 else 0
@@ -126,15 +126,15 @@ theorem misc₂ : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ}
     simp
     cases n; simp at h
     nm n; simp; linarith
-  · simp [subseq]
+  · simp [Subseq]
     use 0, 1, by norm_num
     simp
-  · simp [subseq]
+  · simp [Subseq]
     use 0, 1, by norm_num
     simp
 
 theorem subseq_iff_lt_add_one {σ : ℕ → ℕ} :
-subseq σ ↔ ∀ n, σ n < σ (n + 1) := by
+Subseq σ ↔ ∀ n, σ n < σ (n + 1) := by
   constructor
   · intro h n
     apply h
@@ -149,14 +149,14 @@ subseq σ ↔ ∀ n, σ n < σ (n + 1) := by
   apply h
 
 theorem subseq_iterate_of_id_lt {σ : ℕ → ℕ}
-(h : ∀ n, n < σ n) {n} : subseq (σ^[·] n) := by
+(h : ∀ n, n < σ n) {n} : Subseq (σ^[·] n) := by
   rw [subseq_iff_lt_add_one]
   intro k
   rw [Function.iterate_succ']
   apply h
 
-theorem exi_subseq_of_forall_exi_gt {p : ℕ → Prop}
-(h : ∀ N, ∃ n, N < n ∧ p n) : ∃ σ, subseq σ ∧ ∀ n, p (σ n) := by
+theorem exi_Subseq_of_forall_exi_gt {p : ℕ → Prop}
+(h : ∀ N, ∃ n, N < n ∧ p n) : ∃ σ, Subseq σ ∧ ∀ n, p (σ n) := by
   choose σ h₁ h₂ using h
   use (σ^[· + 1] 0)
   constructor
@@ -166,15 +166,15 @@ theorem exi_subseq_of_forall_exi_gt {p : ℕ → Prop}
   rw [Function.iterate_succ']
   apply h₂
 
-theorem exi_subseq_of_forall_exi_le {p : ℕ → Prop}
-(h : ∀ N, ∃ n, N ≤ n ∧ p n) : ∃ σ, subseq σ ∧ ∀ n, p (σ n) := by
-  apply exi_subseq_of_forall_exi_gt
+theorem exi_Subseq_of_forall_exi_le {p : ℕ → Prop}
+(h : ∀ N, ∃ n, N ≤ n ∧ p n) : ∃ σ, Subseq σ ∧ ∀ n, p (σ n) := by
+  apply exi_Subseq_of_forall_exi_gt
   intro N
   specialize h # N + 1
   obtain ⟨n, h₁, h₂⟩ := h
   use n, by linarith
 
-theorem subseq_comp {σ₁ σ₂} (h₁ : subseq σ₁) (h₂ : subseq σ₂) : subseq (σ₁ ∘ σ₂) := by
+theorem subseq_comp {σ₁ σ₂} (h₁ : Subseq σ₁) (h₂ : Subseq σ₂) : Subseq (σ₁ ∘ σ₂) := by
   rw [subseq_iff_lt_add_one]
   intro n
   apply h₁
