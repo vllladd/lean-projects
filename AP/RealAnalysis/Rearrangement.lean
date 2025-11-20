@@ -63,12 +63,12 @@ theorem converges_rment_iff {a σ} (h₁ : Rment σ) :
 converges (a # σ ·) ↔ converges a := by
   apply exists_congr; simp [tendsTo_rment_iff h₁]
 
-theorem exi_gt_of_monoLe_and_not_converges {a L}
-(h₁ : monoLe a) (h₂ : ¬converges a) : ∃ N, L < a N := by
+theorem exi_gt_of_monoLe_and_not_converges {a}
+(h₁ : monoLe a) (h₂ : ¬converges a) (L : ℝ) : ∃ N, L < a N := by
   contrapose! h₂; apply converges_of_monoLe_and_bounded_top h₁ ⟨L, h₂⟩
 
-theorem exi_lt_of_monoGe_and_not_converges {a L}
-(h₁ : monoGe a) (h₂ : ¬converges a) : ∃ N, a N < L := by
+theorem exi_lt_of_monoGe_and_not_converges {a}
+(h₁ : monoGe a) (h₂ : ¬converges a) (L : ℝ) : ∃ N, a N < L := by
   contrapose! h₂; apply converges_of_monoGe_and_bounded_bottom h₁ ⟨L, h₂⟩
 
 def CondConv (a : ℕ → ℝ) : Prop :=
@@ -271,6 +271,70 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
   have h₆ : monoGe # series an
   · subst hn; apply monoGe_series_of_nonpos; intro n; apply le_of_lt; rw [hn₂]; use n
   
+  have G₁ : 0 ≤ ap
+  · intro n
+    subst hp
+    simp
+    rw [hp₂]
+    use n
+  
+  have G₂ : an ≤ 0
+  · intro n
+    subst hn
+    simp
+    apply le_of_lt
+    rw [hn₂]
+    use n
+  
+  have G₃ : |ap| = ap := abs_of_nonneg G₁
+  have G₄ : |an| = -an := abs_of_nonpos G₂
+  
+  have G₅ : 0 ≤ series ap
+  · intro n
+    apply Finset.sum_nonneg
+    intro k hk
+    apply G₁
+  
+  have G₆ : series an ≤ 0
+  · intro n
+    apply Finset.sum_nonpos
+    intro k hk
+    apply G₂
+  
+  have G₇ : ∀ n, ∃ kp kn, kp ≤ n ∧ kn ≤ n ∧ series a n = series ap kp + series an kn
+  ·
+    intro n
+    -- induction n
+    -- · use 0, 0
+    --   simp
+    -- nm n ih
+    -- rw [series_succ]
+    -- choose kp kn ih using ih
+    -- rw [ih]; clear ih
+    -- simp only [Pi.abs_apply]
+    -- rw [abs_eq_ite (x := a n)]
+    -- split_ifs with H
+    -- ·
+    --   rw [hp₂] at H
+    --   obtain ⟨k, rfl⟩ := H
+    --   use kp + 1, kn
+    --   simp only [series_succ, Pi.abs_apply]
+    --   simp [add_assoc, add_comm]
+    --   replace G₃ := congrArg (· kp) G₃
+    --   simp at G₃
+    --   rw [abs_of_nonneg G₃]
+    --   rw [←hp]
+    --   simp
+    sorry
+  
+  have G₈ : ∀ n, ∃ kp kn, kp ≤ n ∧ kn ≤ n ∧ series |a| n = series |ap| kp + series |an| kn
+  ·
+    intro n
+    obtain ⟨kp, kn, H₁⟩ := G₇ n
+    use kp, kn
+    rw [G₃, G₄]
+    sorry
+  
   -- series of `a+` and series of `a-` cannot both converge
   have h₇ : ¬(converges (series ap) ∧ converges (series an))
   ·
@@ -281,30 +345,11 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
     rw [neg_eq_iff_eq_neg] at hY
     subst hY
     
-    have hX : 0 ≤ X
-    · apply le_limit_of_forall_le h₇
-      intro n
-      subst hp
-      unfold series
-      apply Finset.sum_nonneg
-      simp
-      intro k hk
-      rw [hp₂]
-      use k
+    have hX : 0 ≤ X := le_limit_of_forall_le h₇ G₅
     
     have hY : 0 ≤ Y
-    ·
-      suffices : -Y ≤ 0; linarith
-      apply limit_le_of_forall_le h₈
-      intro n
-      subst hn
-      unfold series
-      apply Finset.sum_nonpos
-      simp
-      intro k hk
-      apply le_of_lt
-      rw [hn₂]
-      use k
+    · suffices : -Y ≤ 0; linarith
+      exact limit_le_of_forall_le h₈ G₆
     
     -- absolute series of `a` is bounded above by `X + Y`
     have h₉ : ∀ n, series |a| n ≤ X + Y
@@ -337,7 +382,8 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
         rw [←neg_series']
         apply neg_le_of_neg_le
         apply limit_le_of_monoGe h₆ h₈
-      sorry
+      obtain ⟨kp, kn, H⟩ := G₈ n
+      linarith [H₃ kp, H₄ kn]
     
     -- since it is monotone and bounded above, it converges
     have H : converges # series |a|
@@ -356,8 +402,35 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
     -- series of `a-` must diverge
     simp [h₈] at h₇
     -- since series of `a-` diverges and it is antitone,
-    --   there exists a prefix of `a-` whose sum is smaller than `M - 2 * X - 1`
+    --   there exists a prefix of `a-` whose sum is smaller than `2 * (M - X - 1)`
+    choose X h₈ using h₈
+    have H₁ : 0 ≤ X := le_limit_of_forall_le h₈ G₅
+    
+    obtain ⟨N, H₂⟩ := exi_lt_of_monoGe_and_not_converges h₆ h₇ # 2 * (M - X - 1)
+    
+    specialize G₇ N
+    choose kp kn hkp hkn G₇ using G₇
+    clear hkp
+    
     -- there exists a prefix of `a` whose sum is smaller than `M - X - 1`
+    have H₃ : series a kn < M - X - 1
+    ·
+      obtain ⟨N, rfl⟩ := Nat.exists_eq_add_of_le hkn
+      clear hkn
+      
+      rw [series_add] at G₇
+      replace G₇ : series a kn = series ap kp + series an kn - series (a # kn + ·) N; linarith
+      rw [G₇]; clear G₇
+      
+      -- suffices : series ap kp - series (an # kn + ·) N < X + 2⁻¹ - 2⁻¹; linarith
+      -- clear H₂
+      -- apply sub_lt_sub
+      -- · suffices : series ap kp ≤ X; linarith
+      --   apply le_limit_of_monoLe h₅ h₈
+      -- suffices : 0 ≤ series (an # kn + ·); linarith
+      
+      sorry
+        
     -- all subsequent elements of the series of `a` are smaller than `M - 1`
     -- therefore series of `a` cannot converge to `M`
     -- contradiction
