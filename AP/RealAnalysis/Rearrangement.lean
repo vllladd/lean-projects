@@ -1,5 +1,22 @@
 import AP.RealAnalysis.Coherence
 
+namespace Finset
+
+variable {α β : Type*}
+variable {s : Finset α}
+
+-- theorem card_filter_range_lt_of_lt {p : ℕ → Prop} {i j : ℕ} [hp : DecidablePred p]
+-- (h : i < j) : (Finset.range i |>.filter p).card < (Finset.range j |>.filter p).card := by
+--   apply Finset.card_lt_card
+--   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
+--   rw [Finset.range_add]
+--   rw [Finset.filter_union]
+--   simp
+
+-- #check 0 #exit
+
+end Finset
+
 namespace RealAnalysis
 
 def Rment (σ : ℕ → ℕ) : Prop :=
@@ -326,21 +343,46 @@ theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : �
   omega
 
 theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ₁ σ₂ : ℕ → ℕ}
+{F : ℝ → ℝ}
 (h₁ : Subseq σ₁) (h₂ : Subseq σ₂)
 (h₃ : ∀ n, p (a n) ↔ ∃ k, σ₁ k = n)
 (h₄ : ∀ n, ¬p (a n) ↔ ∃ k, σ₂ k = n) :
-∃ (f g : ℕ → ℕ),
-(∀ i j, i ≤ j → f i ≤ f j) ∧
-(∀ i j, i ≤ j → g i ≤ g j) ∧
-(∀ n, f n + g n = n) ∧
-(∀ n, series a n = series (a # σ₁ ·) (f n) + series (a # σ₂ ·) (g n)) := by
+∃ (f g : ℕ → ℕ), (∀ n, f n + g n = n) ∧
+(∀ i j, i ≤ j → f i ≤ f j) ∧ (∀ i j, i ≤ j → g i ≤ g j) ∧
+(Infp a p → ∀ n, ∃ k, n ≤ f k) ∧ (Infp a (¬p ·) → ∀ n, ∃ k, n ≤ g k) ∧
+(∀ n, series (F # a ·) n = series (F # a # σ₁ ·) (f n) + series (F # a # σ₂ ·) (g n)) := by
   classical
   use λ n => Finset.range n |>.filter (λ n => p (a n)) |>.card
   use λ n => Finset.range n |>.filter (λ n => ¬p (a n)) |>.card
-  use λ _ _ => Finset.card_filter_range_le_of_le
-  use λ _ _ => Finset.card_filter_range_le_of_le
   split_ands
   · intro n; convert Finset.card_filter_add_card_filter_not; simp
+  · exact λ _ _ => Finset.card_filter_range_le_of_le
+  · exact λ _ _ => Finset.card_filter_range_le_of_le
+  · intro H n
+    induction n; simp; nm n ih
+    choose k ih using ih
+    specialize H k
+    choose r h₆ h₇ using H
+    use r + 1
+    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
+    rw [add_assoc, Finset.card_filter_range_add]
+    suffices : 1 ≤ {i ∈ Finset.Ico k (k + (r + 1)) | p (a i)}.card; linarith
+    simp
+    use k + r
+    simpa
+  · intro H n
+    induction n; simp; nm n ih
+    choose k ih using ih
+    specialize H k
+    choose r h₆ h₇ using H
+    use r + 1
+    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
+    dsimp
+    rw [add_assoc, Finset.card_filter_range_add]
+    suffices : 1 ≤ {i ∈ Finset.Ico k (k + (r + 1)) | ¬p (a i)}.card; linarith
+    simp
+    use k + r
+    simpa
   intro n
   induction n
   · simp
@@ -350,7 +392,7 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
   · rw [series_succ]
     rw [h₃] at h
     choose k h using h
-    suffices : a (σ₁ {n ∈ Finset.range n | p (a n)}.card) = a n
+    suffices : F (a # σ₁ {n ∈ Finset.range n | p (a n)}.card) = F (a n)
     · linarith
     conv_rhs => rw [←h]
     congr
@@ -358,48 +400,7 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
   · rw [series_succ]
     rw [h₄] at h
     choose k h using h
-    suffices : a (σ₂ {n ∈ Finset.range n | ¬p (a n)}.card) = a n
-    · linarith
-    conv_rhs => rw [←h]
-    congr
-    exact subseq_card_filter_range_eq (p := (¬p ·)) h₂ h₄ h
-
-theorem exi_fn_series_abs_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ₁ σ₂ : ℕ → ℕ}
-(h₁ : Subseq σ₁) (h₂ : Subseq σ₂)
-(h₃ : ∀ n, p (a n) ↔ ∃ k, σ₁ k = n)
-(h₄ : ∀ n, ¬p (a n) ↔ ∃ k, σ₂ k = n) :
-∃ (f g : ℕ → ℕ),
-(∀ i j, i ≤ j → f i ≤ f j) ∧
-(∀ i j, i ≤ j → g i ≤ g j) ∧
-(∀ n, f n + g n = n) ∧
-(∀ n, series |a| n = series |(a # σ₁ ·)| (f n) + series |(a # σ₂ ·)| (g n)) := by
-  classical
-  use λ n => Finset.range n |>.filter (λ n => p (a n)) |>.card
-  use λ n => Finset.range n |>.filter (λ n => ¬p (a n)) |>.card
-  use λ _ _ => Finset.card_filter_range_le_of_le
-  use λ _ _ => Finset.card_filter_range_le_of_le
-  split_ands
-  · intro n; convert Finset.card_filter_add_card_filter_not; simp
-  intro n
-  induction n
-  · simp
-  nm n ih
-  simp_rw [series_succ, Finset.range_add_one, Finset.filter_insert]
-  by_cases h : p (a n) <;> simp [h]
-  · rw [series_succ]
-    rw [h₃] at h
-    choose k h using h
-    simp only [Pi.abs_apply]
-    suffices : |a (σ₁ {n ∈ Finset.range n | p (a n)}.card)| = |a n|
-    · linarith
-    conv_rhs => rw [←h]
-    congr
-    exact subseq_card_filter_range_eq h₁ h₃ h
-  · rw [series_succ]
-    rw [h₄] at h
-    choose k h using h
-    simp only [Pi.abs_apply]
-    suffices : |a (σ₂ {n ∈ Finset.range n | ¬p (a n)}.card)| = |a n|
+    suffices : F (a # σ₂ {n ∈ Finset.range n | ¬p (a n)}.card) = F (a n)
     · linarith
     conv_rhs => rw [←h]
     congr
@@ -460,11 +461,21 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
     intro k hk
     apply G₂
   
-  obtain ⟨f, g, hf, hg, hfg, Hfg⟩ :=
-    exi_fn_series_of_subseq_cover hp₁ hn₁ hp₂ # by simpa
-  obtain ⟨f', g', hf', hg', hfg', Hfg'⟩ :=
-    exi_fn_series_abs_of_subseq_cover hp₁ hn₁ hp₂ # by simpa
-  rw [hp, hn] at Hfg'
+  obtain ⟨f, g, hfg, hf, hg, Hf, Hg, Hfg⟩ :=
+    exi_fn_series_of_subseq_cover (F := id) hp₁ hn₁ hp₂ # by simpa
+  obtain ⟨f', g', hfg', hf', hg', Hf', Hg', Hfg'⟩ :=
+    exi_fn_series_of_subseq_cover (F := abs) hp₁ hn₁ hp₂ # by simpa
+  
+  specialize Hf h₃
+  specialize Hf' h₃
+  specialize Hg # by simpa
+  specialize Hg' # by simpa
+  
+  replace Hfg : ∀ (n : ℕ), series a n = series ap (f n) + series an (g n)
+  · simp [hp, hn] at Hfg; exact Hfg
+  
+  replace Hfg' : ∀ (n : ℕ), series |a| n = series |ap| (f' n) + series |an| (g' n)
+  · simpa [←hp, ←hn]
   
   -- series of `a+` and series of `a-` cannot both converge
   have h₇ : ¬(converges (series ap) ∧ converges (series an))
@@ -528,49 +539,89 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
   -- series of `a+` diverges
   replace h₇ : ¬converges (series ap)
   ·
-    -- suppose that it converges to some `X`
     by_contra h₈
-    -- series of `a-` must diverge
     simp [h₈] at h₇
-    -- since series of `a-` diverges and it is antitone,
-    --   there exists a prefix of `a-` whose sum is smaller than `2 * (M - X - 1)`
-    -- choose X h₈ using h₈
-    -- have H₁ : 0 ≤ X := le_limit_of_forall_le h₈ G₅
-    -- 
-    -- obtain ⟨N, H₂⟩ := exi_lt_of_monoGe_and_not_converges h₆ h₇ # 2 * (M - X - 1)
-    -- 
-    -- specialize G₇ N
-    -- choose kp kn hkp hkn G₇ using G₇
-    -- clear hkp
-    -- 
-    -- -- there exists a prefix of `a` whose sum is smaller than `M - X - 1`
-    -- have H₃ : series a kn < M - X - 1
-    -- ·
-    --   obtain ⟨N, rfl⟩ := Nat.exists_eq_add_of_le hkn
-    --   clear hkn
-    --   
-    --   rw [series_add] at G₇
-    --   replace G₇ : series a kn = series ap kp + series an kn - series (a # kn + ·) N; linarith
-    --   rw [G₇]; clear G₇
-    --   
-    --   -- suffices : series ap kp - series (an # kn + ·) N < X + 2⁻¹ - 2⁻¹; linarith
-    --   -- clear H₂
-    --   -- apply sub_lt_sub
-    --   -- · suffices : series ap kp ≤ X; linarith
-    --   --   apply le_limit_of_monoLe h₅ h₈
-    --   -- suffices : 0 ≤ series (an # kn + ·); linarith
-    --   
-    --   sorry
-    --     
-    -- -- all subsequent elements of the series of `a` are smaller than `M - 1`
-    -- -- therefore series of `a` cannot converge to `M`
-    -- -- contradiction
-    sorry
+    choose X h₈ using h₈
+    have H₁ : 0 ≤ X := le_limit_of_forall_le h₈ G₅
+    
+    obtain ⟨N₁, hN₁⟩ := exi_lt_of_monoGe_and_not_converges h₆ h₇ # M - (X + 1)
+    
+    specialize h₁ 1 (by norm_num)
+    choose N₃ h₁ using h₁
+    dsimp at h₁
+    
+    specialize Hg # N₁ + N₃
+    obtain ⟨N₂, hN₂⟩ := Hg
+    replace hN₁ : series an (g N₂) < M - (X + 1)
+    · apply lt_of_le_of_lt _ hN₁
+      apply h₆
+      omega
+    
+    have H₃ : ∀ n, series ap n ≤ X
+    · intro n; apply le_limit_of_monoLe h₅ h₈
+    
+    have H₄ : g N₂ ≤ N₂
+    ·
+      specialize hfg N₂
+      omega
+    
+    specialize h₁ N₂ # by linarith
+    rw [abs_sub_lt_iff'] at h₁
+    replace h₁ := h₁.1
+    
+    rw [Hfg] at h₁
+    contrapose! h₁; clear h₁
+    
+    suffices : series ap (f N₂) ≤ (X + 1) - 1; linarith
+    apply H₃ _ |>.trans
+    linarith
   
   -- similarly `a-` diverges
   have h₈ : ¬converges (series an)
   ·
-    sorry
+    by_contra h₈
+    choose Y' h₈ using h₈
+    
+    generalize hY : -Y' = Y
+    rw [neg_eq_iff_eq_neg] at hY
+    subst hY
+    
+    have H₁ : 0 ≤ Y
+    ·
+      suffices : -Y ≤ 0; linarith
+      apply limit_le_of_forall_le h₈ G₆
+    
+    obtain ⟨N₁, hN₁⟩ := exi_gt_of_monoLe_and_not_converges h₅ h₇ # M + (Y + 1)
+    
+    specialize h₁ 1 (by norm_num)
+    choose N₃ h₁ using h₁
+    dsimp at h₁
+    
+    specialize Hf # N₁ + N₃
+    obtain ⟨N₂, hN₂⟩ := Hf
+    replace hN₁ : M + (Y + 1) < series ap (f N₂)
+    · apply lt_of_lt_of_le hN₁
+      apply h₅
+      omega
+    
+    have H₃ : ∀ n, -Y ≤ series an n
+    · intro n; apply limit_le_of_monoGe h₆ h₈
+    
+    have H₄ : f N₂ ≤ N₂
+    ·
+      specialize hfg N₂
+      omega
+    
+    specialize h₁ N₂ # by linarith
+    rw [abs_sub_lt_iff'] at h₁
+    replace h₁ := h₁.2
+    
+    rw [Hfg] at h₁
+    contrapose! h₁; clear h₁
+    
+    suffices : 1 - (Y + 1) ≤ series an (g N₂); linarith
+    apply H₃ _ |>.trans'
+    linarith
   
   -- we construct the rearrangement recursively
   --   we start from the empty list and the sum `0`
