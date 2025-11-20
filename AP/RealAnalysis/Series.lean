@@ -284,26 +284,36 @@ theorem tendsTo_zero_of_abs_tendsTo_zero {a} (h : tendsTo (|a ·|) 0) : tendsTo 
 theorem abs_tendsTo_zero_iff {a} : tendsTo (|a ·|) 0 ↔ tendsTo a 0 := by
   use tendsTo_zero_of_abs_tendsTo_zero; convert tendsTo_abs; simp
 
-theorem le_limit_of_monoLe {a L n} (h₁ : tendsTo a L) (h₂ : monoLe a) : a n ≤ L := by
+theorem le_limit_of_monoLe' {a L n} (h₁ : monoLe a) (h₂ : tendsTo a L) : a n ≤ L := by
   by_contra! h₃
-  specialize h₁ ((a n - L) / 2) (by linarith)
-  choose N h₁ using h₁
-  specialize h₁ (N + n) (by linarith)
+  specialize h₂ ((a n - L) / 2) (by linarith)
+  choose N h₂ using h₂
+  specialize h₂ (N + n) (by linarith)
   have h₄ : a n ≤ a (N + n)
-  · apply h₂; simp
-  rw [abs_of_pos # by linarith] at h₁
+  · apply h₁; simp
+  rw [abs_of_pos # by linarith] at h₂
   linarith
 
-theorem limit_le_of_monoGe {a L n} (h₁ : tendsTo a L) (h₂ : monoGe a) : L ≤ a n := by
-  replace h₁ := tendsTo_neg h₁
-  replace h₂ : monoLe (-a); simpa
+theorem limit_le_of_monoGe' {a L n} (h₁ : monoGe a) (h₂ : tendsTo a L) : L ≤ a n := by
+  replace h₁ : monoLe (-a); simpa
+  replace h₂ := tendsTo_neg h₂
   suffices h : (-a) n ≤ -L
   · simp at h; exact h
-  exact le_limit_of_monoLe h₁ h₂
+  exact le_limit_of_monoLe' h₁ h₂
+
+theorem le_limit_of_monoLe {a L} (h₁ : monoLe a) (h₂ : tendsTo a L) : ∀ n, a n ≤ L :=
+  λ _ => le_limit_of_monoLe' h₁ h₂
+
+theorem limit_le_of_monoGe {a L} (h₁ : monoGe a) (h₂ : tendsTo a L) : ∀ n, L ≤ a n :=
+  λ _ => limit_le_of_monoGe' h₁ h₂
 
 @[simp]
 theorem monoLe_series_abs {a : ℕ → ℝ} : monoLe # series (|a ·|) := by
   simp [monoLe_iff_le_succ, series_succ]
+
+@[simp]
+theorem monoLe_series_abs' {a : ℕ → ℝ} : monoLe # series |a| :=
+  monoLe_series_abs
 
 theorem abs_series_le_series_abs {a : ℕ → ℝ} {n} : |series a n| ≤ series (|a ·|) n :=
   Finset.abs_sum_le_sum_abs _ _
@@ -367,7 +377,7 @@ theorem limit_eq_of_sub_tendsTo_zero {a b L M} (h₁ : tendsTo a L) (h₂ : tend
   linarith [tendsTo_unique h₃ # tendsTo_sub h₁ h₂]
 
 theorem converges_series_alternating_of_monoGe.aux₁ {a n} (h₁ : monoGe a) (h₂ : tendsTo a 0) :
-0 ≤ a n := limit_le_of_monoGe h₂ h₁
+0 ≤ a n := limit_le_of_monoGe' h₁ h₂
 
 theorem converges_series_alternating_of_monoGe.aux₂ {a n} {f : ℕ → ℕ} (h₁ : monoGe a) :
 0 ≤ ∑ k ∈ Finset.range n, (a (f k) - a (f k + 1)) := by

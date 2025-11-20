@@ -203,34 +203,36 @@ theorem exi_subseq_of_infp {a p} (h : Infp a p) :
 ∃ σ, Subseq σ ∧ ∀ n, p (a n) ↔ ∃ k, σ k = n :=
   ⟨_, subseq_mkSubseq, λ _ => apply_iff_exi_mkSubseq_eq h⟩
 
+theorem infp_of_imp {a} {p₁ p₂ : ℝ → Prop} (h₁ : Infp a p₁)
+(h₂ : ∀ n, p₁ (a n) → p₂ (a n)) : Infp a p₂ := by
+  intro N; specialize h₁ N; choose n h₁ h₃ using h₁; use n, h₁, h₂ _ h₃
+
 theorem infp_pos_of_condConv {a} (h : CondConv a) : Infp a (0 < ·) := by
   intro N
-  -- suppose the opposite
   by_contra! h₃
-  -- there exists `N` such that after `N` all elements are nonnpositive
-  -- drop the first `N` elements of `a` to obtain sequence `b`
   generalize hb : (a # N + ·) = b
-  -- `b` is also conditionally convergent
   have h₄ : CondConv b; rwa [←hb, condConv_drop_iff]
-  -- absolute `b` is equal to `-b`
   have h₅ : |b| = -b
   · subst hb
     rw [abs_of_nonpos]
     intro n
     apply h₃
     simp
-  -- we have that series `b` (and hence series `-b`) converges
   have h₆ := h₄.1
-  -- but `-b` (being absolute) diverges
   have h₇ : ¬converges (series b)
   · rw [←converges_neg, neg_series', ←h₅]; exact h₄.2
-  -- contradiction
   contradiction
 
 theorem infp_neg_of_condConv {a} (h : CondConv a) : Infp a (· < 0) := by
   intro N; rw [←condConv_neg] at h
   have h₁ := infp_pos_of_condConv h N
   simp at h₁; exact h₁
+
+theorem infp_nonneg_of_condConv {a} (h : CondConv a) : Infp a (0 ≤ ·) := by
+  apply infp_of_imp (infp_pos_of_condConv h); intro n; apply le_of_lt
+
+theorem infp_nonpos_of_condConv {a} (h : CondConv a) : Infp a (· ≤ 0) := by
+  apply infp_of_imp (infp_neg_of_condConv h); intro n; apply le_of_lt
 
 theorem monoLe_series_of_nonneg {a} (h : ∀ n, 0 ≤ a n) : monoLe (series a) := by
   rw [monoLe_iff_le_succ]; intro n; rw [series_succ]; linarith [h n]
@@ -250,37 +252,122 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
 ∃ σ, Rment σ ∧ tendsTo (series (a # σ ·)) L := by
   -- suppose that series of `a` converges to `M`
   obtain ⟨⟨M, h₁⟩, h₂⟩ := id h
-  -- infinitely many elements of `a` are positive
-  have h₃ := infp_pos_of_condConv h
+  -- infinitely many elements of `a` are nonnegative
+  have h₃ := infp_nonneg_of_condConv h
   -- infinitely many elements of `a` are negative
   have h₄ := infp_neg_of_condConv h
   -- there exists a subsequence of `a` called `a+`
   -- that contains exactly positive elements of `a`
-  obtain ⟨ap, hp₁, hp₂⟩ := exi_subseq_of_infp h₃
+  obtain ⟨σp, hp₁, hp₂⟩ := exi_subseq_of_infp h₃
+  generalize hp : (a # σp ·) = ap
   -- similarly applies for `a-`
-  obtain ⟨an, hn₁, hn₂⟩ := exi_subseq_of_infp h₄
+  obtain ⟨σn, hn₁, hn₂⟩ := exi_subseq_of_infp h₄
+  generalize hn : (a # σn ·) = an
+  
   -- series of `a+` is monotone
-  have h₅ : monoLe # series (a # ap ·)
-  · apply monoLe_series_of_nonneg; intro n; apply le_of_lt; rw [hp₂]; use n
+  have h₅ : monoLe # series ap
+  · subst hp; apply monoLe_series_of_nonneg; intro n; rw [hp₂]; use n
   -- series of `a-` is antitone
-  have h₆ : monoGe # series (a # an ·)
-  · apply monoGe_series_of_nonpos; intro n; apply le_of_lt; rw [hn₂]; use n
+  have h₆ : monoGe # series an
+  · subst hn; apply monoGe_series_of_nonpos; intro n; apply le_of_lt; rw [hn₂]; use n
+  
   -- series of `a+` and series of `a-` cannot both converge
-  --   suppose that series of `a+` converges to `X`
-  --   suppose that series of `a-` converges to `-Y`
-  --   absolute series of `a` is bounded above by `X + Y`
-  --   since it is monotone and bounded above, it converges
-  --   contradiction
+  have h₇ : ¬(converges (series ap) ∧ converges (series an))
+  ·
+    -- suppose that series of `a+` converges to `X`
+    rintro ⟨⟨X, h₇⟩, ⟨Y', h₈⟩⟩
+    -- suppose that series of `a-` converges to `-Y`
+    generalize hY : -Y' = Y
+    rw [neg_eq_iff_eq_neg] at hY
+    subst hY
+    
+    have hX : 0 ≤ X
+    · apply le_limit_of_forall_le h₇
+      intro n
+      subst hp
+      unfold series
+      apply Finset.sum_nonneg
+      simp
+      intro k hk
+      rw [hp₂]
+      use k
+    
+    have hY : 0 ≤ Y
+    ·
+      suffices : -Y ≤ 0; linarith
+      apply limit_le_of_forall_le h₈
+      intro n
+      subst hn
+      unfold series
+      apply Finset.sum_nonpos
+      simp
+      intro k hk
+      apply le_of_lt
+      rw [hn₂]
+      use k
+    
+    -- absolute series of `a` is bounded above by `X + Y`
+    have h₉ : ∀ n, series |a| n ≤ X + Y
+    ·
+      intro n
+      have H₁ : monoLe # series |an|
+      · apply monoLe_series_abs
+      have H₂ : tendsTo |series an| Y
+      · rw [show Y = |-Y| by rw [abs_neg, abs_of_nonneg hY]]
+        exact tendsTo_abs h₈
+      have H₃ : ∀ n, series |ap| n ≤ X
+      ·
+        rw [abs_of_nonneg]; exact le_limit_of_monoLe h₅ h₇
+        intro k
+        subst hp
+        simp
+        rw [hp₂]
+        use k
+      have H₄ : ∀ n, series |an| n ≤ Y
+      ·
+        rw [abs_of_nonpos]
+        rotate_left
+        · subst hn
+          intro k
+          simp
+          apply le_of_lt
+          rw [hn₂]
+          use k
+        intro k
+        rw [←neg_series']
+        apply neg_le_of_neg_le
+        apply limit_le_of_monoGe h₆ h₈
+      sorry
+    
+    -- since it is monotone and bounded above, it converges
+    have H : converges # series |a|
+    · apply converges_of_monoLe_and_bounded_top # by simp
+      use X + Y, h₉
+    -- contradiction
+    exact h₂ H
+  
+  rw [not_and_iff_or] at h₇
+  
   -- series of `a+` diverges
-  --   suppose that it converges to some `X`
-  --   series of `a-` must diverge
-  --   since series of `a-` diverges and it is antitone,
-  --     there exists a prefix of `a-` whose sum is smaller than `M - 2 * X - 1`
-  --   there exists a prefix of `a` whose sum is smaller than `M - X - 1`
-  --   all subsequent elements of the series of `a` are smaller than `M - 1`
-  --   therefore series of `a` cannot converge to `M`
-  --   contradiction
+  replace h₇ : ¬converges (series ap)
+  ·
+    -- suppose that it converges to some `X`
+    by_contra h₈
+    -- series of `a-` must diverge
+    simp [h₈] at h₇
+    -- since series of `a-` diverges and it is antitone,
+    --   there exists a prefix of `a-` whose sum is smaller than `M - 2 * X - 1`
+    -- there exists a prefix of `a` whose sum is smaller than `M - X - 1`
+    -- all subsequent elements of the series of `a` are smaller than `M - 1`
+    -- therefore series of `a` cannot converge to `M`
+    -- contradiction
+    sorry
+  
   -- similarly `a-` diverges
+  have h₈ : ¬converges (series an)
+  ·
+    sorry
+  
   -- we construct the rearrangement recursively
   --   we start from the empty list and the sum `0`
   --   in the `n`-th iteration (starting from `n = 0`) we do the following
