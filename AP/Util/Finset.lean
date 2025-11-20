@@ -825,3 +825,42 @@ theorem le_sum_of_mem {f : α → β} {x : α}
   rwa [le_add_iff_nonneg_left]
 
 end
+
+theorem card_filter_range_le_of_le {p : ℕ → Prop} {i j : ℕ} [hp : DecidablePred p]
+(h : i ≤ j) : (Finset.range i |>.filter p).card ≤ (Finset.range j |>.filter p).card := by
+  apply Finset.card_le_card
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [Finset.range_add]
+  rw [Finset.filter_union]
+  simp
+
+theorem card_filter_add_card_filter_not {p : α → Prop} [hp : DecidablePred p] :
+(s.filter p).card + (s.filter (¬p ·)).card = s.card := by
+  classical
+  induction s using Finset.induction
+  · simp
+  clear! s
+  nm x s hx ih
+  rw [card_insert_of_notMem hx, ←ih]; clear ih
+  have h₁ : ∀ p [DecidablePred p], x ∉ s.filter p; simp [hx]
+  by_cases h : p x
+  · simp [filter_insert, h, card_insert_of_notMem # h₁ p]; ring_nf
+  · simp [filter_insert, h, card_insert_of_notMem # h₁ (¬p ·)]; ring_nf
+
+theorem Ico_add_right {n m k : ℕ} (h : n ≤ m) : Ico n (m + k) = Ico n m ∪ Ico m (m + k) := by
+  ext; simp; omega
+
+theorem card_filter_range_add {p : ℕ → Prop} {n k : ℕ} [hp : DecidablePred p] :
+{i ∈ Finset.range (n + k) | p i}.card = {i ∈ Finset.range n | p i}.card +
+{i ∈ Finset.Ico n (n + k) | p i}.card := by
+  simp_rw [range_eq_Ico]
+  rw [Ico_add_right # by simp]
+  rw [filter_union, card_union_of_disjoint]
+  rw [Finset.disjoint_iff_ne]
+  intro; simp; omega
+
+theorem card_eq_one_iff_exiu : s.card = 1 ↔ ∃! x, x ∈ s := by
+  rw [card_eq_one]
+  apply exists_congr; intro x
+  simp [Finset.ext_iff]
+  grind

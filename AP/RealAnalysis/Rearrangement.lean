@@ -1,53 +1,5 @@
 import AP.RealAnalysis.Coherence
 
-namespace Finset
-
-variable {α β : Type*}
-variable {s : Finset α}
-
-theorem card_filter_range_le_of_le {p : ℕ → Prop} {i j : ℕ} [hp : DecidablePred p]
-(h : i ≤ j) : (Finset.range i |>.filter p).card ≤ (Finset.range j |>.filter p).card := by
-  apply Finset.card_le_card
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [Finset.range_add]
-  rw [Finset.filter_union]
-  simp
-
-theorem card_filter_add_card_filter_not {p : α → Prop} [hp : DecidablePred p] :
-(s.filter p).card + (s.filter (¬p ·)).card = s.card := by
-  classical
-  induction s using Finset.induction
-  · simp
-  clear! s
-  nm x s hx ih
-  rw [card_insert_of_notMem hx, ←ih]; clear ih
-  have h₁ : ∀ p [DecidablePred p], x ∉ s.filter p; simp [hx]
-  by_cases h : p x
-  · simp [filter_insert, h, card_insert_of_notMem # h₁ p]; ring_nf
-  · simp [filter_insert, h, card_insert_of_notMem # h₁ (¬p ·)]; ring_nf
-
-theorem Ico_add_right {n m k : ℕ} (h : n ≤ m) : Ico n (m + k) = Ico n m ∪ Ico m (m + k) := by
-  ext; simp; omega
-
-theorem card_filter_range_add {p : ℕ → Prop} {n k : ℕ} [hp : DecidablePred p] :
-{i ∈ Finset.range (n + k) | p i}.card = {i ∈ Finset.range n | p i}.card +
-{i ∈ Finset.Ico n (n + k) | p i}.card := by
-  simp_rw [range_eq_Ico]
-  rw [Ico_add_right # by simp]
-  rw [filter_union, card_union_of_disjoint]
-  rw [Finset.disjoint_iff_ne]
-  intro; simp; omega
-
-theorem card_eq_one_iff_exiu : s.card = 1 ↔ ∃! x, x ∈ s := by
-  rw [card_eq_one]
-  apply exists_congr; intro x
-  simp [Finset.ext_iff]
-  grind
-
--- #check 0 #exit
-
-end Finset
-
 namespace RealAnalysis
 
 def Rment (σ : ℕ → ℕ) : Prop :=
@@ -294,7 +246,7 @@ theorem monoLt_series_of_pos {a} (h : ∀ n, 0 < a n) : monoLt (series a) := by
 theorem monoGt_series_of_neg {a} (h : ∀ n, a n < 0) : monoGt (series a) := by
   rw [monoGt_iff_succ_lt]; intro n; rw [series_succ]; linarith [h n]
 
-theorem nat_subseq_eq_subseq_iff {σ n m} (h : Subseq σ) : σ n = σ m ↔ n = m := by
+theorem subseq_nat_eq_subseq_iff {σ n m} (h : Subseq σ) : σ n = σ m ↔ n = m := by
   by_cases h₁ : n < m
   · simp [ne_of_lt h₁]
     apply ne_of_lt
@@ -309,12 +261,12 @@ theorem nat_subseq_eq_subseq_iff {σ n m} (h : Subseq σ) : σ n = σ m ↔ n = 
   apply h
   exact h₁
 
-theorem nat_subseq_lt_subseq_iff {σ n m} (h : Subseq σ) : σ n < σ m ↔ n < m := by
+theorem subseq_nat_lt_subseq_iff {σ n m} (h : Subseq σ) : σ n < σ m ↔ n < m := by
   by_cases h₁ : n = m; simp [h₁]
-  simp [lt_iff_le_and_ne, nat_subseq_le_subseq_iff h, nat_subseq_eq_subseq_iff h, h₁]
+  simp [lt_iff_le_and_ne, subseq_nat_le_subseq_iff h, subseq_nat_eq_subseq_iff h, h₁]
 
 theorem subseq_nat_succ_le {σ n} (h : Subseq σ) : σ n + 1 ≤ σ (n + 1) := by
-  simp [Nat.add_one_le_iff, nat_subseq_lt_subseq_iff h]
+  simp [Nat.add_one_le_iff, subseq_nat_lt_subseq_iff h]
 
 theorem subseq_nat_eq_succ_of_subseq_eq_succ {σ n m}
 (h₁ : Subseq σ) (h₂ : σ n = σ m + 1) : n = m + 1 := by
@@ -347,10 +299,10 @@ theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : �
     simp [h₂]
     rintro k hk r rfl
     subst h₃
-    simp [nat_subseq_lt_subseq_iff h₁] at hk
+    simp [subseq_nat_lt_subseq_iff h₁] at hk
   nm k ih
   have h₄ : σ k ≤ n
-  · simp [←h₃, nat_subseq_le_subseq_iff h₁]
+  · simp [←h₃, subseq_nat_le_subseq_iff h₁]
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₄; clear h₄
   specialize ih rfl
   rw [Finset.card_filter_range_add, ih]; clear ih
@@ -361,16 +313,16 @@ theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : �
   split_ands
   · rw [Nat.pos_iff_ne_zero]
     rintro rfl
-    simp [nat_subseq_eq_subseq_iff h₁] at h₃
+    simp [subseq_nat_eq_subseq_iff h₁] at h₃
   · rw [h₂]
     use k
   intro r h₄ h₅ h₆
   rw [←h₃] at h₅
   rw [h₂] at h₆
   obtain ⟨r, rfl⟩ := h₆
-  rw [nat_subseq_le_subseq_iff h₁] at h₄
-  rw [nat_subseq_lt_subseq_iff h₁] at h₅
-  rw [nat_subseq_eq_subseq_iff h₁]
+  rw [subseq_nat_le_subseq_iff h₁] at h₄
+  rw [subseq_nat_lt_subseq_iff h₁] at h₅
+  rw [subseq_nat_eq_subseq_iff h₁]
   omega
 
 theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ₁ σ₂ : ℕ → ℕ}

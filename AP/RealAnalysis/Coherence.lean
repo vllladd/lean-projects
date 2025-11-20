@@ -2,7 +2,7 @@ import AP.RealAnalysis.Series
 
 namespace RealAnalysis
 
-theorem nat_subseq_le_subseq_iff {σ n m} (h : Subseq σ) : σ n ≤ σ m ↔ n ≤ m := by
+theorem subseq_nat_le_subseq_iff {σ n m} (h : Subseq σ) : σ n ≤ σ m ↔ n ≤ m := by
   unfold Subseq at h
   obtain (h₁ | rfl | h₁) := lt_trichotomy n m
   on_goal 2 => simp
@@ -59,5 +59,5 @@ theorem tendsTo_of_eventually_subseq_cover {a : ℕ → ℝ} {s : Finset (ℕ �
   specialize h₄ σ hσ
   replace h₄ := h₄.trans hn
   specialize h₁ σ hσ
-  rw [nat_subseq_le_subseq_iff h₁] at h₄
+  rw [subseq_nat_le_subseq_iff h₁] at h₄
   linarith
