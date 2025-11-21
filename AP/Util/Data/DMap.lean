@@ -438,3 +438,6 @@ theorem count_empty {p} : (∅ : DMap α β).count p = 0 :=
 theorem count_insert {p i x} (h : i ∉ mp) :
 (mp.insert i x).count p = mp.count p + if p i x then 1 else 0 :=
   mp.1.count_insert h
+
+theorem mem_iff_mem_keys [ha : LinearOrder α] {k} : k ∈ mp ↔ k ∈ mp.keys := by
+  simp [keys_eq_map_fst_toList, mem_iff_get?_eq_some]

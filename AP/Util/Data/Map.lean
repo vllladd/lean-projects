@@ -532,3 +532,6 @@ theorem length_toList [ha : LinearOrder α] : mp.toList.length = mp.size := by
   rcases mp with ⟨m⟩
   simp [toList, size, Std.ExtDHashMap.lift, Std.ExtDHashMap.size]
   induction m; simp
+
+theorem mem_iff_mem_keys [ha : LinearOrder α] {k} : k ∈ mp ↔ k ∈ mp.keys := by
+  simp [keys_eq_map_fst_toList, mem_iff_get?_eq_some]

@@ -41,8 +41,13 @@ def logb : IO Unit := do
 def state₀ : State :=
   initState 1 center
 
-def defense : Defense :=
-  Edge.edge₀.defense
+-- def defense : Defense :=
+--   Edge.edge₀.defense
+
+def defense : Defense where
+  cnd := λ _ => True
+  ps := ∅
+  f := λ _ => none
 
 def mkDigit (d : ℕ) : Char :=
   let c := '0'.val + d.toUInt32
@@ -79,8 +84,7 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
       if !isFst then logb else pure ()
       IO.println s.toStr
       
-      -- IO.println # "\n" ++ if Edge.cnd₀ s then "Yes" else "No"
-      IO.println # "\n" ++ repr (Edge.edge₀.dist s.aPos)
+      -- IO.println # "\n" ++ repr (Edge.edge₀.dist s.aPos)
       
       let p ← readAMove
       pure # p.map (s.aPos + ·)

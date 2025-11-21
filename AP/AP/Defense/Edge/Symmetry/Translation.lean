@@ -52,13 +52,11 @@ theorem defense_translate_of_down {dy} [H : Fact # e.dir = .down] :
   simp only [defense, dist_translate, points_translate, Defense.sym, pw_fs'_of_basicSym,
     aPos_sym_of_basicSym', Defense.mk.injEq, true_and]
   ext s p :2
-  simp only [f, f', dist_translate, getBorderPoint₀_translate_of_down, decide_not,
-    getBorderPoints_translate_of_down, List.any_map, Function.comp_def', List.any_eq_true,
-    decide_eq_true_eq, List.find?_map, ne_eq, Option.pure_def, Option.bind_eq_bind,
-    Option.bind_eq_some_iff', Option.guard_eq_some', Option.some.injEq, exists_const, ↓existsAndEq,
-    and_true, aPos_sym_of_basicSym', taken_sym_of_basicSym', Set'.mem_map, not_exists, not_and,
-    Option.map_bind, Function.comp_apply, Option.map_some, ft_eq_iff, EmbeddingLike.apply_eq_iff_eq,
-    forall_ne_iff_not, and_congr_left_iff, and_imp]
+  simp only [f, f₁, dist_translate, Int.reduceNeg, getBorderPoint_translate_of_down,
+    Option.pure_def, Option.bind_eq_bind, ne_eq, Option.bind_eq_some_iff', Option.some.injEq,
+    ft_eq_iff, Option.guard_eq_some', exists_const, ↓existsAndEq, and_true, aPos_sym_of_basicSym',
+    taken_sym_of_basicSym', Set'.mem_map, not_exists, not_and, Option.map_bind, Function.comp_apply,
+    Option.map_some, exists_exists_and_eq_and]
   intro h₁ h₂
   split <;> try simp [ft'_eq_iff, ft_eq_iff]
   · nm x h₃; clear x
