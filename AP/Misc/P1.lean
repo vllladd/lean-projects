@@ -538,3 +538,23 @@ example : √(6 - 4 * √2) = 2 - √2 := by
   rw [sqrt_mul # by norm_num]
   simp
   ring_nf
+
+end P11 namespace P12
+
+example {a b c : ℤ} (ha : -1 < a) (hb : -1 < b) (hc : -1 < c) :
+3 * a * b * c ≤ a ^ 3 + b ^ 3 + c ^ 3 := by
+  obtain ⟨ha, hb, hc⟩ : (0 : ℝ) ≤ a ∧ (0 : ℝ) ≤ b ∧ (0 : ℝ) ≤ c
+  · exact_mod_cast (⟨ha, hb, hc⟩ : _ ∧ _ ∧ _)
+  nm x y z; clear x y z
+  suffices h : (3 : ℝ) * a * b * c ≤ a ^ 3 + b ^ 3 + c ^ 3
+  · exact_mod_cast h
+  generalize (a : ℝ) = a at *
+  generalize (b : ℝ) = b at *
+  generalize (c : ℝ) = c at *
+  nm x y z; clear x y z
+  have h₁ := Real.gm_le_am_3 (a ^ 3) (b ^ 3) (c ^ 3)
+  iterate 3 specialize h₁ # by positivity
+  simp_rw [←mul_pow] at h₁
+  rw [Real.pow_rpow_inv] at h₁ <;> try positivity
+  field_simp at h₁ ⊢
+  exact h₁

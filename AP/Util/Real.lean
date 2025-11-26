@@ -296,3 +296,13 @@ theorem sqrt_le_self_iff {a : ℝ} : √a ≤ a ↔ a = 0 ∨ 1 ≤ a := by
   rw [le_iff_eq_or_lt] at h
   rcases h with rfl | h; simp
   simp [not_le_of_gt h, ne_symm' # ne_of_lt h]
+
+theorem pow_rpow_inv {a : ℝ} {n : ℕ} (ha : 0 ≤ a) (hn : n ≠ 0) :
+(a ^ ofNat(n)) ^ (ofNat(n) : ℝ)⁻¹ = a := by
+  simp [instOfNatNat, Real.ofNat_eq]; rw [←rpow_natCast]
+  rw [rpow_rpow_inv ha # by exact_mod_cast hn]
+
+theorem rpow_inv_pow {a : ℝ} {n : ℕ} (ha : 0 ≤ a) (hn : n ≠ 0) :
+(a ^ (ofNat(n) : ℝ)⁻¹) ^ ofNat(n) = a := by
+  simp [instOfNatNat, ofNat_eq]; rw [←rpow_natCast]
+  rw [rpow_inv_rpow ha # by exact_mod_cast hn]
