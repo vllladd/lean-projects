@@ -75,6 +75,13 @@ theorem eqComp_iff_decide_eq [hb : DecidableEq β] : t₁.eqComp t₂ ↔ decide
 def val (t : Trie α β) : Option β :=
   t.1.lift Raw.val # λ _ _ => Raw.Equiv.val_eq
 
+def setVal (t : Trie α β) (val : Option β) : Trie α β :=
+  mk # t.1.map (·.setVal val) # λ _ _ h => Raw.Equiv.setVal h
+
+@[simp]
+theorem val_setVal {val} : (t.setVal val).val = val := by
+  rcases t with ⟨t⟩; apply t.ind; intro; rfl
+
 #check 0 #exit
 
 def insert1 (t : Trie α β) (i : List α) (x : β) : Trie α β :=

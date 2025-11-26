@@ -19,7 +19,7 @@ theorem Equiv.refl : t.Equiv t := by
   apply t.ind
   intro val mp wf ih
   unfold Equiv
-  simp only [val_mk, Raw₀.val_mk, get?_eq_some_iff, mp_mk, Raw₀.mp_mk, exists_prop, true_and]
+  simp only [val_mk, Raw₀.val_mk, get1?_eq_some_iff, mp_mk, Raw₀.mp_mk, exists_prop, true_and]
   split_ands; all_goals
     intro k a h
     use a, h, ih k a h
@@ -30,7 +30,7 @@ theorem Equiv.symm (h : t₁.Equiv t₂) : t₂.Equiv t₁ := by
   apply t₁.ind
   intro val mp wf ih t₂ h
   unfold Equiv at h ⊢
-  simp only [val_mk, Raw₀.val_mk, get?_eq_some_iff, mp_mk, Raw₀.mp_mk, exists_prop] at h ⊢
+  simp only [val_mk, Raw₀.val_mk, get1?_eq_some_iff, mp_mk, Raw₀.mp_mk, exists_prop] at h ⊢
   rcases h with ⟨h₀, h₁, h₂⟩
   simp [h₀]
   split_ands <;> intro k a h
@@ -52,7 +52,7 @@ theorem Equiv.trans (h₁ : t₁.Equiv t₂) (h₂ : t₂.Equiv t₃) : t₁.Equ
   apply t₁.ind
   intro val mp wf ih t₂ t₃ h₁ h₂
   unfold Equiv at h₁ h₂ ⊢
-  simp only [get?_eq_some_iff, exists_prop] at h₁ h₂ ⊢
+  simp only [get1?_eq_some_iff, exists_prop] at h₁ h₂ ⊢
   rcases h₁ with ⟨ha, h₁, h₃⟩
   rcases h₂ with ⟨hb, h₂, h₄⟩
   simp [ha, hb]
@@ -92,7 +92,7 @@ theorem depth_eq : t₁.depth = t₂.depth := by
   apply t₁.ind
   intro val mp wf ih t₂ h
   unfold Equiv at h
-  simp only [get?_eq_some_iff, exists_prop] at h
+  simp only [get1?_eq_some_iff, exists_prop] at h
   rcases h with ⟨h₀, h₁, h₂⟩
   rcases t₂ with ⟨⟨val', mp'⟩, wf'⟩
   have wfmp := wf.mp
@@ -212,9 +212,6 @@ theorem iff_alt : t₁.Equiv t₂ ↔ Alt t₁ t₂ := by
     use y, h₂
     tauto
 
-theorem val_eq : t₁.val = t₂.val := by
-  rw [Equiv] at H; exact H.1
-
 end Equiv
 
 section Decidability
@@ -270,7 +267,7 @@ theorem equiv_iff_equivComp : t₁.Equiv t₂ ↔ t₁.equivComp t₂ := by
   rw [mp.foldWith_bool_and_iff_forall]
   simp
   apply forall_congr'; intro k
-  simp [get?_eq_some_iff]
+  simp [get1?_eq_some_iff]
   constructor
   · intro h₂ x h₃
     specialize h₂ ⟨x, wf.get1? h₃⟩ h₃
@@ -300,3 +297,29 @@ theorem equivComp_eq_of_equiv2_expl (a₁ b₁ a₂ b₂ : Raw α β)
   equivComp_eq_of_equiv2 h₁ h₂
 
 end Decidability
+
+namespace Equiv
+
+variable (H : t₁.Equiv t₂)
+include H
+
+theorem val_eq : t₁.val = t₂.val := by
+  rw [Equiv] at H; exact H.1
+
+theorem setVal {val} : (t₁.setVal val).Equiv (t₂.setVal val) := by
+  rw [iff_alt'] at H ⊢; cases H; simpa
+
+#check 0 #exit
+
+theorem erase1 {i} : (t₁.erase1 i).Equiv (t₂.erase1 i) := by
+  rw [iff_alt'] at H ⊢
+  rcases H with ⟨h₁, h₂, h₃⟩
+  simp
+  intro k t' h₄ h₅
+  specialize h₃ _ _ h₅
+  obtain ⟨⟩
+
+#check 0 #exit
+
+theorem insert1 {i t'} : (t₁.insert1 i t').Equiv (t₁.insert1 i t') := by
+  sorry

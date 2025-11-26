@@ -177,5 +177,99 @@ t'.depth (wf := wf.get1? h) < t.depth := by
   use k, t', h₁
   rw [add_comm]
 
-theorem WF.of_mem_toList [wf : t.WF] {p} (h : p ∈ t.mp.toList) : p.2.WF := by
+theorem WF.of_mem_toList {p} [wf : t.WF] (h : p ∈ t.mp.toList) : p.2.WF := by
   rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wf.mp] at h; exact wf.get1? h
+
+theorem wf_iff : t.WF ↔ t.mp.WF ∧ ∀ k t₁, t.mp.get? k = some t₁ → t₁.WF ∧ ¬t₁.isEmpty := by
+  rcases t with ⟨val, mp⟩; constructor
+  · rintro ⟨h₁, h₂, h₃⟩; tauto
+  · rintro ⟨h₁, h₂⟩; use h₁ <;> intro k t₁ h₃ <;> specialize h₂ k _ _ <;> tauto
+
+def setVal (t : Raw₀ α β) (val : Option β) : Raw₀ α β :=
+  ⟨val, t.mp⟩
+
+@[simp]
+theorem setVal_mk {val val₁ mp} : (⟨val, mp⟩ : Raw₀ α β).setVal val₁ = ⟨val₁, mp⟩ := rfl
+
+@[simp]
+instance {x} [wf : t.WF] : WF # t.setVal x := by
+  rcases t with ⟨val, mp⟩
+  rcases wf with ⟨h₁, h₂, h₃⟩
+  dsimp; use h₁
+
+@[simp] theorem val_setVal {val} : (t.setVal val).val = val := rfl
+@[simp] theorem mp_setVal {val} : (t.setVal val).mp = t.mp := rfl
+
+def erase1 (t : Raw₀ α β) (i : α) : Raw₀ α β :=
+  ⟨t.val, t.mp.erase i⟩
+
+@[simp]
+theorem erase1_mk {val mp i} : (⟨val, mp⟩ : Raw₀ α β).erase1 i = ⟨val, mp.erase i⟩ := rfl
+
+@[simp] theorem val_erase1 {i} : (t.erase1 i).val = t.val := rfl
+@[simp] theorem mp_erase1 {i} : (t.erase1 i).mp = t.mp.erase i := rfl
+
+@[simp]
+instance {i} [wf : t.WF] : WF # t.erase1 i := by
+  rcases t with ⟨val, mp⟩
+  rw [wf_iff] at wf ⊢
+  dsimp at wf ⊢
+  rcases wf with ⟨h₁, h₂⟩
+  use h₁.erase
+  intro k t₁ h₃
+  apply h₂ k t₁
+  rw [DHashMap.Raw.get?_erase h₁] at h₃
+  simp at h₃; exact h₃.2
+
+def insert1 (t : Raw₀ α β) (i : α) (t₁ : Raw₀ α β) : Raw₀ α β :=
+  if t₁.isEmpty then t.erase1 i else ⟨t.val, t.mp.insert i t₁⟩
+
+theorem insert1_mk {val mp i t₁} : (⟨val, mp⟩ : Raw₀ α β).insert1 i t₁ =
+⟨val, if t₁.isEmpty then mp.erase i else mp.insert i t₁⟩ := by
+  unfold insert1; split_ifs <;> rfl
+
+@[simp]
+theorem val_insert1 {i t₁} : (t.insert1 i t₁).val = t.val := by
+  cases t; simp [insert1_mk]
+
+theorem mp_insert1 {i} : (t.insert1 i t₁).mp =
+if t₁.isEmpty then t.mp.erase i else t.mp.insert i t₁ := by
+  cases t; simp [insert1_mk]
+
+@[simp]
+instance {i} [wf : t.WF] [wf₁ : t₁.WF] : WF # t.insert1 i t₁ := by
+  dsimp [insert1]
+  split_ifs with h
+  · infer_instance
+  rw [wf_iff] at wf ⊢
+  rcases wf with ⟨h₁, h₂⟩
+  dsimp
+  use h₁.insert
+  intro k t₂ h₃
+  rw [DHashMap.Raw.get?_insert h₁] at h₃
+  simp at h₃
+  split_ifs at h₃ with h₄
+  · simp at h₃
+    subst h₃
+    use wf₁
+  exact h₂ _ _ h₃
+
+def get1? (t : Raw₀ α β) (i : α) : Option (Raw₀ α β) :=
+  t.mp.get? i
+
+theorem get1?_erase1 {i j} [wf : t.WF] :
+(t.erase1 i).get1? j = if i = j then none else t.get1? j := by
+  simp [get1?, DHashMap.Raw.get?_erase wf.mp]
+
+theorem get1?_insert1 {i j} {t₁ : Raw₀ α β} [wf : t.WF] :
+(t.insert1 i t₁).get1? j = if i = j then
+if t₁.isEmpty then none else some t₁ else t.get1? j := by
+  unfold insert1
+  by_cases h : t₁.isEmpty <;> simp [h]
+  · rw [get1?_erase1]
+  · simp [get1?, DHashMap.Raw.get?_insert wf.mp]
+
+@[simp]
+theorem get1?_erase1_eq_some_iff {i j} [wf : t.WF] :
+(t.erase1 i).get1? j = some t₁ ↔ i ≠ j ∧ t.get1? j = t₁ := by
+  rw [get1?_erase1]; split_ifs with h <;> simp [h]

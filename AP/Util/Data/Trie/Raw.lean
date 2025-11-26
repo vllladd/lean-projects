@@ -67,7 +67,7 @@ def get1? (t : Raw α β) (k : α) : Option (Raw α β) :=
   | none => none
   | some t' => some ⟨t', t.wf.get1? h⟩
 
-theorem get?_eq_some_iff {k t'} :
+theorem get1?_eq_some_iff {k t'} :
 t.get1? k = some t' ↔ t.mp.get? k = t'.inner := by
   simp [get1?]
   apply Iff.intro
@@ -94,7 +94,7 @@ theorem depth_eq_depth_inner : t.depth = t.inner.depth := by
   rwa [ih]
 
 theorem depth_lt {k t'} (h : t.get1? k = some t') : t'.depth < t.depth := by
-  simp_rw [depth_eq_depth_inner]; simp [get?_eq_some_iff] at h; exact Raw₀.depth_lt h
+  simp_rw [depth_eq_depth_inner]; simp [get1?_eq_some_iff] at h; exact Raw₀.depth_lt h
 
 @[simp]
 theorem depth_mk {raw : Raw₀ α β} [wf : raw.WF] : (Raw.mk raw wf).depth = raw.depth := by
@@ -126,9 +126,70 @@ theorem get?_mp {k} : t.mp.get? k = (t.get1? k).map (·.1) := by
     simpa [←h]
 
 theorem mem_of_get?_eq_some {k x} (h : t.get1? k = some x) : k ∈ t.mp := by
-  rw [get?_eq_some_iff] at h; exact t.mp.mem_of_get?_eq_some (by simp) h
+  rw [get1?_eq_some_iff] at h; exact t.mp.mem_of_get?_eq_some (by simp) h
 
 theorem mem_mp_iff_get?_eq_some {k} : k ∈ t.mp ↔ ∃ x, t.get1? k = some x := by
   rw [t.mp.mem_iff_isSome_get? # by simp]
   rw [Option.isSome_iff_exists]
   simp [get?_mp]
+
+def isEmpty (t : Raw α β) : Prop :=
+  t.1.isEmpty
+
+instance : Decidable t.isEmpty :=
+  show Decidable t.1.isEmpty from inferInstance
+
+def setVal (t : Raw α β) (val : Option β) : Raw α β :=
+  ⟨t.1.setVal val, inferInstance⟩
+
+@[simp] theorem val_setVal {val} : (t.setVal val).val = val := rfl
+@[simp] theorem mp_setVal {val} : (t.setVal val).mp = t.mp := rfl
+
+def erase1 (t : Raw α β) (i : α) : Raw α β :=
+  ⟨t.1.erase1 i, inferInstance⟩
+
+@[simp] theorem val_erase1 {i} : (t.erase1 i).val = t.val := rfl
+@[simp] theorem mp_erase1 {i} : (t.erase1 i).mp = t.mp.erase i := rfl
+
+def insert1 (t : Raw α β) (i : α) (t₁ : Raw α β) : Raw α β :=
+  ⟨t.1.insert1 i t₁.1, inferInstance⟩
+
+@[simp]
+theorem val_insert1 {i t₁} : (t.insert1 i t₁).val = t.val :=
+  t.1.val_insert1
+
+theorem mp_insert1 {i} : (t.insert1 i t₁).mp =
+if t₁.isEmpty then t.mp.erase i else t.mp.insert i t₁.1 :=
+  t.1.mp_insert1
+
+theorem get1?_eq_get1?_inner {i} : t.get1? i = match h : t.1.get1? i with
+| none => none
+| some t₁ => some ⟨t₁, t.2.get1? h⟩ := rfl
+
+theorem get1?_eq_some_iff_inner {i t₁} : t.get1? i = some t₁ ↔ t.1.get1? i = some t₁.1 := by
+  rw [get1?_eq_get1?_inner]; split <;> simp_all [Raw.ext_iff]
+
+theorem get1?_eq_none_iff_inner {i} : t.get1? i = none ↔ t.1.get1? i = none := by
+  rw [get1?_eq_get1?_inner]; split <;> simp_all
+
+theorem get1?_erase1 {i j} :
+(t.erase1 i).get1? j = if i = j then none else t.get1? j := by
+  ext; simp [get1?_eq_some_iff_inner, erase1, Raw₀.get1?_erase1]
+
+theorem get1?_insert1 {i j} {t₁ : Raw α β} :
+(t.insert1 i t₁).get1? j = if i = j then
+if t₁.isEmpty then none else some t₁ else t.get1? j := by
+  ext t'
+  simp [get1?_eq_some_iff_inner]
+  unfold insert1
+  rw [Raw₀.get1?_insert1]
+  by_cases h : t₁.isEmpty <;> simp [h] <;> rw [isEmpty] at h
+  · simp [h, get1?_eq_some_iff_inner]
+  · simp [h]; split_ifs with h₁
+    · simp [Raw.ext_iff]
+    · simp [get1?_eq_some_iff_inner]
+
+@[simp]
+theorem get1?_erase1_eq_some_iff {i j} :
+(t.erase1 i).get1? j = some t₁ ↔ i ≠ j ∧ t.get1? j = t₁ := by
+  simp [get1?_eq_some_iff_inner, erase1]
