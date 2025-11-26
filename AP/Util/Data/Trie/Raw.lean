@@ -56,20 +56,20 @@ theorem empty_def : (∅ : Raw α β) = ⟨∅, inferInstance⟩ := rfl
 
 def depth (t : Raw α β) : ℕ :=
   t.rec' (γ := λ _ => ℕ) # λ _ mp wf f => (mp.foldWith wf.mp · 0) # λ acc i x h₂ =>
-  max acc # 1 + f i ⟨_, wf.get? h₂⟩ h₂
+  max acc # 1 + f i ⟨_, wf.get1? h₂⟩ h₂
 
 @[simp]
 theorem depth_empty : (∅ : Raw α β).depth = 0 := by
   simp [empty_def, Raw₀.empty_def, depth]
 
-def get? (t : Raw α β) (k : α) : Option (Raw α β) :=
+def get1? (t : Raw α β) (k : α) : Option (Raw α β) :=
   match h : t.mp.get? k with
   | none => none
-  | some t' => some ⟨t', t.wf.get? h⟩
+  | some t' => some ⟨t', t.wf.get1? h⟩
 
 theorem get?_eq_some_iff {k t'} :
-t.get? k = some t' ↔ t.mp.get? k = t'.inner := by
-  simp [get?]
+t.get1? k = some t' ↔ t.mp.get? k = t'.inner := by
+  simp [get1?]
   apply Iff.intro
   · intro a
     split at a
@@ -90,10 +90,10 @@ theorem depth_eq_depth_inner : t.depth = t.inner.depth := by
   simp only [depth, rec'_mk] at ih ⊢
   congr
   ext i k t' h
-  specialize ih k ⟨_, wf.get? h⟩
+  specialize ih k ⟨_, wf.get1? h⟩
   rwa [ih]
 
-theorem depth_lt {k t'} (h : t.get? k = some t') : t'.depth < t.depth := by
+theorem depth_lt {k t'} (h : t.get1? k = some t') : t'.depth < t.depth := by
   simp_rw [depth_eq_depth_inner]; simp [get?_eq_some_iff] at h; exact Raw₀.depth_lt h
 
 @[simp]
@@ -102,8 +102,8 @@ theorem depth_mk {raw : Raw₀ α β} [wf : raw.WF] : (Raw.mk raw wf).depth = ra
 
 @[simp]
 theorem get?_mp_inner_eq_some_inner_iff {k} :
-t.inner.mp.get? k = some t'.inner ↔ t.get? k = some t' := by
-  simp [get?, mp]
+t.inner.mp.get? k = some t'.inner ↔ t.get1? k = some t' := by
+  simp [get1?, mp]
   split
   · nm h
     simp [h]
@@ -114,9 +114,9 @@ t.inner.mp.get? k = some t'.inner ↔ t.get? k = some t' := by
 theorem WF.mp : t.mp.WF := by
   simp [Raw.mp]
 
-theorem get?_mp {k} : t.mp.get? k = (t.get? k).map (·.1) := by
+theorem get?_mp {k} : t.mp.get? k = (t.get1? k).map (·.1) := by
   ext x
-  simp [get?]
+  simp [get1?]
   constructor
   · intro h
     rw! [h]
@@ -125,10 +125,10 @@ theorem get?_mp {k} : t.mp.get? k = (t.get? k).map (·.1) := by
     split at h <;> simp at h
     simpa [←h]
 
-theorem mem_of_get?_eq_some {k x} (h : t.get? k = some x) : k ∈ t.mp := by
+theorem mem_of_get?_eq_some {k x} (h : t.get1? k = some x) : k ∈ t.mp := by
   rw [get?_eq_some_iff] at h; exact t.mp.mem_of_get?_eq_some (by simp) h
 
-theorem mem_mp_iff_get?_eq_some {k} : k ∈ t.mp ↔ ∃ x, t.get? k = some x := by
+theorem mem_mp_iff_get?_eq_some {k} : k ∈ t.mp ↔ ∃ x, t.get1? k = some x := by
   rw [t.mp.mem_iff_isSome_get? # by simp]
   rw [Option.isSome_iff_exists]
   simp [get?_mp]
