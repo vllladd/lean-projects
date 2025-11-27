@@ -107,8 +107,8 @@ theorem edge₂_eq_none_of_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd' s)
   replace h₂ := Option.exists_eq_some_of_ne_none h₂
   obtain ⟨p₂, h₂⟩ := h₂
   simp [cnd'] at H
-  replace h₁ := Edge.of_eq_some h₁
-  replace h₂ := Edge.of_eq_some h₂
+  replace h₁ := Edge.of_f_eq_some h₁
+  replace h₂ := Edge.of_f_eq_some h₂
   rcases h₁ with ⟨h₁, h₃, -⟩
   rcases h₂ with ⟨h₂, h₄, -⟩
   specialize H s.aPos

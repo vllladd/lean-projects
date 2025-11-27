@@ -60,18 +60,23 @@ def cndMp : Map ℤ # List # Array Bool := Map.ofList #
   , (4, ["0100100", "0100010", "0011000", "0010010", "0001100"])
   , (5, ["0010000", "0001000", "0000100"])
   ].map # λ (d, xs) => (d, ·) #
-  xs.map # λ ⟨s⟩ => ⟨s.map ('0' == ·)⟩
+  xs.map # λ ⟨s⟩ => ⟨s.map ('1' == ·)⟩
 
 def cnd (d : ℤ) (f : ℕ → Bool) : Bool :=
   match cndMp.get? d with
   | none => true
   | some xs => xs.any # λ arr => ∀ (i : Fin 7), arr[i]? = some true → f i
 
+def f₅ (f : ℕ → Bool) (n : Option ℕ) : ℕ :=
+  match n with
+  | some n => n
+  | none => List.range 7 |>.find? (!f ·) |>.getD 0
+
 def f₄ (d : ℤ) (f : ℕ → Bool) : ℕ :=
-  List.range 7 |>.find? (λ i => cnd d # λ k => if k == i then true else f k) |>.getD 0
+  f₅ f # List.range 7 |>.find? # λ i => cnd d # λ k => if k == i then true else f k
 
 def f₃ (d : ℤ) (f : ℕ → Bool) : Option ℕ :=
-  if cnd d f then none else some # f₄ d f
+  if d ≤ 0 || 6 ≤ d || cnd d f then none else some # f₄ d f
 
 def f₂ (d : ℤ) (arr : Array Bool) (offset : ℕ) : Option ℕ :=
   f₃ d # λ i => arr[offset + i]?.getD false
