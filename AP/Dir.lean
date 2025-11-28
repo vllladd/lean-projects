@@ -116,14 +116,33 @@ end Dir
 
 namespace Point
 
-variable {α : Type*} {p : Point α}
+variable {α : Type*} {p : Point α} [ha : Neg α]
+omit ha
+
+def coord' (p : Point α) (d : Dir) : α :=
+  match d with
+  | .up => p.y
+  | .down => p.y
+  | .left => p.x
+  | .right => p.x
 
 def coord (p : Point α) (d : Dir) : α :=
-  if d.hor then p.x else p.y
+  match d with
+  | .up => -p.y
+  | .down => p.y
+  | .left => -p.x
+  | .right => p.x
 
-@[simp] theorem coord_up : p.coord .up = p.y := rfl
+@[simp] theorem coord'_up : p.coord' .up = p.y := rfl
+@[simp] theorem coord'_down : p.coord' .down = p.y := rfl
+@[simp] theorem coord'_left : p.coord' .left = p.x := rfl
+@[simp] theorem coord'_right : p.coord' .right = p.x := rfl
+
+include ha
+
+@[simp] theorem coord_up : p.coord .up = -p.y := rfl
 @[simp] theorem coord_down : p.coord .down = p.y := rfl
-@[simp] theorem coord_left : p.coord .left = p.x := rfl
+@[simp] theorem coord_left : p.coord .left = -p.x := rfl
 @[simp] theorem coord_right : p.coord .right = p.x := rfl
 
 end Point

@@ -1,5 +1,17 @@
 import AP.AP.Defense.Defs
 
+namespace List
+
+variable {α β : Type*}
+variable {xs ys zs : List α}
+
+theorem getElem!_eq_getElem [ha : Inhabited α] {i} (h : i < xs.length) : xs[i]! = xs[i] :=
+  getElem!_pos xs i h
+
+-- #check 0 #exit
+
+end List
+
 namespace AP.Defense
 
 variable {dse dse₁ dse₂ : Defense}
@@ -229,7 +241,7 @@ theorem wf_merge {e₁ e₂ : Defense} [He₁ : e₁.WF] [He₂ : e₂.WF]
   · rw [←hr, ←Defense.simulate_st_comm]
     intro s' h₃ p₁ p₂ h₄
     have hs' := sys.wf_of_reachable h₃
-    intro h₅; exact @h₀ s s' p₁ p₂ _ h₁ h₂ h₃ h₄ h₅
+    intro h₅; exact @h₀ s _ s' p₁ p₂ h₁ h₂ h₃ h₄ h₅
   rw [h₃] at H₂; clear h₃
   have h₄ : sys.simulate (Strat.f ⟨a, (e₁.merge e₂).st d⟩) s n = r
   · convert hr using 2; ext1 s
@@ -335,3 +347,22 @@ theorem validTr_ofList' {ds : List Defense}
 theorem validTr_ofList {ds : List Defense}
 (H : ∀ d ∈ ds, d.WF) : (ofList ds).ValidTr :=
   validTr_ofList' # λ d hd => H d hd |>.1
+
+theorem compatibleList_iff_getElem {ds : List Defense} :
+CompatibleList ds ↔ ∀ i j (h₁ : i < j) (h₂ : j < ds.length), ds[i].Compatible ds[j] := by
+  unfold CompatibleList
+  constructor
+  · intro h i j h₁ h₂
+    apply @h ds[i] ds[j] <;> simp
+  intro h e₁ e₂ h₁ h₂
+  rw [List.mem_iff_getElem] at h₁ h₂
+  obtain ⟨i, h₁, rfl⟩ := h₁
+  obtain ⟨j, h₂, rfl⟩ := h₂
+  rcases lt_trichotomy i j with h₃ | rfl | h₃
+  on_goal 2 => rfl
+  · apply h; exact h₃
+  · symm; apply h; exact h₃
+
+theorem compatibleList_iff_getElem! {ds : List Defense} :
+CompatibleList ds ↔ ∀ i j, i < j → j < ds.length → ds[i]!.Compatible ds[j]! := by
+  convert compatibleList_iff_getElem <;> apply getElem!_pos

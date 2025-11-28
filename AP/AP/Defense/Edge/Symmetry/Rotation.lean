@@ -12,6 +12,10 @@ protected def rotLeft (e : Edge) : Edge where
   dir := e.dir.rotLeft
   offset := if e.hor then e.offset else -e.offset
 
+protected def rot180 (e : Edge) : Edge where
+  dir := e.dir⁻¹
+  offset := -e.offset
+
 @[simp]
 theorem points_rotRight : e.rotRight.points = rotRight.ft '' e.points := by
   ext p
@@ -117,3 +121,15 @@ theorem defense_rotRight : e.rotRight.defense = e.defense.sym rotRight := by
     obtain ⟨left_2, right⟩ := right
     simp_all only [Int.reduceNeg, EmbeddingLike.apply_eq_iff_eq, System.Symmetry.ft_ft',
       Option.some.injEq, exists_eq_left', not_false_eq_true, and_self]
+
+@[simp]
+theorem rotRight_rotRight : e.rotRight.rotRight = e.rot180 := by
+  simp [Edge.rotRight, Edge.rot180]
+  rcases e with ⟨dir, offset⟩
+  cases dir <;> simp
+
+@[simp]
+theorem rotLeft_rotLeft : e.rotLeft.rotLeft = e.rot180 := by
+  simp [Edge.rotLeft, Edge.rot180]
+  rcases e with ⟨dir, offset⟩
+  cases dir <;> simp <;> rfl
