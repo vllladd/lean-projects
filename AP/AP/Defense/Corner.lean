@@ -115,6 +115,7 @@ theorem f_edge₂_eq_none_of_f_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd'
   specialize H h₁ h₃ h₂ h₄
   simp at H
 
+@[simp]
 theorem validTr_defense : c.defense.ValidTr := by
   intro s hs p h; simp [f] at h; rcases h with h | ⟨h₁, h₂⟩
   exact Defense.valid_tr h; exact Defense.valid_tr h₂

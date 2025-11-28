@@ -9,8 +9,6 @@ deriving Inhabited, DecidableEq, Fintype
 
 namespace Dir
 
-open Dir
-
 variable {d : Dir}
 
 def point : Dir → PointZ

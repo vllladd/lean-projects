@@ -209,7 +209,7 @@ theorem st_merge : (dse₁.merge dse₂).st = λ d => dse₁.st (dse₂.st d) :=
   simp [merge]; delta st; simp
 
 @[simp]
-theorem validTr_merge [H₁ : dse₁.WF] [H₂ : dse₂.WF] : (dse₁.merge dse₂).ValidTr := by
+theorem validTr_merge_of_wf [H₁ : dse₁.WF] [H₂ : dse₂.WF] : (dse₁.merge dse₂).ValidTr := by
   intro s hs p hp
   simp at hp
   rcases hp with hp | ⟨h₁, h₂⟩
@@ -218,7 +218,7 @@ theorem validTr_merge [H₁ : dse₁.WF] [H₂ : dse₂.WF] : (dse₁.merge dse�
 
 theorem wf_merge {e₁ e₂ : Defense} [He₁ : e₁.WF] [He₂ : e₂.WF]
 (h₀ : Compatible e₁ e₂) : (e₁.merge e₂).WF := by
-  use validTr_merge
+  use validTr_merge_of_wf
   intro s hs h a Ha d Hd n
   simp at h
   rcases h with ⟨h₁, h₂⟩
@@ -229,7 +229,7 @@ theorem wf_merge {e₁ e₂ : Defense} [He₁ : e₁.WF] [He₂ : e₂.WF]
   · rw [←hr, ←Defense.simulate_st_comm]
     intro s' h₃ p₁ p₂ h₄
     have hs' := sys.wf_of_reachable h₃
-    intro h₅; exact h₀ h₄ h₅
+    intro h₅; exact @h₀ s s' p₁ p₂ _ h₁ h₂ h₃ h₄ h₅
   rw [h₃] at H₂; clear h₃
   have h₄ : sys.simulate (Strat.f ⟨a, (e₁.merge e₂).st d⟩) s n = r
   · convert hr using 2; ext1 s
@@ -242,7 +242,9 @@ theorem Compatible.refl : dse.Compatible dse := by
 
 @[symm]
 theorem Compatible.symm (h : dse₁.Compatible dse₂) : dse₂.Compatible dse₁ := by
-  simp [Compatible] at h ⊢; intro s hs p₁ p₂ h₁ h₂; exact h h₂ h₁ |>.symm
+  simp [Compatible] at h ⊢
+  intro s₀ s p₁ p₂ hs h₁ h₂ h₃ h₄ h₅
+  exact h h₂ h₁ h₃ h₅ h₄ |>.symm
 
 @[simp]
 theorem compatible_empty_left : Compatible ∅ dse := by
@@ -254,11 +256,12 @@ theorem compatible_empty_right : Compatible dse ∅ := by
 
 theorem compatible_merge_left_of {a b c} (h₁ : Compatible a c)
 (h₂ : Compatible b c) : Compatible (merge a b) c := by
-  intro s hs p₁ p₂ h₃ h₄
-  simp at h₃
-  rcases h₃ with h₃ | ⟨h₃, h₅⟩
-  · exact h₁ h₃ h₄
-  · exact h₂ h₅ h₄
+  intro s₀ s p₁ p₂ hs h₃ h₄ h₅ h₆ h₇
+  simp at h₃ h₆
+  rcases h₃ with ⟨ha, hb⟩
+  rcases h₆ with h₆ | ⟨h₆, h₈⟩
+  · exact h₁ ha h₄ h₅ h₆ h₇
+  · exact h₂ hb h₄ h₅ h₈ h₇
 
 theorem compatible_merge_right_of {a b c} (h₁ : Compatible a b)
 (h₂ : Compatible a c) : Compatible a (merge b c) := by
@@ -308,3 +311,27 @@ theorem wf_ofList {ds : List Defense} (H : ∀ d ∈ ds, d.WF)
   specialize ih H h₁
   apply wf_merge
   exact compatible_ofList_of h₂
+
+@[simp]
+theorem validTr_empty : ValidTr ∅ := by
+  simp [ValidTr]
+
+theorem validTr_merge_of (h₁ : ValidTr dse₁) (h₂ : ValidTr dse₂) :
+ValidTr # merge dse₁ dse₂ := by
+  intro s hs p h
+  simp at h
+  rcases h with h | ⟨h₃, h₄⟩
+  · exact h₁ h
+  · exact h₂ h₄
+
+theorem validTr_ofList' {ds : List Defense}
+(H : ∀ d ∈ ds, d.ValidTr) : (ofList ds).ValidTr := by
+  induction ds; simp
+  nm e ds ih
+  simp at H ⊢
+  rcases H with ⟨h₁, h₂⟩
+  exact validTr_merge_of h₁ # @ih h₂
+
+theorem validTr_ofList {ds : List Defense}
+(H : ∀ d ∈ ds, d.WF) : (ofList ds).ValidTr :=
+  validTr_ofList' # λ d hd => H d hd |>.1

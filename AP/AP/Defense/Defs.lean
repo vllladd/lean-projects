@@ -50,7 +50,8 @@ def ofList (ds : List Defense) : Defense :=
   ds.foldr merge ∅
 
 def Compatible (dse₁ dse₂ : Defense) : Prop :=
-  ∀ {s} [sys.WF s] {p₁ p₂}, dse₁.f s = some p₁ → dse₂.f s = some p₂ → p₁ = p₂
+  ∀ {s₀ s p₁ p₂} [sys.WF s₀], dse₁.cnd s₀ → dse₂.cnd s₀ → sys.Reachable s₀ s →
+  dse₁.f s = some p₁ → dse₂.f s = some p₂ → p₁ = p₂
 
 def CompatibleList (ds : List Defense) : Prop :=
   ∀ {e₁ e₂}, e₁ ∈ ds → e₂ ∈ ds → e₁.Compatible e₂
