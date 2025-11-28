@@ -1,16 +1,16 @@
 import AP.Util.Nat
 
 inductive Bit where
-| Bit0 : Bit
-| Bit1 : Bit
+| B₀ : Bit
+| B₁ : Bit
 
 open Bit
 
-@[simp] instance : OfNat Bit 0 := ⟨Bit0⟩
-@[simp] instance : OfNat Bit 1 := ⟨Bit1⟩
+@[simp] instance : OfNat Bit 0 := ⟨B₀⟩
+@[simp] instance : OfNat Bit 1 := ⟨B₁⟩
 
-@[simp] theorem Bit0_eq : Bit0 = 0 := rfl
-@[simp] theorem Bit1_eq : Bit1 = 1 := rfl
+@[simp] theorem B₀_eq : B₀ = 0 := rfl
+@[simp] theorem B₁_eq : B₁ = 1 := rfl
 
 theorem bit_ind (R : Bit → Prop) (B0 : R 0) (B1 : R 1) b : R b := by
   cases b <;> assumption
