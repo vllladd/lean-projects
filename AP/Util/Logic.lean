@@ -295,3 +295,6 @@ Classical.epsilon (λ y => y = x) = x := by
 theorem epsilon_eq_right {α : Type*} {x : α} [ha : Nonempty α] :
 Classical.epsilon (λ y => x = y) = x := by
   apply epsilon_eq_of <;> simp
+
+@[simp] theorem iff_not_left_imp_iff {P Q : Prop} : (P ↔ (¬P → Q)) ↔ (Q → P) := by tauto
+@[simp] theorem not_left_iff_imp_iff {P Q : Prop} : (¬P ↔ (P → Q)) ↔ (Q → ¬P) := by tauto

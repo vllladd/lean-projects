@@ -1,16 +1,5 @@
 import AP.AP.Defense.Edge.Cnd
 
-namespace Array
-
-variable {α : Type*} {xs ys : Array α}
-
-theorem set_eq_set! {i x h} : xs.set i x h = xs.set! i x := by
-  unfold Array.set! Array.setIfInBounds; simp [h]
-
--- #check 0 #exit
-
-end Array
-
 namespace AP.Edge
 
 variable {e e₁ e₂ : Edge}

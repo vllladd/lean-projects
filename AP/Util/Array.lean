@@ -128,3 +128,6 @@ theorem getElem?_extract_add {n k i} (h : i < k) : (xs.extract n # n + k)[i]? = 
   symm
   simp
   rwa [add_comm]
+
+theorem set_eq_set! {i x h} : xs.set i x h = xs.set! i x := by
+  unfold Array.set! Array.setIfInBounds; simp [h]

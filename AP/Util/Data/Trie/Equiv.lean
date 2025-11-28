@@ -309,17 +309,17 @@ theorem val_eq : t₁.val = t₂.val := by
 theorem setVal {val} : (t₁.setVal val).Equiv (t₂.setVal val) := by
   rw [iff_alt'] at H ⊢; cases H; simpa
 
-#check 0 #exit
-
-theorem erase1 {i} : (t₁.erase1 i).Equiv (t₂.erase1 i) := by
-  rw [iff_alt'] at H ⊢
-  rcases H with ⟨h₁, h₂, h₃⟩
-  simp
-  intro k t' h₄ h₅
-  specialize h₃ _ _ h₅
-  obtain ⟨⟩
-
-#check 0 #exit
-
-theorem insert1 {i t'} : (t₁.insert1 i t').Equiv (t₁.insert1 i t') := by
-  sorry
+-- #check 0 #exit
+-- 
+-- theorem erase1 {i} : (t₁.erase1 i).Equiv (t₂.erase1 i) := by
+--   rw [iff_alt'] at H ⊢
+--   rcases H with ⟨h₁, h₂, h₃⟩
+--   simp
+--   intro k t' h₄ h₅
+--   specialize h₃ _ _ h₅
+--   obtain ⟨⟩
+-- 
+-- #check 0 #exit
+-- 
+-- theorem insert1 {i t'} : (t₁.insert1 i t').Equiv (t₁.insert1 i t') := by
+--   sorry

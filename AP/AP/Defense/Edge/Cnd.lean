@@ -1,14 +1,5 @@
 import AP.AP.Defense.Edge.Symmetry
 
-section Logic
-
-@[simp] theorem iff_not_left_imp_iff {P Q : Prop} : (P ↔ (¬P → Q)) ↔ (Q → P) := by tauto
-@[simp] theorem not_left_iff_imp_iff {P Q : Prop} : (¬P ↔ (P → Q)) ↔ (Q → ¬P) := by tauto
-
--- #check 0 #exit
-
-end Logic
-
 namespace AP.Edge
 
 def cnd₀ (s : State) : Prop :=
@@ -32,8 +23,6 @@ def aMove₀' (m : Fin 8) : PointZ :=
 
 def aMove₀ (p : PointZ) (m : Fin 8) : PointZ :=
   p + aMove₀' m
-
--- #check 0 #exit
 
 -----
 
