@@ -1,4 +1,4 @@
-import AP.Util.Data
+import AP.Util.Basic
 
 structure Serializer where
   bytes : ByteArray
@@ -17,23 +17,20 @@ def empty : Serializer where
 instance : EmptyCollection Serializer := ⟨empty⟩
 theorem empty_def : (∅ : Serializer) = empty := rfl
 
-def flush' : Serializer :=
-  { s with
-    bytes := s.bytes.push s.curByte
-    curByte := 0
-    bitMask := 1
-  }
+def flush' : Serializer where
+  bytes := s.bytes.push s.curByte
+  curByte := 0
+  bitMask := 1
 
 def flush : Serializer :=
   bif s.bitMask != 0 then s else s.flush'
 
-def writeBit' (b : Bit) : Serializer :=
-  { s with
-    curByte := match b with
-      | .B₀ => s.curByte
-      | .B₁ => s.curByte ||| s.bitMask
-    bitMask := s.bitMask <<< 1
-  }
+def writeBit' (b : Bit) : Serializer where
+  bytes := s.bytes
+  curByte := match b with
+    | .B₀ => s.curByte
+    | .B₁ => s.curByte ||| s.bitMask
+  bitMask := s.bitMask <<< 1
 
 def writeBit (b : Bit) : Serializer :=
   s.writeBit' b |>.flush

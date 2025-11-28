@@ -1,4 +1,4 @@
-import AP.Util.Data
+import AP.Util.Basic
 
 structure Deserializer where
   bytes : ByteArray

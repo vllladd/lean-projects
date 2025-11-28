@@ -21,5 +21,6 @@ import AP.Util.Multiset
 import AP.Util.ListBool
 import AP.Util.ArrayBool
 import AP.Util.SetTheory
+import AP.Util.ByteArray
 import AP.Util.Eventuality
 import AP.Util.ExtDHashMap
