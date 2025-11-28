@@ -35,5 +35,8 @@ def writeBit' (b : Bit) : Serializer where
 def writeBit (b : Bit) : Serializer :=
   s.writeBit' b |>.flush
 
+def writeBits (bs : List Bit) : Serializer :=
+  bs.foldl (λ s b => s.writeBit b) s
+
 def getOutput : ByteArray :=
   s.flush.bytes
