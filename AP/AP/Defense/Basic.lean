@@ -4,16 +4,21 @@ namespace AP.Defense
 
 variable {dse dse₁ dse₂ : Defense}
 
-instance : Inhabited Defense :=
-  ⟨{cnd := λ _ => True, ps := ∅, f := λ _ => none}⟩
+theorem empty_def : (∅ : Defense) = empty := rfl
+theorem default_def : (default : Defense) = ∅ := rfl
+
+@[simp] theorem cnd_empty : cnd ∅ = λ _ => True := rfl
+@[simp] theorem ps_empty : ps ∅ = ∅ := rfl
+@[simp] theorem f_empty : f ∅ = λ _ => none := rfl
 
 @[simp]
-theorem default_def : (default : Defense) =
-{cnd := λ _ => True, ps := ∅, f := λ _ => none} := rfl
-
-@[simp] instance : WF default where
+instance : WF ∅ where
   valid_tr := by simp [ValidTr]
   not_mem_ps := by simp
+
+@[simp]
+instance : WF default := by
+  rw [default_def]; infer_instance
 
 theorem valid_tr [H : dse.WF] {s} [DState s] {p} :
 dse.f s = some p → sys.validTr s p := H.1
@@ -183,3 +188,123 @@ theorem wf_sym_iff_of_basicSym {sym} [H₂ : BasicSym sym] : (dse.sym sym).WF �
   convert_to dse.sym sym |>.sym sym⁻¹ |>.WF
   · simp
   · infer_instance
+
+@[simp]
+theorem merge_empty_left : merge ∅ dse = dse := by
+  ext:1 <;> simp [merge]
+
+@[simp]
+theorem merge_empty_right : merge dse ∅ = dse := by
+  ext:1 <;> simp [merge]
+
+@[simp] theorem ofList_nil : ofList [] = ∅ := rfl
+@[simp] theorem ofList_cons {d ds} : ofList (d :: ds) = merge d (ofList ds) := rfl
+
+@[simp] theorem cnd_merge : (dse₁.merge dse₂).cnd = λ s => dse₁.cnd s ∧ dse₂.cnd s := rfl
+@[simp] theorem ps_merge : (dse₁.merge dse₂).ps = dse₁.ps ∪ dse₂.ps := rfl
+@[simp] theorem f_merge : (dse₁.merge dse₂).f = λ s => dse₁.f s <|> dse₂.f s := rfl
+
+@[simp]
+theorem st_merge : (dse₁.merge dse₂).st = λ d => dse₁.st (dse₂.st d) := by
+  simp [merge]; delta st; simp
+
+@[simp]
+theorem validTr_merge [H₁ : dse₁.WF] [H₂ : dse₂.WF] : (dse₁.merge dse₂).ValidTr := by
+  intro s hs p hp
+  simp at hp
+  rcases hp with hp | ⟨h₁, h₂⟩
+  · exact valid_tr hp
+  · exact valid_tr h₂
+
+theorem wf_merge {e₁ e₂ : Defense} [He₁ : e₁.WF] [He₂ : e₂.WF]
+(h₀ : Compatible e₁ e₂) : (e₁.merge e₂).WF := by
+  use validTr_merge
+  intro s hs h a Ha d Hd n
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  have H₁ := He₁.2 h₁ a (e₂.st d) n
+  have H₂ := He₂.2 h₂ a (e₁.st d) n
+  generalize hr : sys.simulate (Strat.f ⟨a, e₁.st # e₂.st d⟩) s n = r at H₁
+  have h₃ : sys.simulate (Strat.f ⟨a, e₂.st # e₁.st d⟩) s n = r
+  · rw [←hr, ←Defense.simulate_st_comm]
+    intro s' h₃ p₁ p₂ h₄
+    have hs' := sys.wf_of_reachable h₃
+    intro h₅; exact h₀ h₄ h₅
+  rw [h₃] at H₂; clear h₃
+  have h₄ : sys.simulate (Strat.f ⟨a, (e₁.merge e₂).st d⟩) s n = r
+  · convert hr using 2; ext1 s
+    unfold Strat.f; split_ifs with ht <;> simp
+  rw [h₄]; simp [H₁, H₂]
+
+@[refl, simp]
+theorem Compatible.refl : dse.Compatible dse := by
+  simp [Compatible]; intros; simp_all only [Option.some.injEq]
+
+@[symm]
+theorem Compatible.symm (h : dse₁.Compatible dse₂) : dse₂.Compatible dse₁ := by
+  simp [Compatible] at h ⊢; intro s hs p₁ p₂ h₁ h₂; exact h h₂ h₁ |>.symm
+
+@[simp]
+theorem compatible_empty_left : Compatible ∅ dse := by
+  simp [Compatible]
+
+@[simp]
+theorem compatible_empty_right : Compatible dse ∅ := by
+  simp [Compatible]
+
+theorem compatible_merge_left_of {a b c} (h₁ : Compatible a c)
+(h₂ : Compatible b c) : Compatible (merge a b) c := by
+  intro s hs p₁ p₂ h₃ h₄
+  simp at h₃
+  rcases h₃ with h₃ | ⟨h₃, h₅⟩
+  · exact h₁ h₃ h₄
+  · exact h₂ h₅ h₄
+
+theorem compatible_merge_right_of {a b c} (h₁ : Compatible a b)
+(h₂ : Compatible a c) : Compatible a (merge b c) := by
+  symm at *; exact compatible_merge_left_of h₁ h₂
+
+theorem compatible_ofList_of {e : Defense} {ds : List Defense}
+(h : ∀ e₁ ∈ ds, e.Compatible e₁) : e.Compatible (ofList ds) := by
+  induction ds; simp
+  nm e' ds ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  specialize @ih h₂
+  simp; exact compatible_merge_right_of h₁ ih
+
+@[simp]
+theorem compatibleList_nil : CompatibleList [] := by
+  simp [CompatibleList]
+
+@[simp]
+theorem compatibleList_cons {e ds} :
+CompatibleList (e :: ds) ↔ CompatibleList ds ∧ ∀ e₁ ∈ ds, e.Compatible e₁ := by
+  simp [CompatibleList]
+  constructor
+  · intro h
+    split_ands
+    · intro e₁ e₂ he₁ he₂
+      specialize @h e₁ e₂
+      simp [he₁, he₂] at h
+      exact h
+    · intro e₁ he₁
+      specialize @h e e₁
+      simp [he₁] at h
+      exact h
+  · rintro ⟨h₁, h₂⟩ e₁ e₂ (rfl | he₁) (rfl | he₂)
+    · rfl
+    · exact h₂ _ he₂
+    · symm; exact h₂ _ he₁
+    · exact h₁ he₁ he₂
+
+theorem wf_ofList {ds : List Defense} (H : ∀ d ∈ ds, d.WF)
+(h₀ : CompatibleList ds) : (ofList ds).WF := by
+  induction ds <;> simp
+  nm e ds ih
+  simp only [List.mem_cons, forall_eq_or_imp, compatibleList_cons] at H h₀
+  rcases H with ⟨He, H⟩
+  rcases h₀ with ⟨h₁, h₂⟩
+  specialize ih H h₁
+  apply wf_merge
+  exact compatible_ofList_of h₂

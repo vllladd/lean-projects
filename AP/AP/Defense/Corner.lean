@@ -62,7 +62,7 @@ def dist (c : Corner) (p : PointZ) : ℤ :=
 def cnd' (c : Corner) (s : State) : Prop := ∀ (p : PointZ),
   let d₁ := c.edge₁.dist p
   let d₂ := c.edge₂.dist p
-  0 < d₁ → 0 < d₂ → d₁ ≤ 5 → d₂ ≤ 5 → p ∈ s.taken
+  1 ≤ d₁ → d₁ ≤ 5 → 1 ≤ d₂ → d₂ ≤ 5 → p ∈ s.taken
 
 def cnd (c : Corner) (s : State) : Prop :=
   s.pw = 1 ∧ 6 ≤ c.dist s.aPos ∧ c.cnd' s
@@ -100,7 +100,7 @@ theorem cnd'_of_reachable {s s'} [hs : sys.WF s]
 (h₁ : sys.Reachable s s') (h₂ : c.cnd' s) : c.cnd' s' :=
   λ p h₃ h₄ h₅ h₆ => s.mem_taken_of_reachable h₁ # h₂ p h₃ h₄ h₅ h₆
 
-theorem edge₂_eq_none_of_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd' s)
+theorem f_edge₂_eq_none_of_f_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd' s)
 (h : c.edge₁.defense.f s = some p) : c.edge₂.defense.f s = none := by
   rename' h => h₁, p => p₁
   by_contra h₂
@@ -112,7 +112,7 @@ theorem edge₂_eq_none_of_edge₁_eq_some {s p} [hs : sys.WF s] (H : c.cnd' s)
   rcases h₁ with ⟨h₁, h₃, -⟩
   rcases h₂ with ⟨h₂, h₄, -⟩
   specialize H s.aPos
-  specialize H h₁ h₂ h₃ h₄
+  specialize H h₁ h₃ h₂ h₄
   simp at H
 
 theorem validTr_defense : c.defense.ValidTr := by
@@ -135,7 +135,7 @@ theorem wf_defense : c.defense.WF := by
   · rw [←hr, ←Defense.simulate_st_comm]; subst he₁ he₂
     intro s' h₃ p₁ p₂ h₄; have h₅ := c.cnd'_of_reachable h₃ h.2.2
     have hs' := sys.wf_of_reachable h₃
-    simp [edge₂_eq_none_of_edge₁_eq_some h₅ h₄]
+    simp [f_edge₂_eq_none_of_f_edge₁_eq_some h₅ h₄]
   rw [h₃] at H₂; clear h₃
   have h₄ : sys.simulate (Strat.f ⟨a, c.defense.st d⟩) s n = r
   · convert hr using 2; ext1 s

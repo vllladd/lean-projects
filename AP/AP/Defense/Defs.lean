@@ -32,3 +32,25 @@ def sym (dse : Defense) (sym : sys.Symmetry) : Defense where
   cnd := λ s => dse.cnd # sym.fs' s
   ps := sym.ft '' dse.ps
   f := λ s => dse.f (sym.fs' s) |>.map sym.ft
+
+def empty : Defense where
+  cnd := λ _ => True
+  ps := ∅
+  f := λ _ => none
+
+instance : EmptyCollection Defense := ⟨empty⟩
+instance : Inhabited Defense := ⟨∅⟩
+
+def merge (dse₁ dse₂ : Defense) : Defense where
+  cnd := λ s => dse₁.cnd s ∧ dse₂.cnd s
+  ps := dse₁.ps ∪ dse₂.ps
+  f := λ s => dse₁.f s <|> dse₂.f s
+
+def ofList (ds : List Defense) : Defense :=
+  ds.foldr merge ∅
+
+def Compatible (dse₁ dse₂ : Defense) : Prop :=
+  ∀ {s} [sys.WF s] {p₁ p₂}, dse₁.f s = some p₁ → dse₂.f s = some p₂ → p₁ = p₂
+
+def CompatibleList (ds : List Defense) : Prop :=
+  ∀ {e₁ e₂}, e₁ ∈ ds → e₂ ∈ ds → e₁.Compatible e₂

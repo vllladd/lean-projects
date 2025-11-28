@@ -130,9 +130,22 @@ def coord (p : Point α) (d : Dir) : α :=
 
 end Point
 
+namespace Dir
+
 @[simp] theorem hor_rotRight {d : Dir} : d.rotRight.hor = d.vert := by cases d <;> rfl
 @[simp] theorem vert_rotRight {d : Dir} : d.rotRight.vert = d.hor := by cases d <;> rfl
 @[simp] theorem hor_rotLeft {d : Dir} : d.rotLeft.hor = d.vert := by cases d <;> rfl
 @[simp] theorem vert_rotLeft {d : Dir} : d.rotLeft.vert = d.hor := by cases d <;> rfl
 @[simp] theorem hor_inv {d : Dir} : d⁻¹.hor = d.hor := by cases d <;> rfl
 @[simp] theorem vert_inv {d : Dir} : d⁻¹.vert = d.vert := by cases d <;> rfl
+
+def univList : List Dir :=
+  [.up, .left, .right, .down]
+
+@[simp]
+theorem nodup_univList : univList.Nodup := by
+  decide
+
+@[simp]
+theorem mem_univList {d} : d ∈ univList := by
+  cases d <;> decide
