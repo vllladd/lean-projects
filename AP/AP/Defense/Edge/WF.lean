@@ -376,9 +376,7 @@ theorem wf_defense_of_left (h : e.dir = .left) : e.defense.WF := by
   have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
   · have H : Fact # e.rotLeft.hor; simp [h]
     exact defense_rotRight
-  simp at h₂
-  rw [h₂]
-  simpa
+  simp at h₁; exact h₁
 
 theorem wf_defense_of_up (h : e.dir = .up) : e.defense.WF := by
   have h₁ : e.rotLeft.defense.WF
@@ -386,9 +384,7 @@ theorem wf_defense_of_up (h : e.dir = .up) : e.defense.WF := by
   have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
   · have H : Fact # e.rotLeft.vert; simp [h]
     exact defense_rotRight
-  simp at h₂
-  rw [h₂]
-  simpa
+  simp at h₁; exact h₁
 
 theorem wf_defense_of_right (h : e.dir = .right) : e.defense.WF := by
   have h₁ : e.rotLeft.defense.WF
@@ -396,9 +392,7 @@ theorem wf_defense_of_right (h : e.dir = .right) : e.defense.WF := by
   have h₂ : e.rotLeft.rotRight.defense = e.rotLeft.defense.sym rotRight
   · have H : Fact # e.rotLeft.hor; simp [h]
     exact defense_rotRight
-  simp at h₂
-  rw [h₂]
-  simpa
+  simp at h₁; exact h₁
 
 theorem wf_defense : e.defense.WF := by
   cases h : e.dir

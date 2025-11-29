@@ -6,7 +6,7 @@ def offset : ℕ := 106
 
 def corner₀ : Corner where
   dir := .up
-  offset := offset
+  offset := ⟨offset, -offset⟩
 
 def corners : List Corner :=
   List.range 4 |>.map (Corner.rotRight^[·] corner₀)
@@ -16,6 +16,9 @@ def defenses : List Defense :=
 
 def defense : Defense :=
   .ofList defenses
+
+def Cnd (s : State) : Prop :=
+  corner₀.RotCnd s
 
 -----
 
@@ -27,28 +30,60 @@ theorem getElem_corners_eq_iter_rotRight {i h} :
 corners[i]'h = Corner.rotRight^[i] corner₀ := by
   simp [corners]; decide +revert
 
--- theorem compatible_0_1 : defenses[0].Compatible defenses[1] := by
---   simp [defenses]; apply Corner.compatible_rotRight; decide
+@[simp] theorem edge₁_corner₀_dist_zero : corner₀.edge₁.dist 0 = offset := rfl
+@[simp] theorem edge₂_corner₀_dist_zero : corner₀.edge₂.dist 0 = offset := rfl
 
--- #check 0 #exit
--- 
--- theorem compatible_getElem_defenses {i j} (h₁ : i < j) (h₂ : j < defenses.length) :
--- defenses[i].Compatible defenses[j] := by
---   revert h₂; rw![length_defenses]; intro h₂
---   obtain (rfl | rfl | rfl) : i = 0 ∨ i = 1 ∨ i = 2; omega
---   ·
---     obtain (rfl | rfl | rfl) : j = 1 ∨ j = 2 ∨ j = 3; omega
---     ·
---       sorry
---     · sorry
---     · sorry
---   · sorry
---   · sorry
--- 
--- #check 0 #exit
--- 
--- @[simp]
--- instance : defense.WF := by
---   apply Defense.wf_ofList; simp [defenses]
---   rw [Defense.compatibleList_iff_getElem]
---   intro i j; exact compatible_getElem_defenses
+@[simp]
+instance : corner₀.Square := by
+  constructor; simp
+
+@[simp]
+instance : corner₀.SquareGe 6 := by
+  constructor; simp [offset]
+
+theorem compatible_0_1 : defenses[0].Compatible defenses[1] := by
+  simp [defenses]; apply Corner.compatible_rotRight
+
+theorem compatible'_0_2 : defenses[0].Compatible' Cnd defenses[2] := by
+  simp [defenses]; apply Corner.compatible'_rot180
+
+theorem compatible_0_3 : defenses[0].Compatible defenses[3] := by
+  simp [defenses]; apply Corner.compatible_rotLeft
+
+theorem compatible_1_2 : defenses[1].Compatible defenses[2] := by
+  simp [defenses]; apply Corner.compatible_rotRight
+
+theorem compatible'_1_3 : defenses[1].Compatible' Cnd defenses[3] := by
+  simp [defenses]; unfold Cnd
+  rw [←Corner.rot180_rotRight, ←Corner.rotCnd_rotRight]
+  apply Corner.compatible'_rot180
+
+theorem compatible_2_3 : defenses[2].Compatible defenses[3] := by
+  simp [defenses]; apply Corner.compatible_rotRight
+
+theorem compatible_getElem_defenses {i j} (h₁ : i < j) (h₂ : j < defenses.length) :
+defenses[i].Compatible' Cnd defenses[j] := by
+  revert h₂; rw! [length_defenses]; intro h₂
+  obtain (rfl | rfl | rfl) : i = 0 ∨ i = 1 ∨ i = 2; omega
+  · obtain (rfl | rfl | rfl) : j = 1 ∨ j = 2 ∨ j = 3; omega
+    · exact Defense.compatible'_of_compatible compatible_0_1
+    · exact compatible'_0_2
+    · exact Defense.compatible'_of_compatible compatible_0_3
+  · obtain (rfl | rfl) : j = 2 ∨ j = 3; omega
+    · exact Defense.compatible'_of_compatible compatible_1_2
+    · exact compatible'_1_3
+  · obtain rfl : j = 3; omega
+    exact Defense.compatible'_of_compatible compatible_2_3
+
+theorem cnd_eq_forall_cnd : Cnd = λ s => ∀ d ∈ defenses, d.cnd s := by
+  ext s; simp [Cnd, defenses, corners, Corner.rotCnd_eq_and]
+
+theorem compatibleList_defenses :  Defense.CompatibleList defenses := by
+  rw [Defense.compatibleList_iff_getElem]
+  intro i j h₁ h₂; simp [←cnd_eq_forall_cnd]
+  exact compatible_getElem_defenses h₁ h₂
+
+@[simp]
+instance x : defense.WF := by
+  apply Defense.wf_ofList; simp [defenses]
+  exact compatibleList_defenses

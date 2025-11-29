@@ -534,23 +534,27 @@ theorem wf_ofList {ds : List Defense} (H : ∀ d ∈ ds, d.WF)
   simp [hr] at he
   exact he
 
--- #check 0 #exit
+theorem compatible'_of_compatible {d₁ d₂ p} (h : Compatible d₁ d₂) : Compatible' p d₁ d₂ := by
+  dsimp [Compatible, Compatible'] at h ⊢; grind
 
--- theorem compatibleList_iff_getElem {ds : List Defense} :
--- CompatibleList ds ↔ ∀ i j (h₁ : i < j) (h₂ : j < ds.length), ds[i].Compatible ds[j] := by
---   unfold CompatibleList
---   constructor
---   · intro h i j h₁ h₂
---     apply @h ds[i] ds[j] <;> simp
---   intro h e₁ e₂ h₁ h₂
---   rw [List.mem_iff_getElem] at h₁ h₂
---   obtain ⟨i, h₁, rfl⟩ := h₁
---   obtain ⟨j, h₂, rfl⟩ := h₂
---   rcases lt_trichotomy i j with h₃ | rfl | h₃
---   on_goal 2 => rfl
---   · apply h; exact h₃
---   · symm; apply h; exact h₃
+theorem compatible'_of_compatibleList' {p ds d₁ d₂} (h : CompatibleList' p ds)
+(h₁ : d₁ ∈ ds) (h₂ : d₂ ∈ ds) : Compatible' (λ s => (∀ d ∈ ds, d.cnd s) ∧ p s) d₁ d₂ := by
+  dsimp [CompatibleList', Compatible'] at h ⊢; grind
 
--- theorem compatibleList_iff_getElem! {ds : List Defense} :
--- CompatibleList ds ↔ ∀ i j, i < j → j < ds.length → ds[i]!.Compatible ds[j]! := by
---   convert compatibleList_iff_getElem <;> apply getElem!_pos
+theorem compatible'_of_compatibleList {ds d₁ d₂} (h : CompatibleList ds)
+(h₁ : d₁ ∈ ds) (h₂ : d₂ ∈ ds) : Compatible' (λ s => ∀ d ∈ ds, d.cnd s) d₁ d₂ := by
+  have h₃ := @compatible'_of_compatibleList' (h := h) (h₁ := h₁) (h₂ := h₂)
+  simp at h₃; simp_all only
+
+theorem compatibleList_iff_getElem {ds : List Defense} : CompatibleList ds ↔
+∀ i j (h₁ : i < j) (h₂ : j < ds.length), ds[i].Compatible' (λ s => ∀ d ∈ ds, d.cnd s) ds[j] := by
+  constructor
+  · intro h i j h₁ h₂
+    apply compatible'_of_compatibleList h <;> simp
+  intro h s₀ hs₀ s p₁ p₂ d₁ d₂ h₀ h₁ h₂ h₃ h₄ h₅ h₆
+  rw [List.mem_iff_getElem] at h₃ h₄
+  unfold Compatible' at h; grind
+
+theorem compatibleList_iff_getElem! {ds : List Defense} : CompatibleList ds ↔
+∀ i j, i < j → j < ds.length → ds[i]!.Compatible' (λ s => ∀ d ∈ ds, d.cnd s) ds[j]! := by
+  convert compatibleList_iff_getElem <;> apply getElem!_pos

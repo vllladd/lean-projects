@@ -133,3 +133,16 @@ theorem rotLeft_rotLeft : e.rotLeft.rotLeft = e.rot180 := by
   simp [Edge.rotLeft, Edge.rot180]
   rcases e with ⟨dir, offset⟩
   cases dir <;> simp <;> rfl
+
+@[simp]
+theorem rot180_rotRight : e.rotRight.rot180 = e.rotLeft := by
+  rcases e with ⟨dir, offset⟩; cases dir <;> simp [Edge.rotLeft, Edge.rotRight, Edge.rot180]
+
+@[simp]
+theorem defense_rotLeft : e.rotLeft.defense = e.defense.sym rotLeft := by
+  trans Edge.rotRight^[3] e |>.defense; simp
+  dsimp; simp only [defense_rotRight]; simp
+
+@[simp]
+theorem defense_rot180 : e.rot180.defense = e.defense.sym rot180 := by
+  rw [←rotRight_rotRight, defense_rotRight]; simp

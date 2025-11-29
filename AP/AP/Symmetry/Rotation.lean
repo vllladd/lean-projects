@@ -207,3 +207,19 @@ theorem rot180_dist_rot180' {p₁ p₂} :
 @[simp] theorem rotLeft_ft_mk {x y} : rotLeft.ft ⟨x, y⟩ = ⟨y, -x⟩ := rfl
 @[simp] theorem rotLeft_ft'_mk {x y} : rotLeft.ft' ⟨x, y⟩ = ⟨-y, x⟩ := rfl
 @[simp] theorem rot180_ft_mk {x y} : rot180.ft ⟨x, y⟩ = ⟨-x, -y⟩ := rfl
+
+@[simp]
+theorem rotRight_mul_rot180 : rotRight * rot180 = rotLeft := by
+  rw [←rotLeft_mul_rotLeft, ←mul_assoc]; simp
+
+@[simp]
+theorem rot180_mul_rotRight : rot180 * rotRight = rotLeft := by
+  rw [←rotLeft_mul_rotLeft, mul_assoc]; simp
+
+@[simp]
+theorem rotLeft_mul_rot180 : rotLeft * rot180 = rotRight := by
+  rw [←rotRight_mul_rotRight, ←mul_assoc]; simp
+
+@[simp]
+theorem rot180_mul_rotLeft : rot180 * rotLeft = rotRight := by
+  rw [←rotRight_mul_rotRight, mul_assoc]; simp

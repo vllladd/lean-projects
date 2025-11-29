@@ -154,30 +154,123 @@ theorem edge₁_rotLeft : c.rotLeft.edge₁ = c.edge₁.rotLeft := by
 theorem edge₂_rotRight : c.rotRight.edge₂ = c.edge₂.rotRight := by
   simp [edge₂, Corner.rotRight, Edge.rotRight]; cases c.dir <;> simp
 
--- #check 0 #exit
+theorem edge₁_rotRight' : c.rotRight.edge₁ = c.edge₁.rotRight := by
+  simp [edge₁, Corner.rotRight, Edge.rotRight]; cases c.dir <;> simp
 
--- theorem compatible_rot180 [h : c.SquareGe 6] :
--- c.defense.Compatible c.rot180.defense := by
---   intro s₀ hs₀ s p₁ p₂ h₀ h₁ h₂ h₃ h₄ h₅
---   replace h₄ := of_f_eq_some h₄
---   replace h₅ := of_f_eq_some h₅
---   simp at h₅
---   have hs := sys.wf_of_reachable h₃
---   have H₁ := h₁.2.2
---   have H₂ := h₂.2.2
---   have H₃ := cnd'_of_reachable h₃ H₁
---   have H₄ := cnd'_of_reachable h₃ H₂
---   rcases h₄, h₅ with ⟨h₄ | h₄, h₅ | h₅⟩
---   ·
---     sorry
---   ·
---     exfalso
---     rw [←edge₂_rotLeft] at h₄
---     rw [←Edge.rotLeft_rotLeft, rotLeft_edge₂, ←edge₁_rotLeft] at h₅
---     apply false_of_edge₁_edge₂_eq_some _ h₅ h₄
---     sorry
---   ·
---     rw [←edge₁_rotRight] at h₄
---     sorry
---   ·
---     sorry
+theorem edge₂_rotLeft' : c.rotLeft.edge₂ = c.edge₂.rotLeft := by
+  simp [edge₂, Corner.rotLeft, Edge.rotLeft]; cases c.dir <;> simp
+
+@[simp]
+theorem rot180_rotRight : c.rotRight.rot180 = c.rotLeft := by
+  rw [←rotLeft_rotLeft, rotLeft_rotRight]
+
+theorem cnd'_of_cnd {s} (h : c.cnd s) : c.cnd' s := h.2.2
+theorem cnd'_of_cnd_defense {s} (h : c.defense.cnd s) : c.cnd' s := h.2.2
+
+def RotCnd (c : Corner) (s : State) : Prop :=
+  ∀ n, Corner.rotRight^[n] c |>.defense.cnd s
+
+theorem compatible'_rot180 [h : c.SquareGe 6] :
+Defense.Compatible' c.RotCnd c.defense c.rot180.defense := by
+  intro s₀ hs₀ s p₁ p₂ h₀ h₁ h₂ h₃ h₄ h₅
+  replace h₄ := of_f_eq_some h₄
+  replace h₅ := of_f_eq_some h₅
+  simp only [edge₁_rot180, edge₂_rot180] at h₅
+  have hs := sys.wf_of_reachable h₃
+  have H₁ := h₁.2.2
+  have H₂ := h₂.2.2
+  have H₃ := cnd'_of_reachable h₃ H₁
+  have H₄ := cnd'_of_reachable h₃ H₂
+  rcases h₄, h₅ with ⟨h₄ | h₄, h₅ | h₅⟩
+  · rw [←Edge.rotRight_rotRight, rotRight_edge₁, ←edge₂_rotRight] at h₅
+    rw [←c.rotRight_rotLeft, edge₁_rotRight] at h₄
+    cases false_of_f_edge₂_rotLeft_rotRight_eq_some h₄ h₅
+  · exfalso
+    rw [←edge₂_rotLeft] at h₄
+    rw [←Edge.rotLeft_rotLeft, rotLeft_edge₂, ←edge₁_rotLeft] at h₅
+    apply false_of_edge₁_edge₂_eq_some _ h₅ h₄
+    specialize h₀ 3
+    simp at h₀
+    exact cnd'_of_reachable h₃ # cnd'_of_cnd_defense h₀
+  · rw [←Edge.rotRight_rotRight, rotRight_edge₁] at h₅
+    have h₆ := @c.compatible_rotRight _ s₀ _ s p₁ p₂ trivial
+    specialize h₆ h₁ _ h₃
+    · clear h₆
+      specialize h₀ 1; simp at h₀
+      exact h₀
+    rw [f_eq_some_iff_of_cnd' H₃] at h₆
+    rw [f_eq_some_iff_of_cnd'] at h₆
+    rotate_left
+    · specialize h₀ 1; simp at h₀
+      exact cnd'_of_reachable h₃ # cnd'_of_cnd_defense h₀
+    simp at h₅
+    simp [h₄, h₅] at h₆
+    exact h₆
+  · rw [←Edge.rotLeft_rotLeft, rotLeft_edge₂] at h₅
+    have h₆ := @c.compatible_rotLeft _ s₀ _ s p₁ p₂ trivial
+    specialize h₆ h₁ _ h₃
+    · clear h₆
+      specialize h₀ 3; simp at h₀
+      exact h₀
+    rw [f_eq_some_iff_of_cnd' H₃] at h₆
+    rw [f_eq_some_iff_of_cnd'] at h₆
+    rotate_left
+    · specialize h₀ 3; simp at h₀
+      exact cnd'_of_reachable h₃ # cnd'_of_cnd_defense h₀
+    simp at h₅
+    simp [h₄, h₅] at h₆
+    exact h₆
+
+@[simp]
+theorem rotRight_rot180 : c.rot180.rotRight = c.rotLeft := by
+  rw [←rotLeft_rotLeft, rotRight_rotLeft]
+
+@[simp]
+theorem rotLeft_rot180 : c.rot180.rotLeft = c.rotRight := by
+  rw [←rotRight_rotRight, rotLeft_rotRight]
+
+@[simp]
+theorem rot180_rotLeft : c.rotLeft.rot180 = c.rotRight := by
+  rw [←rotRight_rotRight, rotRight_rotLeft]
+
+@[simp]
+theorem rot180_rot180 : c.rot180.rot180 = c := by
+  rw [←rotRight_rotRight, rotRight_rot180, rotRight_rotLeft]
+
+@[simp]
+theorem rotCnd_rotRight : c.rotRight.RotCnd = c.RotCnd := by
+  ext s
+  constructor
+  · intro h n
+    specialize h (n + 3)
+    simp at h
+    exact h
+  · intro h n
+    specialize h (n + 1)
+    simp at h
+    exact h
+
+theorem iter_rotRight_eq_mod_4 {n} : Corner.rotRight^[n] = Corner.rotRight^[n % 4] := by
+  ext c :1
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h : n < 4
+  · rw [Nat.mod_eq_of_lt h]
+  push_neg at h
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
+  simp [Function.iterate_add]
+  apply ih
+  simp
+
+theorem rotCnd_eq_and : c.RotCnd = λ s => c.defense.cnd s ∧ c.rotRight.defense.cnd s ∧
+c.rot180.defense.cnd s ∧ c.rotLeft.defense.cnd s := by
+  ext s; constructor
+  · intro h
+    replace h : _ ∧ _ ∧ _ ∧ _ := ⟨h 0, h 1, h 2, h 3⟩
+    simp at h
+    exact h
+  · rintro ⟨h₁, h₂, h₃, h₄⟩ n
+    rw [iter_rotRight_eq_mod_4]
+    generalize hm : n % 4 = m
+    replace hm : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3; omega
+    rcases hm with (rfl | rfl | rfl | rfl) <;> simpa
