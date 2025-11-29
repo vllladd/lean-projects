@@ -1,17 +1,5 @@
 import AP.AP.Defense.Defs
 
-namespace List
-
-variable {α β : Type*}
-variable {xs ys zs : List α}
-
-theorem getElem!_eq_getElem [ha : Inhabited α] {i} (h : i < xs.length) : xs[i]! = xs[i] :=
-  getElem!_pos xs i h
-
--- #check 0 #exit
-
-end List
-
 namespace AP.Defense
 
 variable {dse dse₁ dse₂ : Defense}

@@ -1261,3 +1261,6 @@ xs.foldlWith (λ a x h => a ∧ p x h) True ↔ ∀ (x : α) (h : x ∈ xs), p x
   classical simp [foldlWith_prop_iff_foldlWith_bool, foldlWith_bool_and_iff_forall]
 
 -----
+
+theorem getElem!_eq_getElem [ha : Inhabited α] {i} (h : i < xs.length) : xs[i]! = xs[i] :=
+  getElem!_pos xs i h
