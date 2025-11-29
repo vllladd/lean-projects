@@ -59,7 +59,7 @@ theorem false_of_f_edge₂_rotLeft_rotRight_eq_some {s p₁ p₂} [h : c.SquareG
   simp at h₁ h₂ h₃ h₄; cases dir <;> simp [Edge.dist] at h₁ h₂ h₃ h₄ <;> omega
 
 theorem compatible_rotRight [h : c.SquareGe 6] : c.defense.Compatible c.rotRight.defense := by
-  intro s₀ hs₀ s p₁ p₂ h₁ h₂ h₃ h₄ h₅
+  intro s₀ hs₀ s p₁ p₂ h₀ h₁ h₂ h₃ h₄ h₅
   replace h₄ := of_f_eq_some h₄
   replace h₅ := of_f_eq_some h₅
   simp at h₅
@@ -156,28 +156,28 @@ theorem edge₂_rotRight : c.rotRight.edge₂ = c.edge₂.rotRight := by
 
 -- #check 0 #exit
 
-theorem compatible_rot180 [h : c.SquareGe 6] :
-c.defense.Compatible c.rot180.defense := by
-  intro s₀ hs₀ s p₁ p₂ h₁ h₂ h₃ h₄ h₅
-  replace h₄ := of_f_eq_some h₄
-  replace h₅ := of_f_eq_some h₅
-  simp at h₅
-  have hs := sys.wf_of_reachable h₃
-  have H₁ := h₁.2.2
-  have H₂ := h₂.2.2
-  have H₃ := cnd'_of_reachable h₃ H₁
-  have H₄ := cnd'_of_reachable h₃ H₂
-  rcases h₄, h₅ with ⟨h₄ | h₄, h₅ | h₅⟩
-  ·
-    sorry
-  ·
-    exfalso
-    rw [←edge₂_rotLeft] at h₄
-    rw [←Edge.rotLeft_rotLeft, rotLeft_edge₂, ←edge₁_rotLeft] at h₅
-    apply false_of_edge₁_edge₂_eq_some _ h₅ h₄
-    sorry
-  ·
-    rw [←edge₁_rotRight] at h₄
-    sorry
-  ·
-    sorry
+-- theorem compatible_rot180 [h : c.SquareGe 6] :
+-- c.defense.Compatible c.rot180.defense := by
+--   intro s₀ hs₀ s p₁ p₂ h₀ h₁ h₂ h₃ h₄ h₅
+--   replace h₄ := of_f_eq_some h₄
+--   replace h₅ := of_f_eq_some h₅
+--   simp at h₅
+--   have hs := sys.wf_of_reachable h₃
+--   have H₁ := h₁.2.2
+--   have H₂ := h₂.2.2
+--   have H₃ := cnd'_of_reachable h₃ H₁
+--   have H₄ := cnd'_of_reachable h₃ H₂
+--   rcases h₄, h₅ with ⟨h₄ | h₄, h₅ | h₅⟩
+--   ·
+--     sorry
+--   ·
+--     exfalso
+--     rw [←edge₂_rotLeft] at h₄
+--     rw [←Edge.rotLeft_rotLeft, rotLeft_edge₂, ←edge₁_rotLeft] at h₅
+--     apply false_of_edge₁_edge₂_eq_some _ h₅ h₄
+--     sorry
+--   ·
+--     rw [←edge₁_rotRight] at h₄
+--     sorry
+--   ·
+--     sorry
