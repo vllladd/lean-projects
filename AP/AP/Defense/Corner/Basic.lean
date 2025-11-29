@@ -162,9 +162,52 @@ theorem f_eq_some_iff_of_cnd' {s p} [hs : sys.WF s] (h : c.cnd' s) :
 c.defense.f s = some p ↔ c.edge₁.defense.f s = some p ∨ c.edge₂.defense.f s = some p := by
   simp [defense, f]; have := c.f_edge₁_eq_none_of_f_edge₂_eq_some (p := p) h; tauto
 
--- theorem rotRight_edge₁_of (h : |c.offset.x| = |c.offset.y|) :
--- c.edge₁.rotRight = c.edge₂ := by
---   simp [edge₁, edge₂, Edge.rotRight]
---   rcases c with ⟨dir, ⟨x, y⟩⟩
---   simp at h ⊢
---   cases dir <;> simp
+class Square (c : Corner) : Prop where
+  h : c.edge₁.dist 0 = c.edge₂.dist 0
+
+class SquareEx (c : Corner) (d : ℤ) extends c.Square where
+  h₁ : c.edge₁.dist 0 = d
+
+class SquareLe (c : Corner) (d : ℤ) extends c.Square where
+  h₁ : c.edge₁.dist 0 ≤ d
+
+class SquareGe (c : Corner) (d : ℤ) extends c.Square where
+  h₁ : d ≤ c.edge₁.dist 0
+
+theorem square_iff : c.Square ↔ c.edge₁.dist 0 = c.edge₂.dist 0 :=
+  ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+theorem square_iff_offset_x_eq :
+c.Square ↔ c.offset.x = c.offset.y * if c.dir.vert then -1 else 1 := by
+  simp [square_iff, edge₁, edge₂, Edge.dist, Point.zero_def]
+  cases c.dir <;> dsimp <;> omega
+
+@[simp]
+theorem rotRight_edge₁ [h : c.Square] : c.edge₁.rotRight = c.edge₂ := by
+  simp [edge₁, edge₂, Edge.rotRight]; rcases c with ⟨dir, ⟨x, y⟩⟩
+  simp at h ⊢; cases dir <;> simp [square_iff_offset_x_eq] at h ⊢ <;> omega
+
+@[simp]
+theorem rotLeft_edge₂ [h : c.Square] : c.edge₂.rotLeft = c.edge₁ := by
+  simp [edge₁, edge₂, Edge.rotLeft]; rcases c with ⟨dir, ⟨x, y⟩⟩
+  simp at h ⊢; cases dir <;> simp [square_iff_offset_x_eq] at h ⊢ <;> omega
+
+@[simp] theorem edge₁_dist_of_squareEx {d} [h : c.SquareEx d] : c.edge₁.dist 0 = d := h.2
+@[simp] theorem edge₁_dist_of_squareLe {d} [h : c.SquareLe d] : c.edge₁.dist 0 ≤ d := h.2
+@[simp] theorem edge₁_dist_of_squareGe {d} [h : c.SquareGe d] : d ≤ c.edge₁.dist 0 := h.2
+
+@[simp]
+theorem edge₂_dist_of_squareEx {d} [h : c.SquareEx d] : c.edge₂.dist 0 = d := by
+  rw [←h.h]; exact h.h₁
+
+@[simp]
+theorem edge₂_dist_of_squareLe {d} [h : c.SquareLe d] : c.edge₂.dist 0 ≤ d := by
+  rw [←h.h]; exact h.h₁
+
+@[simp]
+theorem edge₂_dist_of_squareGe {d} [h : c.SquareGe d] : d ≤ c.edge₂.dist 0 := by
+  rw [←h.h]; exact h.h₁
+
+theorem false_of_edge₁_edge₂_eq_some {s p₁ p₂} [hs : sys.WF s] (H : c.cnd' s)
+(h₁ : c.edge₁.defense.f s = some p₁) (h₂ : c.edge₂.defense.f s = some p₂) : False := by
+  simp [f_edge₂_eq_none_of_f_edge₁_eq_some H h₁] at h₂
