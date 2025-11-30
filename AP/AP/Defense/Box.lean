@@ -4,6 +4,9 @@ namespace AP.Box
 
 def offset : ℕ := 106
 
+def interior : Set' PointZ :=
+  Point.nbhd (0 : PointZ) (offset - 1)
+
 def corner₀ : Corner where
   dir := .up
   offset := ⟨offset, -offset⟩
@@ -84,6 +87,32 @@ theorem compatibleList_defenses :  Defense.CompatibleList defenses := by
   exact compatible_getElem_defenses h₁ h₂
 
 @[simp]
-instance x : defense.WF := by
+instance : defense.WF := by
   apply Defense.wf_ofList; simp [defenses]
   exact compatibleList_defenses
+
+@[simp]
+theorem ps_defense : defense.ps = Set.univ \ interior.toSet := by
+  ext p; simp [interior, defense, Point.zero_def, Point.dist]
+  constructor
+  · unfold offset
+    rintro ⟨d, hd, h⟩ h₁
+    simp [defenses, corners] at hd
+    rcases hd with rfl | rfl | rfl | rfl
+    all_goals
+      by_contra! h₂
+      simp [abs_le] at h₁ h₂
+      simp [corner₀, Corner.points, Corner.edge₁, Corner.edge₂, Edge.points,
+        Edge.memPoints, offset] at h; omega
+  · intro h
+    simp [imp_iff_or_not, lt_abs, offset] at h
+    simp [defenses, corners, corner₀, Corner.points, Corner.edge₁, Corner.edge₂, Edge.points,
+      Edge.memPoints, offset]; omega
+
+theorem mem_interior_of_simulate {s : State} {a : AStrat} {d : DStrat} {n r}
+[hs : sys.WF s] [ha : a.WF] [hd : d.WF] (h₁ : defense.cnd s)
+(h₂ : sys.simulate (Strat.f ⟨a, defense.st d⟩) s n = r) : r.1.aPos ∈ interior := by
+  have H : defense.WF := inferInstance
+  replace H := @H.not_mem_ps
+  specialize @H s _ h₁ a _ d _ n
+  simp [h₂] at H; exact H
