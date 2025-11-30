@@ -774,7 +774,6 @@ y ∈ xs.foldl (λ mp x => mp.push (f x)) mp ↔ y ∈ mp ∨ ∃ x ∈ xs, f x 
   simp [ih]
   tauto
 
-@[simp]
 theorem toList_erase [ha : LinearOrder α] {x} : (s.erase x).toList = s.toList.erase x := by
   rw [List.eq_iff_of_nodup_and_sorted']
   rotate_left
@@ -803,7 +802,7 @@ s.count p = s.toList.countP p := by
   have h₃ : (s.erase x).size = n
   · simp [size_erase h₁, hn]
   rw [ih h₃]
-  simp [h]
+  simp [toList_erase, h]
 
 theorem fold_map_push_eq_map_toMap {f : α → β} :
 s.fold (λ mp x => mp.push # f x) (∅ : Map β ℕ) Map.push_push_comm =
@@ -889,3 +888,54 @@ theorem size_ofFinset {s : Finset α} : (ofFinset s).size = s.card := by
 @[simp]
 theorem subset_insert {x} : s ⊆ s.insert x := by
   intro y hy; simp [hy]
+
+def unionList (xs : List (Set' α)) : Set' α :=
+  xs.foldl (· ∪ ·) ∅
+
+@[simp]
+theorem unionList_nil : unionList ([] : List (Set' α)) = ∅ := rfl
+
+theorem union_comm : s₁ ∪ s₂ = s₂ ∪ s₁ := by
+  ext; simp [or_comm]
+
+theorem inter_comm : s₁ ∩ s₂ = s₂ ∩ s₁ := by
+  ext; simp [and_comm]
+
+theorem union_assoc : (s₁ ∪ s₂) ∪ s₃ = s₁ ∪ (s₂ ∪ s₃) := by
+  ext; simp [or_assoc]
+
+theorem inter_assoc : (s₁ ∩ s₂) ∩ s₃ = s₁ ∩ (s₂ ∩ s₃) := by
+  ext; simp [and_assoc]
+
+@[simp]
+theorem unionList_cons {s : Set' α} {xs} : unionList (s :: xs) = s ∪ unionList xs := by
+  unfold unionList
+  generalize (∅ : Set' α) = z
+  simp
+  induction xs generalizing s z
+  · simp [union_comm]
+  nm s' xs ih
+  simp
+  rw [←ih]; clear ih
+  congr 1
+  simp_rw [union_assoc]
+  congr 1
+  exact union_comm
+
+@[simp]
+theorem unionList_append {xs ys : List (Set' α)} :
+unionList (xs ++ ys) = unionList xs ∪ unionList ys := by
+  induction xs generalizing ys <;> simp
+  nm s xs ih; rw [ih, union_assoc]
+
+theorem unionList_of_perm {xs ys : List (Set' α)}
+(h : xs.Perm ys) : unionList xs = unionList ys := by
+  induction h <;> clear xs ys; rfl
+  · nm s xs ys h₁ ih; simp [ih]
+  · nm s t xs; simp; simp_rw [←union_assoc, union_comm]
+  · nm xs ys zs h₁ h₂ ih₁ ih₂; rwa [ih₁]
+
+@[simp]
+theorem mem_unionList {xs : List (Set' α)} {x} :
+x ∈ unionList xs ↔ ∃ s ∈ xs, x ∈ s := by
+  induction xs <;> simp; grind

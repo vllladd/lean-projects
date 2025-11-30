@@ -5,7 +5,7 @@ namespace AP.Box
 def offset : ℕ := 106
 
 def interior : Set' PointZ :=
-  Point.nbhd (0 : PointZ) (offset - 1)
+  (0 : PointZ).nbhd (offset - 1)
 
 def corner₀ : Corner where
   dir := .up
@@ -22,6 +22,11 @@ def defense : Defense :=
 
 def Cnd (s : State) : Prop :=
   corner₀.RotCnd s
+
+def guardTiles : Set' PointZ :=
+  .unionList # corners.map # λ c => c.offset * 103 / 106 |>.nbhd 2
+
+-- #check 0 #exit
 
 -----
 
@@ -93,7 +98,7 @@ instance : defense.WF := by
 
 @[simp]
 theorem ps_defense : defense.ps = Set.univ \ interior.toSet := by
-  ext p; simp [interior, defense, Point.zero_def, Point.dist]
+  ext p; simp [interior, defense, Point.dist]
   constructor
   · unfold offset
     rintro ⟨d, hd, h⟩ h₁
@@ -116,3 +121,101 @@ theorem mem_interior_of_simulate {s : State} {a : AStrat} {d : DStrat} {n r}
   replace H := @H.not_mem_ps
   specialize @H s _ h₁ a _ d _ n
   simp [h₂] at H; exact H
+
+@[simp]
+theorem size_guardTiles : guardTiles.size = 100 := by
+  native_decide
+
+@[simp]
+theorem offset_corner₀ : corner₀.offset = ⟨106, -106⟩ := rfl
+
+theorem cnd_defense_iff_guardTiles {s} : defense.cnd s ↔ s.pw = 1 ∧
+s.aPos ∈ (0 : PointZ).nbhd 100 ∧ guardTiles ⊆ s.taken := by
+  simp only [defense, defenses, Corner.defense, corners, corner₀, offset, Nat.cast_ofNat,
+    Int.reduceNeg, List.range_map_iterate, List.iterate, Corner.rotRight, Dir.rotRight_up,
+    rotRight_ft_mk, neg_neg, Dir.rotRight_right, Dir.rotRight_down, List.map_cons, List.map_nil,
+    Defense.ofList_cons, Defense.ofList_nil, Defense.merge_empty_right, Defense.cnd_merge,
+    Corner.cnd, Corner.dist, Edge.dist, Corner.edge₁, Corner.edge, Point.coord'_up, instFactTrue_aP,
+    Edge.dir_eq_of_up, sub_neg_eq_add, Corner.edge₂, Point.coord'_right, le_inf_iff, Corner.cnd',
+    tsub_le_iff_right, Point.coord'_down, Edge.dir_eq_of_down, Point.coord'_left, Dir.rotRight_left,
+    Int.min_add_right, Point.mem_nbhd, Point.dist, Point.x_ofNat, CharP.cast_eq_zero, zero_sub,
+    abs_neg, Point.y_ofNat, sup_le_iff, guardTiles, Set'.unionList_cons, Set'.unionList_nil,
+    Set'.union_empty, Set'.subset_def, Set'.mem_union, Set'.mem_ofList, Point.x_div, Point.x_mul,
+    Int.reduceMul, Int.reduceDiv, Point.y_div, Point.y_mul, neg_mul]
+  rcases s.aPos with ⟨ax, ay⟩
+  simp only [Point.forall_iff, Int.reduceNeg]
+  by_cases hpw : s.pw = 1
+  rotate_left; simp only [hpw, false_and, and_self, Int.reduceNeg]
+  simp only [hpw, true_and, abs_le, Int.reduceNeg, neg_le_sub_iff_le_add, Int.reduceAdd,
+    tsub_le_iff_right]
+  apply Iff.intro
+  · intro a
+    obtain ⟨left, right⟩ := a
+    obtain ⟨left, right_1⟩ := left
+    obtain ⟨left_1, right⟩ := right
+    obtain ⟨left, right_2⟩ := left
+    obtain ⟨left_1, right_3⟩ := left_1
+    obtain ⟨left_2, right⟩ := right
+    obtain ⟨left_1, right_4⟩ := left_1
+    obtain ⟨left_2, right_5⟩ := left_2
+    obtain ⟨left_3, right⟩ := right
+    obtain ⟨left_2, right_6⟩ := left_2
+    simp_all only [Int.reduceNeg]
+    apply And.intro
+    · apply And.intro
+      · apply And.intro
+        · omega
+        · omega
+      · apply And.intro
+        · omega
+        · omega
+    · intro x y a
+      cases a with
+      | inl h =>
+        obtain ⟨left_4, right_2⟩ := h
+        obtain ⟨left_4, right_4⟩ := left_4
+        obtain ⟨left_5, right_2⟩ := right_2
+        apply right_1 <;> omega
+      | inr h_1 =>
+        cases h_1 with
+        | inl h =>
+          obtain ⟨left_4, right_2⟩ := h
+          obtain ⟨left_4, right_4⟩ := left_4
+          obtain ⟨left_5, right_2⟩ := right_2
+          apply right_3 <;> omega
+        | inr h_2 =>
+          cases h_2 with
+          | inl h =>
+            obtain ⟨left_4, right_2⟩ := h
+            obtain ⟨left_4, right_4⟩ := left_4
+            obtain ⟨left_5, right_2⟩ := right_2
+            apply right_5 <;> omega
+          | inr h_1 =>
+            obtain ⟨left_4, right_2⟩ := h_1
+            obtain ⟨left_4, right_4⟩ := left_4
+            obtain ⟨left_5, right_2⟩ := right_2
+            apply right <;> omega
+  · intro a
+    obtain ⟨left, right⟩ := a
+    obtain ⟨left, right_1⟩ := left
+    obtain ⟨left, right_2⟩ := left
+    obtain ⟨left_1, right_1⟩ := right_1
+    apply And.intro
+    · apply And.intro
+      · omega
+      · intro x y a a_1 a_2 a_3
+        apply right; omega
+    · apply And.intro
+      · apply And.intro
+        · omega
+        · intro x y a a_1 a_2 a_3
+          apply right; omega
+      · apply And.intro
+        · apply And.intro
+          · omega
+          · intro x y a a_1 a_2 a_3
+            apply right; omega
+        · apply And.intro
+          · omega
+          · intro x y a a_1 a_2 a_3
+            apply right; omega

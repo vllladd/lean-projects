@@ -77,7 +77,7 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
   | 0 => pure ()
   | n + 1 => do
     let p? ← match s.aTurn with
-    | false => pure # some # dKingOp.f s
+    | false => pure # some # King.dKingOp.f s
     | true => do
       if !isFst then logb else pure ()
       IO.println s.toStr

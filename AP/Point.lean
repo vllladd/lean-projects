@@ -348,11 +348,22 @@ end StrictMono
 --   · rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩; simp; intro h₁ h₂
 --     constructor <;> apply neg_eq_of_add_eq_zero_right <;> assumption
 
-theorem ofNat_def [ha : Ring α] {n} :
-(OfNat.ofNat n : Point α) = ⟨OfNat.ofNat n, OfNat.ofNat n⟩ := by
-  induction n; simp; nm n ih
-  rw [Lean.Grind.Semiring.ofNat_succ, ih]
-  nth_rw 2 3 [Lean.Grind.Semiring.ofNat_succ]; rfl
+instance {n} [ha : OfNat α n] : OfNat (Point α) n where
+  ofNat := ⟨ofNat(n), ofNat(n)⟩
+
+theorem ofNat_def {n : ℕ} [ha : OfNat α n] :
+(ofNat(n) : Point α) = ⟨ofNat(n), ofNat(n)⟩ := rfl
+
+theorem ofNat_ring_def {n : ℕ} [ha : Ring α] : (ofNat(n) : Point α) = ⟨n, n⟩ := by
+  rw [ofNat_def]; simp; apply Semiring.toGrindSemiring_ofNat
+
+@[simp]
+theorem x_ofNat {n : ℕ} [ha : Ring α] : (ofNat(n) : Point α).x = n := by
+  simp [Point.ofNat_def]; apply Semiring.toGrindSemiring_ofNat α n
+
+@[simp]
+theorem y_ofNat {n : ℕ} [ha : Ring α] : (ofNat(n) : Point α).y = n := by
+  simp [Point.ofNat_def]; apply Semiring.toGrindSemiring_ofNat α n
 
 @[simp]
 theorem add_self_eq_zero_iff
