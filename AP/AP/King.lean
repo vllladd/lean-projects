@@ -1,5 +1,40 @@
 import AP.AP.Defense
 
+namespace System
+
+universe u
+variable {S T : Type u}
+variable {sys : System S T}
+
+theorem simulate_snd_ne_zero_of_tr_eq_none {f s n}
+(h₁ : sys.tr s (f s) = none) (h₂ : n ≠ 0) : (sys.simulate f s n).2 ≠ 0 :=
+  simulate_snd_ne_zero_of (n := n) (s' := s) (r := n) (by simp [h₁]) h₂ (by rfl)
+
+theorem exi_simulate_succ_eq_of {f s₀ s s' n k r₀ r}
+(h₁ : sys.simulate f s₀ n = (s', r₀)) (hr₀ : r₀ = 0)
+(h₂ : sys.simulate f s₀ k = (s, r)) (hk : k < n) :
+r = 0 ∧ ∃ s', sys.simulate f s₀ (k + 1) = (s', 0) ∧ sys.tr s (f s) = some s' := by
+  subst hr₀
+  apply and_of
+  · rw [Prod.snd_eq_of_eq_mk h₂]
+    exact simulate_snd_eq_zero_of_le_and_eq_zero
+      (Prod.snd_eq_of_eq_mk h₁ |>.symm) (le_of_lt hk)
+  rintro rfl
+  generalize hr : sys.simulate f s₀ (k + 1) = r
+  rcases r with ⟨s₁, r⟩; simp
+  apply and_of
+  · rw [Prod.snd_eq_of_eq_mk hr]
+    exact simulate_snd_eq_zero_of_le_and_eq_zero
+      (Prod.snd_eq_of_eq_mk h₁ |>.symm) hk
+  rintro rfl
+  rw [simulate_add] at hr
+  simp [h₂] at hr
+  exact hr
+
+-- #check 0 #exit
+
+end System
+
 namespace AP.King
 
 def state₀ : State :=
@@ -17,7 +52,6 @@ def dKingOp : DStrat := .mk' # λ s =>
   match Box.guardTiles \ s.taken |>.erase s.aPos |>.toList.head? with
   | none => dKingOp₁.f s
   | some p => p
-
 
 -----
 
@@ -69,7 +103,7 @@ theorem State.aPos_dist_le_of_simulate_mul_two {s r f n} [hs : sys.WF s]
   rcases r with ⟨s₁, r⟩
   dsimp at ih ⊢
   generalize hr₁ : sys.simulate f s₁ 2 = r₁
-  rcases r₁ with ⟨s₃, r₁⟩
+  rcases r₁ with ⟨s', r₁⟩
   dsimp
   split_ifs with h₁
   rotate_left; grind
@@ -77,30 +111,33 @@ theorem State.aPos_dist_le_of_simulate_mul_two {s r f n} [hs : sys.WF s]
   simp
   have h₁ := sys.reachable_of_simulate_eq hr
   have hs₁ := sys.wf_of_reachable h₁
-  suffices h : s₃.aPos.dist s₁.aPos ≤ s.pw
-  · suffices : s₃.aPos.dist s.aPos ≤ s₃.aPos.dist s₁.aPos + s₁.aPos.dist s.aPos; grind
+  suffices h : s'.aPos.dist s₁.aPos ≤ s.pw
+  · suffices : s'.aPos.dist s.aPos ≤ s'.aPos.dist s₁.aPos + s₁.aPos.dist s.aPos; grind
     apply Point.triangle
   simp [←pw_eq_of_reachable h₁]
-  exact aPos_dist_le_of_simulate_two (r := ⟨s₃, r₁⟩) hr₁
+  exact aPos_dist_le_of_simulate_two (r := ⟨s', r₁⟩) hr₁
 
--- theorem State.aPos_distle_of_simulate_le {s f k n r₁ r₂} [hs : sys.WF s]
--- (h₁ : sys.simulate f s k = r₁) (h₂ : sys.simulate f s n = r₂) (h₃ : k ≤ n) :
--- r₁.1.aPos.dist s.aPos ≤ r₂.1.aPos.dist s.aPos := by
---   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₃; clear h₃
---   induction n generalizing r₂
---   · simp at h₂; subst h₁ h₂; rfl
---   nm n ih
---   rw [←add_assoc, System.simulate_add] at h₂
---   generalize hr : sys.simulate f s (k + n) = r at h₂
---   rcases r with ⟨s₁, r⟩
---   specialize ih hr
---   simp at h₂
---   split_ifs at h₂ with h₃
---   rotate_left
---   · subst h₂; simpa
---   subst h₃
---   rcases r₂ with ⟨s₂, r₂⟩
---   simp at h₂ ⊢ ih
+theorem DState.aPos_dist_le_div_two_of_simulate {s f n r} [hs : DState s]
+(h : sys.simulate f s n = r) : r.1.aPos.dist s.aPos ≤ s.pw * (n / 2) := by
+  induction n using Nat.mod_2_ind <;> nm n
+  · simp; exact s.aPos_dist_le_of_simulate_mul_two h
+  rw [add_comm, System.simulate_add] at h
+  split at h; nm x s₁ r₁ h₁; clear x
+  split at h; nm x s₂ r₂ h₂; clear x
+  simp [System.simulate] at h₁
+  convert_to _ ≤ (s.pw * n : ℤ); simp; omega
+  split at h₁
+  · nm x h₃; clear x
+    simp at h₁; rcases h₁ with ⟨rfl, rfl⟩
+    simp at h; simp [←h]; grind
+  nm x s' h₃; clear x
+  simp at h₁; rcases h₁ with ⟨rfl, rfl⟩
+  simp at h
+  subst h
+  simp
+  have hs' := AState.of_tr h₃
+  rw [←DState.aPos_eq_of_tr h₃, ←pw_eq_of_tr h₃]
+  exact s'.aPos_dist_le_of_simulate_mul_two (r := (s₂, r₂)) h₂
 
 -- #check 0 #exit
 
@@ -140,11 +177,13 @@ instance : DState state₀ := by
 
 @[simp] theorem pw_state₀ : state₀.pw = 1 := rfl
 @[simp] theorem aPos_state₀ : state₀.aPos = 0 := rfl
+@[simp] theorem taken_state₀ : state₀.taken = ∅ := rfl
 
 -- #check 0 #exit
 
 theorem dWins_dKingOp {a : AStrat} [ha : a.WF] : state₀.dWins ⟨a, dKingOp⟩ := by
   let f d n := sys.simulate (Strat.f ⟨a, d⟩) state₀ n
+  
   generalize hr : f dKingOp 200 = r
   rcases r with ⟨s₁, n⟩
   by_cases hn : n ≠ 0
@@ -152,12 +191,46 @@ theorem dWins_dKingOp {a : AStrat} [ha : a.WF] : state₀.dWins ⟨a, dKingOp⟩
   push_neg at hn; subst hn
   have hs₁ := DState.of_simulate_mul_two_eq_full (n := 100) hr
   
-  have h₁ : ∀ k ≤ 200, (f dKingOp k).1.aPos.dist 0 ≤ 100
+  have h₁ : ∀ k ≤ 200, (f dKingOp k).1.aPos.dist 0 ≤ k / 2
+  · intro k hk
+    generalize hr₁ : f dKingOp k = r₁
+    have h₁ := DState.aPos_dist_le_div_two_of_simulate (s := state₀) hr₁
+    simp at h₁
+    exact h₁
+  
+  have h₂ : ∀ k ≤ 200, (f dKingOp k).1.aPos ∉ Box.guardTiles
+  · intro k hk h₂
+    specialize h₁ k hk
+    replace h₂ := Box.le_dist_center_of_mem_guardTiles h₂
+    omega
+  
+  have hf : ∀ {d n k s r₀ r}, f d n = r₀ → r₀.2 = 0 → f d k = (s, r) → k < n →
+    r = 0 ∧ ∃ s', f d (k + 1) = (s', 0) ∧ sys.tr s (Strat.f ⟨a, d⟩ s) = some s'
+  · intro d n k s r₀ r H₁ H₂ H₃ H₄
+    exact sys.exi_simulate_succ_eq_of H₁ H₂ H₃ H₄
+  
+-- #check 0 #exit
+  
+  have h₃ : ∀ k ≤ 200, (Box.guardTiles ∩ (f dKingOp k).1.taken).size = (k + 1) / 2
   ·
     intro k hk
-    generalize hr₁ : f dKingOp k = r₁
-    have h₁ := State.aPos_dist_le_of_simulate_mul_two (n := 100) hr
-    simp at h₁
-    sorry
+    induction k
+    · simp [f]
+    nm k ih
+    specialize ih # by omega
+    generalize hr₁ : f dKingOp k = r₁ at ih
+    rcases r₁ with ⟨s₂, r₁⟩
+    dsimp at ih
+    obtain ⟨rfl, s', h₃, h₄⟩ := hf hr rfl hr₁ (by omega)
+    simp [h₃]
+    
+    induction k using Nat.mod_2_ind <;> nm k
+    ·
+      have hs₂ := DState.of_simulate_mul_two_eq_full hr₁
+      simp [add_assoc] at ih ⊢
+      sorry
+    ·
+      -- have hs₂ := AState.of_simulate_mul_two_eq_full hr₁
+      sorry
   
   sorry

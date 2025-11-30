@@ -1,18 +1,5 @@
 import AP.AP.Defense.Corner
 
-namespace Set'
-
-universe u v w
-variable {α : Type u} {β : Type v} {γ : Type w}
-variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
-variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
-variable {s s' s₁ s₂ s₃ : Set' α}
-
--- #check 0 #exit
-
-end Set'
-
 namespace AP.Box
 
 def offset : ℕ := 106
