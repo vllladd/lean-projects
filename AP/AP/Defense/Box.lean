@@ -1,10 +1,26 @@
 import AP.AP.Defense.Corner
 
+namespace Set'
+
+universe u v w
+variable {α : Type u} {β : Type v} {γ : Type w}
+variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
+variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
+variable {s s' s₁ s₂ s₃ : Set' α}
+
+-- #check 0 #exit
+
+end Set'
+
 namespace AP.Box
 
 def offset : ℕ := 106
 
 def interior : Set' PointZ :=
+  (0 : PointZ).nbhd Box.offset
+
+def interior₁ : Set' PointZ :=
   (0 : PointZ).nbhd (offset - 1)
 
 def corner₀ : Corner where
@@ -97,8 +113,8 @@ instance : defense.WF := by
   exact compatibleList_defenses
 
 @[simp]
-theorem ps_defense : defense.ps = Set.univ \ interior.toSet := by
-  ext p; simp [interior, defense, Point.dist]
+theorem ps_defense : defense.ps = Set.univ \ interior₁.toSet := by
+  ext p; simp [interior₁, defense, Point.dist]
   constructor
   · unfold offset
     rintro ⟨d, hd, h⟩ h₁
@@ -114,9 +130,9 @@ theorem ps_defense : defense.ps = Set.univ \ interior.toSet := by
     simp [defenses, corners, corner₀, Corner.points, Corner.edge₁, Corner.edge₂, Edge.points,
       Edge.memPoints, offset]; omega
 
-theorem mem_interior_of_simulate {s : State} {a : AStrat} {d : DStrat} {n r}
+theorem mem_interior₁_of_simulate {s : State} {a : AStrat} {d : DStrat} {n r}
 [hs : sys.WF s] [ha : a.WF] [hd : d.WF] (h₁ : defense.cnd s)
-(h₂ : sys.simulate (Strat.f ⟨a, defense.st d⟩) s n = r) : r.1.aPos ∈ interior := by
+(h₂ : sys.simulate (Strat.f ⟨a, defense.st d⟩) s n = r) : r.1.aPos ∈ interior₁ := by
   have H : defense.WF := inferInstance
   replace H := @H.not_mem_ps
   specialize @H s _ h₁ a _ d _ n
@@ -153,69 +169,41 @@ s.aPos ∈ (0 : PointZ).nbhd 100 ∧ guardTiles ⊆ s.taken := by
     obtain ⟨left, right⟩ := a
     obtain ⟨left, right_1⟩ := left
     obtain ⟨left_1, right⟩ := right
-    obtain ⟨left, right_2⟩ := left
     obtain ⟨left_1, right_3⟩ := left_1
     obtain ⟨left_2, right⟩ := right
-    obtain ⟨left_1, right_4⟩ := left_1
     obtain ⟨left_2, right_5⟩ := left_2
     obtain ⟨left_3, right⟩ := right
-    obtain ⟨left_2, right_6⟩ := left_2
     simp_all only [Int.reduceNeg]
-    apply And.intro
-    · apply And.intro
-      · apply And.intro
-        · omega
-        · omega
-      · apply And.intro
-        · omega
-        · omega
-    · intro x y a
-      cases a with
-      | inl h =>
-        obtain ⟨left_4, right_2⟩ := h
-        obtain ⟨left_4, right_4⟩ := left_4
-        obtain ⟨left_5, right_2⟩ := right_2
-        apply right_1 <;> omega
-      | inr h_1 =>
-        cases h_1 with
-        | inl h =>
-          obtain ⟨left_4, right_2⟩ := h
-          obtain ⟨left_4, right_4⟩ := left_4
-          obtain ⟨left_5, right_2⟩ := right_2
-          apply right_3 <;> omega
-        | inr h_2 =>
-          cases h_2 with
-          | inl h =>
-            obtain ⟨left_4, right_2⟩ := h
-            obtain ⟨left_4, right_4⟩ := left_4
-            obtain ⟨left_5, right_2⟩ := right_2
-            apply right_5 <;> omega
-          | inr h_1 =>
-            obtain ⟨left_4, right_2⟩ := h_1
-            obtain ⟨left_4, right_4⟩ := left_4
-            obtain ⟨left_5, right_2⟩ := right_2
-            apply right <;> omega
-  · intro a
-    obtain ⟨left, right⟩ := a
-    obtain ⟨left, right_1⟩ := left
-    obtain ⟨left, right_2⟩ := left
-    obtain ⟨left_1, right_1⟩ := right_1
-    apply And.intro
-    · apply And.intro
-      · omega
-      · intro x y a a_1 a_2 a_3
-        apply right; omega
-    · apply And.intro
-      · apply And.intro
-        · omega
-        · intro x y a a_1 a_2 a_3
-          apply right; omega
-      · apply And.intro
-        · apply And.intro
-          · omega
-          · intro x y a a_1 a_2 a_3
-            apply right; omega
-        · apply And.intro
-          · omega
-          · intro x y a a_1 a_2 a_3
-            apply right; omega
+    use by omega
+    rintro x y (h | h | h | h)
+    · apply right_1 <;> omega
+    · apply right_3 <;> omega
+    · apply right_5 <;> omega
+    · apply right <;> omega
+  · rintro ⟨h₁, h₂⟩
+    split_ands <;> try omega
+    all_goals
+      intro x y a a_1 a_2 a_3
+      apply h₂; omega
+
+@[simp]
+theorem interior₁_subset_interior : interior₁ ⊆ interior := by
+  intro p; simp [interior₁, interior, Point.dist]; omega
+
+@[simp]
+theorem guardTiles_subset_interior₁ : guardTiles ⊆ interior₁ := by
+  native_decide
+
+@[simp]
+theorem guardTiles_subset_interior : guardTiles ⊆ interior :=
+  Set'.subset_trans guardTiles_subset_interior₁ interior₁_subset_interior
+
+theorem le_dist_center_of_mem_guardTiles {p} (h : p ∈ guardTiles) : 101 ≤ p.dist 0 := by
+  simp only [guardTiles, corners, corner₀, offset, Nat.cast_ofNat, Int.reduceNeg,
+    List.range_map_iterate, List.iterate, Corner.rotRight_mk, Dir.rotRight_up, rotRight_ft_mk,
+    neg_neg, Dir.rotRight_right, Dir.rotRight_down, List.map_cons, List.map_nil,
+    Set'.unionList_cons, Set'.unionList_nil, Set'.union_empty, Set'.mem_union, Set'.mem_ofList,
+    Point.mem_nbhd, Point.dist, Point.x_div, Point.x_mul, Point.x_ofNat, Int.reduceMul,
+    Int.reduceDiv, Point.y_div, Point.y_mul, Point.y_ofNat, neg_mul, sup_le_iff, abs_le,
+    neg_le_sub_iff_le_add, Int.reduceAdd, tsub_le_iff_right, CharP.cast_eq_zero, sub_zero,
+    le_sup_iff, le_abs] at h ⊢; omega

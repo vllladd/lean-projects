@@ -43,6 +43,18 @@ theorem AState.of_simulate_mul_two_eq_full {sa s₁} [ha : AState sa]
   have hsa' := AState.of_tr h₂
   exact ih h₃
 
+theorem DState.of_simulate_mul_two_eq_full {sd s₁} [hd : DState sd]
+{st : Strat} {n} (h : sys.simulate st.f sd (n * 2) = (s₁, 0)) : DState s₁ := by
+  induction n generalizing sd
+  · simp at h
+    rwa [←h]
+  nm n ih
+  simp [Nat.add_mul] at h
+  obtain ⟨sd, h₁, sa', h₂, h₃⟩ := h
+  have hsd := AState.of_tr h₁
+  have hsa' := DState.of_tr h₂
+  exact ih h₃
+
 theorem AState.aWins_of_ind_two' {sa₀} [ha₀ : AState sa₀]
 {st : Strat} [hst : st.WF] {p : State → Prop} (hp : p sa₀)
 (h : ∀ {sa} [AState sa], sys.Reachable sa₀ sa → p sa →
