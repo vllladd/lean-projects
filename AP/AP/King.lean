@@ -1,5 +1,43 @@
 import AP.AP.Defense
 
+namespace Set'
+
+universe u v w
+variable {α : Type u} {β : Type v} {γ : Type w}
+variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
+variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
+variable {s s' s₁ s₂ s₃ : Set' α}
+
+@[simp]
+theorem insert_subset_iff {x} : s₁.insert x ⊆ s₂ ↔ x ∈ s₂ ∧ s₁ ⊆ s₂ := by
+  simp [subset_def]
+
+theorem diff_insert_eq_diff_erase {x} : s₁ \ s₂.insert x = (s₁ \ s₂).erase x := by
+  ext y; simp; grind
+
+theorem size_diff_add_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size + s₁.size = s₂.size := by
+  induction s₁ using ind generalizing s₂; simp
+  nm s₁ x hx ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  rw [size_insert hx, diff_insert_eq_diff_erase]
+  rw [size_erase # by simp; grind]
+  specialize ih h₂
+  rw [←add_assoc]
+  convert ih using 1; clear ih
+  cases h₃ : (s₂ \ s₁).size
+  rotate_left; omega
+  simp [diff_eq_empty_iff_subset] at h₃
+  cases hx # h₃ x h₁
+
+theorem size_diff_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size = s₂.size - s₁.size := by
+  have := size_diff_add_eq_of_subset h; omega
+
+-- #check 0 #exit
+
+end Set'
+
 namespace AP.King
 
 def state₀ : State :=
@@ -148,6 +186,95 @@ theorem State.pw_eq_of_simulate_eq {s f n r} [hs : sys.WF s]
 (h : sys.simulate f s n = r) : r.1.pw = s.pw :=
   pw_eq_of_reachable # sys.reachable_of_simulate_eq h
 
+theorem DState.size_taken_diff_eq_of_simulate_full_mul_two {s s' n} {st : Strat}
+[hs : DState s] (h : sys.simulate st.f s (n * 2) = (s', 0)) :
+(s'.taken \ s.taken).size = n := by
+  have hs' := DState.of_simulate_mul_two_eq_full h
+  have h₁ := s.length_hist_eq_size_taken_mul_two_add_ite
+  have h₂ := s'.length_hist_eq_size_taken_mul_two_add_ite
+  rw [Set'.size_diff_eq_of_subset]
+  rotate_left; exact taken_subset_of_reachable # sys.reachable_of_simulate_eq h
+  simp at h₁ h₂
+  rw [State.length_hist_eq_of_simulate_eq h] at h₂
+  grind
+
+theorem DState.exi_d_move_not_mem_of_aWins {s} {st : Strat} (set : Set' PointZ)
+[hs : DState s] (h : s.aWins st) : ∃ n s', DState s' ∧
+sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
+  by_contra! h₁
+  replace h₁ : ∀ n s' r, sys.simulate st.f s (n * 2) = (s', r) → r = 0 ∧ st.d.f s' ∈ set
+  · intro n s' r h₂
+    apply and_of
+    · specialize h (n * 2)
+      simp [h₂] at h
+      exact h
+    rintro rfl
+    have hs' := DState.of_simulate_mul_two_eq_full h₂
+    exact h₁ (n * 2) s' hs' h₂
+  have h₂ : ∀ n, (sys.simulate st.f s (n * 2)).1.taken \ s.taken ⊆ set
+  · intro n
+    induction n
+    · simp
+    nm n ih
+    generalize hr : sys.simulate st.f s (n * 2) = r at ih
+    rcases r with ⟨s₁, r⟩
+    dsimp at ih
+    obtain rfl : r = 0; grind
+    simp [add_mul]
+    rw [sys.simulate_add, hr]
+    simp
+    simp [System.simulate]
+    split
+    · exact ih
+    nm x s₂ h₂; clear x
+    have hs₁ := DState.of_simulate_mul_two_eq_full hr
+    suffices h₃ : s₂.taken \ s.taken ⊆ set
+    · split; exact h₃
+      nm x s₃ h₄; clear x
+      have hs₂ := AState.of_tr h₂
+      simpa [AState.taken_eq_of_tr h₄]
+    simp at h₂
+    suffices h₃ : st.d.f s₁ ∈ set
+    · intro p
+      specialize ih p
+      rw [DState.taken_eq_of_tr h₂]
+      simp at ih ⊢
+      grind
+    have h₃ := taken_subset_of_reachable # sys.reachable_of_simulate_eq hr
+    have h₄ := h₁ _ _ _ hr |>.2
+    simp at h₄; exact h₄
+  specialize h₂ # set.size + 1
+  generalize hr : sys.simulate st.f s ((set.size + 1) * 2) = r at h₂
+  rcases r with ⟨s₁, r⟩
+  obtain rfl := h₁ _ _ _ hr |>.1
+  dsimp at h₂
+  have h₃ := hs.size_taken_diff_eq_of_simulate_full_mul_two hr
+  replace h₂ := Set'.size_le_of_subset h₂
+  omega
+
+theorem AState.exi_d_move_not_mem_of_aWins {s} {st : Strat} (set : Set' PointZ)
+[hs : AState s] (h : s.aWins st) : ∃ n s', DState s' ∧
+sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
+  obtain ⟨s₁, h₁⟩ : ∃ s', sys.tr s (st.a.f s) = some s'
+  · specialize h 1
+    simp at h
+    exact h
+  have hs₁ := DState.of_tr h₁
+  replace h : s₁.aWins st
+  · intro n
+    specialize h (n + 1)
+    simp [h₁] at h
+    exact h
+  obtain ⟨n, s₂,hs₂, h₂, h₃⟩ := hs₁.exi_d_move_not_mem_of_aWins set h
+  use n + 1, s₂, hs₂
+  simpa [h₁, h₂]
+
+theorem State.exi_d_move_not_mem_of_aWins {s} {st : Strat} (set : Set' PointZ)
+[hs : sys.WF s] (h : s.aWins st) : ∃ n s', DState s' ∧
+sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
+  replace hs := s.aState_or_dState
+  rcases hs with hs | hs <;> exact hs.exi_d_move_not_mem_of_aWins set h
+
 -- #check 0 #exit
 
 namespace King
@@ -190,6 +317,9 @@ instance : DState state₀ := by
 
 theorem dWins_dKingOp₁_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
 (h : Box.defense.cnd s) : s.dWins ⟨a, dKingOp₁⟩ := by
+  by_contra h₁; simp at h₁
+  obtain ⟨n, s', hs', h₂, h₃⟩ := s.exi_d_move_not_mem_of_aWins Box.interior h₁
+  dsimp at h₃
   sorry
 
 -- #check 0 #exit
