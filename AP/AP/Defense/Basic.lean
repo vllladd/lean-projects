@@ -369,7 +369,7 @@ CompatibleList' d.cnd ds := by
   have h₁ := @of_compatibleList'_cons (h := h)
   simp at h₁; simp_all only
 
-theorem of_f_of_list_eq_some {ds s p} (h : (ofList ds).f s = some p) :
+theorem of_f_ofList_eq_some {ds s p} (h : (ofList ds).f s = some p) :
 ∃ d ∈ ds, d.f s = some p := by
   induction ds <;> simp_all; grind
 
@@ -521,7 +521,7 @@ theorem wf_ofList {ds : List Defense} (H : ∀ d ∈ ds, d.WF)
   · grind
   · intro s₁ hs₁ p₁ p₂ hp₁ hp₂
     simp [←H₂] at hp₁
-    replace hp₁ := of_f_of_list_eq_some hp₁
+    replace hp₁ := of_f_ofList_eq_some hp₁
     choose e₂ H₃ hp₁ using hp₁
     specialize @h₀ s₀ _ s₁ p₁ p₂ e₂ e _ _ hs₁
     · simp [hds] at h; grind

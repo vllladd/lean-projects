@@ -233,3 +233,37 @@ theorem size_interior : interior.size = 213 ^ 2 := by
 theorem size_interior₁ : interior₁.size = 211 ^ 2 := by
   rw [interior₁, show (offset - 1 : ℤ) = ((offset  - 1 : ℕ) : ℤ) by rfl,
     Point.size_set'_ofList_nbhd_int_nat]; rfl
+
+theorem dist_zero_eq_of_f_eq_some {s p} [hs : sys.WF s] (h : defense.f s = some p)
+(H₁ : s.aPos ∈ interior₁) (H₂ : guardTiles ⊆ s.taken) : p.dist 0 = 106 := by
+  simp [interior₁, Point.dist, offset, abs_le] at H₁
+  replace h := Defense.of_f_ofList_eq_some h
+  choose d hd h₁ using h
+  simp [defenses, corners] at hd
+  rcases hd with rfl | rfl | rfl | rfl
+  all_goals
+    replace h₁ := Corner.of_f_eq_some h₁
+    simp [Corner.edge₁, Corner.edge₂, Edge.defense, corner₀] at h₁
+    rcases h₁ with h₁ | h₁
+    all_goals
+      replace h₁ := Edge.of_f_eq_some h₁
+      simp [Edge.dist, Edge.getBorderPoint, offset] at h₁
+      rcases h₁ with ⟨-, h₂, h₃, d, hd, rfl⟩
+      simp [Point.dist]
+      simp [abs_le] at hd ⊢
+      have h₄ : s.aPos ∉ guardTiles
+      · apply Set'.not_mem_of_subset H₂; simp
+      rcases h : s.aPos with ⟨x, y⟩
+      simp [h] at H₁ H₂ h₂ h₃ h₄ ⊢; clear h
+      simp only [guardTiles, corners, corner₀, offset, Nat.cast_ofNat, Int.reduceNeg,
+        List.range_map_iterate, List.iterate, Corner.rotRight_mk, Dir.rotRight_up, rotRight_ft_mk,
+        neg_neg, Dir.rotRight_right, Dir.rotRight_down, List.map_cons, List.map_nil,
+        Set'.unionList_cons, Set'.unionList_nil, Set'.union_empty, Set'.mem_union, Set'.mem_ofList,
+        Point.mem_nbhd, Point.dist, Point.x_div, Point.x_mul, Point.x_ofNat, Int.reduceMul,
+        Int.reduceDiv, Point.y_div, Point.y_mul, Point.y_ofNat, neg_mul, sup_le_iff, abs_le,
+        neg_le_sub_iff_le_add, Int.reduceAdd, tsub_le_iff_right, not_or, not_and, not_le,
+        and_imp] at h₄; omega
+
+theorem mem_interior_of_f_eq_some {s p} [hs : sys.WF s] (h : defense.f s = some p)
+(H₁ : s.aPos ∈ interior₁) (H₂ : guardTiles ⊆ s.taken) : p ∈ interior := by
+  simp [interior, offset]; rw [Point.dist_comm, dist_zero_eq_of_f_eq_some h H₁ H₂]

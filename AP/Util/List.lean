@@ -1277,3 +1277,22 @@ theorem nodup_flatMap_of {f : α → List β} (h₁ : xs.Nodup)
 (h₂ : ∀ x ∈ xs, (f x).Nodup ∧ ∀ y ∈ xs, ∀ z, z ∈ f x → z ∈ f y → x = y) :
 (xs.flatMap f).Nodup := by
   induction xs <;> simp; grind
+
+theorem flatMap_fn_replicate_guard {p : α → Prop} [hp : DecidablePred p] :
+xs.flatMap (λ x => List.replicate (length # guard # p x) x) = xs.filter p := by
+  simp [guard, failure]; induction xs <;> simp; grind
+
+theorem find?_eq_some_iff_of_at_most_one {p : α → Bool} {x}
+(h : ∀ {x y}, x ∈ xs → y ∈ xs → p x → p y → x = y) :
+xs.find? p = some x ↔ x ∈ xs ∧ p x := by
+  induction xs <;> simp; grind
+
+theorem forall_of_find?_eq_some_imp {p₁ : α → Bool} {p₂ : α → Prop}
+(h₁ : ∀ x, xs.find? p₁ = some x → p₂ x) (h₂ : ∀ x, p₂ x ↔ p₁ x = false) :
+∀ x ∈ xs, p₂ x := by
+  intro x hx
+  replace h₂ : p₂ = λ x => p₁ x = false; ext; simp [h₂]
+  subst h₂
+  specialize h₁ # (xs.find? p₁).getD x
+  simp at h₁
+  cases h₂ : xs.find? p₁ <;> grind

@@ -1,43 +1,5 @@
 import AP.AP.Defense
 
-namespace Set'
-
-universe u v w
-variable {α : Type u} {β : Type v} {γ : Type w}
-variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
-variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
-variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
-variable {s s' s₁ s₂ s₃ : Set' α}
-
-@[simp]
-theorem insert_subset_iff {x} : s₁.insert x ⊆ s₂ ↔ x ∈ s₂ ∧ s₁ ⊆ s₂ := by
-  simp [subset_def]
-
-theorem diff_insert_eq_diff_erase {x} : s₁ \ s₂.insert x = (s₁ \ s₂).erase x := by
-  ext y; simp; grind
-
-theorem size_diff_add_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size + s₁.size = s₂.size := by
-  induction s₁ using ind generalizing s₂; simp
-  nm s₁ x hx ih
-  simp at h
-  rcases h with ⟨h₁, h₂⟩
-  rw [size_insert hx, diff_insert_eq_diff_erase]
-  rw [size_erase # by simp; grind]
-  specialize ih h₂
-  rw [←add_assoc]
-  convert ih using 1; clear ih
-  cases h₃ : (s₂ \ s₁).size
-  rotate_left; omega
-  simp [diff_eq_empty_iff_subset] at h₃
-  cases hx # h₃ x h₁
-
-theorem size_diff_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size = s₂.size - s₁.size := by
-  have := size_diff_add_eq_of_subset h; omega
-
--- #check 0 #exit
-
-end Set'
-
 namespace AP.King
 
 def state₀ : State :=
@@ -320,9 +282,51 @@ theorem dWins_dKingOp₁_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
   by_contra h₁; simp at h₁
   obtain ⟨n, s', hs', h₂, h₃⟩ := s.exi_d_move_not_mem_of_aWins Box.interior h₁
   dsimp at h₃
-  sorry
-
--- #check 0 #exit
+  simp [dKingOp₁, Defense.st, Option.getD] at h₃
+  split at h₃
+  · nm x p h₄; clear x
+    apply h₃
+    apply Box.mem_interior_of_f_eq_some h₄
+    · apply Box.mem_interior₁_of_simulate h h₂
+    apply Set'.subset_trans (s₂ := s.taken)
+    rotate_left
+    · apply taken_subset_of_reachable
+      exact sys.reachable_of_simulate_eq h₂
+    rw [Box.cnd_defense_iff_guardTiles] at h
+    exact h.2.2
+  nm x h₄; clear x
+  simp [dKingOp₂, Option.getD] at h₃
+  split at h₃
+  · nm x p₁ h₅; clear x
+    simp at h₅
+    rcases h₅ with ⟨h₅, s₁, h₆⟩
+    replace h₅ := List.mem_of_head? h₅
+    simp [h₃] at h₅
+  nm x h₅; clear x
+  simp [List.flatMap_fn_replicate_guard] at h₅
+  replace h₅ := List.forall_of_find?_eq_some_imp h₅ # by grind
+  simp at h₅
+  specialize h₁ (n + 2)
+  generalize hr : sys.simulate (Strat.f ⟨a, dKingOp₁⟩) s (n + 2) = r at h₁
+  rcases r with ⟨s₂, r⟩
+  dsimp at h₁
+  subst h₁
+  have H₄ := Box.mem_interior₁_of_simulate h hr
+  replace H₄ : s₂.aPos ∈ Box.interior
+  · exact Set'.mem_of_subset (by simp) H₄
+  rw [sys.simulate_add, h₂] at hr
+  simp at hr
+  obtain ⟨s₁, h₁, h₆⟩ := hr
+  have hs₁ := AState.of_tr h₁
+  simp [AState.tr_eq_some_iff] at h₆
+  rcases h₆ with ⟨⟨H₁, H₂, H₃⟩, h₆⟩
+  subst h₆
+  dsimp at *
+  specialize h₅ _ H₄
+  simp [←DState.aPos_eq_of_tr h₁, H₁] at h₅
+  apply H₂
+  apply Set'.mem_of_subset _ h₅
+  exact taken_subset_of_tr h₁
 
 theorem dWins_dKingOp_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
 (h : Box.defense.cnd s) : s.dWins ⟨a, dKingOp⟩ := by
@@ -428,3 +432,11 @@ theorem dWins_dKingOp {a : AStrat} [ha : a.WF] : state₀.dWins ⟨a, dKingOp⟩
   rw [System.simulate_add']
   dsimp [f] at hr
   simpa [hr]
+
+theorem dHwsPw_one : dHwsPw 1 := by
+  intro p
+  rw [dHws_initState_iff_dHws_origin]
+  change state₀.dHws
+  use dKingOp, inferInstance
+  intro a ha
+  exact dWins_dKingOp

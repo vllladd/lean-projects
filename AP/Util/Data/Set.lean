@@ -1027,3 +1027,28 @@ theorem size_inter_eq_size_left_iff : (s₁ ∩ s₂).size = s₁.size ↔ s₁ 
 @[simp]
 theorem size_inter_eq_size_right_iff : (s₁ ∩ s₂).size = s₂.size ↔ s₂ ⊆ s₁ := by
   use subset_of_size_inter_eq_size_right; intro h; rw [inter_eq_right_of_subset h]
+
+@[simp]
+theorem insert_subset_iff {x} : s₁.insert x ⊆ s₂ ↔ x ∈ s₂ ∧ s₁ ⊆ s₂ := by
+  simp [subset_def]
+
+theorem diff_insert_eq_diff_erase {x} : s₁ \ s₂.insert x = (s₁ \ s₂).erase x := by
+  ext y; simp; grind
+
+theorem size_diff_add_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size + s₁.size = s₂.size := by
+  induction s₁ using ind generalizing s₂; simp
+  nm s₁ x hx ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  rw [size_insert hx, diff_insert_eq_diff_erase]
+  rw [size_erase # by simp; grind]
+  specialize ih h₂
+  rw [←add_assoc]
+  convert ih using 1; clear ih
+  cases h₃ : (s₂ \ s₁).size
+  rotate_left; omega
+  simp [diff_eq_empty_iff_subset] at h₃
+  cases hx # h₃ x h₁
+
+theorem size_diff_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size = s₂.size - s₁.size := by
+  have := size_diff_add_eq_of_subset h; omega
