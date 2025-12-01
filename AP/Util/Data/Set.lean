@@ -991,9 +991,11 @@ theorem inter_eq_left_of_subset (h : s₁ ⊆ s₂) : s₁ ∩ s₂ = s₁ := by
 theorem inter_eq_right_of_subset (h : s₂ ⊆ s₁) : s₁ ∩ s₂ = s₂ := by
   ext x; specialize h x; simpa
 
+@[simp]
 theorem inter_eq_left_iff : s₁ ∩ s₂ = s₁ ↔ s₁ ⊆ s₂ :=
   ⟨subset_of_inter_eq_left, inter_eq_left_of_subset⟩
 
+@[simp]
 theorem inter_eq_right_iff : s₁ ∩ s₂ = s₂ ↔ s₂ ⊆ s₁ :=
   ⟨subset_of_inter_eq_right, inter_eq_right_of_subset⟩
 
@@ -1018,8 +1020,10 @@ theorem subset_of_size_inter_eq_size_left (h : (s₁ ∩ s₂).size = s₁.size)
 theorem subset_of_size_inter_eq_size_right (h : (s₁ ∩ s₂).size = s₂.size) : s₂ ⊆ s₁ :=
   subset_of_inter_eq_right # eq_of_subset_and_size_eq (by simp) h
 
+@[simp]
 theorem size_inter_eq_size_left_iff : (s₁ ∩ s₂).size = s₁.size ↔ s₁ ⊆ s₂ := by
   use subset_of_size_inter_eq_size_left; intro h; rw [inter_eq_left_of_subset h]
 
+@[simp]
 theorem size_inter_eq_size_right_iff : (s₁ ∩ s₂).size = s₂.size ↔ s₂ ⊆ s₁ := by
   use subset_of_size_inter_eq_size_right; intro h; rw [inter_eq_right_of_subset h]
