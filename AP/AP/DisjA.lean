@@ -882,8 +882,38 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
   -- · rw [pw_eq_of_tr H₄]
   -- have G₂ : s'.aPos = sd.aPos
   
-  have H₅ : s'.aHwsDisj # fsp.insertSet 2 # s.aPos.nbhd s.pw |>.toSet
-  · -- have H₂ := @sa.aHwsDisj_of_taken_subset fsp.next s' _ _ ⟨a, h₈⟩ (by rw [G, G₁]) (by simp)
+  obtain ⟨k₀, hk₀⟩ : ∃ k₀, k₀ + 1 = k
+  ·
+    cases k
+    · simp at hk
+    simp
+  clear hk
+  
+  -----
+  
+  obtain ⟨sd₀, H₅⟩ := H₂ k₀
+  have hsd₀ : DState sd₀
+  ·
+    rw [←hF] at h₁ H₅
+    rw [←hk₀] at h₁
+    use sys.wf_of_simulate_eq H₅
+    rw [State.aTurn_eq_of_simulate_eq H₅]
+    have H₆ := State.aTurn_eq_of_simulate_eq h₁
+    simp at H₆ ⊢
+    exact H₆
+  
+  have H₆ : sys.tr sd₀ (d.f sd₀) = sa
+  ·
+    rw [←hF] at h₁ H₅
+    rw [←hk₀] at h₁
+    rw [sys.simulate_add, H₅] at h₁
+    simp at h₁
+    exact h₁
+  
+  have H₇ : sd₀.aHwsDisj # fsp.insertSet 2 # s.aPos.nbhd s.pw |>.toSet
+  ·
+    use a, Ha
+    intro d₁ hd₁ n
     sorry
   
   sorry
