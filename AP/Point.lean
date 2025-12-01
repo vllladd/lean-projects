@@ -639,3 +639,53 @@ theorem forall_iff {p : Point α → Prop} : (∀ pt, p pt) ↔ ∀ x y, p ⟨x,
 
 theorem exi_iff {p : Point α → Prop} : (∃ pt, p pt) ↔ ∃ x y, p ⟨x, y⟩ := by
   rw [iff_iff_not']; push_neg; exact forall_iff
+
+section
+
+variable {α : Type*}
+variable [ha₁ : LocallyFiniteOrderList α] [ha₂ : Ring α]
+
+@[simp]
+theorem nodup_rect {a b c d : α} : (rect a b c d).Nodup := by
+  simp [rect]
+  apply List.nodup_flatMap_of; simp
+  simp
+  intro x h₁ h₂
+  split_ands
+  · rw [List.nodup_map_iff]; simp
+    intro x; grind
+  grind
+
+@[simp]
+theorem nodup_rectRel {p : Point α} {a b c d : α} : (p.rectRel a b c d).Nodup := by
+  simp [rectRel]
+
+@[simp]
+theorem nodup_nbhd {p : Point α} {a : α} : (p.nbhd a).Nodup := by
+  simp [nbhd]
+
+end
+
+section
+
+@[simp]
+theorem length_rect_int_nat {p : PointZ} {a b c d : ℕ} :
+(rect (p.x - a) (p.y - b) (p.x + c) (p.y + d)).length = (a + c + 1) * (b + d + 1) := by
+  simp [rect, mul_comm]
+
+@[simp]
+theorem length_rectRel_int_nat {p : PointZ} {a b c d : ℕ} :
+(p.rectRel a b c d).length = (a + c + 1) * (b + d + 1) := by
+  simp [rectRel]
+
+@[simp]
+theorem length_nbhd_int_nat {p : PointZ} {n : ℕ} : (p.nbhd n).length = (n * 2 + 1) ^ 2 := by
+  simp [nbhd]; ring_nf
+
+@[simp]
+theorem size_set'_ofList_nbhd_int_nat {p : PointZ} {n : ℕ} :
+(Set'.ofList # p.nbhd n).size = (n * 2 + 1) ^ 2 := by
+  rw [Set'.size_ofList_of_nodup]; simp
+  simp
+
+end

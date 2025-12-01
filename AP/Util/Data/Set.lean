@@ -939,3 +939,87 @@ theorem unionList_of_perm {xs ys : List (Set' α)}
 theorem mem_unionList {xs : List (Set' α)} {x} :
 x ∈ unionList xs ↔ ∃ s ∈ xs, x ∈ s := by
   induction xs <;> simp; grind
+
+theorem size_le_of_subset (h : s₁ ⊆ s₂) : s₁.size ≤ s₂.size := by
+  induction s₁ using Set'.ind generalizing s₂
+  · simp
+  nm s₁ x h₁ ih
+  rw [size_insert h₁]
+  specialize @ih (s₂.erase x) _
+  · intro y
+    specialize h y
+    simp at h ⊢
+    grind
+  rw [size_erase # h x # by simp] at ih
+  suffices : s₂.size ≠ 0; omega
+  simp [eq_empty_iff]
+  use x
+  apply h
+  simp
+
+theorem size_eq_size_add_one_of
+(h : ∃ x, x ∉ s₂ ∧ s₁ = s₂.insert x) : s₁.size = s₂.size + 1 := by
+  obtain ⟨x, hx, rfl⟩ := h; rw [size_insert hx]
+
+theorem size_inter_insert_left {x} (h₁ : x ∉ s₁) (h₂ : x ∈ s₂) :
+(s₁.insert x ∩ s₂).size = (s₁ ∩ s₂).size + 1 := by
+  apply size_eq_size_add_one_of; use x
+  simp [h₁, h₂]; ext; simp; grind
+
+theorem size_inter_insert_right {x} (h₁ : x ∈ s₁) (h₂ : x ∉ s₂) :
+(s₁ ∩ s₂.insert x).size = (s₁ ∩ s₂).size + 1 := by
+  simp_rw [inter_comm (s₁ := s₁)]; exact size_inter_insert_left h₂ h₁
+
+theorem insert_inter_eq {x} (h : x ∈ s₂) : s₁.insert x ∩ s₂ = (s₁ ∩ s₂).insert x := by
+  ext; simp; grind
+
+theorem inter_insert_eq {x} (h : x ∈ s₁) : s₁ ∩ s₂.insert x = (s₁ ∩ s₂).insert x := by
+  ext; simp; grind
+
+theorem subset_of_eq (h : s₁ = s₂) : s₁ ⊆ s₂ := by
+  simp [h]
+
+theorem subset_of_inter_eq_left (h : s₁ ∩ s₂ = s₁) : s₁ ⊆ s₂ := by
+  intro x hx; rw [←h] at hx; simp at hx; tauto
+
+theorem subset_of_inter_eq_right (h : s₁ ∩ s₂ = s₂) : s₂ ⊆ s₁ := by
+  intro x hx; rw [←h] at hx; simp at hx; tauto
+
+theorem inter_eq_left_of_subset (h : s₁ ⊆ s₂) : s₁ ∩ s₂ = s₁ := by
+  ext x; specialize h x; simpa
+
+theorem inter_eq_right_of_subset (h : s₂ ⊆ s₁) : s₁ ∩ s₂ = s₂ := by
+  ext x; specialize h x; simpa
+
+theorem inter_eq_left_iff : s₁ ∩ s₂ = s₁ ↔ s₁ ⊆ s₂ :=
+  ⟨subset_of_inter_eq_left, inter_eq_left_of_subset⟩
+
+theorem inter_eq_right_iff : s₁ ∩ s₂ = s₂ ↔ s₂ ⊆ s₁ :=
+  ⟨subset_of_inter_eq_right, inter_eq_right_of_subset⟩
+
+theorem eq_of_subset_and_size_eq (h₁ : s₁ ⊆ s₂) (h₂ : s₁.size = s₂.size) : s₁ = s₂ := by
+  induction s₁ using ind generalizing s₂
+  · symm at h₂; simp at h₂; rw [h₂]
+  nm s₁ x hx ih
+  rw [size_insert hx] at h₂
+  specialize @ih (s₂.erase x) _
+  · intro y
+    specialize h₁ y
+    simp at h₁ ⊢
+    grind
+  have h₃ := h₁ x # by simp
+  rw [size_erase h₃] at ih
+  specialize ih # by omega
+  rw [ih, insert_erase_eq_of_mem h₃]
+
+theorem subset_of_size_inter_eq_size_left (h : (s₁ ∩ s₂).size = s₁.size) : s₁ ⊆ s₂ :=
+  subset_of_inter_eq_left # eq_of_subset_and_size_eq (by simp) h
+
+theorem subset_of_size_inter_eq_size_right (h : (s₁ ∩ s₂).size = s₂.size) : s₂ ⊆ s₁ :=
+  subset_of_inter_eq_right # eq_of_subset_and_size_eq (by simp) h
+
+theorem size_inter_eq_size_left_iff : (s₁ ∩ s₂).size = s₁.size ↔ s₁ ⊆ s₂ := by
+  use subset_of_size_inter_eq_size_left; intro h; rw [inter_eq_left_of_subset h]
+
+theorem size_inter_eq_size_right_iff : (s₁ ∩ s₂).size = s₂.size ↔ s₂ ⊆ s₁ := by
+  use subset_of_size_inter_eq_size_right; intro h; rw [inter_eq_right_of_subset h]

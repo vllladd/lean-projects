@@ -29,3 +29,34 @@ theorem invariant_val {α : Type*} {a b} [ha : sys.WF a] {f : S → α} (h₁ : 
   intro x y t ha hb h₃ h₄
   rw [←h₃]
   exact h₂ h₄
+
+theorem simulate_snd_ne_zero_of_tr_eq_none {f s n}
+(h₁ : sys.tr s (f s) = none) (h₂ : n ≠ 0) : (sys.simulate f s n).2 ≠ 0 :=
+  simulate_snd_ne_zero_of (n := n) (s' := s) (r := n) (by simp [h₁]) h₂ (by rfl)
+
+theorem exi_simulate_succ_eq_of {f s₀ s s' n k r₀ r}
+(h₁ : sys.simulate f s₀ n = (s', r₀)) (hr₀ : r₀ = 0)
+(h₂ : sys.simulate f s₀ k = (s, r)) (hk : k < n) :
+r = 0 ∧ ∃ s', sys.simulate f s₀ (k + 1) = (s', 0) ∧ sys.tr s (f s) = some s' := by
+  subst hr₀
+  apply and_of
+  · rw [Prod.snd_eq_of_eq_mk h₂]
+    exact simulate_snd_eq_zero_of_le_and_eq_zero
+      (Prod.snd_eq_of_eq_mk h₁ |>.symm) (le_of_lt hk)
+  rintro rfl
+  generalize hr : sys.simulate f s₀ (k + 1) = r
+  rcases r with ⟨s₁, r⟩; simp
+  apply and_of
+  · rw [Prod.snd_eq_of_eq_mk hr]
+    exact simulate_snd_eq_zero_of_le_and_eq_zero
+      (Prod.snd_eq_of_eq_mk h₁ |>.symm) hk
+  rintro rfl
+  rw [simulate_add] at hr
+  simp [h₂] at hr
+  exact hr
+
+theorem simulate_add' {f s n m} : sys.simulate f s (m + n) =
+let ⟨s₁, n'⟩ := sys.simulate f s n
+let (s₂, m') := sys.simulate f s₁ m
+if n' ≠ 0 then (s₁, n' + m) else (s₂, n' + m') := by
+  conv_lhs => rw [add_comm]; exact simulate_add

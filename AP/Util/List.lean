@@ -1231,7 +1231,7 @@ theorem foldl_and_iff_forall {p : α → Prop} :
 xs.foldl (λ a x => a ∧ p x) True ↔ ∀ x ∈ xs, p x := by
   classical simp [foldl_prop_iff_foldl_bool, foldl_bool_and_eq_all]
 
------
+section foldlWith
 
 theorem foldlWith_bool_iff_foldlWith_prop {f : Bool → (x : α) → x ∈ xs → Bool} {z : Bool} :
 xs.foldlWith f z ↔ xs.foldlWith (β := Prop) (λ acc x h => f (acc = true) x h) z := by
@@ -1260,7 +1260,20 @@ theorem foldlWith_and_iff_forall {p : (x : α) → x ∈ xs → Prop} :
 xs.foldlWith (λ a x h => a ∧ p x h) True ↔ ∀ (x : α) (h : x ∈ xs), p x h := by
   classical simp [foldlWith_prop_iff_foldlWith_bool, foldlWith_bool_and_iff_forall]
 
------
+end foldlWith
 
 theorem getElem!_eq_getElem [ha : Inhabited α] {i} (h : i < xs.length) : xs[i]! = xs[i] :=
   getElem!_pos xs i h
+
+theorem nodup_of_pairwise {p : α → α → Prop} (h₁ : xs.Pairwise p)
+(h₂ : ∀ {x y}, x ∈ xs → y ∈ xs → p x y → x ≠ y) : xs.Nodup :=
+  Pairwise.imp_of_mem h₂ h₁
+
+@[simp]
+theorem nodup_append_self_iff : (xs ++ xs).Nodup ↔ xs = [] := by
+  cases xs <;> simp
+
+theorem nodup_flatMap_of {f : α → List β} (h₁ : xs.Nodup)
+(h₂ : ∀ x ∈ xs, (f x).Nodup ∧ ∀ y ∈ xs, ∀ z, z ∈ f x → z ∈ f y → x = y) :
+(xs.flatMap f).Nodup := by
+  induction xs <;> simp; grind

@@ -558,3 +558,13 @@ theorem compatibleList_iff_getElem {ds : List Defense} : CompatibleList ds ↔
 theorem compatibleList_iff_getElem! {ds : List Defense} : CompatibleList ds ↔
 ∀ i j, i < j → j < ds.length → ds[i]!.Compatible' (λ s => ∀ d ∈ ds, d.cnd s) ds[j]! := by
   convert compatibleList_iff_getElem <;> apply getElem!_pos
+
+theorem f_st_eq_of_f_eq_none {s d} (h : dse.f s = none) : (dse.st d).f s = d.f s := by
+  simp [st, h]
+
+theorem f_st_eq_of_f_eq_some {s d p} (h : dse.f s = some p) : (dse.st d).f s = p := by
+  simp [st, h]
+
+@[simp]
+theorem f_ofList_eq_none_iff {ds s} : (ofList ds).f s = none ↔ ∀ d ∈ ds, d.f s = none := by
+  induction ds <;> simp; grind

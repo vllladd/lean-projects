@@ -133,7 +133,7 @@ theorem size_guardTiles : guardTiles.size = 100 := by
 theorem offset_corner₀ : corner₀.offset = ⟨106, -106⟩ := rfl
 
 theorem cnd_defense_iff_guardTiles {s} : defense.cnd s ↔ s.pw = 1 ∧
-s.aPos ∈ (0 : PointZ).nbhd 100 ∧ guardTiles ⊆ s.taken := by
+s.aPos.dist 0 ≤ 100 ∧ guardTiles ⊆ s.taken := by
   simp only [defense, defenses, Corner.defense, corners, corner₀, offset, Nat.cast_ofNat,
     Int.reduceNeg, List.range_map_iterate, List.iterate, Corner.rotRight, Dir.rotRight_up,
     rotRight_ft_mk, neg_neg, Dir.rotRight_right, Dir.rotRight_down, List.map_cons, List.map_nil,
@@ -141,9 +141,9 @@ s.aPos ∈ (0 : PointZ).nbhd 100 ∧ guardTiles ⊆ s.taken := by
     Corner.cnd, Corner.dist, Edge.dist, Corner.edge₁, Corner.edge, Point.coord'_up, instFactTrue_aP,
     Edge.dir_eq_of_up, sub_neg_eq_add, Corner.edge₂, Point.coord'_right, le_inf_iff, Corner.cnd',
     tsub_le_iff_right, Point.coord'_down, Edge.dir_eq_of_down, Point.coord'_left, Dir.rotRight_left,
-    Int.min_add_right, Point.mem_nbhd, Point.dist, Point.x_ofNat, CharP.cast_eq_zero, zero_sub,
-    abs_neg, Point.y_ofNat, sup_le_iff, guardTiles, Set'.unionList_cons, Set'.unionList_nil,
-    Set'.union_empty, Set'.subset_def, Set'.mem_union, Set'.mem_ofList, Point.x_div, Point.x_mul,
+    Int.min_add_right, Point.dist, Point.x_ofNat, CharP.cast_eq_zero, sub_zero, Point.y_ofNat,
+    sup_le_iff, guardTiles, Set'.unionList_cons, Set'.unionList_nil, Set'.union_empty,
+    Set'.subset_def, Set'.mem_union, Set'.mem_ofList, Point.mem_nbhd, Point.x_div, Point.x_mul,
     Int.reduceMul, Int.reduceDiv, Point.y_div, Point.y_mul, neg_mul]
   rcases s.aPos with ⟨ax, ay⟩
   simp only [Point.forall_iff, Int.reduceNeg]
@@ -194,3 +194,42 @@ theorem le_dist_center_of_mem_guardTiles {p} (h : p ∈ guardTiles) : 101 ≤ p.
     Int.reduceDiv, Point.y_div, Point.y_mul, Point.y_ofNat, neg_mul, sup_le_iff, abs_le,
     neg_le_sub_iff_le_add, Int.reduceAdd, tsub_le_iff_right, CharP.cast_eq_zero, sub_zero,
     le_sup_iff, le_abs] at h ⊢; omega
+
+theorem mem_corners_iff_exi {c} : c ∈ corners ↔ ∃ n < 4, Corner.rotRight^[n] corner₀ = c := by
+  simp [List.mem_iff_getElem]
+
+theorem f_eq_none_of_aPos_dist_le_and_mem_defenses {s : State} {d}
+(h₁ : s.aPos.dist 0 ≤ 100) (h₂ : d ∈ defenses) : d.f s = none := by
+  simp [Point.dist, abs_le] at h₁
+  simp [defenses] at h₂
+  obtain ⟨c, h₂, rfl⟩ := h₂
+  simp [corners] at h₂
+  rcases h₂ with rfl | rfl | rfl | rfl <;>
+    simp [corner₀, Corner.f, Corner.edge₁, Corner.edge₂]
+  all_goals split_ands; all_goals
+    apply Edge.f_defense_eq_none_of_6_le_dist
+    simp [Edge.dist, offset]; omega
+
+theorem f_eq_none_of_aPos_dist_le {s : State}
+(h : s.aPos.dist 0 ≤ 100) : defense.f s = none := by
+  simp [defense]; intro d; exact f_eq_none_of_aPos_dist_le_and_mem_defenses h
+
+theorem f_st_eq_of_aPos_dist_le {s : State} {d}
+(h : s.aPos.dist 0 ≤ 100) : (defense.st d).f s = d.f s :=
+  Defense.f_st_eq_of_f_eq_none # f_eq_none_of_aPos_dist_le h
+
+theorem cnd_defense_eq_cnd : defense.cnd = Cnd := by
+  ext; simp [cnd_eq_forall_cnd, defense]
+
+theorem guardTiles_subset_taken_of_cnd_defense {s}
+(h : defense.cnd s) : guardTiles ⊆ s.taken := by
+  rw [cnd_defense_iff_guardTiles] at h; exact h.2.2
+
+@[simp]
+theorem size_interior : interior.size = 213 ^ 2 := by
+  simp [interior]; rfl
+
+@[simp]
+theorem size_interior₁ : interior₁.size = 211 ^ 2 := by
+  rw [interior₁, show (offset - 1 : ℤ) = ((offset  - 1 : ℕ) : ℤ) by rfl,
+    Point.size_set'_ofList_nbhd_int_nat]; rfl

@@ -163,3 +163,15 @@ theorem cnd_const_true {d} : cnd d (λ _ => true) := by
   subst h
   revert n
   native_decide
+
+theorem f_eq_none_of_6_le_dist {s : State}
+(h : 6 ≤ e.dist s.aPos) : e.f s = none := by
+  by_contra! h₁
+  rw [Option.ne_none_iff_exists'] at h₁
+  choose p h₁ using h₁
+  replace h₁ := of_f_eq_some h₁
+  grind
+
+theorem f_defense_eq_none_of_6_le_dist {s : State}
+(h : 6 ≤ e.dist s.aPos) : e.defense.f s = none :=
+  f_eq_none_of_6_le_dist h

@@ -340,6 +340,19 @@ theorem icc_eq_nil_iff {a b : α} : icc a b = [] ↔ b < a := by
   · intro h; by_contra! h₁; specialize h _ h₁; simp at h
   · intro h₁ c h₂; exact lt_of_lt_of_le h₁ h₂
 
+@[simp]
+theorem nodup_icc {x y : α} : (icc x y).Nodup := by
+  simp [icc]
+  have h := @LocallyFiniteOrderList.sorted_listIcc α _ x y
+  apply nodup_of_pairwise h
+  simp [LocallyFiniteOrderList.mem_listIcc]
+  intros; rintro rfl; simp_all only [lt_self_iff_false]
+
+@[simp]
+theorem length_icc_int_nat {z : ℤ} {a b : ℕ} :
+(icc (z - a) (z + b)).length = a + b + 1 := by
+  simp [icc, instLocallyFiniteOrderListInt]; omega
+
 end List
 
 variable {α : Type*}

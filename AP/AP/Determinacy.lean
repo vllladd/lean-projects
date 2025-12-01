@@ -27,12 +27,12 @@ instance {sa} [ha : AState sa] {st : Strat} [hst : st.WF] {n} :
 AState (sys.simulate st.f sa # n * 2).1 :=
   ha.of_simulate_mul_two
 
-theorem AState.of_simulate_mul_two_eq {sa s₁ r} [ha : AState sa]
+theorem AState.of_simulate_mul_two_eq' {sa s₁ r} [ha : AState sa]
 {st : Strat} [hst : st.WF] {n} (h : sys.simulate st.f sa (n * 2) = (s₁, r)) : AState s₁ := by
   rw [Prod.fst_eq_of_eq_mk h]; infer_instance
 
-theorem AState.of_simulate_mul_two_eq_full {sa s₁} [ha : AState sa]
-{st : Strat} {n} (h : sys.simulate st.f sa (n * 2) = (s₁, 0)) : AState s₁ := by
+theorem AState.of_simulate_mul_two_eq_full {sa s₁ f} [ha : AState sa]
+{n} (h : sys.simulate f sa (n * 2) = (s₁, 0)) : AState s₁ := by
   induction n generalizing sa
   · simp at h
     rwa [←h]
@@ -43,8 +43,8 @@ theorem AState.of_simulate_mul_two_eq_full {sa s₁} [ha : AState sa]
   have hsa' := AState.of_tr h₂
   exact ih h₃
 
-theorem DState.of_simulate_mul_two_eq_full {sd s₁} [hd : DState sd]
-{st : Strat} {n} (h : sys.simulate st.f sd (n * 2) = (s₁, 0)) : DState s₁ := by
+theorem DState.of_simulate_mul_two_eq_full {sd s₁ f} [hd : DState sd]
+{n} (h : sys.simulate f sd (n * 2) = (s₁, 0)) : DState s₁ := by
   induction n generalizing sd
   · simp at h
     rwa [←h]
