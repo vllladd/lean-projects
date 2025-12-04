@@ -11,16 +11,10 @@ import AP.Inference
 
 namespace AP
 
-def center : PointZ :=
-  ⟨0, -6⟩
-
-def getPs (d : ℕ) : List PointZ :=
-  center.nbhd d
-
 def State.toStr (s : State) : String := String.mk # do
   let d := 7
-  let p ← getPs d
-  let ⟨x, y⟩ := p - center
+  let p ← s.aPos.nbhd d
+  let ⟨x, y⟩ := p - s.aPos
   let sp := do
     guard # x + d = 0 ∧ y + d ≠ 0
     return '\n'
@@ -39,15 +33,7 @@ def logb : IO Unit := do
 -----
 
 def state₀ : State :=
-  initState 1 center
-
--- def defense : Defense :=
---   Edge.edge₀.defense
-
-def defense : Defense where
-  cnd := λ _ => True
-  ps := ∅
-  f := λ _ => none
+  initState 1 ⟨0, 0⟩
 
 def mkDigit (d : ℕ) : Char :=
   let c := '0'.val + d.toUInt32
@@ -63,11 +49,16 @@ def parseAMove (inp : String) : Option PointZ :=
   | _ :: _ :: _ => none
   | [c] => movesMp.get? c
 
-def readAMove : IO (Option PointZ) := do
+def readAMove : IO # Option # Option PointZ := do
   let stdin ← IO.getStdin
   IO.print "\n> "
   let inp ← stdin.getLine
-  pure # parseAMove ⟨inp.1.filter (· ∉ "\r\n".1)⟩
+  let inp := ⟨inp.1.filter (· ∉ "\r\n".1)⟩
+  
+  if inp = "q" then
+    return none
+  
+  pure # some # parseAMove inp
 
 -- instance {s} : Decidable # Edge.cnd₀ s := by
 --   simp [Edge.cnd₀]; split <;> all_goals infer_instance
@@ -81,11 +72,9 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
     | true => do
       if !isFst then logb else pure ()
       IO.println s.toStr
-      
-      -- IO.println # "\n" ++ repr (Edge.edge₀.dist s.aPos)
-      
-      let p ← readAMove
-      pure # p.map (s.aPos + ·)
+      match ←readAMove with
+      | none => return
+      | some p => pure # p.map (s.aPos + ·)
     match p? with
     | none => do
       IO.println "Invalid command"
@@ -99,7 +88,9 @@ def run (s : State) (isFst : Bool) (n : ℕ) : IO Unit := do
       | some s' => run s' false n
 
 def _root_.main : IO Unit := do
-  run state₀ true # 2 ^ 30
+  let st : Strat := ⟨.mk # λ s => some # s.aPos + ⟨1, 1⟩, King.dKingOp⟩
+  let state := sys.simulate st.f state₀ 200 |>.1
+  run state true # 2 ^ 30
 
 -----
 
