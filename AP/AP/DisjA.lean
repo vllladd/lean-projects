@@ -855,13 +855,21 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     subst h₁
     simp at h₇
   
-  have h₈ : sa.aForallWinsDisj fsp.next a
+  -- have h₈ : sa.aForallWinsDisj fsp.next a
+  -- · rw [←hF] at h₁
+  --   have H₄ := s.aForallWinsDisj_of_simulate_eq h h₁
+  --   cases k; simp at hk; nm k
+  --   rw [FSP.offset_succ] at H₄
+  --   exact sa.aForallWinsDisj_of_aForallWinsDisj_offset H₄
+  
+  have h₈ : sa.aForallWinsDisj (fsp.insertSet 1 (s.aPos.nbhd s.pw).toSet) a
   · rw [←hF] at h₁
     have H₄ := s.aForallWinsDisj_of_simulate_eq h h₁
-    cases k; simp at hk; nm k
-    rw [FSP.offset_succ] at H₄
-    exact sa.aForallWinsDisj_of_aForallWinsDisj_offset H₄
+    replace H₄ := State.aForallWinsDisj_of_aForallWinsDisj_offset H₄
+    sorry
   
+-- #check 0 #exit
+
   obtain ⟨s', H₄⟩ : ∃ s', sys.tr s sa.aPos = some s'
   · simp [AState.tr_eq_some_iff] at h₅ ⊢
     rcases h₅ with ⟨⟨H₄, H₅, H₆⟩, rfl⟩
@@ -910,10 +918,38 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     simp at h₁
     exact h₁
   
-  have H₇ : sd₀.aHwsDisj # fsp.insertSet 2 # s.aPos.nbhd s.pw |>.toSet
+  have H₇ : F s k = (sa, 0)
+  · rw [←hF] at H₅
+    rw [←hk₀, ←hF, sys.simulate_add, H₅]
+    simpa
+  
+  have H₈ : sd₀.aHwsDisj # fsp.insertSet 2 # s.aPos.nbhd s.pw |>.toSet
   ·
-    use a, Ha
-    intro d₁ hd₁ n
+    -- use a, Ha
+    -- intro d₁ hd₁
+    -- rw [State.aWinsDisj_iff]
+    -- split_ands
+    -- ·
+    --   specialize h₈ (d₁.set sd₀ # d.f sd₀) # DStrat.wf_set_of_tr H₆
+    --   rw [State.aWinsDisj_iff] at h₈
+    --   replace h₈ := h₈.1
+    --   intro r
+    --   cases r
+    --   · simp
+    --   nm r
+    --   specialize h₈ r
+    --   replace h₈ : (sys.simulate (Strat.f ⟨a, d₁⟩) sa r).2 = 0
+    --   ·
+    --     convert h₈ using 2
+    --     symm;
+    --     apply State.simulate_set_d_eq_of_length_hist_lt ⟨_, H₆⟩
+    --     simp [hist_eq_of_tr H₆]
+    --   simp
+    --   use sa
+    --   simp [h₈]
+    --   sorry
+    -- ·
+    --   sorry
     sorry
   
   sorry
