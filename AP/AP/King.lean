@@ -433,10 +433,15 @@ theorem dWins_dKingOp {a : AStrat} [ha : a.WF] : state₀.dWins ⟨a, dKingOp⟩
   dsimp [f] at hr
   simpa [hr]
 
+end King
+
 theorem dHwsPw_one : dHwsPw 1 := by
   intro p
   rw [dHws_initState_iff_dHws_origin]
-  change state₀.dHws
-  use dKingOp, inferInstance
+  change King.state₀.dHws
+  use King.dKingOp, inferInstance
   intro a ha
-  exact dWins_dKingOp
+  exact King.dWins_dKingOp
+
+theorem not_aHwsPw_one : ¬aHwsPw 1 := by
+  simp; exact dHwsPw_one
