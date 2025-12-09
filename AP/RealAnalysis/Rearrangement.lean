@@ -406,6 +406,22 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
     congr
     exact subseq_card_filter_range_eq (p := (¬p ·)) h₂ h₄ h
 
+noncomputable
+def mkRmentList (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : List ℕ :=
+  match n with
+  | 0 => []
+  | n + 1 =>
+    let is := mkRmentList a L n
+    let i := Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
+    let j := Nat.findRaw # λ j => j ∉ is ∧ 0 ≤ a j
+    let is₁ := is ++ [i, j]
+    let s := ∑ i ∈ is.toFinset, a i
+    let d := |s - L|
+    if s ≤ L - 1 / (n + 2) then
+      sorry
+    else
+      sorry
+
 -- #check 0 #exit
 
 theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
@@ -653,4 +669,5 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
   --     are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
   --   since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
   --     the series of rearrangement of `a` tends to `L`
+  
   sorry
