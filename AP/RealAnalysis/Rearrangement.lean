@@ -1,8 +1,24 @@
 import AP.RealAnalysis.Coherence
 
+namespace List
+
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
+
+-- theorem exi_getElem?_eq_iff_mem {f : ℕ → List α} {g : ℕ → ℕ} {x : α}
+-- {hh : ∀ i, g i < (f i).length}
+-- (h₁ : ∀ i j, i ≤ j → f i <+: f j)
+-- (∃ i, (f i)[g i]'(hh i) = x) ↔ ∃ i, x ∈ f i := by
+--   apply exists_congr; intro i
+
+-- #check 0 #exit
+
+end List
+
 namespace Finset
 
 variable {α β : Type*}
+variable {xs ys : List α}
 variable {s : Finset α}
 
 -- theorem card_filter_range_lt_of_lt {p : ℕ → Prop} {i j : ℕ} [hp : DecidablePred p]
@@ -12,6 +28,18 @@ variable {s : Finset α}
 --   rw [Finset.range_add]
 --   rw [Finset.filter_union]
 --   simp
+
+-- theorem sum_range_list_getElem [ha : Ring α]
+-- {f : ℕ → List α} {h : ∀ i, i < (f i).length} {n} :
+-- ∑ i ∈ range n, (f i)[i]'(h i) = (xs.take n).sum := by
+--   induction n
+--   · simp
+--   nm n ih
+--   rw [sum_range_succ, ih]
+--   rw [List.take_succ]
+--   simp
+--   rw [List.getElem?_eq_getElem]
+--   rotate_left
 
 -- #check 0 #exit
 
@@ -412,15 +440,218 @@ def mkRmentList (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : List ℕ :=
   | 0 => []
   | n + 1 =>
     let is := mkRmentList a L n
+    -- consume the first unconsumed element `x` of `a+`
     let i := Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
-    let j := Nat.findRaw # λ j => j ∉ is ∧ 0 ≤ a j
-    let is₁ := is ++ [i, j]
+    -- consume the first unconsumed element `y` of `a-`
+    let j := Nat.findRaw # λ j => j ∉ is ∧ a j < 0
+    -- add `x + y` to the current sum
+    let is := is ++ [i, j]
+    -- let the current sum be `s`
     let s := ∑ i ∈ is.toFinset, a i
-    let d := |s - L|
-    if s ≤ L - 1 / (n + 2) then
-      sorry
-    else
-      sorry
+    -- if `s <= L - 1 / (n + 2)`
+    is ++ if s ≤ L - 1 / (n + 2) then
+      -- let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
+      --   and all elements are unconsumed
+      let N := Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ n, N ≤ n → 0 ≤ a n → n ∉ is ∧ a n < 1 / (n + 2)
+      -- consume the shortest prefix of `a+` starting from `N`
+      --   whose sum is larger than `L - 1 / (n + 2)`
+      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (0 ≤ a ·)
+      f # Nat.findRaw # λ k => L - 1 / (n + 2) < (f k |>.map a |>.sum)
+      -- the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
+    else if L + 1 / (n + 2) ≤ s then
+      -- let `N` be the index in `a-` after which all elements are larger than `-1 / (n + 2)`
+      --   and all elements are unconsumed
+      let N := Nat.findRaw # λ N => a N < 0 ∧ ∀ n, N ≤ n → a n < 0 → n ∉ is ∧ -1 / (n + 2) < a n
+      -- consume the shortest prefix of `a-` starting from `N`
+      --   whose sum is smaller than `L + 1 / (n + 2)`
+      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (a · < 0)
+      f # Nat.findRaw # λ k => (f k |>.map a |>.sum) < L + 1 / (n + 2)
+      -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
+    else []
+    -- we now have `|s - L| < 1 / (n + 1)`
+
+noncomputable
+def mkRment (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : ℕ :=
+  (mkRmentList a L (n + 1))[n]!
+
+@[simp]
+theorem le_length_mkRmentList {a L n} : n ≤ (mkRmentList a L n).length := by
+  induction n; simp; rw [mkRmentList]; grind
+
+theorem mkRmentList_prefix {a L k n} (h : k ≤ n) : mkRmentList a L k <+: mkRmentList a L n := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h
+  induction n; rfl; rw [Nat.add_succ, mkRmentList]; grind
+
+theorem getElem!_mkRmentList_eq_getElem {a L n k} (h : k < n) :
+(mkRmentList a L n)[k]! = (mkRmentList a L n)[k]'(lt_of_lt_of_le h # by simp) := by
+  rw [List.getElem!_eq_getElem]
+
+@[simp]
+theorem lt_length_mkRmentList_succ {a L n} : n < (mkRmentList a L (n + 1)).length := by
+  apply lt_of_lt_of_le (b := n + 1) <;> simp
+
+theorem mkRment_eq_getElem {a L n} :
+mkRment a L n = (mkRmentList a L (n + 1))[n]'(by simp) := by
+  rw [mkRment, getElem!_mkRmentList_eq_getElem]; simp
+
+theorem getElem_mkRmentList_eq_of_lt {a L n m k} (h₁ : k < n) (h₂ : k < m) :
+(mkRmentList a L n)[k]'(lt_of_lt_of_le h₁ # by simp) =
+(mkRmentList a L m)[k]'(lt_of_lt_of_le h₂ # by simp) := by
+  wlog h₃ : n < m; grind; apply List.IsPrefix.getElem # mkRmentList_prefix # le_of_lt h₃
+
+theorem getElem!_mkRmentList_eq_of_lt {a L n m k} (h₁ : k < n) (h₂ : k < m) :
+(mkRmentList a L n)[k]! = (mkRmentList a L m)[k]! := by
+  rw [getElem!_mkRmentList_eq_getElem h₁, getElem!_mkRmentList_eq_getElem h₂]
+  exact getElem_mkRmentList_eq_of_lt h₁ h₂
+
+@[simp]
+theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h₁ : n ∈ mkRmentList a L n
+  · apply List.IsPrefix.mem h₁
+    apply mkRmentList_prefix
+    simp
+  unfold mkRmentList
+  generalize h_is : mkRmentList a L n = is at h₁ ⊢
+  generalize hi : Nat.findRaw (λ i => i ∉ is ∧ 0 ≤ a i) = i
+  generalize hj : Nat.findRaw (λ j => j ∉ is ∧ a j < 0) = j
+  apply List.mem_append_left
+  apply List.mem_append_right
+  rw [hi, hj]
+  simp
+  have h₂ : ∀ k < n, k ∈ is
+  ·
+    intro k hk
+    specialize ih k hk
+    apply List.IsPrefix.mem ih
+    rw [←h_is]
+    apply mkRmentList_prefix
+    omega
+  by_cases h₃ : 0 ≤ a n
+  · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hi; grind
+  · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hj; grind
+
+-- #check 0 #exit
+
+theorem mkRment_eq_iff {a L i j} (h : CondConv a) : mkRment a L i = mkRment a L j ↔ i = j := by
+  symm; constructor; rintro rfl; rfl; intro h
+  sorry
+
+-- #check 0 #exit
+
+theorem rment_mkRment {a L} (h : CondConv a) : Rment (mkRment a L) := by
+  constructor
+  · intro i j h₁; rw [mkRment_eq_iff h] at h₁; exact h₁
+  intro j
+  simp_rw [mkRment_eq_getElem]
+  change ∃ i, _
+  suffices h : ∃ i, (mkRmentList a L (j + i + 1))[i]'
+    (by apply lt_of_lt_of_le (b := j + i + 1) (by omega) (by simp)) = j
+  ·
+    obtain ⟨i, h⟩ := h
+    use i
+    convert h using 1
+    rw [getElem_mkRmentList_eq_of_lt] <;> omega
+  suffices h : ∃ (i : ℕ) (h : _), (mkRmentList a L (j + 1))[i]'h = j
+  ·
+    choose i h₁ h₂ using h
+    use i
+    convert h₂ using 1
+    symm
+    apply List.IsPrefix.getElem
+    apply mkRmentList_prefix
+    omega
+  rw [←List.mem_iff_getElem]
+  simp
+
+-- theorem nodup_mkRmentList {a L n} (h : CondConv a) : (mkRmentList a L n).Nodup := by
+--   sorry
+
+theorem series_mkRment_eq_sum {a L n} :
+series (λ i => a # mkRment a L i) n = (mkRmentList a L n |>.take n |>.map a |>.sum) := by
+  simp [mkRment_eq_getElem, series]
+  induction n
+  ·
+    simp
+  nm n ih
+  simp
+  rw [Finset.sum_range_succ, ih]; clear ih
+  simp
+  congr 1
+  have h₁ : mkRmentList a L n <+: mkRmentList a L (n + 1)
+  ·
+    apply mkRmentList_prefix
+    simp
+  obtain ⟨ys, h₁⟩ := h₁
+  rw [←h₁]
+  clear h₁
+  simp
+
+theorem take_length_mkRmentList {a L n is} (h : mkRmentList a L n = is) :
+(mkRmentList a L is.length).take is.length = is := by
+  generalize h₁ : mkRmentList a L is.length = is₁
+  have h₂ : n ≤ is.length
+  · simp [←h]
+  have h₃ : is <+: is₁
+  · subst h h₁; exact mkRmentList_prefix h₂
+  obtain ⟨xs, rfl⟩ := h₃
+  simp
+
+-- #check 0 #exit
+
+theorem abs_series_mkRment_dif_lt {a L n} (h : CondConv a) :
+|series (λ i => a # mkRment a L i) (mkRmentList a L n).length - L| < 1 / (n + 1) := by
+  rw [series_mkRment_eq_sum, take_length_mkRmentList rfl]
+  sorry
+
+-- #check 0 #exit
+
+theorem tendsTo_series_mkRment {a L} (h : CondConv a) :
+tendsTo (series # λ i => a # mkRment a L i) L := by
+  -- we now have `|s - L| < 1 / (n + 1)`
+  
+  -- let `f : N -> N` be a function that maps `n` to the index representing the
+  --   end of the `n`-th generation
+  -- for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
+  --   at distance from `L` at most `1 / (n + 1)`
+  -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
+  --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+  -- moreover, all elements or series of rearrangement of `a` after `f n`
+  --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+  -- since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
+  --   the series of rearrangement of `a` tends to `L`
+  
+  rw [tendsTo_iff_eps_lt_one]
+  intro ε hε hε'
+  
+  obtain ⟨N, hN⟩ : ∃ (N : ℕ), 1 / (N + 1) < ε
+  ·
+    obtain ⟨N, hN⟩ := exists_nat_ge ε⁻¹
+    use N
+    rw [div_lt_iff₀] <;> try positivity
+    field_simp at hN
+    grind
+  
+  generalize hN₁ : (mkRmentList a L N).length = N₁
+  have h₁ : N ≤ N₁
+  · simp [←hN₁]
+  have h₂ : 1 / (N₁ + 1) < ε
+  · apply lt_of_le_of_lt _ hN
+    field_simp
+    simpa
+  
+  use N₁
+  intro n hn
+  apply hN.trans'
+  
+  -- have h₃ := abs_series_mkRment_dif_lt h (L := L) (n := n)
+  
+  -- apply lt_of_lt_of_le # abs_series_mkRment_dif_lt h
+  -- field_simp
+  -- simpa
+  
+  sorry
 
 -- #check 0 #exit
 
@@ -639,35 +870,4 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
     apply H₃ _ |>.trans'
     linarith
   
-  -- we construct the rearrangement recursively
-  --   we start from the empty list and the sum `0`
-  --   in the `n`-th iteration (starting from `n = 0`) we do the following
-  --     consume the first unconsumed element `x` of `a+`
-  --     consume the first unconsumed element `y` of `a-`
-  --     add `x + y` to the current sum
-  --     let the current sum be `s`
-  --     let `d = |s - L|`
-  --     if `s <= L - 1 / (n + 2)`
-  --       let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
-  --         and all elements are unconsumed
-  --       consume the shortest prefix of `a+` starting from `N`
-  --         whose sum is larger than `L - 1 / (n + 2)`
-  --       the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
-  --     if `s >= L + 1 / (n + 2)`
-  --       ditto
-  --     let `s` be the new sum
-  --     we now have `|s - L| < 1 / (n + 1)`
-  --   the `n`-th element of the rearrangement is obtained by constructing the list
-  --     in `n + 1` iterations and taking the `n`-th element
-  --   let `f : N -> N` be a function that maps `n` to the index representing the
-  --     end of the `n`-th generation
-  --   for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
-  --     at distance from `L` at most `1 / (n + 1)`
-  --   elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
-  --     are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
-  --   moreover, all elements or series of rearrangement of `a` after `f n`
-  --     are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
-  --   since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
-  --     the series of rearrangement of `a` tends to `L`
-  
-  sorry
+  use mkRment a L, rment_mkRment h, tendsTo_series_mkRment h
