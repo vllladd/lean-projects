@@ -1,49 +1,4 @@
-import AP.RealAnalysis.Coherence
-
-namespace List
-
-variable {α β γ : Type*}
-variable {xs ys zs : List α}
-
--- theorem exi_getElem?_eq_iff_mem {f : ℕ → List α} {g : ℕ → ℕ} {x : α}
--- {hh : ∀ i, g i < (f i).length}
--- (h₁ : ∀ i j, i ≤ j → f i <+: f j)
--- (∃ i, (f i)[g i]'(hh i) = x) ↔ ∃ i, x ∈ f i := by
---   apply exists_congr; intro i
-
--- #check 0 #exit
-
-end List
-
-namespace Finset
-
-variable {α β : Type*}
-variable {xs ys : List α}
-variable {s : Finset α}
-
--- theorem card_filter_range_lt_of_lt {p : ℕ → Prop} {i j : ℕ} [hp : DecidablePred p]
--- (h : i < j) : (Finset.range i |>.filter p).card < (Finset.range j |>.filter p).card := by
---   apply Finset.card_lt_card
---   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
---   rw [Finset.range_add]
---   rw [Finset.filter_union]
---   simp
-
--- theorem sum_range_list_getElem [ha : Ring α]
--- {f : ℕ → List α} {h : ∀ i, i < (f i).length} {n} :
--- ∑ i ∈ range n, (f i)[i]'(h i) = (xs.take n).sum := by
---   induction n
---   · simp
---   nm n ih
---   rw [sum_range_succ, ih]
---   rw [List.take_succ]
---   simp
---   rw [List.getElem?_eq_getElem]
---   rotate_left
-
--- #check 0 #exit
-
-end Finset
+import AP.RealAnalysis.ConditionalConvergence
 
 namespace RealAnalysis
 
@@ -53,6 +8,48 @@ def Rment (σ : ℕ → ℕ) : Prop :=
 noncomputable
 def rinv (σ : ℕ → ℕ) (n : ℕ) : ℕ :=
   Classical.epsilon # λ k => σ k = n
+
+noncomputable
+def mkRmentList (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : List ℕ :=
+  match n with
+  | 0 => []
+  | n + 1 =>
+    let is := mkRmentList a L n
+    -- consume the first unconsumed element `x` of `a+`
+    let i := Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
+    -- consume the first unconsumed element `y` of `a-`
+    let j := Nat.findRaw # λ j => j ∉ is ∧ a j < 0
+    -- add `x + y` to the current sum
+    let is := is ++ [i, j]
+    -- let the current sum be `s`
+    let s := ∑ i ∈ is.toFinset, a i
+    -- if `s <= L - 1 / (n + 2)`
+    is ++ if s ≤ L - 1 / (n + 2) then
+      -- let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
+      --   and all elements are unconsumed
+      let N := Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ n, N ≤ n → 0 ≤ a n → n ∉ is ∧ a n < 1 / (n + 2)
+      -- consume the shortest prefix of `a+` starting from `N`
+      --   whose sum is larger than `L - 1 / (n + 2)`
+      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (0 ≤ a ·)
+      f # Nat.findRaw # λ k => L - 1 / (n + 2) < (f k |>.map a |>.sum)
+      -- the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
+    else if L + 1 / (n + 2) ≤ s then
+      -- let `N` be the index in `a-` after which all elements are larger than `-1 / (n + 2)`
+      --   and all elements are unconsumed
+      let N := Nat.findRaw # λ N => a N < 0 ∧ ∀ n, N ≤ n → a n < 0 → n ∉ is ∧ -1 / (n + 2) < a n
+      -- consume the shortest prefix of `a-` starting from `N`
+      --   whose sum is smaller than `L + 1 / (n + 2)`
+      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (a · < 0)
+      f # Nat.findRaw # λ k => (f k |>.map a |>.sum) < L + 1 / (n + 2)
+      -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
+    else []
+    -- we now have `|s - L| < 1 / (n + 1)`
+
+noncomputable
+def mkRment (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : ℕ :=
+  (mkRmentList a L (n + 1))[n]!
+
+-----
 
 theorem rment_eq_iff {σ n m} (h : Rment σ) : σ n = σ m ↔ n = m := by
   symm; constructor; rintro rfl; rfl
@@ -107,189 +104,6 @@ theorem converges_rment_of {a σ} (h₁ : Rment σ)
 theorem converges_rment_iff {a σ} (h₁ : Rment σ) :
 converges (a # σ ·) ↔ converges a := by
   apply exists_congr; simp [tendsTo_rment_iff h₁]
-
-theorem exi_gt_of_monoLe_and_not_converges {a}
-(h₁ : monoLe a) (h₂ : ¬converges a) (L : ℝ) : ∃ N, L < a N := by
-  contrapose! h₂; apply converges_of_monoLe_and_bounded_top h₁ ⟨L, h₂⟩
-
-theorem exi_lt_of_monoGe_and_not_converges {a}
-(h₁ : monoGe a) (h₂ : ¬converges a) (L : ℝ) : ∃ N, a N < L := by
-  contrapose! h₂; apply converges_of_monoGe_and_bounded_bottom h₁ ⟨L, h₂⟩
-
-def CondConv (a : ℕ → ℝ) : Prop :=
-  converges (series a) ∧ ¬AbsConv a
-
-theorem absConv_drop_of {a N} (h : AbsConv a) : AbsConv (a # N + ·) := by
-  unfold AbsConv at h ⊢; rwa [converges_series_drop_iff (a := (|a ·|))]
-
-theorem absConv_drop_iff {a N} : AbsConv (a # N + ·) ↔ AbsConv a := by
-  exact converges_series_drop_iff (a := (|a ·|))
-
-theorem condConv_drop_of {a N} (h : CondConv a) : CondConv (a # N + ·) := by
-  unfold CondConv at h ⊢; rwa [converges_series_drop_iff, absConv_drop_iff]
-
-theorem condConv_drop_iff {a N} : CondConv (a # N + ·) ↔ CondConv a := by
-  unfold CondConv; rw [converges_series_drop_iff, absConv_drop_iff]
-
-theorem absConv_neg {a} : AbsConv (-a) ↔ AbsConv a := by
-  simp [AbsConv]
-
-theorem condConv_neg {a} : CondConv (-a) ↔ CondConv a := by
-  unfold CondConv; rw [←neg_series', converges_neg, absConv_neg]
-
-def Infp (a : ℕ → ℝ) (p : ℝ → Prop) : Prop :=
-  ∀ N, ∃ n, N ≤ n ∧ p (a n)
-
-theorem infp_iff_infinite {a p} : Infp a p ↔ {n | p # a n}.Infinite := by
-  simp_rw [Set.infinite_iff_exists_gt, Set.mem_setOf_eq]
-  constructor; all_goals
-    intro h N
-    specialize h # N + 1
-    choose n h₁ h₂ using h
-    use n, by omega, by omega
-
-open Classical in noncomputable
-def mkSubseq (a : ℕ → ℝ) (p : ℝ → Prop) (n : ℕ) : ℕ :=
-  match n with
-  | 0 => Nat.findRaw (p # a ·)
-  | n + 1 =>
-    let k := mkSubseq a p n
-    k + 1 + Nat.findRaw (p # a # k + 1 + ·)
-
-theorem subseq_mkSubseq {a p} : Subseq (mkSubseq a p) := by
-  rw [subseq_iff_lt_add_one]
-  intro n
-  rw [mkSubseq]
-  omega
-
-theorem exi_add_of_infp {a p N} (h : Infp a p) : ∃ n, p (a # N + n) := by
-  specialize h N
-  choose n h₁ h₂ using h
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₁
-  use n
-
-theorem exi_of_infp {a p} (h : Infp a p) : ∃ n, p (a n) := by
-  convert exi_add_of_infp h (N := 0); simp
-
-theorem mkSubseq_spec {a p n} (h : Infp a p) : p # a # mkSubseq a p n := by
-  cases n <;> rw [mkSubseq]
-  · exact Nat.findRaw_spec (P := (p # a ·)) # exi_of_infp h
-  nm n; apply Nat.findRaw_spec (P := λ k => p (a (mkSubseq a p n + 1 + k)))
-  exact exi_add_of_infp h
-
-theorem apply_of_mkSubseq_eq {a p n k} (h : Infp a p)
-(h₁ : mkSubseq a p k = n) : p (a n) := by
-  subst h₁; exact mkSubseq_spec h
-
-theorem infp_drop_of {a p N} (h : Infp a p) : Infp (a # N + ·) p := by
-  intro M
-  specialize h (N + M)
-  choose n h₁ h₂ using h
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
-  use n + M, by omega
-  ring_nf at h₂ ⊢
-  exact h₂
-
-theorem infp_of_drop {a p N} (h : Infp (a # N + ·) p) : Infp a p := by
-  intro M
-  specialize h M
-  choose n h₁ h₂ using h
-  use N + n, by omega
-
-theorem infp_drop_iff {a p N} : Infp (a # N + ·) p ↔ Infp a p :=
-   ⟨infp_of_drop, infp_drop_of⟩
-
-theorem exi_mkSubseq_eq_of_apply {a p n} (h : Infp a p)
-(h₁ : p (a n)) : ∃ k, mkSubseq a p k = n := by
-  induction n using Nat.strong_induction_on generalizing a
-  nm n ih
-  by_cases h₂ : ∀ k < n, ¬p (a k)
-  · use 0
-    rw [mkSubseq]
-    rw [Nat.findRaw_eq_iff, if_pos ⟨_, h₁⟩]
-    exact ⟨h₁, h₂⟩
-  push_neg at h₂
-  replace h₂ : ∃ k, k < n ∧ p (a k) ∧ ∀ r, k < r → r < n → ¬p (a r)
-  · choose k hk h₂ using h₂
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt hk; clear hk
-    have h₃ : ∃ d, p # a # k + n - d
-    · use n
-      simpa
-    replace h₃ := Nat.findRaw_spec' h₃
-    generalize Nat.findRaw (λ d => p # a # k + n - d) = d at h₃
-    rcases h₃ with ⟨h₃, h₄⟩
-    use k + n - d, by omega, h₃
-    intro r h₅ h₆ h₇
-    rw [Nat.lt_succ_iff] at h₆
-    obtain ⟨w, h₈⟩ := Nat.exists_eq_add_of_le h₆
-    clear h₆
-    have h₆ : r = k + n - w; omega
-    rw [h₆] at h₇
-    specialize h₄ _ h₇
-    omega
-  choose k h₂ h₃ h₄ using h₂
-  specialize @ih k (by omega) a h h₃
-  choose i ih using ih
-  use i + 1
-  rw [mkSubseq, ih]; clear ih
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt h₂; clear h₂
-  ring_nf at h₁ ⊢
-  simp
-  rw [Nat.findRaw_eq_iff]
-  rw [if_pos ⟨_, h₁⟩]
-  use h₁
-  intro w hw
-  apply h₄ <;> omega
-
-theorem apply_iff_exi_mkSubseq_eq {a p n} (h : Infp a p) : p (a n) ↔ ∃ k, mkSubseq a p k = n :=
-  ⟨exi_mkSubseq_eq_of_apply h, λ ⟨_, h₁⟩ => apply_of_mkSubseq_eq h h₁⟩
-
-theorem exi_subseq_of_infp {a p} (h : Infp a p) :
-∃ σ, Subseq σ ∧ ∀ n, p (a n) ↔ ∃ k, σ k = n :=
-  ⟨_, subseq_mkSubseq, λ _ => apply_iff_exi_mkSubseq_eq h⟩
-
-theorem infp_of_imp {a} {p₁ p₂ : ℝ → Prop} (h₁ : Infp a p₁)
-(h₂ : ∀ n, p₁ (a n) → p₂ (a n)) : Infp a p₂ := by
-  intro N; specialize h₁ N; choose n h₁ h₃ using h₁; use n, h₁, h₂ _ h₃
-
-theorem infp_pos_of_condConv {a} (h : CondConv a) : Infp a (0 < ·) := by
-  intro N
-  by_contra! h₃
-  generalize hb : (a # N + ·) = b
-  have h₄ : CondConv b; rwa [←hb, condConv_drop_iff]
-  have h₅ : |b| = -b
-  · subst hb
-    rw [abs_of_nonpos]
-    intro n
-    apply h₃
-    simp
-  have h₆ := h₄.1
-  have h₇ : ¬converges (series b)
-  · rw [←converges_neg, neg_series', ←h₅]; exact h₄.2
-  contradiction
-
-theorem infp_neg_of_condConv {a} (h : CondConv a) : Infp a (· < 0) := by
-  intro N; rw [←condConv_neg] at h
-  have h₁ := infp_pos_of_condConv h N
-  simp at h₁; exact h₁
-
-theorem infp_nonneg_of_condConv {a} (h : CondConv a) : Infp a (0 ≤ ·) := by
-  apply infp_of_imp (infp_pos_of_condConv h); intro n; apply le_of_lt
-
-theorem infp_nonpos_of_condConv {a} (h : CondConv a) : Infp a (· ≤ 0) := by
-  apply infp_of_imp (infp_neg_of_condConv h); intro n; apply le_of_lt
-
-theorem monoLe_series_of_nonneg {a} (h : ∀ n, 0 ≤ a n) : monoLe (series a) := by
-  rw [monoLe_iff_le_succ]; intro n; rw [series_succ]; linarith [h n]
-
-theorem monoGe_series_of_nonpos {a} (h : ∀ n, a n ≤ 0) : monoGe (series a) := by
-  rw [monoGe_iff_succ_le]; intro n; rw [series_succ]; linarith [h n]
-
-theorem monoLt_series_of_pos {a} (h : ∀ n, 0 < a n) : monoLt (series a) := by
-  rw [monoLt_iff_lt_succ]; intro n; rw [series_succ]; linarith [h n]
-
-theorem monoGt_series_of_neg {a} (h : ∀ n, a n < 0) : monoGt (series a) := by
-  rw [monoGt_iff_succ_lt]; intro n; rw [series_succ]; linarith [h n]
 
 theorem subseq_nat_eq_subseq_iff {σ n m} (h : Subseq σ) : σ n = σ m ↔ n = m := by
   by_cases h₁ : n < m
@@ -434,46 +248,6 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
     congr
     exact subseq_card_filter_range_eq (p := (¬p ·)) h₂ h₄ h
 
-noncomputable
-def mkRmentList (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : List ℕ :=
-  match n with
-  | 0 => []
-  | n + 1 =>
-    let is := mkRmentList a L n
-    -- consume the first unconsumed element `x` of `a+`
-    let i := Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
-    -- consume the first unconsumed element `y` of `a-`
-    let j := Nat.findRaw # λ j => j ∉ is ∧ a j < 0
-    -- add `x + y` to the current sum
-    let is := is ++ [i, j]
-    -- let the current sum be `s`
-    let s := ∑ i ∈ is.toFinset, a i
-    -- if `s <= L - 1 / (n + 2)`
-    is ++ if s ≤ L - 1 / (n + 2) then
-      -- let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
-      --   and all elements are unconsumed
-      let N := Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ n, N ≤ n → 0 ≤ a n → n ∉ is ∧ a n < 1 / (n + 2)
-      -- consume the shortest prefix of `a+` starting from `N`
-      --   whose sum is larger than `L - 1 / (n + 2)`
-      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (0 ≤ a ·)
-      f # Nat.findRaw # λ k => L - 1 / (n + 2) < (f k |>.map a |>.sum)
-      -- the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
-    else if L + 1 / (n + 2) ≤ s then
-      -- let `N` be the index in `a-` after which all elements are larger than `-1 / (n + 2)`
-      --   and all elements are unconsumed
-      let N := Nat.findRaw # λ N => a N < 0 ∧ ∀ n, N ≤ n → a n < 0 → n ∉ is ∧ -1 / (n + 2) < a n
-      -- consume the shortest prefix of `a-` starting from `N`
-      --   whose sum is smaller than `L + 1 / (n + 2)`
-      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (a · < 0)
-      f # Nat.findRaw # λ k => (f k |>.map a |>.sum) < L + 1 / (n + 2)
-      -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
-    else []
-    -- we now have `|s - L| < 1 / (n + 1)`
-
-noncomputable
-def mkRment (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : ℕ :=
-  (mkRmentList a L (n + 1))[n]!
-
 @[simp]
 theorem le_length_mkRmentList {a L n} : n ≤ (mkRmentList a L n).length := by
   induction n; simp; rw [mkRmentList]; grind
@@ -532,7 +306,51 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
   · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hi; grind
   · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hj; grind
 
+-- theorem ConvCond.tendsTo_series : tendsTo (series a) := H.2
+
 -- #check 0 #exit
+
+-- h : CondConv a
+-- h₂ : ¬AbsConv a
+-- M : ℝ
+-- h₁ : tendsTo (series a) M
+-- h₃ : Infp a fun x ↦ 0 ≤ x
+-- h₄ : Infp a fun x ↦ x < 0
+-- σp : ℕ → ℕ
+-- hp₁ : Subseq σp
+-- hp₂ : ∀ (n : ℕ), 0 ≤ a n ↔ ∃ k, σp k = n
+-- ap : ℕ → ℝ
+-- hp : (fun x ↦ a (σp x)) = ap
+-- σn : ℕ → ℕ
+-- hn₁ : Subseq σn
+-- hn₂ : ∀ (n : ℕ), a n < 0 ↔ ∃ k, σn k = n
+-- an : ℕ → ℝ
+-- hn : (fun x ↦ a (σn x)) = an
+-- h₅ : monoLe (series ap)
+-- h₆ : monoGe (series an)
+-- G₁ : 0 ≤ ap
+-- G₂ : an ≤ 0
+-- G₃ : |ap| = ap
+-- G₄ : |an| = -an
+-- G₅ : 0 ≤ series ap
+-- G₆ : series an ≤ 0
+-- f g : ℕ → ℕ
+-- hfg : ∀ (n : ℕ), f n + g n = n
+-- hf : ∀ (i j : ℕ), i ≤ j → f i ≤ f j
+-- hg : ∀ (i j : ℕ), i ≤ j → g i ≤ g j
+-- f' g' : ℕ → ℕ
+-- hfg' : ∀ (n : ℕ), f' n + g' n = n
+-- hf' : ∀ (i j : ℕ), i ≤ j → f' i ≤ f' j
+-- hg' : ∀ (i j : ℕ), i ≤ j → g' i ≤ g' j
+-- Hf : ∀ (n : ℕ), ∃ k, n ≤ f k
+-- Hf' : ∀ (n : ℕ), ∃ k, n ≤ f' k
+-- Hg : ∀ (n : ℕ), ∃ k, n ≤ g k
+-- Hg' : ∀ (n : ℕ), ∃ k, n ≤ g' k
+-- Hfg : ∀ (n : ℕ), series a n = series ap (f n) + series an (g n)
+-- Hfg' : ∀ (n : ℕ), series |a| n = series |ap| (f' n) + series |an| (g' n)
+-- h₇ : ¬converges (series ap)
+-- h₈ : ¬converges (series an)
+-- ⊢ ∃ σ, Rment σ ∧ tendsTo (series fun x ↦ a (σ x)) L
 
 theorem mkRment_eq_iff {a L i j} (h : CondConv a) : mkRment a L i = mkRment a L j ↔ i = j := by
   symm; constructor; rintro rfl; rfl; intro h
@@ -660,9 +478,9 @@ theorem exi_rment_tendsTo_of_condConv {a L} (h : CondConv a) :
   -- suppose that series of `a` converges to `M`
   obtain ⟨⟨M, h₁⟩, h₂⟩ := id h
   -- infinitely many elements of `a` are nonnegative
-  have h₃ := infp_nonneg_of_condConv h
+  have h₃ := h.infp_nonneg
   -- infinitely many elements of `a` are negative
-  have h₄ := infp_neg_of_condConv h
+  have h₄ := h.infp_neg
   -- there exists a subsequence of `a` called `a+`
   -- that contains exactly positive elements of `a`
   obtain ⟨σp, hp₁, hp₂⟩ := exi_subseq_of_infp h₃

@@ -32,6 +32,8 @@ def offset (fsp : FSP) (n : ℕ) : FSP :=
 
 def hasLe (a : FSP) (n : ℕ) (p : PointZ) : Prop :=
   ∃ k ≤ n, p ∈ a.get k
+
+-----
   
 @[simp]
 theorem hasLe_next {n p} : a.next.hasLe n p ↔ a.hasLe (n + 1) p := by
