@@ -147,3 +147,146 @@ theorem monoLt_series_of_pos {a} (h : ∀ n, 0 < a n) : monoLt (series a) := by
 
 theorem monoGt_series_of_neg {a} (h : ∀ n, a n < 0) : monoGt (series a) := by
   rw [monoGt_iff_succ_lt]; intro n; rw [series_succ]; linarith [h n]
+
+theorem subseq_nat_eq_subseq_iff {σ n m} (h : Subseq σ) : σ n = σ m ↔ n = m := by
+  by_cases h₁ : n < m
+  · simp [ne_of_lt h₁]
+    apply ne_of_lt
+    apply h
+    exact h₁
+  push_neg at h₁
+  rw [le_iff_eq_or_lt] at h₁
+  rcases h₁ with rfl | h₁
+  · simp
+  simp [ne_symm' # ne_of_lt h₁]
+  apply ne_of_gt
+  apply h
+  exact h₁
+
+theorem subseq_nat_lt_subseq_iff {σ n m} (h : Subseq σ) : σ n < σ m ↔ n < m := by
+  by_cases h₁ : n = m; simp [h₁]
+  simp [lt_iff_le_and_ne, subseq_nat_le_subseq_iff h, subseq_nat_eq_subseq_iff h, h₁]
+
+theorem subseq_nat_succ_le {σ n} (h : Subseq σ) : σ n + 1 ≤ σ (n + 1) := by
+  simp [Nat.add_one_le_iff, subseq_nat_lt_subseq_iff h]
+
+theorem subseq_nat_eq_succ_of_subseq_eq_succ {σ n m}
+(h₁ : Subseq σ) (h₂ : σ n = σ m + 1) : n = m + 1 := by
+  have h₃ : m < n
+  · apply lt_of_le_of_ne
+    · contrapose! h₂
+      apply ne_of_lt
+      rw [Nat.lt_succ]
+      apply le_of_lt
+      apply h₁
+      exact h₂
+    rintro rfl
+    simp at h₂
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt h₃; clear h₃
+  suffices : n = 0; linarith
+  contrapose! h₂
+  apply ne_of_gt
+  cases n; simp at h₂; clear h₂
+  nm n
+  suffices h : σ m + 1 < σ (m + n + 2); ring_nf at h ⊢; exact h
+  apply lt_of_le_of_lt # subseq_nat_succ_le h₁
+  apply h₁
+  omega
+
+theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : ℕ → ℕ} {n k : ℕ}
+[hp : DecidablePred p] (h₁ : Subseq σ) (h₂ : ∀ n, p (a n) ↔ ∃ k, σ k = n)
+(h₃ : σ k = n) : {k ∈ Finset.range n | p (a k)}.card = k := by
+  induction k generalizing n
+  · simp
+    simp [h₂]
+    rintro k hk r rfl
+    subst h₃
+    simp [subseq_nat_lt_subseq_iff h₁] at hk
+  nm k ih
+  have h₄ : σ k ≤ n
+  · simp [←h₃, subseq_nat_le_subseq_iff h₁]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₄; clear h₄
+  specialize ih rfl
+  rw [Finset.card_filter_range_add, ih]; clear ih
+  simp
+  rw [Finset.card_eq_one_iff_exiu]
+  use σ k
+  simp
+  split_ands
+  · rw [Nat.pos_iff_ne_zero]
+    rintro rfl
+    simp [subseq_nat_eq_subseq_iff h₁] at h₃
+  · rw [h₂]
+    use k
+  intro r h₄ h₅ h₆
+  rw [←h₃] at h₅
+  rw [h₂] at h₆
+  obtain ⟨r, rfl⟩ := h₆
+  rw [subseq_nat_le_subseq_iff h₁] at h₄
+  rw [subseq_nat_lt_subseq_iff h₁] at h₅
+  rw [subseq_nat_eq_subseq_iff h₁]
+  omega
+
+theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ₁ σ₂ : ℕ → ℕ}
+{F : ℝ → ℝ}
+(h₁ : Subseq σ₁) (h₂ : Subseq σ₂)
+(h₃ : ∀ n, p (a n) ↔ ∃ k, σ₁ k = n)
+(h₄ : ∀ n, ¬p (a n) ↔ ∃ k, σ₂ k = n) :
+∃ (f g : ℕ → ℕ), (∀ n, f n + g n = n) ∧
+(∀ i j, i ≤ j → f i ≤ f j) ∧ (∀ i j, i ≤ j → g i ≤ g j) ∧
+(Infp a p → ∀ n, ∃ k, n ≤ f k) ∧ (Infp a (¬p ·) → ∀ n, ∃ k, n ≤ g k) ∧
+(∀ n, series (F # a ·) n = series (F # a # σ₁ ·) (f n) + series (F # a # σ₂ ·) (g n)) := by
+  classical
+  use λ n => Finset.range n |>.filter (λ n => p (a n)) |>.card
+  use λ n => Finset.range n |>.filter (λ n => ¬p (a n)) |>.card
+  split_ands
+  · intro n; convert Finset.card_filter_add_card_filter_not; simp
+  · exact λ _ _ => Finset.card_filter_range_le_of_le
+  · exact λ _ _ => Finset.card_filter_range_le_of_le
+  · intro H n
+    induction n; simp; nm n ih
+    choose k ih using ih
+    specialize H k
+    choose r h₆ h₇ using H
+    use r + 1
+    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
+    rw [add_assoc, Finset.card_filter_range_add]
+    suffices : 1 ≤ {i ∈ Finset.Ico k (k + (r + 1)) | p (a i)}.card; linarith
+    simp
+    use k + r
+    simpa
+  · intro H n
+    induction n; simp; nm n ih
+    choose k ih using ih
+    specialize H k
+    choose r h₆ h₇ using H
+    use r + 1
+    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
+    dsimp
+    rw [add_assoc, Finset.card_filter_range_add]
+    suffices : 1 ≤ {i ∈ Finset.Ico k (k + (r + 1)) | ¬p (a i)}.card; linarith
+    simp
+    use k + r
+    simpa
+  intro n
+  induction n
+  · simp
+  nm n ih
+  simp_rw [series_succ, Finset.range_add_one, Finset.filter_insert]
+  by_cases h : p (a n) <;> simp [h]
+  · rw [series_succ]
+    rw [h₃] at h
+    choose k h using h
+    suffices : F (a # σ₁ {n ∈ Finset.range n | p (a n)}.card) = F (a n)
+    · linarith
+    conv_rhs => rw [←h]
+    congr
+    exact subseq_card_filter_range_eq h₁ h₃ h
+  · rw [series_succ]
+    rw [h₄] at h
+    choose k h using h
+    suffices : F (a # σ₂ {n ∈ Finset.range n | ¬p (a n)}.card) = F (a n)
+    · linarith
+    conv_rhs => rw [←h]
+    congr
+    exact subseq_card_filter_range_eq (p := (¬p ·)) h₂ h₄ h
