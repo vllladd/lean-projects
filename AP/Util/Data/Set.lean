@@ -1052,3 +1052,79 @@ theorem size_diff_add_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size + s�
 
 theorem size_diff_eq_of_subset (h : s₁ ⊆ s₂) : (s₂ \ s₁).size = s₂.size - s₁.size := by
   have := size_diff_add_eq_of_subset h; omega
+
+def ssubset (s₁ s₂ : Set' α) : Prop :=
+  s₁ ⊆ s₂ ∧ s₁ ≠ s₂
+
+instance : HasSSubset (Set' α) := ⟨ssubset⟩
+theorem ssubset_def : s₁ ⊂ s₂ ↔ s₁ ⊆ s₂ ∧ s₁ ≠ s₂ := by rfl
+
+@[simp]
+theorem union_eq_left_iff_subset : s₁ ∪ s₂ = s₁ ↔ s₂ ⊆ s₁ := by
+  simp [ext_iff, subset_def]
+
+@[simp]
+theorem union_eq_right_iff_subset : s₁ ∪ s₂ = s₂ ↔ s₁ ⊆ s₂ := by
+  simp [ext_iff, subset_def]
+
+theorem ssubset_iff_exi_disj_union :
+s₁ ⊂ s₂ ↔ ∃ s₃, s₃ ≠ ∅ ∧ (∀ x ∈ s₃, x ∉ s₁) ∧ s₁ ∪ s₃ = s₂ := by
+  rw [ssubset_def, subset_iff_exi_disj_union]
+  by_cases h : s₁ = s₂
+  · simp [h]
+    intro s₃ h₁ h₂
+    simp [subset_def]
+    choose x hx using exi_mem_of_ne_empty h₁
+    use x, hx, h₂ x hx
+  simp [h]
+  apply exists_congr
+  intro s₃
+  simp
+  rintro h₁ rfl rfl
+  simp at h
+
+theorem insert_union {x} : s₁.insert x ∪ s₂ = (s₁ ∪ s₂).insert x := by
+  ext; simp; grind
+
+theorem union_insert {x} : s₁ ∪ s₂.insert x = (s₁ ∪ s₂).insert x := by
+  ext; simp; grind
+
+theorem size_union (h : ∀ x ∈ s₁, x ∉ s₂) : (s₁ ∪ s₂).size = s₁.size + s₂.size := by
+  induction s₁ using ind; simp
+  clear! s₁
+  nm s₁ x hx ih
+  simp at h
+  rcases h with ⟨h₁, h₂⟩
+  rw [size_insert hx, Nat.add_one_add, insert_union, size_insert # by simp; grind]
+  rw [ih h₂]
+
+theorem size_union' (h : ∀ x ∈ s₂, x ∉ s₁) : (s₁ ∪ s₂).size = s₁.size + s₂.size := by
+  apply size_union; grind
+
+@[simp]
+theorem pos_size_iff : 0 < s.size ↔ s ≠ ∅ := by
+  simp [Nat.pos_iff_ne_zero]
+
+theorem size_lt_of_ssubset (h : s₁ ⊂ s₂) : s₁.size < s₂.size := by
+  rw [ssubset_iff_exi_disj_union] at h; obtain ⟨s₂, h₁, h₂, rfl⟩ := h; simpa [size_union' h₂]
+
+theorem eq_of_subset_and_subset (h₁ : s₁ ⊆ s₂) (h₂ : s₂ ⊆ s₁) : s₁ = s₂ :=
+  eq_of_subset_and_size_eq h₁ # le_antisymm (size_le_of_subset h₁) (size_le_of_subset h₂)
+
+theorem ssubset_iff_exi : s₁ ⊂ s₂ ↔ s₁ ⊆ s₂ ∧ ∃ x, x ∈ s₂ ∧ x ∉ s₁ := by
+  rw [ssubset_def]
+  simp
+  intro h
+  rw [ext_iff]
+  rw [subset_def] at h
+  grind
+
+theorem diff_subset_of_right (h₁ : s₂ ⊆ s₃) : s₁ \ s₃ ⊆ s₁ \ s₂ := by
+  simp [subset_def] at h₁ ⊢; tauto
+
+theorem diff_ssubset_of_right (h₁ : s₂ ⊆ s₃)
+(h₂ : ∃ x ∈ s₁, x ∈ s₃ ∧ x ∉ s₂) : s₁ \ s₃ ⊂ s₁ \ s₂ := by
+  choose x hx h₂ h₃ using h₂
+  rw [ssubset_iff_exi]
+  simp [subset_def] at h₁ ⊢
+  tauto

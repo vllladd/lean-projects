@@ -188,3 +188,10 @@ theorem hasLe_zero {p} : fsp.hasLe 0 p ↔ p ∈ fsp.get 0 := by
 
 theorem next_offset {n} : (fsp.offset n).next = fsp.offset (n + 1) :=
   offset_succ'.symm
+
+theorem next_insertSet_succ {n set} :
+(fsp.insertSet (n + 1) set).next = fsp.next.insertSet n set := by
+  simp [next, insertSet]; grind
+
+theorem next_insert_succ {n p} : (fsp.insert (n + 1) p).next = fsp.next.insert n p :=
+  next_insertSet_succ
