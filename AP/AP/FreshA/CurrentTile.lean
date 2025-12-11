@@ -8,8 +8,8 @@ def State.HasDReenter (s : State) (fsp : FSP) : Prop :=
 
 -----
 
-theorem AState.hasDReenter_of_not_aHwsDisj_insert_aPos {s fsp}
-[hs : AState s] (h₁ : ¬s.aHwsDisj (fsp.insert 1 s.aPos)) : s.HasDReenter fsp := by
+theorem AState.hasDReenter_of_not_aHwsDisj_insert_aPos {s fsp} [hs : AState s]
+(h₁ : ¬s.aHwsDisj (fsp.insert 1 s.aPos)) : s.HasDReenter fsp := by
   intro a ha h₂
   simp [State.aHwsDisj, State.aForallWinsDisj] at h₁
   specialize h₁ a ha

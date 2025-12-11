@@ -60,3 +60,8 @@ let ⟨s₁, n'⟩ := sys.simulate f s n
 let (s₂, m') := sys.simulate f s₁ m
 if n' ≠ 0 then (s₁, n' + m) else (s₂, n' + m') := by
   conv_lhs => rw [add_comm]; exact simulate_add
+
+theorem simulate_snd_eq_zero_of_tr {f} [hf : sys.SimFn f] {a b c t n r} [ha : sys.WF a]
+(h₁ : sys.simulate f a n = (b, r)) (h₂ : sys.tr b t = some c) : r = 0 := by
+  rw [Prod.fst_eq_of_eq_mk h₁] at h₂; rw [Prod.snd_eq_of_eq_mk h₁]
+  exact simulate_snd_eq_zero_of_hasTr # hasTr_of_eq_some h₂

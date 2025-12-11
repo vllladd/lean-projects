@@ -1128,3 +1128,30 @@ theorem diff_ssubset_of_right (h₁ : s₂ ⊆ s₃)
   rw [ssubset_iff_exi]
   simp [subset_def] at h₁ ⊢
   tauto
+
+noncomputable
+def compr (P : α → Prop) : Set' α :=
+  ofSet # setOf P
+
+def singleton (x : α) : Set' α :=
+  ofList [x]
+
+@[simp]
+theorem mem_singleton {x y : α} : x ∈ singleton y ↔ x = y := by
+  simp [singleton]
+
+@[simp]
+theorem singleton_eq_iff {x y : α} : singleton x = singleton y ↔ x = y := by
+  simp [ext_iff]
+
+@[simp]
+theorem singleton_ne_empty {x : α} : singleton x ≠ ∅ := by
+  simp [ext_iff]
+
+@[simp]
+theorem size_singleton {x : α} : (singleton x).size = 1 := by
+  simp [singleton, size_ofList_of_nodup]
+
+@[simp]
+theorem empty_insert_eq_singleton {x : α} : (∅ : Set' α).insert x = singleton x := by
+  simp [ext_iff]
