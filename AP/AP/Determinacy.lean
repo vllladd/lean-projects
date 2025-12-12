@@ -37,7 +37,7 @@ theorem AState.of_simulate_mul_two_eq_full {sa s₁ f} [ha : AState sa]
   · simp at h
     rwa [←h]
   nm n ih
-  simp [Nat.add_mul] at h
+  simp_rw [Nat.add_mul, sys.simulate_succ_full'] at h
   obtain ⟨sd, h₁, sa', h₂, h₃⟩ := h
   have hsd := DState.of_tr h₁
   have hsa' := AState.of_tr h₂
@@ -49,7 +49,7 @@ theorem DState.of_simulate_mul_two_eq_full {sd s₁ f} [hd : DState sd]
   · simp at h
     rwa [←h]
   nm n ih
-  simp [Nat.add_mul] at h
+  simp_rw [Nat.add_mul, sys.simulate_succ_full'] at h
   obtain ⟨sd, h₁, sa', h₂, h₃⟩ := h
   have hsd := AState.of_tr h₁
   have hsa' := DState.of_tr h₂
@@ -709,7 +709,7 @@ theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀
   induction n generalizing s₀
   · simp at h; simp [h]
   nm n ih
-  simp at h
+  simp only [System.simulate_succ_full'] at h
   choose s' h₁ h using h
   have hs' := sys.wf_of_tr h₁
   specialize ih h

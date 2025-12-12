@@ -94,6 +94,7 @@ s n = (s₁, 0) ∧ p s₁ acc := by
     obtain ⟨s₁, acc, H₁, H₂⟩ := ih
     use s₁, acc
     refine ⟨?_, H₂⟩
+    simp only [System.simulate_succ_full']
     simp [aStrat_mkFold_apply_a # sys.validTr_of_eq_some h₁, h₁]
     convert H₁ using 1; symm; clear H₁ H₂
     apply simulate_congr _ (by simp)
@@ -115,6 +116,7 @@ s n = (s₁, 0) ∧ p s₁ acc := by
     obtain ⟨s₁, acc, H₁, H₂⟩ := ih
     use s₁, acc
     refine ⟨?_, H₂⟩
+    simp only [System.simulate_succ_full']
     simp [h₃]
     convert H₁ using 1; symm; clear H₁ H₂
     apply simulate_congr _ (by simp)

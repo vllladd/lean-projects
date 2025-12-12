@@ -107,14 +107,14 @@ theorem DState.aPos_dist_le_div_two_of_simulate {s f n r} [hs : DState s]
 theorem AState.of_simulate_mul_two_add_one_eq_full {s s₁ : State}
 {st : Strat} {n : ℕ} [hs : DState s]
 (h : sys.simulate st.f s (n * 2 + 1) = (s₁, 0)) : AState s₁ := by
-  simp at h; obtain ⟨s', h₁, h₂⟩ := h
+  simp only [System.simulate_succ_full'] at h; obtain ⟨s', h₁, h₂⟩ := h
   have hs' := AState.of_tr h₁
   exact AState.of_simulate_mul_two_eq_full h₂
 
 theorem DState.of_simulate_mul_two_add_one_eq_full {s s₁ : State}
 {st : Strat} {n : ℕ} [hs : AState s]
 (h : sys.simulate st.f s (n * 2 + 1) = (s₁, 0)) : DState s₁ := by
-  simp at h; obtain ⟨s', h₁, h₂⟩ := h
+  simp only [System.simulate_succ_full'] at h; obtain ⟨s', h₁, h₂⟩ := h
   have hs' := DState.of_tr h₁
   exact DState.of_simulate_mul_two_eq_full h₂
 
@@ -229,6 +229,7 @@ sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
     exact h
   obtain ⟨n, s₂,hs₂, h₂, h₃⟩ := hs₁.exi_d_move_not_mem_of_aWins set h
   use n + 1, s₂, hs₂
+  simp only [System.simulate_succ_full']
   simpa [h₁, h₂]
 
 theorem State.exi_d_move_not_mem_of_aWins {s} {st : Strat} (set : Set' PointZ)

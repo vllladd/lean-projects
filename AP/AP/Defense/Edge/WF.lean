@@ -321,7 +321,7 @@ theorem edge₀_simulate_full_neg_aPos_y_of_aState {s₁} {a : AStrat} {d : DStr
   induction n using Nat.mod_2_ind <;> nm n
   · apply neg_aPos_y_of_cnd₀
     apply cnd₀_simulate_mul_two_full_of_aState H h₂
-  rw [sys.simulate_succ_full'] at h₂
+  rw [sys.simulate_succ_full] at h₂
   choose s' h₂ h₃ using h₂
   have h₄ := cnd₀_simulate_mul_two_full_of_aState H h₂
   have hs' := AState.of_simulate_mul_two_eq_full h₂

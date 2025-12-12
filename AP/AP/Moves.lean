@@ -173,7 +173,7 @@ theorem State.mem_aVisited_iff {s f n s₁ p} [hs : sys.WF s]
   induction n generalizing s₁
   · simp at h; simp [h]
   nm n ih
-  rw [sys.simulate_succ_full'] at h
+  simp at h
   choose s' h₁ h₂ using h
   specialize ih h₁
   have hs' : sys.WF s' := sys.wf_of_simulate_eq h₁
@@ -306,7 +306,7 @@ p ∈ s.aPtsSim st ↔ ∃ n s₁, 2 ≤ n ∧ sys.simulate st.f s n = (s₁, 0)
     simp only [exists_and_right]
     obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
     rw [add_comm] at h₁
-    simp_rw [sys.simulate_succ_full'] at h₁
+    simp at h₁
     obtain ⟨s₂, ⟨s₁, h₁, h₂⟩, h₃⟩ := h₁
     have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
     replace hs₁ := s₁.aState_or_dState

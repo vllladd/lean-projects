@@ -24,6 +24,7 @@ theorem AState.tr_of_aForallWinsDisj {s fsp} {a : AStrat}
   intro d Hd n
   specialize h₁ d Hd (n + 1)
   obtain ⟨s₁, h₁, h₃⟩ := h₁
+  simp only [System.simulate_succ_full'] at h₁
   simp [h₂] at h₁; simp; use s₁
 
 theorem AState.tr_of_aHwsDisj {s fsp} [hs : AState s] (h : s.aHwsDisj fsp) :
@@ -41,6 +42,7 @@ theorem DState.tr_of_aForallWinsDisj {s s' p fsp} {a : AStrat}
   use s₁
   simp [h₃]
   clear h₃
+  simp only [System.simulate_succ_full'] at h₁
   simp [h₂] at h₁
   convert h₁ using 1; symm
   have hs' := sys.wf_of_tr h₂
@@ -368,6 +370,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
       specialize H₆ d hd (n + 1)
       obtain ⟨s₁, H₆⟩ := H₆
       use s₁
+      simp only [System.simulate_succ_full'] at H₆
       simp [h₂] at H₆
       simpa
     · rw [G, H₉, FSP.next_offset]
@@ -583,6 +586,7 @@ ps ⊆ s'.taken := by
       rintro n hn s' h₂
       cases n; simp at hn
       contrapose! h₁
+      simp only [System.simulate_succ_full'] at h₂
       simp at h₂
       choose s₁ h₃ h₂ using h₂
       exact sys.hasTr_of_eq_some h₃
@@ -596,6 +600,7 @@ ps ⊆ s'.taken := by
     intro n hn s₁ h₃
     cases n; simp at hn; nm n
     specialize ihd n (by linarith) s₁
+    simp only [System.simulate_succ_full'] at h₃
     simp [h₂] at h₃
     exact ihd h₃
   clear! s ps
@@ -618,6 +623,7 @@ ps ⊆ s'.taken := by
     intro n hn s₂ h₆
     cases n; simp at hn; nm n
     specialize ih n (by linarith) s₂
+    simp only [System.simulate_succ_full'] at h₆
     simp [h₁'] at h₆
     have G := sys.reachable_of_simulate_eq h₆
     have H₀ : p ∈ s₁.taken
@@ -679,6 +685,7 @@ ps ⊆ s'.taken := by
     intro n hn s₁ H₁
     iterate 2 cases n; simp at hn; nm n
     contrapose! h₄
+    simp only [System.simulate_succ_full'] at H₁
     simp [h₁'] at H₁
     choose s₂ H₂ H₁ using H₁
     exact sys.hasTr_of_eq_some H₂
@@ -709,6 +716,7 @@ ps ⊆ s'.taken := by
   intro n hn s₂ H₂
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
   rw [add_comm] at H₂
+  simp only [System.simulate_succ_full'] at H₂
   simp [h₁', h₄, h₅'] at H₂
   apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₂
   simp [DState.taken_eq_of_tr h₅, AState.taken_eq_of_tr h₄]

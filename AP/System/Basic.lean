@@ -512,26 +512,26 @@ theorem snd_trs_snoc_eq_nil_iff {s t ts} : (sys.trs s (ts ++ [t])).2 = [] ↔
     obtain ⟨w_1, h⟩ := right
     simp_all only [Prod.mk.injEq, and_true, exists_eq_left', exists_eq']
 
-@[simp high]
-theorem simulate_succ_full {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
+theorem simulate_succ_full' {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
 ∃ s₁, sys.tr s (f s) = some s₁ ∧ sys.simulate f s₁ n = (s₂, 0) := by
   simp [simulate]; split
   · simp_all only [Prod.mk.injEq, Nat.add_eq_zero, one_ne_zero, and_false, reduceCtorEq,
       false_and, exists_false]
   · simp_all only [Option.some.injEq, exists_eq_left']
 
-theorem simulate_succ_full' {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
+@[simp high]
+theorem simulate_succ_full {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
 ∃ s₁, sys.simulate f s n = (s₁, 0) ∧ sys.tr s₁ (f s₁) = some s₂ := by
-  rw [Nat.succ_eq_add_one, simulate_add_full]; simp
+  rw [Nat.succ_eq_add_one, simulate_add_full]; simp [simulate_succ_full']
+
+theorem simulate_add_one_full' {f s s₂ n} : sys.simulate f s (n + 1) = (s₂, 0) ↔
+∃ s₁, sys.tr s (f s) = some s₁ ∧ sys.simulate f s₁ n = (s₂, 0) :=
+  simulate_succ_full'
 
 @[simp high]
 theorem simulate_add_one_full {f s s₂ n} : sys.simulate f s (n + 1) = (s₂, 0) ↔
-∃ s₁, sys.tr s (f s) = some s₁ ∧ sys.simulate f s₁ n = (s₂, 0) :=
-  simulate_succ_full
-
-theorem simulate_add_one_full' {f s s₂ n} : sys.simulate f s (n + 1) = (s₂, 0) ↔
 ∃ s₁, sys.simulate f s n = (s₁, 0) ∧ sys.tr s₁ (f s₁) = some s₂ :=
-  simulate_succ_full'
+  simulate_succ_full
 
 @[simp]
 theorem simulate_one_of_snd_succ {f s s' r} :

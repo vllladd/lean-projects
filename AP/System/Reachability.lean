@@ -342,7 +342,7 @@ sys.simulate f (g 0) k = (g k, 0) := by
   cases n <;> simp at hk
   nm n
   specialize h₂ k # by linarith
-  rw [simulate_add_one_full']
+  rw [simulate_add_one_full]
   simp_all only [Prod.mk.injEq, and_true, exists_eq_left']
 
 theorem simulate_eq_of_iter {f : S → T} {n} (g : ℕ → S)
@@ -764,6 +764,7 @@ theorem exi_simulate_full_of_simulate_eq {f a n r}
   specialize @ih b r hr
   obtain ⟨k, hk, ih⟩ := ih
   use k + 1, by linarith
+  simp_rw [simulate_succ_full']
   simpa [h₁]
 
 theorem exi_simulate_full_of_simulate_fst_eq {f a n b}
@@ -854,6 +855,7 @@ theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited # S → T]
   obtain ⟨f, hf, n, h₃, h₄⟩ := ih
   have h₅ := validTr_of_eq_some h₂
   use fn_set a t f, simFn_fn_set_of h₅, n + 1
+  simp_rw [simulate_succ_full']
   simp [Nat.add_one_add, h₂, h₄]
   rw [←h₃]
   apply simulate_fn_set_eq_of h₅
@@ -1266,6 +1268,7 @@ sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → (sys.hasTr b₁ ↔ sys.ha
   apply ih h₆
   intro k hk
   specialize h₂ (k + 1) (by linarith)
+  simp_rw [simulate_succ_full'] at h₂
   simp [h₃, h₅] at h₂
   exact h₂
 

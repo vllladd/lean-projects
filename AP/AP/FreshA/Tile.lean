@@ -223,6 +223,7 @@ s.aHwsDisj fsp ↔ ∀ p, ∃ (a : AStrat), a.WF ∧
   rotate_left
   · contrapose! h₃
     rwa [FSP.hasLe_next]
+  simp only [System.simulate_succ_full']
   simp [h₁]
   rw [←h₂]
   apply simulate_congr _ # by simp
