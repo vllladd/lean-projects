@@ -1,4 +1,4 @@
-import AP.AP.FreshA.CurrentTile
+import AP.AP.FreshA.Tile
 import AP.AP.Moves
 
 namespace AP
