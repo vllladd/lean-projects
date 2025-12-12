@@ -263,3 +263,4 @@ theorem State.aHwsDisj_insert_two_aPos {s fsp} [hs : sys.WF s]
     . exact hs.aHwsDisj_insert_one_aPos h
     · simp
   · exact DState.aHwsDisj_insert_two_aPos h
+    
