@@ -1,5 +1,18 @@
 import AP.RealAnalysis.ConditionalConvergence
 
+namespace List
+
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
+
+theorem eq_of_getElem_and_nodup {i j : ℕ} {hi hj}
+(h₁ : xs[i]'hi = xs[j]'hj) (h₂ : xs.Nodup) : i = j := by
+  rwa [←h₂.getElem_inj_iff]
+
+-- #check 0 #exit
+
+end List
+
 namespace RealAnalysis
 
 def Rment (σ : ℕ → ℕ) : Prop :=
@@ -166,8 +179,7 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
   rw [hi, hj]
   simp
   have h₂ : ∀ k < n, k ∈ is
-  ·
-    intro k hk
+  · intro k hk
     specialize ih k hk
     apply List.IsPrefix.mem ih
     rw [←h_is]
@@ -177,7 +189,14 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
   · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hi; grind
   · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hj; grind
 
--- theorem ConvCond.tendsTo_series : tendsTo (series a) := H.2
+theorem getElem_mkRmentList_of_le.proof₁ {a L n₁ n₂ k} (h₁ : n₁ ≤ n₂)
+(h₂ : k < (mkRmentList a L n₁).length) : k < (mkRmentList a L n₂).length :=
+  lt_of_lt_of_le h₂ # List.IsPrefix.length_le # mkRmentList_prefix h₁
+
+theorem getElem_mkRmentList_of_le {a L n₁ n₂ k} {hh : k < (mkRmentList a L n₁).length}
+(h : n₁ ≤ n₂) : (mkRmentList a L n₁)[k] = (mkRmentList a L n₂)[k]'
+(getElem_mkRmentList_of_le.proof₁ h hh) := by
+  apply List.IsPrefix.getElem # mkRmentList_prefix h
 
 -- #check 0 #exit
 
@@ -223,11 +242,43 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
 -- h₈ : ¬converges (series an)
 -- ⊢ ∃ σ, Rment σ ∧ tendsTo (series fun x ↦ a (σ x)) L
 
-theorem mkRment_eq_iff {a L i j} (h : CondConv a) : mkRment a L i = mkRment a L j ↔ i = j := by
-  symm; constructor; rintro rfl; rfl; intro h
+@[simp]
+theorem mkRmentList_zero {a L} : mkRmentList a L 0 = [] := rfl
+
+theorem nodup_mkRmentList {a L n} (H : CondConv a) : (mkRmentList a L n).Nodup := by
+  induction n; simp
+  nm n ih
+  unfold mkRmentList
+  generalize h₁ : mkRmentList a L n = is
+  have h₂ : ∃ i, i ∉ is ∧ 0 ≤ a i
+  · choose k h₂ h₃ using H.infp_nonneg # is.sum + 1
+    refine ⟨k, ?_, h₃⟩
+    intro h₄
+    replace h₄ : k ≤ is.sum
+    · exact List.le_sum_of_mem h₄
+    omega
+  have h₃ : ∃ i, i ∉ is ∧ a i < 0
+  · choose k h₃ h₄ using H.infp_neg # is.sum + 1
+    refine ⟨k, ?_, h₄⟩
+    intro h₅
+    replace h₅ : k ≤ is.sum
+    · exact List.le_sum_of_mem h₅
+    omega
   sorry
 
 -- #check 0 #exit
+
+theorem mkRment_eq_iff {a L i j} (H : CondConv a) : mkRment a L i = mkRment a L j ↔ i = j := by
+  symm; constructor; rintro rfl; rfl; intro h
+  by_contra! h₁
+  wlog h₂ : i < j with ih
+  · push_neg at h₂; apply ih H h.symm # ne_symm' h₁; grind
+  clear h₁
+  simp_rw [mkRment_eq_getElem] at h
+  have h₃ : i + 1 ≤ j + 1; omega
+  rw [getElem_mkRmentList_of_le h₃] at h
+  have h₄ := List.eq_of_getElem_and_nodup h # nodup_mkRmentList H
+  omega
 
 theorem rment_mkRment {a L} (h : CondConv a) : Rment (mkRment a L) := by
   constructor
@@ -237,14 +288,12 @@ theorem rment_mkRment {a L} (h : CondConv a) : Rment (mkRment a L) := by
   change ∃ i, _
   suffices h : ∃ i, (mkRmentList a L (j + i + 1))[i]'
     (by apply lt_of_lt_of_le (b := j + i + 1) (by omega) (by simp)) = j
-  ·
-    obtain ⟨i, h⟩ := h
+  · obtain ⟨i, h⟩ := h
     use i
     convert h using 1
     rw [getElem_mkRmentList_eq_of_lt] <;> omega
   suffices h : ∃ (i : ℕ) (h : _), (mkRmentList a L (j + 1))[i]'h = j
-  ·
-    choose i h₁ h₂ using h
+  · choose i h₁ h₂ using h
     use i
     convert h₂ using 1
     symm
@@ -254,23 +303,18 @@ theorem rment_mkRment {a L} (h : CondConv a) : Rment (mkRment a L) := by
   rw [←List.mem_iff_getElem]
   simp
 
--- theorem nodup_mkRmentList {a L n} (h : CondConv a) : (mkRmentList a L n).Nodup := by
---   sorry
-
 theorem series_mkRment_eq_sum {a L n} :
 series (λ i => a # mkRment a L i) n = (mkRmentList a L n |>.take n |>.map a |>.sum) := by
   simp [mkRment_eq_getElem, series]
   induction n
-  ·
-    simp
+  · simp
   nm n ih
   simp
   rw [Finset.sum_range_succ, ih]; clear ih
   simp
   congr 1
   have h₁ : mkRmentList a L n <+: mkRmentList a L (n + 1)
-  ·
-    apply mkRmentList_prefix
+  · apply mkRmentList_prefix
     simp
   obtain ⟨ys, h₁⟩ := h₁
   rw [←h₁]
@@ -344,35 +388,35 @@ tendsTo (series # λ i => a # mkRment a L i) L := by
 
 open CondConv in
 theorem exi_rment_tendsTo_of_condConv {a L} (H : CondConv a) :
-∃ σ, Rment σ ∧ tendsTo (series (a # σ ·)) L := by
-  have h₁ := H.tendsTo_series
-  have h₂ := H.not_absConv
-  have h₃ := H.infp_nonneg
-  have h₄ := H.infp_neg
-  have hp₁ := CondConv.subseq_σp a
-  have hn₁ := CondConv.subseq_σn a
-  have hp₂ := @H.σp_spec'
-  have hn₂ := @H.σn_spec'
-  have h₅ := H.monoLe_series_ap
-  have h₆ := H.monoGe_series_an
-  have G₁ := H.ap_fn_nonneg
-  have G₂ := H.an_fn_nonpos
-  have G₃ := H.abs_ap_fn
-  have G₄ := H.abs_an_fn
-  have G₅ := H.series_ap_fn_nonneg
-  have G₆ := H.series_an_fn_nonpos
-  have hfg := @H.f_add_g
-  have hf := @H.f_le_of_le
-  have hg := @H.g_le_of_le
-  have Hf := @H.exi_f_ge
-  have Hg := @H.exi_g_ge
-  have Hfg := @H.series_eq_f_add_g
-  have hfg' := @H.f'_add_g'
-  have hf' := @H.f'_le_of_le
-  have hg' := @H.g'_le_of_le
-  have Hf' := @H.exi_f'_ge
-  have Hg' := @H.exi_g'_ge
-  have Hfg' := @H.series_eq_f'_add_g'
-  have h₇ := H.not_converges_series_ap
-  have h₈ := H.not_converges_series_an
-  use mkRment a L, rment_mkRment H, tendsTo_series_mkRment H
+∃ σ, Rment σ ∧ tendsTo (series (a # σ ·)) L :=
+  -- have h₁ := H.tendsTo_series
+  -- have h₂ := H.not_absConv
+  -- have h₃ := H.infp_nonneg
+  -- have h₄ := H.infp_neg
+  -- have hp₁ := CondConv.subseq_σp a
+  -- have hn₁ := CondConv.subseq_σn a
+  -- have hp₂ := @H.σp_spec'
+  -- have hn₂ := @H.σn_spec'
+  -- have h₅ := H.monoLe_series_ap
+  -- have h₆ := H.monoGe_series_an
+  -- have G₁ := H.ap_fn_nonneg
+  -- have G₂ := H.an_fn_nonpos
+  -- have G₃ := H.abs_ap_fn
+  -- have G₄ := H.abs_an_fn
+  -- have G₅ := H.series_ap_fn_nonneg
+  -- have G₆ := H.series_an_fn_nonpos
+  -- have hfg := @H.f_add_g
+  -- have hf := @H.f_le_of_le
+  -- have hg := @H.g_le_of_le
+  -- have Hf := @H.exi_f_ge
+  -- have Hg := @H.exi_g_ge
+  -- have Hfg := @H.series_eq_f_add_g
+  -- have hfg' := @H.f'_add_g'
+  -- have hf' := @H.f'_le_of_le
+  -- have hg' := @H.g'_le_of_le
+  -- have Hf' := @H.exi_f'_ge
+  -- have Hg' := @H.exi_g'_ge
+  -- have Hfg' := @H.series_eq_f'_add_g'
+  -- have h₇ := H.not_converges_series_ap
+  -- have h₈ := H.not_converges_series_an
+  ⟨_, rment_mkRment H, tendsTo_series_mkRment H⟩
