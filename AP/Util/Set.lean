@@ -104,3 +104,7 @@ theorem ne_empty_iff : s ≠ ∅ ↔ ∃ x, x ∈ s := by
 
 theorem ne_empty_of (x : α) (h : x ∈ s) : s ≠ ∅ := by
   simp [ne_empty_iff]; use x
+
+@[simp]
+theorem erase_singleton {x : α} : ({x} : Set α).erase x = ∅ := by
+  ext; simp

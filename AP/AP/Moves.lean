@@ -1,35 +1,5 @@
 import AP.AP.WF
 
-namespace System
-
-universe u
-variable {S T : Type u} {sys : System S T}
-
--- theorem simulate_snd_add_le_add_of_le {s s₁ s₂ k n r₁ r₂ f}
--- (hn : k ≤ n) (h₁ : sys.simulate f s k = (s₁, r₁))
--- (h₂ : sys.simulate f s n = (s₂, r₂)) : k + r₂ ≤ n + r₁ := by
---   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hn; clear hn
---   simp [simulate_add, h₁] at h₂
---   generalize sys.simulate f s₁ n = r at h₂
---   rcases r with ⟨s₁', r⟩
---   dsimp at h₂
---   split_ifs at h₂ with h₃
---   ·
---     subst h₃
---     simp at h₂
---     rcases h₂ with ⟨rfl, rfl⟩
---     simp
--- 
--- #check 0 #exit
--- 
--- theorem simulate_snd_sub_le_sub_of_le {s s₁ s₂ k n r₁ r₂ f}
--- (hn : k ≤ n) (h₁ : sys.simulate f s k = (s₁, r₁))
--- (h₂ : sys.simulate f s n = (s₂, r₂)) : k - r₁ ≤ n - r₂ := by
--- 
--- #check 0 #exit
-
-end System
-
 namespace AP
 
 def State.diff (s₁ s : State) : ℕ :=

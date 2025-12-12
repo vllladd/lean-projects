@@ -1296,3 +1296,7 @@ theorem forall_of_find?_eq_some_imp {p₁ : α → Bool} {p₂ : α → Prop}
   specialize h₁ # (xs.find? p₁).getD x
   simp at h₁
   cases h₂ : xs.find? p₁ <;> grind
+
+theorem eq_of_getElem_and_nodup {i j : ℕ} {hi hj}
+(h₁ : xs[i]'hi = xs[j]'hj) (h₂ : xs.Nodup) : i = j := by
+  rwa [←h₂.getElem_inj_iff]

@@ -1155,3 +1155,15 @@ theorem size_singleton {x : α} : (singleton x).size = 1 := by
 @[simp]
 theorem empty_insert_eq_singleton {x : α} : (∅ : Set' α).insert x = singleton x := by
   simp [ext_iff]
+
+@[simp]
+theorem toSet_singleton {x : α} : (singleton x).toSet = {x} := by
+  ext; simp
+
+@[simp]
+theorem erase_singleton_self {x : α} : (singleton x).erase x = ∅ := by
+  ext; simp; grind
+
+@[simp]
+theorem insert_singleton_self {x : α} : (singleton x).insert x = singleton x := by
+  ext; simp

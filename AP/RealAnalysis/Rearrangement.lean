@@ -1,18 +1,5 @@
 import AP.RealAnalysis.ConditionalConvergence
 
-namespace List
-
-variable {α β γ : Type*}
-variable {xs ys zs : List α}
-
-theorem eq_of_getElem_and_nodup {i j : ℕ} {hi hj}
-(h₁ : xs[i]'hi = xs[j]'hj) (h₂ : xs.Nodup) : i = j := by
-  rwa [←h₂.getElem_inj_iff]
-
--- #check 0 #exit
-
-end List
-
 namespace RealAnalysis
 
 def Rment (σ : ℕ → ℕ) : Prop :=
