@@ -1,5 +1,42 @@
 import AP.AP.MkFold
 
+namespace Set
+
+variable {α : Type*} {s : Set α}
+
+@[simp]
+theorem erase_singleton {x : α} : ({x} : Set α).erase x = ∅ := by
+  ext; simp
+
+-- #check 0 #exit
+
+end Set
+
+namespace Set'
+
+universe u v w
+variable {α : Type u} {β : Type v} {γ : Type w}
+variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
+variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
+variable {s s' s₁ s₂ s₃ : Set' α}
+
+@[simp]
+theorem toSet_singleton {x : α} : (singleton x).toSet = {x} := by
+  ext; simp
+
+@[simp]
+theorem erase_singleton_self {x : α} : (singleton x).erase x = ∅ := by
+  ext; simp; grind
+
+@[simp]
+theorem insert_singleton_self {x : α} : (singleton x).insert x = singleton x := by
+  ext; simp
+
+-- #check 0 #exit
+
+end Set'
+
 namespace AP
 
 @[ext]
@@ -197,3 +234,12 @@ theorem next_insertSet_succ {n set} :
 
 theorem next_insert_succ {n p} : (fsp.insert (n + 1) p).next = fsp.next.insert n p :=
   next_insertSet_succ
+
+@[simp]
+theorem insertSet_idem {n set} :
+(fsp.insertSet n set).insertSet n set = fsp.insertSet n set := by
+  simp [insertSet]; grind
+
+@[simp]
+theorem insert_idem {n p} : (fsp.insert n p).insert n p = fsp.insert n p :=
+  insertSet_idem

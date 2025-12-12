@@ -127,19 +127,7 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   apply fresh1_of_aHwsDisj_aVisited
   intro d hd n
   replace h := AState.aHwsDisj_insert_one_aPos h
-  induction n
-  ·
-    simp
-    choose a ha h using h
-    use a, ha
-    intro d₁ hd₁ n
-    specialize h d₁ hd₁ n
-    choose s₁ h₁ h₂ using h
-    use s₁, h₁
-    simp [FSP.hasLe, FSP.insert, FSP.insertSet] at h₂ ⊢
-    intro k hk
-    specialize h₂ k hk
-    split_ifs <;> simp_all
+  induction n; simpa
   nm n ih
   
   choose s₁ h₁ h₂ using ih
@@ -158,69 +146,90 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
     unfold aFresh
     apply exi_aSeek_tr
     
-    choose s₂ h₄ h₅ using h₂ default inferInstance 1
-    
-    simp at h₄
-    use a.f s₁, s₂, h₄
-    
-    -- specialize h₂ d₁ hd₁ (k + 1)
-    -- simp_rw [sys.simulate_succ_full'] at h₂
-    -- simp [h₄] at h₂
-    -- choose s₃ h₂ h₆ using h₂
-    -- use s₃, h₂
+    -- choose s₂ h₄ h₅ using h₂ default inferInstance 1
     -- 
-    -- -- cases k
-    -- -- ·
-    -- --   simp at h₆
-    -- --   simp [FSP.hasLe, FSP.insertSet]
-    -- --   split
+    -- simp at h₄
+    -- use a.f s₁, s₂, h₄
     -- 
+    -- -- specialize h₂ d₁ hd₁ (k + 1)
+    -- -- simp_rw [sys.simulate_succ_full'] at h₂
     -- -- simp [h₄] at h₂
-    -- -- simp [FSP.hasLe, FSP.insert, FSP.insertSet] at h₂ h₅
-    -- -- specialize h₂ 1
-    -- -- simp [←h₃, FSP.insert, FSP.insertSet] at h₂
+    -- -- choose s₃ h₂ h₆ using h₂
+    -- -- use s₃, h₂
+    -- -- 
+    -- -- -- cases k
+    -- -- -- ·
+    -- -- --   simp at h₆
+    -- -- --   simp [FSP.hasLe, FSP.insertSet]
+    -- -- --   split
+    -- -- 
+    -- -- -- simp [h₄] at h₂
+    -- -- -- simp [FSP.hasLe, FSP.insert, FSP.insertSet] at h₂ h₅
+    -- -- -- specialize h₂ 1
+    -- -- -- simp [←h₃, FSP.insert, FSP.insertSet] at h₂
+    -- -- 
+    -- -- simp [FSP.hasLe]
+    -- -- intro c hc
+    -- -- simp [FSP.insertSet]
+    -- -- 
+    -- -- have h₇ : s₃.aPos ∉ (fsp.offset # s₂.diff s).get c
     -- 
-    -- simp [FSP.hasLe]
+    -- unfold aFreshCnd
+    -- rw [State.diff, length_hist_eq_of_tr h₄, State.length_hist_eq_of_simulate_eq h₁]
+    -- dsimp
+    -- rw [show s.hist.length + n * 2 + 1 - s.hist.length = n * 2 + 1 by omega]
+    -- rw [AState.aVisited_eq_of_tr h₄ # sys.reachable_of_simulate_eq h₁]
+    -- 
+    -- use a, ha
+    -- intro d₁ hd₁ k
+    -- specialize h₂ d₁ hd₁ (k + 1)
+    -- simp only [sys.simulate_succ_full'] at h₂
+    -- obtain ⟨s₃, ⟨s₂', H₁, H₂⟩, H₃⟩ := h₂
+    -- simp at H₁
+    -- 
+    -- simp [h₄] at H₁; subst H₁
+    -- use s₃, H₂
+    -- 
+    -- rw [←AState.aPos_eq_of_tr h₄]
+    -- rw [FSP.offset_succ']
+    -- 
+    -- clear h₅
+    -- 
+    -- cases n
+    -- ·
+    --   simp at h₁
+    --   subst h₁
+    --   simp at h₃ H₃ ⊢
+    --   subst h₃
+    --   simp at H₃
+    -- 
+    -- #check 0 #exit
+    -- 
+    -- simp [FSP.hasLe] at H₃ ⊢
+    -- 
+    -- rw [FSP.offset_succ']
+    -- 
+    -- simp [FSP.hasLe, FSP.insert, FSP.insertSet] at H₃ h₅ ⊢
     -- intro c hc
-    -- simp [FSP.insertSet]
-    -- 
-    -- have h₇ : s₃.aPos ∉ (fsp.offset # s₂.diff s).get c
+    -- specialize H₃ (c + 1) (by omega)
+    -- simp at H₃
+    -- split_ifs at H₃ ⊢ with H₄
+    -- ·
+    --   subst H₄
+    --   simp at H₃ ⊢
+    --   rcases H₃ with ⟨H₃, H₄⟩
+    --   split_ands
+    --   ·
+    --     by_contra! H₅
+    --     sorry
+    --   ·
+    --     sorry
+    --   ·
+    --     sorry
+    -- ·
+    --   sorry
     
-    unfold aFreshCnd
-    rw [State.diff, length_hist_eq_of_tr h₄, State.length_hist_eq_of_simulate_eq h₁]
-    dsimp
-    rw [show s.hist.length + n * 2 + 1 - s.hist.length = n * 2 + 1 by omega]
-    rw [AState.aVisited_eq_of_tr h₄ # sys.reachable_of_simulate_eq h₁]
-    
-    use a, ha
-    intro d₁ hd₁ k
-    specialize h₂ d₁ hd₁ (k + 1)
-    simp only [sys.simulate_succ_full'] at h₂
-    obtain ⟨s₃, ⟨s₂', H₁, H₂⟩, H₃⟩ := h₂
-    simp at H₁
-    
-    simp [h₄] at H₁; subst H₁; clear h₄
-    use s₃, H₂
-    
-    simp [FSP.hasLe, FSP.insert, FSP.insertSet] at H₃ h₅ ⊢
-    intro c hc
-    specialize H₃ (c + 1) (by omega)
-    simp at H₃
-    split_ifs at H₃ ⊢ with H₄
-    ·
-      subst H₄
-      simp at H₃ ⊢
-      rcases H₃ with ⟨H₃, H₄⟩
-      split_ands
-      ·
-        by_contra! H₅
-        sorry
-      ·
-        sorry
-      ·
-        sorry
-    ·
-      sorry
+    sorry
   
   simp [h₄]
   unfold aFreshCnd at h₅
