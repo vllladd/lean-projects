@@ -104,16 +104,14 @@ theorem DState.aPos_dist_le_div_two_of_simulate {s f n r} [hs : DState s]
   rw [←DState.aPos_eq_of_tr h₃, ←pw_eq_of_tr h₃]
   exact s'.aPos_dist_le_of_simulate_mul_two (r := (s₂, r₂)) h₂
 
-theorem AState.of_simulate_mul_two_add_one_eq_full {s s₁ : State}
-{st : Strat} {n : ℕ} [hs : DState s]
-(h : sys.simulate st.f s (n * 2 + 1) = (s₁, 0)) : AState s₁ := by
+theorem AState.of_simulate_mul_two_add_one_eq_full {s s₁ f n} [hs : DState s]
+(h : sys.simulate f s (n * 2 + 1) = (s₁, 0)) : AState s₁ := by
   simp only [System.simulate_succ_full'] at h; obtain ⟨s', h₁, h₂⟩ := h
   have hs' := AState.of_tr h₁
   exact AState.of_simulate_mul_two_eq_full h₂
 
-theorem DState.of_simulate_mul_two_add_one_eq_full {s s₁ : State}
-{st : Strat} {n : ℕ} [hs : AState s]
-(h : sys.simulate st.f s (n * 2 + 1) = (s₁, 0)) : DState s₁ := by
+theorem DState.of_simulate_mul_two_add_one_eq_full {s s₁ f n} [hs : AState s]
+(h : sys.simulate f s (n * 2 + 1) = (s₁, 0)) : DState s₁ := by
   simp only [System.simulate_succ_full'] at h; obtain ⟨s', h₁, h₂⟩ := h
   have hs' := DState.of_tr h₁
   exact DState.of_simulate_mul_two_eq_full h₂
