@@ -202,3 +202,24 @@ theorem not_monoLt_const {M : ℝ} : ¬monoLt (λ _ => M) := by
 @[simp]
 theorem not_monoGt_const {M : ℝ} : ¬monoGt (λ _ => M) := by
   simp [monoGt]; use 0, 1; norm_num
+
+def DivergesToInf (a : ℕ → ℝ) : Prop :=
+  ∀ M, 0 < M → eventually (λ n => M < a n)
+
+theorem divergesToInf_mul_left {a b : ℕ → ℝ} {L : ℝ} (ha : DivergesToInf a)
+(hb : tendsTo b L) (hL : 0 < L) : DivergesToInf (a * b) := by
+  intro M hM
+  specialize hb (L / 2) (by bound)
+  choose N hb using hb
+  specialize ha (M / L * 2) (by bound)
+  choose N1 ha using ha
+  use N + N1
+  intro n hn
+  specialize ha n (by linarith)
+  specialize hb n (by linarith)
+  rewrite [abs_lt] at hb
+  replace hb : L / 2 < b n := by linarith
+  have h₁ : M / L * 2 * (L / 2) < a n * b n
+  · apply mul_lt_mul_of_pos <;> bound
+  field_simp at h₁
+  exact h₁
