@@ -7,6 +7,13 @@ def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
   ∀ s₁ p, (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → p ∉ s.aVisited s₁
 
+def aFreshCnd (s : State) (fsp : FSP) (s₁ : State) : Prop :=
+  s₁.aHwsDisj # fsp.offset (s₁.diff s) |>.insertSet 0 # s.aVisited s₁ |>.toSet
+
+noncomputable
+def aFresh (s : State) (fsp : FSP) : AStrat :=
+  aSeek # aFreshCnd s fsp
+
 -----
 
 theorem AStrat.Fresh1.wf {a : AStrat} {s fsp} (h : a.Fresh1 s fsp) : a.WF := h.1
@@ -22,10 +29,50 @@ theorem AState.even_of_simulate {s s₁ f n} [hs : AState s] [hs₁ : AState s�
   have h₁ := DState.of_simulate_mul_two_add_one_eq_full h
   exact s₁.false_of_aState_and_dState
 
+theorem AState.exi_aSeek_tr {s P} [hs : AState s]
+(h : ∃ p s₁, sys.tr s p = some s₁ ∧ P s₁) :
+∃ s₁, sys.tr s (aSeek P |>.f s) = some s₁ ∧ P s₁ := by
+  simp [aSeek]
+  rw [choose?_eq_of_exi]
+  rotate_left; exact h
+  simp
+  have h₁ := Classical.epsilon_spec h
+  generalize hp : Classical.epsilon (λ p => ∃ s₁, sys.tr s p = some s₁ ∧ P s₁) = p at h₁ ⊢
+  choose s₁ h₁ h₂ using h₁
+  simpa [sys.validTr_of_eq_some h₁, h₁]
+
+theorem AState.aPos_ne_of_tr {s s₁ p} [hs : AState s]
+(h : sys.tr s p = some s₁) : s₁.aPos ≠ s.aPos := by
+  rw [tr_eq_some_iff] at h; grind
+
 theorem AState.fresh1_of_aHwsDisj_aVisited {s fsp} {a : AStrat} [hs : AState s] [ha : a.WF]
 (h : ∀ (d : DStrat) [d.WF], ∀ n, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧
 s₁.aHwsDisj (fsp.insert 1 s.aPos |>.offset (n * 2) |>.insertSet 0 #
 s.aVisited s₁ |>.toSet.erase s.aPos)) : a.Fresh1 s fsp := by
+  specialize h default 1
+  choose s₂ h₁ h₃ using h
+  simp at h₁ h₃
+  choose s₁ h₁ h₂ using h₁
+  have hs₁ := DState.of_tr h₁
+  have hs₂ := AState.of_tr h₂
+  simp at h₂
+  rw [DState.aVisited_eq_of_tr h₂ # sys.reachable_of_tr h₁] at h₃
+  rw [AState.aVisited_eq_of_tr h₁ # by rfl] at h₃
+  simp at h₃
+  choose a₁ ha₁ h₃ using h₃
+  specialize h₃ default inferInstance
+  specialize h₃ 0
+  choose s' h₃ h₅ using h₃
+  simp at h₃
+  subst h₃
+  simp [FSP.hasLe] at h₅
+  replace h₅ := h₅.1
+  rw [DState.aPos_eq_of_tr h₂] at h₅
+  simp [AState.aPos_ne_of_tr h₁] at h₅
+  simp [AState.aPos_eq_of_tr h₁] at h₅
+
+#check 0 #exit
+
   use ha
   split_ands
   · intro d hd n
@@ -92,32 +139,9 @@ s.aVisited s₁ |>.toSet.erase s.aPos)) : a.Fresh1 s fsp := by
   exact State.aVisited_subset_of_simulate_le ⟨a, d⟩ (n * 2) (n * 2 + 2)
     (by omega) h₁ # by simpa [h₁, h₂]
 
-def aFreshCnd (s : State) (fsp : FSP) (s₁ : State) : Prop :=
-  s₁.aHwsDisj # fsp.offset (s₁.diff s) |>.insertSet 0 # s.aVisited s₁ |>.toSet
-
-noncomputable
-def aFresh (s : State) (fsp : FSP) : AStrat :=
-  aSeek # aFreshCnd s fsp
-
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by
   unfold aFresh; infer_instance
-
-theorem AState.exi_aSeek_tr {s P} [hs : AState s]
-(h : ∃ p s₁, sys.tr s p = some s₁ ∧ P s₁) :
-∃ s₁, sys.tr s (aSeek P |>.f s) = some s₁ ∧ P s₁ := by
-  simp [aSeek]
-  rw [choose?_eq_of_exi]
-  rotate_left; exact h
-  simp
-  have h₁ := Classical.epsilon_spec h
-  generalize hp : Classical.epsilon (λ p => ∃ s₁, sys.tr s p = some s₁ ∧ P s₁) = p at h₁ ⊢
-  choose s₁ h₁ h₂ using h₁
-  simpa [sys.validTr_of_eq_some h₁, h₁]
-
-theorem AState.aPos_ne_of_tr {s s₁ p} [hs : AState s]
-(h : sys.tr s p = some s₁) : s₁.aPos ≠ s.aPos := by
-  rw [tr_eq_some_iff] at h; grind
 
 -- #check 0 #exit
 
@@ -126,6 +150,7 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   use aFresh s fsp
   apply fresh1_of_aHwsDisj_aVisited
   intro d hd n
+  
   replace h := AState.aHwsDisj_insert_one_aPos h
   induction n; simpa
   nm n ih
