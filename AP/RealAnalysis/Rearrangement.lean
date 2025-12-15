@@ -26,44 +26,42 @@ def mkRmentSum (a : ℕ → ℝ) (is : List ℕ) : ℝ :=
   ∑ i ∈ is.toFinset, a i
 
 noncomputable
-def mkRmentLeN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ n, N ≤ n → 0 ≤ a n → n ∉ is ∧ a n < 1 / (n + 2)
+def mkRmentLeN (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ r, N ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)
 
 noncomputable
-def mkRmentGeN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ N => a N < 0 ∧ ∀ n, N ≤ n → a n < 0 → n ∉ is ∧ -1 / (n + 2) < a n
+def mkRmentGeN (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ N => a N < 0 ∧ ∀ r, N ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r
 
 noncomputable
-def mkRmentLeF (a : ℕ → ℝ) (is : List ℕ) (k : ℕ) : List ℕ :=
-  List.range k |>.map (mkRmentLeN a is + ·) |>.filter (0 ≤ a ·)
+def mkRmentLeF (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : List ℕ :=
+  List.range k |>.map (mkRmentLeN a n is + ·) |>.filter (0 ≤ a ·)
 
 noncomputable
-def mkRmentGeF (a : ℕ → ℝ) (is : List ℕ) (k : ℕ) : List ℕ :=
-  List.range k |>.map (mkRmentGeN a is + ·) |>.filter (a · < 0)
+def mkRmentGeF (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : List ℕ :=
+  List.range k |>.map (mkRmentGeN a n is + ·) |>.filter (a · < 0)
 
 noncomputable
 def mkRmentLeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ k => L - 1 / (n + 2) < (mkRmentLeF a is k |>.map a |>.sum)
+  Nat.findRaw # λ k => L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum)
 
 noncomputable
 def mkRmentGeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ k => (mkRmentGeF a is k |>.map a |>.sum) < L + 1 / (n + 2)
+  Nat.findRaw # λ k => (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2)
 
 noncomputable
 def mkRmentLe (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
-  mkRmentLeF a is # mkRmentLeK a L n is
+  mkRmentLeF a n is # mkRmentLeK a L n is
 
 noncomputable
 def mkRmentGe (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
-  mkRmentGeF a is # mkRmentGeK a L n is
+  mkRmentGeF a n is # mkRmentGeK a L n is
 
 noncomputable
 def mkRmentIte (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
   is ++ if mkRmentSum a is ≤ L - 1 / (n + 2) then mkRmentLe a L n is
   else if L + 1 / (n + 2) ≤ mkRmentSum a is then mkRmentGe a L n is
   else []
-  -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
-  -- we now have `|s - L| < 1 / (n + 1)`
 
 noncomputable
 def mkRmentList (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : List ℕ :=
@@ -308,19 +306,102 @@ theorem nodup_mkRmentGe {a L n is} : (mkRmentGe a L n is).Nodup := by
   rw [←List.filterMap_eq_filter, List.filterMap_map]
   simp; rw [List.nodup_filterMap_iff]; grind
 
+theorem mkRmentLeK_spec' {a L n is} (H : CondConv a) :
+L - 1 / (n + 2) < (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) ∧
+∀ k, L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum) → mkRmentLeK a L n is ≤ k := by
+  apply Nat.findRaw_spec' (P := λ k => L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum))
+  unfold mkRmentLeF
+  simp_rw [←List.filterMap_eq_filter, List.map_filterMap, List.filterMap_map]
+  simp [Option.guard]
+  change ∃ N, _
+  sorry
+
+theorem mkRmentGeK_spec' {a L n is} (H : CondConv a) :
+(mkRmentGeF a n is (mkRmentGeK a L n is) |>.map a |>.sum) < L + 1 / (n + 2) ∧
+∀ k, (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2) → mkRmentGeK a L n is ≤ k := by
+  apply Nat.findRaw_spec' (P := λ k => (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2))
+  unfold mkRmentGeF
+  simp_rw [←List.filterMap_eq_filter, List.map_filterMap, List.filterMap_map]
+  simp [Option.guard]
+  change ∃ N, _
+  sorry
+
+theorem mkRmentLeK_spec {a L n is} (H : CondConv a) :
+L - 1 / (n + 2) < (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) :=
+  mkRmentLeK_spec' H |>.1
+
+theorem mkRmentGeK_spec {a L n is} (H : CondConv a) :
+(mkRmentGeF a n is (mkRmentGeK a L n is) |>.map a |>.sum) < L + 1 / (n + 2) :=
+  mkRmentGeK_spec' H |>.1
+
+theorem mkRmentLeN_spec' {a n is} (H : CondConv a) :
+(0 ≤ a (mkRmentLeN a n is) ∧ ∀ r, mkRmentLeN a n is ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)) ∧
+∀ k, (0 ≤ a k ∧ ∀ r, k ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)) → mkRmentLeN a n is ≤ k := by
+  apply Nat.findRaw_spec' (P := λ k => 0 ≤ a k ∧ ∀ r, k ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2))
+  generalize hN₁ : is.sum + 1 = N₁
+  choose N₂ h₁ using tendsTo_zero_of_converges_series H.converges_series
+    (1 / (n + 2)) (by subst hN₁; positivity)
+  simp at h₁
+  choose N₃ h₂ h₃ using H.infp_nonneg (N₁ + N₂)
+  use N₃, h₃
+  intro r hr h₄
+  split_ands
+  · intro h₅
+    replace h₅ := List.le_sum_of_mem h₅
+    omega
+  specialize h₁ r (by omega)
+  rw [abs_of_nonneg h₄] at h₁
+  apply lt_of_lt_of_le h₁
+  simp
+
+theorem mkRmentGeN_spec' {a n is} (H : CondConv a) :
+(a (mkRmentGeN a n is) < 0 ∧ ∀ r, mkRmentGeN a n is ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r) ∧
+∀ k, (a k < 0 ∧ ∀ r, k ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r) → mkRmentGeN a n is ≤ k := by
+  apply Nat.findRaw_spec' (P := λ k => a k < 0 ∧ ∀ r, k ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r)
+  generalize hN₁ : is.sum + 1 = N₁
+  choose N₂ h₁ using tendsTo_zero_of_converges_series H.converges_series
+    (1 / (n + 2)) (by subst hN₁; positivity)
+  simp at h₁
+  choose N₃ h₂ h₃ using H.infp_neg (N₁ + N₂)
+  use N₃, h₃
+  intro r hr h₄
+  split_ands
+  · intro h₅
+    replace h₅ := List.le_sum_of_mem h₅
+    omega
+  specialize h₁ r (by omega)
+  rw [abs_of_neg h₄, neg_lt] at h₁
+  apply lt_of_le_of_lt _ h₁
+  field_simp
+  rfl
+
+theorem mkRmentLeN_spec {a n is} (H : CondConv a) : 0 ≤ a (mkRmentLeN a n is) ∧
+∀ r, mkRmentLeN a n is ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2) :=
+  mkRmentLeN_spec' H |>.1
+
+theorem mkRmentGeN_spec {a n is} (H : CondConv a) : a (mkRmentGeN a n is) < 0 ∧
+∀ r, mkRmentGeN a n is ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r :=
+  mkRmentGeN_spec' H |>.1
+
+-- theorem mkRmentLeN_add_not_mem_is {a n is k} (H : CondConv a) :
+-- mkRmentLeN a n is + k ∉ is := by
+--   have h := @mkRmentLeN_spec a n is H |>.2 (mkRmentLeN a n is + k) (by omega)
+
+-- #check 0 #exit
+
 theorem notMem_mkRmentLe_of_mem {a L n is i} (H : CondConv a)
 (h : i ∈ is) : i ∉ mkRmentLe a L n is := by
   simp [mkRmentLe, mkRmentLeF]
   rintro k h₁ rfl
-  sorry
+  have h₂ := @mkRmentLeN_spec a n is H |>.2 (mkRmentLeN a n is + k) (by omega)
+  simp [h] at h₂; exact h₂
 
 theorem notMem_mkRmentGe_of_mem {a L n is i} (H : CondConv a)
 (h : i ∈ is) : i ∉ mkRmentGe a L n is := by
   simp [mkRmentGe, mkRmentGeF]
   rintro k h₁ rfl
-  sorry
-
--- #check 0 #exit
+  have h₂ := @mkRmentGeN_spec a n is H |>.2 (mkRmentGeN a n is + k) (by omega)
+  simp [h] at h₂; exact h₂
 
 theorem nodup_mkRmentList {a L n} (H : CondConv a) : (mkRmentList a L n).Nodup := by
   induction n; simp
@@ -419,12 +500,13 @@ theorem take_mkRmentLen_mkRmentList {a L n} :
 (mkRmentList a L # mkRmentLen a L n).take (mkRmentLen a L n) = mkRmentList a L n :=
   take_length_mkRmentList rfl
 
+-- we now have `|s - L| < 1 / (n + 1)`
+-- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
+
 -- #check 0 #exit
 
 theorem tendsTo_series_mkRment {a L} (h : CondConv a) :
 tendsTo (series # λ i => a # mkRment a L i) L := by
-  -- we now have `|s - L| < 1 / (n + 1)`
-  
   -- let `f : N -> N` be a function that maps `n` to the index representing the
   --   end of the `n`-th generation
   -- for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
