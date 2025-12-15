@@ -18,8 +18,8 @@ def mkRmentN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
   Nat.findRaw # λ j => j ∉ is ∧ a j < 0
 
 noncomputable
-def mkRmentList1 (a : ℕ → ℝ) (is₀ : List ℕ) : List ℕ :=
-  is₀ ++ [mkRmentP a is₀, mkRmentN a is₀]
+def mkRmentList1 (a : ℕ → ℝ) (is : List ℕ) : List ℕ :=
+  is ++ [mkRmentP a is, mkRmentN a is]
 
 noncomputable
 def mkRmentSum (a : ℕ → ℝ) (is : List ℕ) : ℝ :=
@@ -176,6 +176,30 @@ theorem getElem!_mkRmentList_eq_of_lt {a L n m k} (h₁ : k < n) (h₂ : k < m) 
   rw [getElem!_mkRmentList_eq_getElem h₁, getElem!_mkRmentList_eq_getElem h₂]
   exact getElem_mkRmentList_eq_of_lt h₁ h₂
 
+theorem mkRmentP_spec' {a is} (H : CondConv a) :
+(mkRmentP a is ∉ is ∧ 0 ≤ a (mkRmentP a is)) ∧ ∀ k, k ∉ is ∧ 0 ≤ a k → mkRmentP a is ≤ k := by
+  apply Nat.findRaw_spec' (P := λ i => i ∉ is ∧ 0 ≤ a i)
+  choose n h₁ h₂ using H.infp_nonneg # is.sum + 1
+  refine ⟨n, ?_, h₂⟩
+  intro h₃
+  replace h₄ := List.le_sum_of_mem h₃
+  omega
+
+theorem mkRmentN_spec' {a is} (H : CondConv a) :
+(mkRmentN a is ∉ is ∧ a (mkRmentN a is) < 0) ∧ ∀ k, k ∉ is ∧ a k < 0 → mkRmentN a is ≤ k := by
+  apply Nat.findRaw_spec' (P := λ i => i ∉ is ∧ a i < 0)
+  choose n h₁ h₂ using H.infp_neg # is.sum + 1
+  refine ⟨n, ?_, h₂⟩
+  intro h₃
+  replace h₄ := List.le_sum_of_mem h₃
+  omega
+
+theorem mkRmentP_spec {a is} (H : CondConv a) :
+mkRmentP a is ∉ is ∧ 0 ≤ a (mkRmentP a is) := mkRmentP_spec' H |>.1
+
+theorem mkRmentN_spec {a is} (H : CondConv a) :
+mkRmentN a is ∉ is ∧ a (mkRmentN a is) < 0 := mkRmentN_spec' H |>.1
+
 @[simp]
 theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
   induction n using Nat.strong_induction_on
@@ -257,28 +281,75 @@ theorem getElem_mkRmentList_of_le {a L n₁ n₂ k} {hh : k < (mkRmentList a L n
 @[simp]
 theorem mkRmentList_zero {a L} : mkRmentList a L 0 = [] := rfl
 
+theorem mkRmentP_notMem {a is} (H : CondConv a) : mkRmentP a is ∉ is :=
+  mkRmentP_spec H |>.1
+
+theorem mkRmentN_notMem {a is} (H : CondConv a) : mkRmentN a is ∉ is :=
+  mkRmentN_spec H |>.1
+
+theorem mkRmentP_nonneg {a is} (H : CondConv a) : 0 ≤ a (mkRmentP a is) :=
+  mkRmentP_spec H |>.2
+
+theorem mkRmentN_neg {a is} (H : CondConv a) : a (mkRmentN a is) < 0 :=
+  mkRmentN_spec H |>.2
+
+theorem mkRmentP_ne_mkRmentN {a is} (H : CondConv a) : mkRmentP a is ≠ mkRmentN a is := by
+  have := @mkRmentP_nonneg a is H; have := @mkRmentN_neg a is H; grind
+
+@[simp]
+theorem nodup_mkRmentLe {a L n is} : (mkRmentLe a L n is).Nodup := by
+  unfold mkRmentLe mkRmentLeF
+  rw [←List.filterMap_eq_filter, List.filterMap_map]
+  simp; rw [List.nodup_filterMap_iff]; grind
+
+@[simp]
+theorem nodup_mkRmentGe {a L n is} : (mkRmentGe a L n is).Nodup := by
+  unfold mkRmentGe mkRmentGeF
+  rw [←List.filterMap_eq_filter, List.filterMap_map]
+  simp; rw [List.nodup_filterMap_iff]; grind
+
+theorem notMem_mkRmentLe_of_mem {a L n is i} (H : CondConv a)
+(h : i ∈ is) : i ∉ mkRmentLe a L n is := by
+  simp [mkRmentLe, mkRmentLeF]
+  rintro k h₁ rfl
+  sorry
+
+theorem notMem_mkRmentGe_of_mem {a L n is i} (H : CondConv a)
+(h : i ∈ is) : i ∉ mkRmentGe a L n is := by
+  simp [mkRmentGe, mkRmentGeF]
+  rintro k h₁ rfl
+  sorry
+
+-- #check 0 #exit
+
 theorem nodup_mkRmentList {a L n} (H : CondConv a) : (mkRmentList a L n).Nodup := by
   induction n; simp
   nm n ih
   unfold mkRmentList
-  generalize h₁ : mkRmentList a L n = is
-  have h₂ : ∃ i, i ∉ is ∧ 0 ≤ a i
-  · choose k h₂ h₃ using H.infp_nonneg # is.sum + 1
-    refine ⟨k, ?_, h₃⟩
-    intro h₄
-    replace h₄ : k ≤ is.sum
-    · exact List.le_sum_of_mem h₄
-    omega
-  have h₃ : ∃ i, i ∉ is ∧ a i < 0
-  · choose k h₃ h₄ using H.infp_neg # is.sum + 1
-    refine ⟨k, ?_, h₄⟩
-    intro h₅
-    replace h₅ : k ≤ is.sum
-    · exact List.le_sum_of_mem h₅
-    omega
-  sorry
-
--- #check 0 #exit
+  generalize h₁ : mkRmentList a L n = is at ih ⊢
+  unfold mkRmentList1
+  have h₂ := @mkRmentP_notMem a is H
+  have h₃ := @mkRmentN_notMem a is H
+  generalize h₄ : is ++ [mkRmentP a is, mkRmentN a is] = is₁
+  unfold mkRmentIte
+  rw [List.nodup_append]
+  apply and_of
+  · subst h₄
+    rw [List.nodup_append]
+    use ih
+    simp [mkRmentP_ne_mkRmentN H]
+    intro i hi
+    split_ands
+    · contrapose! hi
+      subst hi
+      exact mkRmentP_notMem H
+    · contrapose! hi
+      subst hi
+      exact mkRmentN_notMem H
+  intro h₅
+  split_ifs with h₆ h₇ <;> simp <;> intro i
+  · exact notMem_mkRmentLe_of_mem H
+  · exact notMem_mkRmentGe_of_mem H
 
 theorem mkRment_eq_iff {a L i j} (H : CondConv a) : mkRment a L i = mkRment a L j ↔ i = j := by
   symm; constructor; rintro rfl; rfl; intro h
