@@ -10,40 +10,66 @@ def rinv (σ : ℕ → ℕ) (n : ℕ) : ℕ :=
   Classical.epsilon # λ k => σ k = n
 
 noncomputable
+def mkRmentP (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
+
+noncomputable
+def mkRmentN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ j => j ∉ is ∧ a j < 0
+
+noncomputable
+def mkRmentList1 (a : ℕ → ℝ) (is₀ : List ℕ) : List ℕ :=
+  is₀ ++ [mkRmentP a is₀, mkRmentN a is₀]
+
+noncomputable
+def mkRmentSum (a : ℕ → ℝ) (is : List ℕ) : ℝ :=
+  ∑ i ∈ is.toFinset, a i
+
+noncomputable
+def mkRmentLeN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ n, N ≤ n → 0 ≤ a n → n ∉ is ∧ a n < 1 / (n + 2)
+
+noncomputable
+def mkRmentGeN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ N => a N < 0 ∧ ∀ n, N ≤ n → a n < 0 → n ∉ is ∧ -1 / (n + 2) < a n
+
+noncomputable
+def mkRmentLeF (a : ℕ → ℝ) (is : List ℕ) (k : ℕ) : List ℕ :=
+  List.range k |>.map (mkRmentLeN a is + ·) |>.filter (0 ≤ a ·)
+
+noncomputable
+def mkRmentGeF (a : ℕ → ℝ) (is : List ℕ) (k : ℕ) : List ℕ :=
+  List.range k |>.map (mkRmentGeN a is + ·) |>.filter (a · < 0)
+
+noncomputable
+def mkRmentLeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ k => L - 1 / (n + 2) < (mkRmentLeF a is k |>.map a |>.sum)
+
+noncomputable
+def mkRmentGeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
+  Nat.findRaw # λ k => (mkRmentGeF a is k |>.map a |>.sum) < L + 1 / (n + 2)
+
+noncomputable
+def mkRmentLe (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
+  mkRmentLeF a is # mkRmentLeK a L n is
+
+noncomputable
+def mkRmentGe (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
+  mkRmentGeF a is # mkRmentGeK a L n is
+
+noncomputable
+def mkRmentIte (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
+  is ++ if mkRmentSum a is ≤ L - 1 / (n + 2) then mkRmentLe a L n is
+  else if L + 1 / (n + 2) ≤ mkRmentSum a is then mkRmentGe a L n is
+  else []
+  -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
+  -- we now have `|s - L| < 1 / (n + 1)`
+
+noncomputable
 def mkRmentList (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : List ℕ :=
   match n with
   | 0 => []
-  | n + 1 =>
-    let is := mkRmentList a L n
-    -- consume the first unconsumed element `x` of `a+`
-    let i := Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
-    -- consume the first unconsumed element `y` of `a-`
-    let j := Nat.findRaw # λ j => j ∉ is ∧ a j < 0
-    -- add `x + y` to the current sum
-    let is := is ++ [i, j]
-    -- let the current sum be `s`
-    let s := ∑ i ∈ is.toFinset, a i
-    -- if `s <= L - 1 / (n + 2)`
-    is ++ if s ≤ L - 1 / (n + 2) then
-      -- let `N` be the index in `a+` after which all elements are smaller than `1 / (n + 2)`
-      --   and all elements are unconsumed
-      let N := Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ n, N ≤ n → 0 ≤ a n → n ∉ is ∧ a n < 1 / (n + 2)
-      -- consume the shortest prefix of `a+` starting from `N`
-      --   whose sum is larger than `L - 1 / (n + 2)`
-      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (0 ≤ a ·)
-      f # Nat.findRaw # λ k => L - 1 / (n + 2) < (f k |>.map a |>.sum)
-      -- the new total sum will be between `L - 1 / (n + 2)` and `L` inclusively
-    else if L + 1 / (n + 2) ≤ s then
-      -- let `N` be the index in `a-` after which all elements are larger than `-1 / (n + 2)`
-      --   and all elements are unconsumed
-      let N := Nat.findRaw # λ N => a N < 0 ∧ ∀ n, N ≤ n → a n < 0 → n ∉ is ∧ -1 / (n + 2) < a n
-      -- consume the shortest prefix of `a-` starting from `N`
-      --   whose sum is smaller than `L + 1 / (n + 2)`
-      let f (k : ℕ) := List.range k |>.map (N + ·) |>.filter (a · < 0)
-      f # Nat.findRaw # λ k => (f k |>.map a |>.sum) < L + 1 / (n + 2)
-      -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
-    else []
-    -- we now have `|s - L| < 1 / (n + 1)`
+  | n + 1 => mkRmentIte a L n # mkRmentList1 a # mkRmentList a L n
 
 noncomputable
 def mkRment (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : ℕ :=
@@ -113,7 +139,7 @@ converges (a # σ ·) ↔ converges a := by
 
 @[simp]
 theorem le_length_mkRmentList {a L n} : n ≤ (mkRmentList a L n).length := by
-  induction n; simp; rw [mkRmentList]; grind
+  induction n; simp; unfold mkRmentList mkRmentIte mkRmentList1; grind
 
 @[simp]
 theorem le_mkRmentLen {a L n} : n ≤ mkRmentLen a L n :=
@@ -121,7 +147,8 @@ theorem le_mkRmentLen {a L n} : n ≤ mkRmentLen a L n :=
 
 theorem mkRmentList_prefix {a L k n} (h : k ≤ n) : mkRmentList a L k <+: mkRmentList a L n := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h
-  induction n; rfl; rw [Nat.add_succ, mkRmentList]; grind
+  induction n; rfl; rw [Nat.add_succ, mkRmentList]
+  unfold mkRmentList1 mkRmentIte; grind
 
 theorem getElem!_mkRmentList_eq_getElem {a L n k} (h : k < n) :
 (mkRmentList a L n)[k]! = (mkRmentList a L n)[k]'(lt_of_lt_of_le h # by simp) := by
@@ -159,11 +186,8 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
     simp
   unfold mkRmentList
   generalize h_is : mkRmentList a L n = is at h₁ ⊢
-  generalize hi : Nat.findRaw (λ i => i ∉ is ∧ 0 ≤ a i) = i
-  generalize hj : Nat.findRaw (λ j => j ∉ is ∧ a j < 0) = j
   apply List.mem_append_left
   apply List.mem_append_right
-  rw [hi, hj]
   simp
   have h₂ : ∀ k < n, k ∈ is
   · intro k hk
@@ -172,9 +196,10 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
     rw [←h_is]
     apply mkRmentList_prefix
     omega
+  simp_rw [eq_comm (a := n)]
   by_cases h₃ : 0 ≤ a n
-  · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hi; grind
-  · rw [Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩] at hj; grind
+  · rw [mkRmentP, Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩]; grind
+  · rw [mkRmentN, Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩]; grind
 
 theorem getElem_mkRmentList_of_le.proof₁ {a L n₁ n₂ k} (h₁ : n₁ ≤ n₂)
 (h₂ : k < (mkRmentList a L n₁).length) : k < (mkRmentList a L n₂).length :=
