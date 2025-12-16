@@ -6,6 +6,18 @@ namespace Serializable
 abbrev Ser := StateM Serializer
 abbrev DSer := StateM Deserializer
 
+-- V x, ser x = writeBits (f x)
+-- 
+-- dser = do
+--   let bs <- queryAllBits
+--   let (n, x) := g bs
+--   skipBits n
+--   pure x
+-- 
+-- V x bs, g (f x ++ bs) = ((f x).length, x)
+-- 
+-- V bs, g (bs ++ [0]) = g bs
+
 -- def cnd {α : Type} (ser : α → Ser Unit) (dser : DSer α) : Prop :=
 --   ∃ (f : α → List Bit) (g : List Bit → α × ℕ),
 --   (∀ s x, (ser x |>.run s).2 = s.writeBits (f x)) ∧
