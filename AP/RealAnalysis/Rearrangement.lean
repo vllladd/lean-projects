@@ -546,15 +546,50 @@ theorem take_mkRmentLen_mkRmentList {a L n} :
 (mkRmentList a L # mkRmentLen a L n).take (mkRmentLen a L n) = mkRmentList a L n :=
   take_length_mkRmentList rfl
 
+-- we now have `|s - L| < 1 / (n + 1)`
+-- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
+
+theorem abs_map_sum_mkRmentIte_sub_lt {a L n is} (H : CondConv a) :
+|(mkRmentIte a L n is |>.map a |>.sum) - L| < 1 / (n + 2) := by
+  rw [mkRmentIte]
+  simp
+  split_ifs with h₁ h₂
+  rotate_right
+  · simp [mkRmentSum] at h₁ h₂
+    simp [abs_lt]; split_ands <;> linarith
+  ·
+    rw [mkRmentLe]
+    have h₂ := @mkRmentLeK_spec a L n is H
+    simp at h₂
+    rw [mkRmentSum] at h₁
+    generalize (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a).sum = s at h₂ ⊢
+    rw [sub_lt_iff_lt_add] at h₂
+    rw [←sub_lt_iff_lt_add'] at h₂
+    apply lt_of_le_of_lt _ h₂; clear h₂
+    rw [abs_le]
+    -- split_ands
+    -- ·
+    --   simp
+    -- ·
+    --   linarith
+    sorry
+  ·
+    sorry
+
+-- #check 0 #exit
+
+theorem abs_map_sum_mkRmentList_sub_lt {a L n} (H : CondConv a) (hn : n ≠ 0) :
+|(mkRmentList a L n |>.map a |>.sum) - L| < 1 / (n + 1) := by
+  cases n; simp at hn
+  simp [mkRmentList]
+  convert abs_map_sum_mkRmentIte_sub_lt H using 1
+  grind
+
 -- for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
 --   at distance from `L` at most `1 / (n + 1)`
-theorem abs_map_sum_mkRmentList_sub_lt {a L n} (H : CondConv a) :
-|(mkRmentList a L n |>.map a |>.sum) - L| < 1 / (n + 1) := by
-  sorry
-
-theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) :
+theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) (hn : n ≠ 0) :
 |series (a # mkRment a L ·) (mkRmentLen a L n) - L| < 1 / (n + 1) := by
-  convert @abs_map_sum_mkRmentList_sub_lt a L n H using 3
+  convert @abs_map_sum_mkRmentList_sub_lt a L n H hn using 3
   dsimp [series, mkRmentLen]
   rw [List.sum_map_eq_sum_getElem_finset_range]
   apply Finset.sum_congr rfl
@@ -567,62 +602,49 @@ theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) :
 
 -- #check 0 #exit
 
--- theorem x {a L n}
--- :
--- -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
--- --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
-
--- #check 0 #exit
-
--- we now have `|s - L| < 1 / (n + 1)`
--- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
-
--- #check 0 #exit
-
-theorem tendsTo_series_mkRment {a L} (H : CondConv a) :
-tendsTo (series # λ i => a # mkRment a L i) L := by
-  -- let `f : N -> N` be a function that maps `n` to the index representing the
-  --   end of the `n`-th generation
-  
-  -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
-  --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
-  -- moreover, all elements or series of rearrangement of `a` after `f n`
-  --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
-  -- since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
-  --   the series of rearrangement of `a` tends to `L`
-  
-  rw [tendsTo_iff_eps_lt_one]
-  intro ε hε hε'
-  
-  obtain ⟨N, hN⟩ : ∃ (N : ℕ), 1 / (N + 1) < ε
-  ·
-    obtain ⟨N, hN⟩ := exists_nat_ge ε⁻¹
-    use N
-    rw [div_lt_iff₀] <;> try positivity
-    field_simp at hN
-    grind
-  
-  generalize hN₁ : (mkRmentList a L N).length = N₁
-  have h₁ : N ≤ N₁
-  · simp [←hN₁]
-  have h₂ : 1 / (N₁ + 1) < ε
-  · apply lt_of_le_of_lt _ hN
-    field_simp
-    simpa
-  
-  use N₁
-  intro n hn
-  apply hN.trans'
-  
-  -- have h₃ := abs_series_mkRment_dif_lt h (L := L) (n := n)
-  
-  -- apply lt_of_lt_of_le # abs_series_mkRment_dif_lt h
-  -- field_simp
-  -- simpa
-  
+-- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
+--   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+theorem abs_series_mkRment_sub_lt_of_between {a L n i} (H : CondConv a)
+(h₁ : mkRmentLen a L n ≤ i) (h₂ : i < mkRmentLen a L (n + 1)) :
+|series (a # mkRment a L ·) i - L| < 2 * |a n| + 1 / (n + 1) := by
   sorry
 
 -- #check 0 #exit
+
+-- moreover, all elements or series of rearrangement of `a` after `f n`
+--   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+theorem abs_series_mkRment_sub_lt_of_le {a L n i} (H : CondConv a) (h : mkRmentLen a L n ≤ i) :
+|series (a # mkRment a L ·) i - L| < 2 * |a n| + 1 / (n + 1) := by
+  sorry
+
+-- #check 0 #exit
+
+-- since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
+--   the series of rearrangement of `a` tends to `L`
+theorem tendsTo_series_mkRment {a L} (H : CondConv a) :
+tendsTo (series # λ i => a # mkRment a L i) L := by
+  rw [tendsTo_iff_eps_lt_one]
+  intro ε hε hε'
+  obtain ⟨N₁, hN₁⟩ : ∃ (N : ℕ), ∀ n, N ≤ n → 1 / (n + 1) < ε / 2
+  · obtain ⟨N, hN⟩ := exists_nat_ge (ε / 2)⁻¹
+    use N
+    intro n hn
+    rw [div_lt_iff₀] <;> try positivity
+    field_simp at hN ⊢
+    apply lt_of_le_of_lt hN
+    rw [mul_lt_mul_iff_right₀ hε]
+    norm_cast
+    omega
+  choose N₂ hN₂ using H.tendsTo_zero (ε / 4) (by positivity)
+  simp at hN₂
+  use mkRmentLen a L (N₁ + N₂)
+  intro n hn
+  have h₁ : N₁ + N₂ ≤ n
+  · apply hn.trans'; simp
+  specialize hN₁ (N₁ + N₂) (by omega)
+  specialize hN₂ (N₁ + N₂) (by omega)
+  apply lt_of_lt_of_le # abs_series_mkRment_sub_lt_of_le H hn
+  linarith
 
 open CondConv in
 theorem exi_rment_tendsTo_of_condConv {a L} (H : CondConv a) :

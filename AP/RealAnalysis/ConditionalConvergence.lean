@@ -397,3 +397,6 @@ theorem exi_an_map_range_drop_lt L k :
   simp [List.range_succ]
   rw [ih]; clear ih
   grind
+
+theorem tendsTo_zero : tendsTo a 0 :=
+  tendsTo_zero_of_converges_series H.converges_series
