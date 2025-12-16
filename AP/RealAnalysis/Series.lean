@@ -353,12 +353,47 @@ theorem sum_range_mul_two_alternating {a : ℕ → ℝ} {m : ℕ} :
   rw [Finset.sum_sub_distrib]
   ring_nf
 
+theorem subseq_lt_of_lt {σ i j} (h₁ : Subseq σ)  (h₂ : i < j) : σ i < σ j :=
+  h₁ _ _ h₂
+
 theorem subseq_le_of_le {σ i j} (h₁ : Subseq σ)  (h₂ : i ≤ j) : σ i ≤ σ j := by
   rw [le_iff_eq_or_lt] at h₂
   rcases h₂ with rfl | h₂; rfl
-  apply le_of_lt
-  apply h₁
-  exact h₂
+  exact le_of_lt # subseq_lt_of_lt h₁ h₂
+
+theorem subseq_eq_of_eq {σ : ℕ → ℕ} {i j} (h₂ : i = j) : σ i = σ j := by
+  rw [h₂]
+
+theorem eq_of_subseq_eq {σ i j} (h₁ : Subseq σ) (h₂ : σ i = σ j) : i = j := by
+  contrapose! h₂
+  rw [ne_iff_lt_or_gt] at h₂ ⊢
+  rcases h₂ with h₂ | h₂
+  · left; exact subseq_lt_of_lt h₁ h₂
+  · right; exact subseq_lt_of_lt h₁ h₂
+
+theorem subseq_eq_iff {σ i j} (h₁ : Subseq σ) : σ i = σ j ↔ i = j :=
+  ⟨eq_of_subseq_eq h₁, subseq_eq_of_eq⟩
+
+theorem lt_of_subseq_lt {σ i j} (h₁ : Subseq σ) (h₂ : σ i < σ j) : i < j := by
+  contrapose! h₂; exact subseq_le_of_le h₁ h₂
+
+theorem subseq_lt_iff {σ i j} (h₁ : Subseq σ) : σ i < σ j ↔ i < j :=
+  ⟨lt_of_subseq_lt h₁, subseq_lt_of_lt h₁⟩
+
+theorem le_of_subseq_le {σ i j} (h₁ : Subseq σ) (h₂ : σ i ≤ σ j) : i ≤ j := by
+  contrapose! h₂; exact subseq_lt_of_lt h₁ h₂
+
+theorem subseq_le_iff {σ i j} (h₁ : Subseq σ) : σ i ≤ σ j ↔ i ≤ j :=
+  ⟨le_of_subseq_le h₁, subseq_le_of_le h₁⟩
+
+theorem subseq_ne_of_ne {σ i j} (h₁ : Subseq σ) (h₂ : i ≠ j) : σ i ≠ σ j := by
+  simpa [subseq_eq_iff h₁]
+
+theorem ne_of_subseq_ne {σ i j} (h₁ : Subseq σ) (h₂ : σ i ≠ σ j) : i ≠ j := by
+  simp [subseq_eq_iff h₁] at h₂; exact h₂
+
+theorem subseq_ne_iff {σ i j} (h₁ : Subseq σ) : σ i ≠ σ j ↔ i ≠ j :=
+  ⟨ne_of_subseq_ne h₁, subseq_ne_of_ne h₁⟩
 
 theorem monoLe_subseq {a σ} (h₁ : monoLe a) (h₂ : Subseq σ) : monoLe (a # σ ·) := by
   intro i j h; apply h₁; exact subseq_le_of_le h₂ h

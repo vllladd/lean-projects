@@ -148,27 +148,8 @@ theorem monoLt_series_of_pos {a} (h : ∀ n, 0 < a n) : monoLt (series a) := by
 theorem monoGt_series_of_neg {a} (h : ∀ n, a n < 0) : monoGt (series a) := by
   rw [monoGt_iff_succ_lt]; intro n; rw [series_succ]; linarith [h n]
 
-theorem subseq_nat_eq_subseq_iff {σ n m} (h : Subseq σ) : σ n = σ m ↔ n = m := by
-  by_cases h₁ : n < m
-  · simp [ne_of_lt h₁]
-    apply ne_of_lt
-    apply h
-    exact h₁
-  push_neg at h₁
-  rw [le_iff_eq_or_lt] at h₁
-  rcases h₁ with rfl | h₁
-  · simp
-  simp [ne_symm' # ne_of_lt h₁]
-  apply ne_of_gt
-  apply h
-  exact h₁
-
-theorem subseq_nat_lt_subseq_iff {σ n m} (h : Subseq σ) : σ n < σ m ↔ n < m := by
-  by_cases h₁ : n = m; simp [h₁]
-  simp [lt_iff_le_and_ne, subseq_nat_le_subseq_iff h, subseq_nat_eq_subseq_iff h, h₁]
-
 theorem subseq_nat_succ_le {σ n} (h : Subseq σ) : σ n + 1 ≤ σ (n + 1) := by
-  simp [Nat.add_one_le_iff, subseq_nat_lt_subseq_iff h]
+  simp [Nat.add_one_le_iff, subseq_lt_iff h]
 
 theorem subseq_nat_eq_succ_of_subseq_eq_succ {σ n m}
 (h₁ : Subseq σ) (h₂ : σ n = σ m + 1) : n = m + 1 := by
@@ -201,7 +182,7 @@ theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : �
     simp [h₂]
     rintro k hk r rfl
     subst h₃
-    simp [subseq_nat_lt_subseq_iff h₁] at hk
+    simp [subseq_lt_iff h₁] at hk
   nm k ih
   have h₄ : σ k ≤ n
   · simp [←h₃, subseq_nat_le_subseq_iff h₁]
@@ -215,7 +196,7 @@ theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : �
   split_ands
   · rw [Nat.pos_iff_ne_zero]
     rintro rfl
-    simp [subseq_nat_eq_subseq_iff h₁] at h₃
+    simp [subseq_eq_iff h₁] at h₃
   · rw [h₂]
     use k
   intro r h₄ h₅ h₆
@@ -223,8 +204,8 @@ theorem subseq_card_filter_range_eq {a : ℕ → ℝ} {p : ℝ → Prop} {σ : �
   rw [h₂] at h₆
   obtain ⟨r, rfl⟩ := h₆
   rw [subseq_nat_le_subseq_iff h₁] at h₄
-  rw [subseq_nat_lt_subseq_iff h₁] at h₅
-  rw [subseq_nat_eq_subseq_iff h₁]
+  rw [subseq_lt_iff h₁] at h₅
+  rw [subseq_eq_iff h₁]
   omega
 
 theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ₁ σ₂ : ℕ → ℕ}
@@ -290,3 +271,38 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
     conv_rhs => rw [←h]
     congr
     exact subseq_card_filter_range_eq (p := (¬p ·)) h₂ h₄ h
+
+theorem not_of_lt_mkSubseq_zero {a p n}
+(h : n < mkSubseq a p 0) : ¬p (a n) := by
+  simp [mkSubseq] at h; exact Nat.findRaw_min h
+
+@[simp]
+theorem mkSubseq_lt_mkSubseq_succ {a p n} : mkSubseq a p n < mkSubseq a p (n + 1) := by
+  simp [mkSubseq]; omega
+
+@[simp]
+theorem mkSubseq_le_mkSubseq_succ {a p n} : mkSubseq a p n ≤ mkSubseq a p (n + 1) :=
+  le_of_lt mkSubseq_lt_mkSubseq_succ
+
+theorem not_of_between_mkSubseq {a p k} n (H : Infp a p)
+(h₁ : mkSubseq a p n < k) (h₂ : k < mkSubseq a p (n + 1)) : ¬p (a k) := by
+  intro h₃
+  replace h₃ := exi_mkSubseq_eq_of_apply H h₃
+  obtain ⟨k, rfl⟩ := h₃
+  rw [subseq_lt_iff subseq_mkSubseq] at h₁ h₂
+  omega
+
+theorem filter_range_mkSubseq_succ {a p n} [hp : DecidablePred p] (H : Infp a p) :
+(List.range (mkSubseq a p # n + 1) |>.filter (p # a ·)) =
+(List.range (mkSubseq a p n) |>.filter (p # a ·)) ++ [mkSubseq a p n] := by
+  have h₁ : mkSubseq a p n < mkSubseq a p (n + 1)
+  · apply subseq_lt_of_lt subseq_mkSubseq; simp
+  obtain ⟨k, h₂⟩ := Nat.exists_eq_add_of_lt h₁
+  rw [h₂]; replace h₂ : k + mkSubseq a p n < mkSubseq a p (n + 1); omega
+  induction k
+  · simp [List.range_succ]; exact mkSubseq_spec H
+  nm k ih
+  rw [←ih # by omega]; clear ih
+  nth_rw 1 [List.range_succ]
+  ring_nf; simp
+  apply not_of_between_mkSubseq n H <;> omega

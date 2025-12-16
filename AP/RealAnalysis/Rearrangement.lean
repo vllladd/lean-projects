@@ -1,5 +1,36 @@
 import AP.RealAnalysis.ConditionalConvergence
 
+namespace List
+
+variable {α β : Type*}
+variable {xs ys zs : List α}
+
+theorem sum_eq_sum_toFinset [ha₁ : DecidableEq α] [ha₂ : Ring α]
+(h : xs.Nodup) : xs.sum = ∑ x ∈ xs.toFinset, x := by
+  rw [List.sum_toFinset _ h]; simp
+
+theorem sum_map_eq_sum_toFinset [ha : DecidableEq α] [hb : Ring β] {f : α → β}
+(h : xs.Nodup) : (xs.map f).sum = ∑ x ∈ xs.toFinset, f x := by
+  rw [List.sum_toFinset _ h]
+
+theorem sum_map_eq_sum_getElem_finset_range [hb : Ring β] {f : α → β} :
+(xs.map f).sum = ∑ i ∈ Finset.range xs.length, if h : i < xs.length then f xs[i] else 0 := by
+  induction xs using List.reverseRecOn <;> simp
+  clear! xs; nm xs x ih
+  rw [ih]; clear ih
+  simp [Finset.range_add_one]
+  rw [add_comm (a := f x)]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro i h₁
+  simp at h₁
+  simp [h₁]
+  omega
+
+-- #check 0 #exit
+
+end List
+
 namespace RealAnalysis
 
 def Rment (σ : ℕ → ℕ) : Prop :=
@@ -23,15 +54,21 @@ def mkRmentList1 (a : ℕ → ℝ) (is : List ℕ) : List ℕ :=
 
 noncomputable
 def mkRmentSum (a : ℕ → ℝ) (is : List ℕ) : ℝ :=
-  ∑ i ∈ is.toFinset, a i
+  is.map a |>.sum
+
+def mkRmentLeNCnd (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (N : ℕ) : Prop :=
+  0 ≤ a N ∧ ∀ r, N ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)
+
+def mkRmentGeNCnd (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (N : ℕ) : Prop :=
+  a N < 0 ∧ ∀ r, N ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r
 
 noncomputable
 def mkRmentLeN (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ N => 0 ≤ a N ∧ ∀ r, N ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)
+  Nat.findRaw # mkRmentLeNCnd a n is
 
 noncomputable
 def mkRmentGeN (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ N => a N < 0 ∧ ∀ r, N ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r
+  Nat.findRaw # mkRmentGeNCnd a n is
 
 noncomputable
 def mkRmentLeF (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : List ℕ :=
@@ -41,13 +78,19 @@ noncomputable
 def mkRmentGeF (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : List ℕ :=
   List.range k |>.map (mkRmentGeN a n is + ·) |>.filter (a · < 0)
 
+def mkRmentLeKCnd (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : Prop :=
+  L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum)
+
+def mkRmentGeKCnd (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : Prop :=
+  (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2)
+
 noncomputable
 def mkRmentLeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ k => L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum)
+  Nat.findRaw # mkRmentLeKCnd a L n is
 
 noncomputable
 def mkRmentGeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ k => (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2)
+  Nat.findRaw # mkRmentGeKCnd a L n is
 
 noncomputable
 def mkRmentLe (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
@@ -232,6 +275,19 @@ theorem getElem_mkRmentList_of_le {a L n₁ n₂ k} {hh : k < (mkRmentList a L n
 (getElem_mkRmentList_of_le.proof₁ h hh) := by
   apply List.IsPrefix.getElem # mkRmentList_prefix h
 
+theorem getElem_mkRmentList_eq {a L n₁ n₂ k}
+{hh₁ : k < (mkRmentList a L n₁).length} {hh₂ : k < (mkRmentList a L n₂).length} :
+(mkRmentList a L n₁)[k] = (mkRmentList a L n₂)[k] := by
+  rcases lt_trichotomy n₁ n₂ with h₁ | rfl | h₁; on_goal 2 => rfl
+  · exact getElem_mkRmentList_of_le # le_of_lt h₁
+  · exact getElem_mkRmentList_of_le (le_of_lt h₁) |>.symm
+
+@[simp]
+theorem getElem_mkRmentList_eq_iff_true {a L n₁ n₂ k}
+{hh₁ : k < (mkRmentList a L n₁).length} {hh₂ : k < (mkRmentList a L n₂).length} :
+(mkRmentList a L n₁)[k] = (mkRmentList a L n₂)[k] ↔ True := by
+  simp; exact getElem_mkRmentList_eq
+
 -- #check 0 #exit
 
 -- h : CondConv a
@@ -307,24 +363,14 @@ theorem nodup_mkRmentGe {a L n is} : (mkRmentGe a L n is).Nodup := by
   simp; rw [List.nodup_filterMap_iff]; grind
 
 theorem mkRmentLeK_spec' {a L n is} (H : CondConv a) :
-L - 1 / (n + 2) < (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) ∧
-∀ k, L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum) → mkRmentLeK a L n is ≤ k := by
-  apply Nat.findRaw_spec' (P := λ k => L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum))
-  unfold mkRmentLeF
-  simp_rw [←List.filterMap_eq_filter, List.map_filterMap, List.filterMap_map]
-  simp [Option.guard]
-  change ∃ N, _
-  sorry
+mkRmentLeKCnd a L n is (mkRmentLeK a L n is) ∧
+∀ k, mkRmentLeKCnd a L n is k → mkRmentLeK a L n is ≤ k :=
+  Nat.findRaw_spec' # H.exi_ap_map_range_drop_gt _ _
 
 theorem mkRmentGeK_spec' {a L n is} (H : CondConv a) :
-(mkRmentGeF a n is (mkRmentGeK a L n is) |>.map a |>.sum) < L + 1 / (n + 2) ∧
-∀ k, (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2) → mkRmentGeK a L n is ≤ k := by
-  apply Nat.findRaw_spec' (P := λ k => (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2))
-  unfold mkRmentGeF
-  simp_rw [←List.filterMap_eq_filter, List.map_filterMap, List.filterMap_map]
-  simp [Option.guard]
-  change ∃ N, _
-  sorry
+mkRmentGeKCnd a L n is (mkRmentGeK a L n is) ∧
+∀ k, mkRmentGeKCnd a L n is k → mkRmentGeK a L n is ≤ k :=
+  Nat.findRaw_spec' # H.exi_an_map_range_drop_lt _ _
 
 theorem mkRmentLeK_spec {a L n is} (H : CondConv a) :
 L - 1 / (n + 2) < (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) :=
@@ -335,9 +381,9 @@ theorem mkRmentGeK_spec {a L n is} (H : CondConv a) :
   mkRmentGeK_spec' H |>.1
 
 theorem mkRmentLeN_spec' {a n is} (H : CondConv a) :
-(0 ≤ a (mkRmentLeN a n is) ∧ ∀ r, mkRmentLeN a n is ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)) ∧
-∀ k, (0 ≤ a k ∧ ∀ r, k ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2)) → mkRmentLeN a n is ≤ k := by
-  apply Nat.findRaw_spec' (P := λ k => 0 ≤ a k ∧ ∀ r, k ≤ r → 0 ≤ a r → r ∉ is ∧ a r < 1 / (n + 2))
+mkRmentLeNCnd a n is (mkRmentLeN a n is) ∧
+∀ k, mkRmentLeNCnd a n is k → mkRmentLeN a n is ≤ k := by
+  apply Nat.findRaw_spec'
   generalize hN₁ : is.sum + 1 = N₁
   choose N₂ h₁ using tendsTo_zero_of_converges_series H.converges_series
     (1 / (n + 2)) (by subst hN₁; positivity)
@@ -355,9 +401,9 @@ theorem mkRmentLeN_spec' {a n is} (H : CondConv a) :
   simp
 
 theorem mkRmentGeN_spec' {a n is} (H : CondConv a) :
-(a (mkRmentGeN a n is) < 0 ∧ ∀ r, mkRmentGeN a n is ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r) ∧
-∀ k, (a k < 0 ∧ ∀ r, k ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r) → mkRmentGeN a n is ≤ k := by
-  apply Nat.findRaw_spec' (P := λ k => a k < 0 ∧ ∀ r, k ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r)
+mkRmentGeNCnd a n is (mkRmentGeN a n is) ∧
+∀ k, mkRmentGeNCnd a n is k → mkRmentGeN a n is ≤ k := by
+  apply Nat.findRaw_spec'
   generalize hN₁ : is.sum + 1 = N₁
   choose N₂ h₁ using tendsTo_zero_of_converges_series H.converges_series
     (1 / (n + 2)) (by subst hN₁; positivity)
@@ -500,17 +546,44 @@ theorem take_mkRmentLen_mkRmentList {a L n} :
 (mkRmentList a L # mkRmentLen a L n).take (mkRmentLen a L n) = mkRmentList a L n :=
   take_length_mkRmentList rfl
 
+-- for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
+--   at distance from `L` at most `1 / (n + 1)`
+theorem abs_map_sum_mkRmentList_sub_lt {a L n} (H : CondConv a) :
+|(mkRmentList a L n |>.map a |>.sum) - L| < 1 / (n + 1) := by
+  sorry
+
+theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) :
+|series (a # mkRment a L ·) (mkRmentLen a L n) - L| < 1 / (n + 1) := by
+  convert @abs_map_sum_mkRmentList_sub_lt a L n H using 3
+  dsimp [series, mkRmentLen]
+  rw [List.sum_map_eq_sum_getElem_finset_range]
+  apply Finset.sum_congr rfl
+  intro i h₁
+  simp at h₁
+  simp [h₁]
+  rw [mkRment_eq_getElem]
+  congr 1
+  simp
+
+-- #check 0 #exit
+
+-- theorem x {a L n}
+-- :
+-- -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
+-- --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+
+-- #check 0 #exit
+
 -- we now have `|s - L| < 1 / (n + 1)`
 -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
 
 -- #check 0 #exit
 
-theorem tendsTo_series_mkRment {a L} (h : CondConv a) :
+theorem tendsTo_series_mkRment {a L} (H : CondConv a) :
 tendsTo (series # λ i => a # mkRment a L i) L := by
   -- let `f : N -> N` be a function that maps `n` to the index representing the
   --   end of the `n`-th generation
-  -- for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
-  --   at distance from `L` at most `1 / (n + 1)`
+  
   -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
   --   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
   -- moreover, all elements or series of rearrangement of `a` after `f n`

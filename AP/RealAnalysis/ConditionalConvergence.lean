@@ -333,3 +333,67 @@ theorem not_converges_series_an : ¬converges (series # an a) := by
   contrapose! h₁; clear h₁
   suffices : 1 - (Y + 1) ≤ series (an a) (g a N₂); linarith
   apply H₃ _ |>.trans'; linarith
+
+theorem exi_ap_gt L : ∃ n, L < series (ap a) n :=
+  exi_gt_of_monoLe_and_not_converges H.monoLe_series_ap H.not_converges_series_ap L
+
+theorem exi_an_lt L : ∃ n, series (an a) n < L :=
+  exi_lt_of_monoGe_and_not_converges H.monoGe_series_an H.not_converges_series_an L
+
+omit H in
+theorem neg_of_lt_σp_zero {n} (h : n < σp a 0) : a n < 0 := by
+  linarith [not_of_lt_mkSubseq_zero h]
+
+omit H in
+theorem nonneg_of_lt_σn_zero {n} (h : n < σn a 0) : 0 ≤ a n := by
+  linarith [not_of_lt_mkSubseq_zero h]
+
+theorem sum_map_filter_range_σp {n} :
+(List.range (σp a n) |>.filter (0 ≤ a ·) |>.map a).sum = series (ap a) n := by
+  induction n
+  · simp; convert List.sum_nil; simp; exact λ _ => neg_of_lt_σp_zero
+  nm n ih; simp [series_succ, ←ih]; unfold ap σp
+  simp [filter_range_mkSubseq_succ H.infp_nonneg]
+
+theorem sum_map_filter_range_σn {n} :
+(List.range (σn a n) |>.filter (a · < 0) |>.map a).sum = series (an a) n := by
+  induction n
+  · simp; convert List.sum_nil; simp; exact λ _ => nonneg_of_lt_σn_zero
+  nm n ih; simp [series_succ, ←ih]; unfold an σn
+  simp [filter_range_mkSubseq_succ H.infp_neg]
+
+theorem exi_ap_map_range_gt L :
+∃ n, L < (List.range n |>.filter (0 ≤ a ·) |>.map a |>.sum) := by
+  choose n h₁ using H.exi_ap_gt L; use σp a n; rwa [H.sum_map_filter_range_σp]
+
+theorem exi_an_map_range_lt L :
+∃ n, (List.range n |>.filter (a · < 0) |>.map a |>.sum) < L := by
+  choose n h₁ using H.exi_an_lt L; use σn a n; rwa [H.sum_map_filter_range_σn]
+
+theorem exi_ap_map_range_drop_gt L k :
+∃ n, L < (List.range n |>.map (k + ·) |>.filter (0 ≤ a ·) |>.map a |>.sum) := by
+  replace H := H.drop (N := k)
+  choose n h₁ using H.exi_ap_map_range_gt L
+  use n
+  convert h₁ using 2
+  clear h₁
+  induction n
+  · rfl
+  nm n ih
+  simp [List.range_succ]
+  rw [ih]; clear ih
+  grind
+
+theorem exi_an_map_range_drop_lt L k :
+∃ n, (List.range n |>.map (k + ·) |>.filter (a · < 0) |>.map a |>.sum) < L := by
+  replace H := H.drop (N := k)
+  choose n h₁ using H.exi_an_map_range_lt L
+  use n
+  convert h₁ using 2
+  clear h₁
+  induction n
+  · rfl
+  nm n ih
+  simp [List.range_succ]
+  rw [ih]; clear ih
+  grind
