@@ -1,36 +1,5 @@
 import AP.RealAnalysis.ConditionalConvergence
 
-namespace List
-
-variable {α β : Type*}
-variable {xs ys zs : List α}
-
-theorem sum_eq_sum_toFinset [ha₁ : DecidableEq α] [ha₂ : Ring α]
-(h : xs.Nodup) : xs.sum = ∑ x ∈ xs.toFinset, x := by
-  rw [List.sum_toFinset _ h]; simp
-
-theorem sum_map_eq_sum_toFinset [ha : DecidableEq α] [hb : Ring β] {f : α → β}
-(h : xs.Nodup) : (xs.map f).sum = ∑ x ∈ xs.toFinset, f x := by
-  rw [List.sum_toFinset _ h]
-
-theorem sum_map_eq_sum_getElem_finset_range [hb : Ring β] {f : α → β} :
-(xs.map f).sum = ∑ i ∈ Finset.range xs.length, if h : i < xs.length then f xs[i] else 0 := by
-  induction xs using List.reverseRecOn <;> simp
-  clear! xs; nm xs x ih
-  rw [ih]; clear ih
-  simp [Finset.range_add_one]
-  rw [add_comm (a := f x)]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro i h₁
-  simp at h₁
-  simp [h₁]
-  omega
-
--- #check 0 #exit
-
-end List
-
 namespace RealAnalysis
 
 def Rment (σ : ℕ → ℕ) : Prop :=

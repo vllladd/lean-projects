@@ -1300,3 +1300,25 @@ theorem forall_of_find?_eq_some_imp {p₁ : α → Bool} {p₂ : α → Prop}
 theorem eq_of_getElem_and_nodup {i j : ℕ} {hi hj}
 (h₁ : xs[i]'hi = xs[j]'hj) (h₂ : xs.Nodup) : i = j := by
   rwa [←h₂.getElem_inj_iff]
+
+theorem sum_eq_sum_toFinset [ha₁ : DecidableEq α] [ha₂ : Ring α]
+(h : xs.Nodup) : xs.sum = ∑ x ∈ xs.toFinset, x := by
+  rw [List.sum_toFinset _ h]; simp
+
+theorem sum_map_eq_sum_toFinset [ha : DecidableEq α] [hb : Ring β] {f : α → β}
+(h : xs.Nodup) : (xs.map f).sum = ∑ x ∈ xs.toFinset, f x := by
+  rw [List.sum_toFinset _ h]
+
+theorem sum_map_eq_sum_getElem_finset_range [hb : Ring β] {f : α → β} :
+(xs.map f).sum = ∑ i ∈ Finset.range xs.length, if h : i < xs.length then f xs[i] else 0 := by
+  induction xs using List.reverseRecOn <;> simp
+  clear! xs; nm xs x ih
+  rw [ih]; clear ih
+  simp [Finset.range_add_one]
+  rw [add_comm (a := f x)]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro i h₁
+  simp at h₁
+  simp [h₁]
+  omega
