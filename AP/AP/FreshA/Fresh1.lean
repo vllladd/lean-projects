@@ -7,9 +7,11 @@ def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
   ∀ s₁ p, (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → p ∉ s.aVisited s₁
 
-def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
-  a.WF ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) s n = (s₁, 0) ∧
-  s₁.aForallWinsDisj (fsp.offset n |>.insertSet 0 # s.aVisited s₁ |>.toSet.erase s₁.aPos) a
+-- def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
+--   a.WF ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁,
+--   sys.simulate (Strat.f ⟨a, d⟩) s n = (s₁, 0) ∧
+--   s₁.aForallWinsDisj (fsp.offset n |>.insertSet 0
+--   (s.aVisited s₁ |>.toSet.erase s₁.aPos)) a
 
 def aFreshCnd (s : State) (fsp : FSP) (s₁ : State) : Prop :=
   s₁.aHwsDisj # fsp.offset (s₁.diff s) |>.insertSet 0 # s.aVisited s₁ |>.toSet
@@ -95,21 +97,30 @@ instance {s fsp} : aFresh s fsp |>.WF := by
 --   · intro d hd n
 --     specialize h d hd n
 --     choose s₁ h₁ h₂ using h
---     use s₁, h₁
---     have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
---     replace h₂ := aPos_notMem_of_aForallWinsDisj h₂
---     simp at h₂
---     simp [FSP.hasLe]
---     exact h₂
---   intro d hd s₁ p h₁
---   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
---   choose hs₁ n h₁ s₂ h₂ h₃ using h₁
---   specialize h d hd n
---   simp at h₂ h₃
---   subst h₃
---   rw [←AState.aPos_eq_of_tr h₂]
---   simp [h₁] at h
---   specialize h d hd
+--     -- use s₁, h₁
+--     -- have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
+--     -- replace h₂ := aPos_notMem_of_aForallWinsDisj h₂
+--     -- simp at h₂
+--     -- simp [FSP.hasLe]
+--     -- exact h₂
+--     sorry
+--   ·
+--     intro d hd s₁ p h₁
+--     rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+--     choose hs₂ n h₁ s₂ h₂ h₃ using h₁
+--     simp at h₂ h₃
+--     subst h₃
+--     
+--     specialize h d hd
+--     
+--     induction n using Nat.mod_2_ind <;> nm n
+--     ·
+--       specialize h n
+--       simp [h₁] at h
+--       specialize h d hd 1
+--       simp [h₂, FSP.hasLe, FSP.insert, FSP.insertSet] at h
+--       specialize h 1
+--       simp at h
 
 -- #check 0 #exit
 
