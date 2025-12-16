@@ -9,7 +9,7 @@ def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
 
 def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) s n = (s₁, 0) ∧
-  s₁.aHwsDisj (fsp.offset n |>.insertSet 0 # s.aVisited s₁ |>.toSet.erase s₁.aPos)
+  s₁.aForallWinsDisj (fsp.offset n |>.insertSet 0 # s.aVisited s₁ |>.toSet.erase s₁.aPos) a
 
 def aFreshCnd (s : State) (fsp : FSP) (s₁ : State) : Prop :=
   s₁.aHwsDisj # fsp.offset (s₁.diff s) |>.insertSet 0 # s.aVisited s₁ |>.toSet
@@ -87,52 +87,29 @@ instance {s fsp} : aFresh s fsp |>.WF := by
 
 -- #check 0 #exit
 
-theorem State.fresh1_of_alt {s fsp} {a : AStrat} [hs : sys.WF s]
-(h : a.Fresh1Alt s fsp) : a.Fresh1 s fsp := by
-  rcases h with ⟨ha, h⟩
-  use ha
-  split_ands
-  · intro d hd n
-    specialize h d hd n
-    choose s₁ h₁ h₂ using h
-    use s₁, h₁
-    have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
-    replace h₂ := aPos_notMem_of_aHwsDisj h₂
-    simp at h₂
-    simp [FSP.hasLe]
-    exact h₂
-  intro d hd s₁ p h₁
-  specialize h d hd
-  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
-  choose hs₁ n h₁ s₂ h₂ h₃ using h₁
-  simp at h₂ h₃
-  subst h₃
-  rw [←AState.aPos_eq_of_tr h₂]
-  
-  -- cases n
-  -- ·
-  --   simp at h₁
-  --   simp [h₁]
-  --   exact AState.aPos_ne_of_tr h₂
-  -- nm n
-  -- 
-  -- simp at h₁
-  -- choose s₀ h₁ h₃ using h₁
-  -- 
-  -- have hs₀ : sys.WF s₀ := sys.wf_of_simulate_eq h₁
-  -- replace hs₀ := DState.of_tr' h₃
-  -- simp at h₃
-  -- 
-  -- specialize h n
-  -- simp [h₁] at h
-  -- replace h := DState.aHwsDisj_insert_two_aPos h
-  
-  -- specialize h (n + 1)
-  -- simp [h₁, h₂] at h
-  -- 
-  -- replace h := AState.aHwsDisj_insert_one_aPos h
-  
-  sorry
+-- theorem State.fresh1_of_alt {s fsp} {a : AStrat} [hs : sys.WF s]
+-- (h : a.Fresh1Alt s fsp) : a.Fresh1 s fsp := by
+--   rcases h with ⟨ha, h⟩
+--   use ha
+--   split_ands
+--   · intro d hd n
+--     specialize h d hd n
+--     choose s₁ h₁ h₂ using h
+--     use s₁, h₁
+--     have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
+--     replace h₂ := aPos_notMem_of_aForallWinsDisj h₂
+--     simp at h₂
+--     simp [FSP.hasLe]
+--     exact h₂
+--   intro d hd s₁ p h₁
+--   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+--   choose hs₁ n h₁ s₂ h₂ h₃ using h₁
+--   specialize h d hd n
+--   simp at h₂ h₃
+--   subst h₃
+--   rw [←AState.aPos_eq_of_tr h₂]
+--   simp [h₁] at h
+--   specialize h d hd
 
 -- #check 0 #exit
 
