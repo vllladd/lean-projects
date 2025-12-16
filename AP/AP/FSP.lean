@@ -206,3 +206,13 @@ theorem insertSet_idem {n set} :
 @[simp]
 theorem insert_idem {n p} : (fsp.insert n p).insert n p = fsp.insert n p :=
   insertSet_idem
+
+@[simp]
+theorem mem_get_succ_offset_iff {n k p} :
+p ∈ (fsp.offset n).get (k + 1) ↔ p ∈ fsp.get (n + k + 1) := by
+  induction n generalizing k
+  · simp
+  nm n ih
+  rw [offset_succ']
+  simp [next, ih]
+  ring_nf

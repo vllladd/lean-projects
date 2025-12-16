@@ -7,11 +7,10 @@ def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
   ∀ s₁ p, (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → p ∉ s.aVisited s₁
 
--- def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
---   a.WF ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁,
---   sys.simulate (Strat.f ⟨a, d⟩) s n = (s₁, 0) ∧
---   s₁.aForallWinsDisj (fsp.offset n |>.insertSet 0
---   (s.aVisited s₁ |>.toSet.erase s₁.aPos)) a
+def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
+  a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
+  sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
+  s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisited s₁).toSet)
 
 def aFreshCnd (s : State) (fsp : FSP) (s₁ : State) : Prop :=
   s₁.aHwsDisj # fsp.offset (s₁.diff s) |>.insertSet 0 # s.aVisited s₁ |>.toSet
@@ -87,50 +86,62 @@ theorem State.hasTr_of_aHwsDisj {s fsp} [hs : sys.WF s]
 instance {s fsp} : aFresh s fsp |>.WF := by
   unfold aFresh; infer_instance
 
+theorem AState.aForallWinsDisj_of_fresh1Alt {s fsp} {a : AStrat} [hs : AState s]
+(h : a.Fresh1Alt s fsp) : s.aForallWinsDisj fsp a := by
+  choose ha h₀ h using h
+  intro d hd n
+  specialize h d hd
+  induction n using Nat.mod_2_ind <;> nm n
+  · cases n; simpa; nm n
+    specialize h n
+    simp at h
+    choose s₁ h₁ s₂ h₂ h₃ using h
+    have hs₁ := AState.of_simulate_mul_two_eq_full h₁
+    have hs₂ := DState.of_tr h₂
+    simp [Nat.add_mul, h₁, h₂]
+    choose a₁ ha₁ h₃ using h₃
+    specialize h₃ d hd 1
+    simp at h₃
+    choose s₃ h₃ h₄ using h₃
+    use s₃, h₃
+    simp [FSP.hasLe, FSP.insertSet] at h₄ ⊢
+    intro k hk
+    have h₅ := h₄ 0
+    specialize h₄ 1
+    simp at h₄ h₅
+    choose h₅ h₆ using h₅
+    rw [Nat.le_add_one_iff] at hk
+    rcases hk with hk | rfl
+    · exact h₆ k hk
+    · exact h₄
+  · specialize h n
+    choose s₁ s₂ h₁ h₂ h₃ using h
+    have hs₁ := AState.of_simulate_mul_two_eq_full h₁
+    simp [h₁, h₂]
+    replace h₃ := State.aPos_notMem_of_aHwsDisj h₃
+    simp at h₃
+    simp [FSP.hasLe]
+    exact h₃.2
+
+theorem AState.fresh1_of_alt {s fsp} {a : AStrat} [hs : AState s]
+(h : a.Fresh1Alt s fsp) : a.Fresh1 s fsp := by
+  have H₀ := h
+  choose ha h₀ h using h
+  use ha, aForallWinsDisj_of_fresh1Alt H₀
+  intro d hd s₁ p h₁
+  rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
+  choose hs₁ n h₁ s₂ h₂ h₃ using h₁
+  simp at h₂ h₃; subst h₃
+  obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # even_of_simulate h₁
+  specialize h d hd n
+  simp [h₁, h₂] at h
+  rw [←AState.aPos_eq_of_tr h₂]
+  choose a₁ ha₁ h using h
+  specialize h d hd 0
+  simp at h
+  exact h.1
+
 -- #check 0 #exit
-
--- theorem State.fresh1_of_alt {s fsp} {a : AStrat} [hs : sys.WF s]
--- (h : a.Fresh1Alt s fsp) : a.Fresh1 s fsp := by
---   rcases h with ⟨ha, h⟩
---   use ha
---   split_ands
---   · intro d hd n
---     specialize h d hd n
---     choose s₁ h₁ h₂ using h
---     -- use s₁, h₁
---     -- have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
---     -- replace h₂ := aPos_notMem_of_aForallWinsDisj h₂
---     -- simp at h₂
---     -- simp [FSP.hasLe]
---     -- exact h₂
---     sorry
---   ·
---     intro d hd s₁ p h₁
---     rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
---     choose hs₂ n h₁ s₂ h₂ h₃ using h₁
---     simp at h₂ h₃
---     subst h₃
---     
---     specialize h d hd
---     
---     induction n using Nat.mod_2_ind <;> nm n
---     ·
---       specialize h n
---       simp [h₁] at h
---       specialize h d hd 1
---       simp [h₂, FSP.hasLe, FSP.insert, FSP.insertSet] at h
---       specialize h 1
---       simp at h
-
--- #check 0 #exit
-
--- theorem State.alt_of_fresh1 {s fsp} {a : AStrat} [hs : sys.WF s]
--- (h : a.Fresh1 s fsp) : a.Fresh1Alt s fsp := by
---   unfold AStrat.Fresh1 at h
---   choose ha h₁ h₂ using h
---   use ha
---   intro d hd n
---   sorry
 
 theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
 (h : s.aHwsDisj fsp) : ∃ (a : AStrat), a.Fresh1 s fsp := by
