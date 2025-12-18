@@ -12,4 +12,5 @@ import AP.RealAnalysis.Coherence
 import AP.RealAnalysis.Subsequence
 import AP.RealAnalysis.Bounds
 import AP.RealAnalysis.ConditionalConvergence
+import AP.RealAnalysis.AlternatingInverse
 import AP.RealAnalysis.Rearrangement

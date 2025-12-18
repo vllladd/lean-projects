@@ -5,6 +5,11 @@ namespace RealAnalysis
 def series (a : ℕ → ℝ) (n : ℕ) : ℝ :=
   ∑ i ∈ Finset.range n, a i
 
+def AbsConv (a : ℕ → ℝ) : Prop :=
+  converges # series (|a ·|)
+
+-----
+
 theorem series_eq {a} : series a = λ n => ∑ i ∈ Finset.range n, a i := rfl
 
 @[simp]
@@ -246,9 +251,6 @@ tendsTo (series (x ^ ·)) # 1 / (1 - x) := by
     apply tendsTo_sub # by simp
     exact pow_tendsTo_zero_of_pos_and_lt_one h₁ h₂
   · simp
-
-def AbsConv (a : ℕ → ℝ) : Prop :=
-  converges # series (|a ·|)
 
 theorem limit_le_limit_of_forall_le {a b L M} (h₁ : tendsTo a L) (h₂ : tendsTo b M)
 (h₃ : ∀ n, a n ≤ b n) : L ≤ M := by

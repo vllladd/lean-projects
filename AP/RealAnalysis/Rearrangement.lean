@@ -1,4 +1,4 @@
-import AP.RealAnalysis.ConditionalConvergence
+import AP.RealAnalysis.AlternatingInverse
 
 namespace RealAnalysis
 
