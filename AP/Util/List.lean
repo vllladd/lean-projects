@@ -1322,3 +1322,11 @@ theorem sum_map_eq_sum_getElem_finset_range [hb : Ring β] {f : α → β} :
   simp at h₁
   simp [h₁]
   omega
+
+@[simp]
+theorem take_length_sub_one : xs.take (xs.length - 1) = xs.init := by
+  induction xs using List.reverseRecOn <;> simp
+
+@[simp]
+theorem length_init : xs.init.length = xs.length - 1 := by
+  induction xs using List.reverseRecOn <;> simp

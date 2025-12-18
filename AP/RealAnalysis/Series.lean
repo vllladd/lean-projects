@@ -274,7 +274,7 @@ example : ¬∀ {a L}, tendsTo (|a ·|) L ↔ 0 ≤ L ∧ tendsTo a L := by
   apply not_converges_alternating
   norm_num
 
-theorem tendsTo_zero_of_abs_tendsTo_zero {a} (h : tendsTo (|a ·|) 0) : tendsTo a 0 := by
+theorem tendsTo_zero_of_abs_tendsTo {a} (h : tendsTo (|a ·|) 0) : tendsTo a 0 := by
   intro e he
   specialize h e he
   choose N h using h
@@ -284,7 +284,7 @@ theorem tendsTo_zero_of_abs_tendsTo_zero {a} (h : tendsTo (|a ·|) 0) : tendsTo 
   simp at h ⊢; exact h
 
 theorem abs_tendsTo_zero_iff {a} : tendsTo (|a ·|) 0 ↔ tendsTo a 0 := by
-  use tendsTo_zero_of_abs_tendsTo_zero; convert tendsTo_abs; simp
+  use tendsTo_zero_of_abs_tendsTo; convert tendsTo_abs; simp
 
 theorem le_limit_of_monoLe' {a L n} (h₁ : monoLe a) (h₂ : tendsTo a L) : a n ≤ L := by
   by_contra! h₃
@@ -593,3 +593,9 @@ theorem converges_series_alternating_of_monoLt_drop {a N}
 theorem converges_series_alternating_of_monoGt_drop {a N}
 (h₁ : monoGt (a # N + ·)) (h₂ : tendsTo a 0) : converges # series # λ n => (-1) ^ n * a n :=
   converges_series_alternating_of_monoGe_drop (monoGe_of_monoGt h₁) h₂
+
+theorem tendsTo_even_of {a L} (h : tendsTo a L) : tendsTo (a # · * 2) L := by
+  apply tendsTo_subseq h; simp
+
+theorem tendsTo_odd_of {a L} (h : tendsTo a L) : tendsTo (a # · * 2 + 1) L := by
+  apply tendsTo_subseq h; intro; simp

@@ -1,22 +1,5 @@
 import AP.AP.WF
 
-namespace List
-
-variable {α β γ : Type*}
-variable {xs ys zs : List α}
-
-@[simp]
-theorem take_length_sub_one : xs.take (xs.length - 1) = xs.init := by
-  induction xs using List.reverseRecOn <;> simp
-
-@[simp]
-theorem length_init : xs.init.length = xs.length - 1 := by
-  induction xs using List.reverseRecOn <;> simp
-
--- #check 0 #exit
-
-end List
-
 namespace AP
 
 def State.diff (s₁ s : State) : ℕ :=
