@@ -1,4 +1,4 @@
-import AP.RealAnalysis.Subsequence
+import AP.RealAnalysis.Bounds
 
 namespace RealAnalysis
 
@@ -400,3 +400,6 @@ theorem exi_an_map_range_drop_lt L k :
 
 theorem tendsTo_zero : tendsTo a 0 :=
   tendsTo_zero_of_converges_series H.converges_series
+
+theorem bounds_tendsTo_zero : tendsTo (bounds a) 0 := by
+  rw [←abs_zero]; exact tendsTo_bounds_of_tendsTo H.tendsTo_zero

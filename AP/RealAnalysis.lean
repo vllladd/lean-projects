@@ -10,5 +10,6 @@ import AP.RealAnalysis.Completeness
 import AP.RealAnalysis.Series
 import AP.RealAnalysis.Coherence
 import AP.RealAnalysis.Subsequence
+import AP.RealAnalysis.Bounds
 import AP.RealAnalysis.ConditionalConvergence
 import AP.RealAnalysis.Rearrangement

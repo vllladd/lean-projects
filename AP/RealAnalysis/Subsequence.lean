@@ -13,6 +13,8 @@ def mkSubseq (a : ℕ → ℝ) (p : ℝ → Prop) (n : ℕ) : ℕ :=
     let k := mkSubseq a p n
     k + 1 + Nat.findRaw (p # a # k + 1 + ·)
 
+-- #check 0 #exit
+
 -----
 
 theorem absConv_drop_of {a N} (h : AbsConv a) : AbsConv (a # N + ·) := by
