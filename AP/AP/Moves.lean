@@ -1,5 +1,22 @@
 import AP.AP.WF
 
+namespace List
+
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
+
+@[simp]
+theorem take_length_sub_one : xs.take (xs.length - 1) = xs.init := by
+  induction xs using List.reverseRecOn <;> simp
+
+@[simp]
+theorem length_init : xs.init.length = xs.length - 1 := by
+  induction xs using List.reverseRecOn <;> simp
+
+-- #check 0 #exit
+
+end List
+
 namespace AP
 
 def State.diff (s₁ s : State) : ℕ :=
@@ -40,6 +57,18 @@ def State.aPtsSimAt (s : State) (st : Strat) : Set (State × PointZ) :=
 
 def State.aPtsSim (s : State) (st : Strat) : Set PointZ :=
   Prod.snd '' s.aPtsSimAt st
+
+def State.init (s : State) : State :=
+  initState s.pw s.aPos₀
+
+def State.prev (s : State) : State :=
+  sys.trs s.init (s.diffTrs s.init |>.init) |>.1
+
+def State.lastMove (s : State) : PointZ :=
+  s.diffTrs s.prev |>.getLast!
+
+def State.IsInit (s : State) : Prop :=
+  sys.Initial s
 
 -- #check 0 #exit
 
@@ -329,3 +358,130 @@ theorem State.aVisited_subset_of_simulate_le  (st : Strat) k n {s s₁ s₂} [hs
 (hn : k ≤ n) (h₁ : sys.simulate st.f s k = (s₁, 0)) (h₂ : sys.simulate st.f s n = (s₂, 0)) :
 s.aVisited s₁ ⊆ s.aVisited s₂ := by
   intro p; rw [mem_aVisited_iff h₁, mem_aVisited_iff h₂]; grind
+
+@[simp]
+instance {s : State} : sys.Initial s.init := by
+  unfold State.init; infer_instance
+
+@[simp]
+theorem State.one_le_hist_length {s} [hs : sys.WF s] : 1 ≤ s.hist.length := by
+  simp [Nat.one_le_iff_ne_zero]
+
+theorem State.diff_init_succ {s} [hs : sys.WF s] : s.diff s.init + 1 = s.hist.length := by
+  simp [init, diff]
+
+@[simp]
+theorem State.diff_init {s} [hs : sys.WF s] : s.diff s.init = s.hist.length - 1 := by
+  have := s.diff_init_succ; omega
+
+@[simp]
+theorem State.isInit_initial {s} [hs : sys.Initial s] : s.IsInit := hs
+
+theorem State.isInit_of_length_hist_eq_one {s}
+[hs : sys.WF s] (h : s.hist.length = 1) : s.IsInit := by
+  rw [IsInit, initial_iff]; ext <;> simp_all
+
+theorem State.length_hist_eq_one_of_isInit {s : State}
+(h : s.IsInit) : s.hist.length = 1 := by
+  rw [IsInit, initial_iff] at h; rw [←h]; rfl
+
+theorem State.isInit_iff_length_hist_eq_one {s}
+[hs : sys.WF s] : s.IsInit ↔ s.hist.length = 1 :=
+  ⟨length_hist_eq_one_of_isInit, isInit_of_length_hist_eq_one⟩
+
+@[simp]
+theorem State.length_hist_init {s : State} : s.init.hist.length = 1 := by
+  simp [init]
+
+@[simp]
+theorem State.diffTrs_init {s} [hs : sys.WF s] : s.diffTrs s.init = s.hist.init.reverse := by
+  simp [diffTrs]
+
+@[simp]
+theorem AState.initState_ne {s pw p₀} [ha : AState s] : initState pw p₀ ≠ s := by
+  rintro rfl; simp at ha
+
+@[simp]
+theorem AState.not_isInit {s} [ha : AState s] : ¬s.IsInit := by
+  simp [State.IsInit]
+
+theorem State.wf_prev_and_tr {s} [hs : sys.WF s]
+(h : ¬s.IsInit) : sys.WF s.prev ∧ sys.tr s.prev s.lastMove = some s := by
+  choose ps h₁ using wf_iff.mp hs
+  induction ps using List.reverseRecOn
+  · simp at h₁
+    rw [←h₁] at h
+    simp at h
+  nm ps p ih; clear ih
+  simp at h₁
+  choose s' h₁ h₂ using h₁
+  rw [lastMove, prev]
+  simp [hist_eq_of_tr h₂, hist_eq_of_trs h₁]
+  simp [init, h₁, diffTrs_eq_of_tr h₂, h₂]
+  exact sys.wf_of_trs h₁
+
+theorem State.wf_prev {s} [hs : sys.WF s] (h : ¬s.IsInit) : sys.WF s.prev :=
+  wf_prev_and_tr h |>.1
+
+theorem State.prev_tr_lastMove {s} [hs : sys.WF s]
+(h : ¬s.IsInit) : sys.tr s.prev s.lastMove = some s :=
+  wf_prev_and_tr h |>.2
+
+theorem State.length_hist_prev {s} [hs : sys.WF s]
+(h : ¬s.IsInit) : s.prev.hist.length = s.hist.length - 1 := by
+  simp [length_hist_eq_of_tr # prev_tr_lastMove h]
+
+theorem State.not_isInit_of_tr {s s' p} [hs : sys.WF s]
+(h : sys.tr s p = some s') : ¬s'.IsInit := by
+  have hs' := sys.wf_of_tr h; simp [isInit_iff_length_hist_eq_one, length_hist_eq_of_tr h]
+
+theorem State.eq_iff_pw_and_hist {s₁ s₂} [hs₁ : sys.WF s₁] [hs₂ : sys.WF s₂] :
+s₁ = s₂ ↔ s₁.pw = s₂.pw ∧ s₁.hist = s₂.hist := by
+  use by rintro rfl; simp;
+  rintro ⟨h₁, h₂⟩
+  choose ps₁ h₃ using wf_iff.mp hs₁
+  choose ps₂ h₄ using wf_iff.mp hs₂
+  rw [←h₁, aPos₀, ←h₂, ←aPos₀] at h₄
+  simp [hist_eq_of_trs h₃, hist_eq_of_trs h₄] at h₂
+  grind
+
+theorem State.tr_inj {s₁ s₂ s₃ p₁ p₂} [hs₁ : sys.WF s₁] [hs₂ : sys.WF s₂]
+(h₁ : sys.tr s₁ p₁ = some s₃) (h₂ : sys.tr s₂ p₂ = some s₃) : s₁ = s₂ ∧ p₁ = p₂ := by
+  replace hs₁ := s₁.aState_or_dState
+  rcases hs₁ with hs₁ | hs₁
+  · have hs₃ := DState.of_tr h₁
+    replace hs₂ := AState.of_tr' h₂
+    rw [AState.tr_eq_some_iff] at h₁ h₂
+    rcases h₂ with ⟨⟨h₄, h₅, h₆⟩, rfl⟩
+    rcases h₁ with ⟨⟨h₁, h₂, h₃⟩, h₇⟩
+    rw [eq_iff_pw_and_hist]; grind
+  · have hs₃ := AState.of_tr h₁
+    replace hs₂ := DState.of_tr' h₂
+    rw [DState.tr_eq_some_iff] at h₁ h₂
+    rcases h₂ with ⟨⟨h₄, h₅⟩, rfl⟩
+    rcases h₁ with ⟨⟨h₁, h₂⟩, h₇⟩
+    rw [eq_iff_pw_and_hist]; grind
+
+theorem State.lastMove_eq_of_tr {s s' p} [hs : sys.WF s]
+(h : sys.tr s p = some s') : s'.lastMove = p := by
+  have hs' := sys.wf_of_tr h
+  have h₁ := not_isInit_of_tr h
+  have h₂ := prev_tr_lastMove h₁
+  have H := wf_prev h₁
+  obtain ⟨rfl, rfl⟩ := tr_inj h h₂; rfl
+
+theorem State.diffTrs_prev {s} [hs : sys.WF s]
+(h : ¬s.IsInit) : s.diffTrs s.prev = [s.lastMove] := by
+  simp [diffTrs_eq_of_tr # prev_tr_lastMove h]
+
+theorem State.diff_prev {s} [hs : sys.WF s]
+(h : ¬s.IsInit) : s.diff s.prev = 1 := by
+  simp [diff_eq_of_tr # prev_tr_lastMove h]
+
+theorem State.prev_eq_of_tr {s s' p} [hs : sys.WF s]
+(h : sys.tr s p = some s') : s'.prev = s := by
+  have hs' := sys.wf_of_tr h
+  have H₁ := not_isInit_of_tr h
+  have h₁ := s'.prev_tr_lastMove H₁
+  have H₂ := wf_prev H₁
+  obtain ⟨rfl, rfl⟩ := tr_inj h h₁; rfl

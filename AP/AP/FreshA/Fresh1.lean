@@ -12,12 +12,12 @@ def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
   s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisited s₁).toSet)
 
-def aFreshCnd (s : State) (fsp : FSP) (s₁ : State) : Prop :=
-  s₁.aHwsDisj # fsp.offset (s₁.diff s) |>.insertSet 0 # s.aVisited s₁ |>.toSet
+def aFresh1Cnd (s : State) (fsp : FSP) (s₂ : State) : Prop :=
+  s₂.aHwsDisj (fsp.offset (s₂.diff s) |>.insertSet 0 (s.aVisited s₂.prev).toSet)
 
 noncomputable
-def aFresh (s : State) (fsp : FSP) : AStrat :=
-  aSeek # aFreshCnd s fsp
+def aFresh1 (s : State) (fsp : FSP) : AStrat :=
+  aSeek # aFresh1Cnd s fsp
 
 -- #check 0 #exit
 
@@ -36,7 +36,7 @@ theorem AState.even_of_simulate {s s₁ f n} [hs : AState s] [hs₁ : AState s�
   have h₁ := DState.of_simulate_mul_two_add_one_eq_full h
   exact s₁.false_of_aState_and_dState
 
-theorem AState.exi_aSeek_tr {s P} [hs : AState s]
+theorem AState.aSeek_exi_tr_of {s P} [hs : AState s]
 (h : ∃ p s₁, sys.tr s p = some s₁ ∧ P s₁) :
 ∃ s₁, sys.tr s (aSeek P |>.f s) = some s₁ ∧ P s₁ := by
   simp [aSeek]
@@ -48,8 +48,12 @@ theorem AState.exi_aSeek_tr {s P} [hs : AState s]
   choose s₁ h₁ h₂ using h₁
   simpa [sys.validTr_of_eq_some h₁, h₁]
 
-theorem AState.aPos_ne_of_tr {s s₁ p} [hs : AState s]
+theorem AState.ne_of_tr {s s₁ p} [hs : AState s]
 (h : sys.tr s p = some s₁) : p ≠ s.aPos := by
+  rw [tr_eq_some_iff] at h; grind
+
+theorem AState.aPos_ne_of_tr {s s₁ p} [hs : AState s]
+(h : sys.tr s p = some s₁) : s₁.aPos ≠ s.aPos := by
   rw [tr_eq_some_iff] at h; grind
 
 theorem State.aPos_notMem_of_aWinsDisj {s : State} {fsp a d}
@@ -83,8 +87,8 @@ theorem State.hasTr_of_aHwsDisj {s fsp} [hs : sys.WF s]
   choose a ha h using h; exact hasTr_of_aForallWinsDisj h
 
 @[simp]
-instance {s fsp} : aFresh s fsp |>.WF := by
-  unfold aFresh; infer_instance
+instance {s fsp} : aFresh1 s fsp |>.WF := by
+  unfold aFresh1; infer_instance
 
 theorem AState.aForallWinsDisj_of_fresh1Alt {s fsp} {a : AStrat} [hs : AState s]
 (h : a.Fresh1Alt s fsp) : s.aForallWinsDisj fsp a := by
@@ -141,132 +145,114 @@ theorem AState.fresh1_of_alt {s fsp} {a : AStrat} [hs : AState s]
   simp at h
   exact h.1
 
--- #check 0 #exit
-
 theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
 (h : s.aHwsDisj fsp) : ∃ (a : AStrat), a.Fresh1 s fsp := by
-  use aFresh s fsp
-  
-  -- apply State.fresh1_of_alt
-  -- use inferInstance
-  -- intro d hd n
-  -- 
-  -- replace h := AState.aHwsDisj_insert_one_aPos h
-  -- 
-  -- induction n
-  -- ·
-  --   simp
-  -- nm n ih
-  -- 
-  -- choose s₁ h₁ h₂ using ih
-  -- simp [Nat.add_one_mul, h₁]
-  -- 
-  -- have hs₁ := AState.of_simulate_mul_two_eq' h₁
-  -- 
-  -- generalize h₃ : (fsp.insert 1 s.aPos |>.offset (n * 2) |>.insertSet 0 #
-  --   s.aVisited s₁ |>.toSet.erase s.aPos) = fsp₁ at h₂
-  -- 
-  -- replace h₂ := AState.aHwsDisj_insert_one_aPos h₂
-  -- choose a ha h₂ using h₂
-  -- 
-  -- obtain ⟨s₂, h₄, h₅⟩ : ∃ s₂, sys.tr s₁ (aFresh s fsp |>.f s₁) = some s₂ ∧ aFreshCnd s fsp s₂
-  -- ·
-  --   unfold aFresh
-  --   apply exi_aSeek_tr
-  --   
-  --   -- choose s₂ h₄ h₅ using h₂ default inferInstance 1
-  --   -- 
-  --   -- simp at h₄
-  --   -- use a.f s₁, s₂, h₄
-  --   -- 
-  --   -- -- specialize h₂ d₁ hd₁ (k + 1)
-  --   -- -- simp_rw [sys.simulate_succ_full'] at h₂
-  --   -- -- simp [h₄] at h₂
-  --   -- -- choose s₃ h₂ h₆ using h₂
-  --   -- -- use s₃, h₂
-  --   -- -- 
-  --   -- -- -- cases k
-  --   -- -- -- ·
-  --   -- -- --   simp at h₆
-  --   -- -- --   simp [FSP.hasLe, FSP.insertSet]
-  --   -- -- --   split
-  --   -- -- 
-  --   -- -- -- simp [h₄] at h₂
-  --   -- -- -- simp [FSP.hasLe, FSP.insert, FSP.insertSet] at h₂ h₅
-  --   -- -- -- specialize h₂ 1
-  --   -- -- -- simp [←h₃, FSP.insert, FSP.insertSet] at h₂
-  --   -- -- 
-  --   -- -- simp [FSP.hasLe]
-  --   -- -- intro c hc
-  --   -- -- simp [FSP.insertSet]
-  --   -- -- 
-  --   -- -- have h₇ : s₃.aPos ∉ (fsp.offset # s₂.diff s).get c
-  --   -- 
-  --   -- unfold aFreshCnd
-  --   -- rw [State.diff, length_hist_eq_of_tr h₄, State.length_hist_eq_of_simulate_eq h₁]
-  --   -- dsimp
-  --   -- rw [show s.hist.length + n * 2 + 1 - s.hist.length = n * 2 + 1 by omega]
-  --   -- rw [AState.aVisited_eq_of_tr h₄ # sys.reachable_of_simulate_eq h₁]
-  --   -- 
-  --   -- use a, ha
-  --   -- intro d₁ hd₁ k
-  --   -- specialize h₂ d₁ hd₁ (k + 1)
-  --   -- simp only [sys.simulate_succ_full'] at h₂
-  --   -- obtain ⟨s₃, ⟨s₂', H₁, H₂⟩, H₃⟩ := h₂
-  --   -- simp at H₁
-  --   -- 
-  --   -- simp [h₄] at H₁; subst H₁
-  --   -- use s₃, H₂
-  --   -- 
-  --   -- rw [←AState.aPos_eq_of_tr h₄]
-  --   -- rw [FSP.offset_succ']
-  --   -- 
-  --   -- clear h₅
-  --   -- 
-  --   -- cases n
-  --   -- ·
-  --   --   simp at h₁
-  --   --   subst h₁
-  --   --   simp at h₃ H₃ ⊢
-  --   --   subst h₃
-  --   --   simp at H₃
-  --   -- 
-  --   -- #check 0 #exit
-  --   -- 
-  --   -- simp [FSP.hasLe] at H₃ ⊢
-  --   -- 
-  --   -- rw [FSP.offset_succ']
-  --   -- 
-  --   -- simp [FSP.hasLe, FSP.insert, FSP.insertSet] at H₃ h₅ ⊢
-  --   -- intro c hc
-  --   -- specialize H₃ (c + 1) (by omega)
-  --   -- simp at H₃
-  --   -- split_ifs at H₃ ⊢ with H₄
-  --   -- ·
-  --   --   subst H₄
-  --   --   simp at H₃ ⊢
-  --   --   rcases H₃ with ⟨H₃, H₄⟩
-  --   --   split_ands
-  --   --   ·
-  --   --     by_contra! H₅
-  --   --     sorry
-  --   --   ·
-  --   --     sorry
-  --   --   ·
-  --   --     sorry
-  --   -- ·
-  --   --   sorry
-  --   
-  --   sorry
-  -- 
-  -- simp [h₄]
-  -- unfold aFreshCnd at h₅
-  -- 
-  -- -- rw [State.diff, length_hist_eq_of_tr h₄, State.length_hist_eq_of_simulate_eq h₁] at h₅
-  -- -- dsimp at h₅
-  -- -- rw [show s.hist.length + n * 2 + 1 - s.hist.length = n * 2 + 1 by omega] at h₅
-  -- -- rw [AState.aVisited_eq_of_tr h₄ # sys.reachable_of_simulate_eq h₁] at h₅
-  -- 
-  -- sorry
-  
-  sorry
+  use aFresh1 s fsp
+  apply hs.fresh1_of_alt
+  use inferInstance
+  use State.aPos_notMem_of_aHwsDisj h
+  intro d hd n
+  induction n
+  · simp
+    have h₁ := @hs.aSeek_exi_tr_of (P := aFresh1Cnd s fsp)
+    specialize h₁ _
+    · clear h₁
+      unfold aFresh1Cnd
+      replace h := aHwsDisj_insert_one_aPos h
+      choose a₁ ha₁ h using h
+      have h₁ := h d hd 1
+      simp at h₁
+      choose s₁ h₁ h₂ using h₁
+      use a₁.f s, s₁, h₁, a₁, ha₁
+      simp [State.diff_eq_of_tr h₁, State.prev_eq_of_tr h₁]
+      intro d₁ hd₁ n
+      specialize h d₁ hd₁ (n + 1)
+      simp_rw [sys.simulate_succ_full'] at h
+      simp [h₁] at h
+      choose s₂ h h₃ using h
+      use s₂, h
+      simp [FSP.hasLe, FSP.insert, FSP.insertSet, FSP.next] at h₃ ⊢
+      grind
+    unfold aFresh1
+    choose s₂ h₁ h₂ using h₁
+    use s₂, h₁
+    unfold aFresh1Cnd at h₂
+    simp [State.diff_eq_of_tr h₁, State.prev_eq_of_tr h₁] at h₂
+    exact h₂
+  nm n ih
+  choose s₁ s₂ h₁ h₂ h₃ using ih
+  have hs₁ := AState.of_simulate_mul_two_eq' h₁
+  have hs₂ := DState.of_tr h₂
+  choose s₃ h₄ using hd.validTr s₂
+  have hs₃ := AState.of_tr h₄
+  simp [Nat.add_mul, h₁, h₂, h₄]
+  have G₁ := sys.reachable_of_simulate_eq h₁
+  have G₂ := sys.reachable_right G₁ h₂
+  have G₃ := sys.reachable_right G₂ h₄
+  have h₅ := @hs₃.aSeek_exi_tr_of (P := aFresh1Cnd s fsp)
+  specialize h₅ _
+  · clear h₅
+    unfold aFresh1Cnd
+    replace h₃ := DState.aHwsDisj_insert_two_aPos h₃
+    choose a₁ ha₁ h₃ using h₃
+    have H₁ := h₃ d hd 2
+    simp [h₄] at H₁
+    choose s₄ H₁ H₂ using H₁
+    use a₁.f s₃, s₄, H₁, a₁, ha₁
+    rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁]
+    rw [State.diff_eq_of_simulate_full h₁]
+    rw [State.prev_eq_of_tr H₁, DState.aVisited_eq_of_tr h₄ G₂, AState.aVisited_eq_of_tr h₂ G₁]
+    intro d₁ hd₁ n₁
+    specialize h₃ (d₁.set s₂ # d.f s₂) (DStrat.wf_set_of_tr h₄) (n₁ + 2)
+    simp_rw [sys.simulate_succ_full'] at h₃
+    simp [h₄, H₁] at h₃
+    choose s₅ H₃ H₄ using h₃
+    use s₅
+    have hs₄ := sys.wf_of_tr H₁
+    split_ands
+    · convert H₃ using 1
+      symm
+      apply State.simulate_set_d_eq_of_length_hist_lt ⟨_, h₄⟩
+      rw [length_hist_eq_of_tr H₁, length_hist_eq_of_tr h₄]
+      omega
+    simp
+    rw [←AState.aPos_eq_of_tr h₂]
+    simp [FSP.hasLe] at H₄ ⊢
+    simp [Nat.add_assoc]
+    intro k hk
+    cases k
+    rotate_left
+    · nm k
+      specialize H₄ (k + 3) (by omega)
+      simp at H₄ ⊢
+      ring_nf at H₄ ⊢
+      exact H₄
+    simp
+    split_ands
+    · specialize H₄ 2 (by omega)
+      simp at H₄
+      exact H₄.1
+    · specialize H₄ 0 (by omega)
+      simp at H₄
+      exact H₄.1
+    · intro k hk
+      iterate 2 rw [Nat.le_add_one_iff] at hk
+      rcases hk with ((hr | rfl) | rfl)
+      · specialize H₄ 0 (by omega)
+        simp at H₄
+        exact H₄.2 k hr
+      · specialize H₄ 1 (by omega)
+        simp at H₄
+        exact H₄
+      · specialize H₄ 2 (by omega)
+        simp at H₄
+        exact H₄.2
+  choose s₄ h₅ h₆ using h₅
+  use s₄, h₅
+  unfold aFresh1Cnd at h₆
+  rw [State.diff_eq_of_tr h₅ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁] at h₆
+  rw [State.diff_eq_of_simulate_full h₁] at h₆
+  simp [Nat.add_assoc] at h₆ ⊢
+  have hs₄ := DState.of_tr h₅
+  rw [State.prev_eq_of_tr h₅] at h₆
+  exact h₆
