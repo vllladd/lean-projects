@@ -256,3 +256,60 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   have hs₄ := DState.of_tr h₅
   rw [State.prev_eq_of_tr h₅] at h₆
   exact h₆
+
+theorem State.aPtsSimAt_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} {d : DStrat}
+{s₁ s₂ p fsp} [hs : sys.WF s] [hd : d.WF] (h : a.Fresh1 s fsp)
+(h₁ : (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩) (h₂ : (s₂, p) ∈ s.aPtsSimAt ⟨a, d⟩) : s₁ = s₂ := by
+  choose ha h₃ h₄ using h
+  specialize h₄ d hd
+  have H₁ := h₄ _ _ h₁
+  have H₂ := h₄ _ _ h₂
+  clear h₄
+  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁ h₂
+  choose hs₁ n₁ h₁ s₁' h₅ h₆ using h₁
+  choose hs₂ n₂ h₂ s₂' h₇ h₈ using h₂
+  simp at h₅ h₆ h₇ h₈
+  by_cases H₃ : n₁ = n₂
+  · subst H₃
+    simp [h₁] at h₂
+    exact h₂
+  exfalso
+  wlog H₄ : n₁ < n₂ with ih
+  · push_neg at H₄
+    specialize @ih s a d s₂ s₁ p fsp _ _ ha h₃
+    grind
+  clear H₃
+  apply H₂; clear H₂
+  rw [mem_aVisited_iff h₂]
+  right
+  use n₁, H₄, s₁, hs₁, h₁
+  simpa
+
+-- #check 0 #exit
+
+theorem State.aPtsSimNcard_spec_of_fresh1 {s fsp} {a : AStrat} [hs : sys.WF s]
+(h : a.Fresh1 s fsp) (set : Set' PointZ) : ∀ (d : DStrat) [d.WF],
+∃ n, s.aPtsSimNcard ⟨a, d⟩ set.toSet = some n ∧ n ≤ set.size := by
+  intro d hd; simp [aPtsSimNcard]
+  suffices h₁ : ∃ n, (s.aPtsSimAt ⟨a, d⟩ |>.filter (·.2 ∈ set)
+    |>.image (·.2) |>.ncard?) = some n ∧ n ≤ set.size
+  · choose n h₁ h₂ using h₁
+    refine ⟨n, ?_, h₂⟩; clear h₂
+    rwa [Set.ncard?_image_of_injOn] at h₁
+    intro ⟨s₁, p₁⟩ hx ⟨s₂, p₂⟩ hy h₂
+    simp at hx hy h₂
+    rcases hx with ⟨hx, h₃⟩
+    rcases hy with ⟨hy, h₄⟩
+    subst h₂
+    simp [aPtsSimAt_state_eq_of_point_eq_of_fresh1 h hx hy]
+  suffices h₁ : ∃ n, (s.aPtsSim ⟨a, d⟩ |>.filter (· ∈ set) |>.ncard?) = some n ∧ n ≤ set.size
+  · choose n h₁ h₂ using h₁
+    refine ⟨n, ?_, h₂⟩; clear h₂
+    simp [Set.filter, aPtsSim] at h₁ ⊢
+    convert h₁; ext; simp
+  simp_rw [←Set'.mem_toSet, Set.filter_fn_mem, Set.ncard?]
+  rw [if_pos]
+  rotate_left
+  · apply Set.Finite.inter_of_right; simp
+  simp; rw [←Set'.ncard_toSet]
+  apply Set.ncard_inter_le_ncard_right; simp

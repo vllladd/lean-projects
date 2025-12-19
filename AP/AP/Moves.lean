@@ -1,5 +1,28 @@
 import AP.AP.WF
 
+namespace List
+
+variable {α β : Type*}
+variable {xs ys zs : List α}
+
+theorem nodup_of_sorted_lt [ha : LinearOrder α] (h : xs.Sorted (· < ·)) : xs.Nodup := by
+  induction h
+  · simp
+  clear! xs; nm x xs h₁ h₂ ih
+  simp [ih]
+  intro hx
+  specialize h₁ x hx
+  simp at h₁
+
+theorem foldl_apply_comm {f : β → α → β} {z x}
+(h : ∀ ⦃x y z⦄, f (f x y) z = f (f x z) y) :
+xs.foldl f (f z x) = f (xs.foldl f z) x := by
+  induction xs generalizing z; simp; nm y xs ih; simp; rw [←ih, h]
+
+-- #check 0 #exit
+
+end List
+
 namespace Set
 
 variable {α β : Type*}
@@ -9,9 +32,270 @@ open Classical in noncomputable
 def ncard? (s : Set α) : Option ℕ :=
   if s.Finite then some s.ncard else none
 
+def filter (s : Set α) (p : α → Prop) : Set α :=
+  {x ∈ s | p x}
+
+@[simp]
+theorem mem_filter {p x} : x ∈ s.filter p ↔ x ∈ s ∧ p x := by
+  simp [filter]
+
+@[simp]
+theorem filter_const_true : s.filter (λ _ => True) = s := by
+  simp [filter]
+
+@[simp]
+theorem filter_const_false : s.filter (λ _ => False) = ∅ := by
+  simp [filter]
+
+@[simp]
+theorem ncard?_empty : (∅ : Set α).ncard? = some 0 := by
+  simp [ncard?]
+
+theorem ncard?_image_of_injOn {f : α → β} (h : s.InjOn f) : (f '' s).ncard? = s.ncard? := by
+  unfold ncard?; rw [finite_image_iff h]
+  split_ifs with h₁; on_goal 2 => rfl
+  simpa [ncard_image_eq_iff_injOn h₁]
+
+theorem filter_fn_mem : s.filter (· ∈ s₁) = s ∩ s₁ := by
+  simp [filter]
+
+theorem forall_not_mem_iff : (∀ x, x ∉ s) ↔ s = ∅ := by
+  grind
+
+@[simp]
+theorem not_finite_iff_infinite : ¬s.Finite ↔ s.Infinite := by
+  rfl
+
+theorem exi_mem_of_infinite (h : s.Infinite) : ∃ x, x ∈ s := by
+  contrapose! h; rw [forall_not_mem_iff] at h; simp [h]
+
+theorem exi_min [ha : LinearOrder α]
+(h₁ : s.Finite) (h₂ : s.Nonempty) : ∃ x ∈ s, ∀ y ∈ s, x ≤ y :=
+  exists_min_image _ id h₁ h₂
+
+theorem exi_max [ha : LinearOrder α]
+(h₁ : s.Finite) (h₂ : s.Nonempty) : ∃ x ∈ s, ∀ y ∈ s, y ≤ x :=
+  exists_max_image _ id h₁ h₂
+
 -- #check 0 #exit
 
 end Set
+
+section Order
+
+variable {α : Type*}
+variable [ha : LinearOrder α]
+
+@[simp]
+theorem le_trans_simp {a b c : α} : (a ≤ b → b ≤ c → a ≤ c) = True := by
+  simp; exact le_trans
+
+@[simp]
+theorem le_total_simp {a b : α} : (a ≤ b ∨ b ≤ a) = True := by
+  simp; apply le_total
+
+@[simp]
+theorem le_antisymm_simp {a b : α} : (a ≤ b → b ≤ a → a = b) = True := by
+  simp; apply le_antisymm
+
+-- #check 0 #exit
+
+end Order
+
+namespace Set'
+
+universe u v w
+variable {α : Type u} {β : Type v} {γ : Type w}
+variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
+variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
+variable {s s' s₁ s₂ s₃ : Set' α}
+
+def toFinset (s : Set' α) : Finset α :=
+  s.fold (λ s₁ x => insert x s₁) ∅ # by grind
+
+@[simp]
+theorem toFinset_empty : (∅ : Set' α).toFinset = ∅ := by
+  simp [toFinset]
+
+theorem mem_toFinset_of_mem {x} (hx : x ∈ s) : x ∈ s.toFinset := by
+  classical
+  unfold toFinset
+  rw [fold_eq_foldl_toList]
+  rw [←mem_toList] at hx
+  generalize s.toList = xs at hx ⊢; clear! s
+  induction xs using List.reverseRecOn <;> grind
+
+@[simp]
+theorem ofList_cons {xs : List α} {x} : ofList (x :: xs) = (ofList xs).insert x := by
+  ext; simp
+
+@[simp]
+theorem ofList_append {xs ys : List α} : ofList (xs ++ ys) = ofList xs ∪ ofList ys := by
+  ext; simp
+
+theorem ind_ofList' [ha : LinearOrder α] {p : Set' α → Prop}
+(h : ∀ (xs : List α), xs.Sorted (· < ·) → p (ofList xs)) (s : Set' α) : p s := by
+  induction s using ind_ofList; nm xs h₁ h₂; apply h _ # h₂.lt_of_le h₁
+
+@[simp]
+theorem sorted_toList' [ha : LinearOrder α] : s.toList.Sorted (· < ·) :=
+  sorted_toList.lt_of_le nodup_toList
+
+theorem toList_ofList_of_nodup [ha : LinearOrder α] {xs : List α}
+(h : xs.Nodup) : (ofList xs).toList = xs.mergeSort := by
+  induction xs; simp
+  nm x xs ih
+  simp at h ⊢
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  rw [List.eq_iff_of_nodup_and_sorted (r := (· < ·))] <;> try simp [h₁, h₂]
+  · intro y z h₃ h₄ h₅ h₆
+    replace h₅ := h₅.trans h₆
+    simp at h₅
+  · have H := @(x :: xs).sorted_mergeSort α (le := (· ≤ ·))
+    simp at H
+    apply List.Sorted.lt_of_le _ # by simp [h₁, h₂]
+    apply H
+
+theorem toList_ofList_of_sorted [ha : LinearOrder α] {xs : List α}
+(h : xs.Sorted (· < ·)) : (ofList xs).toList = xs := by
+  rw [toList_ofList_of_nodup h.nodup]
+  rw [List.mergeSort_of_sorted]
+  simp; exact h.le_of_lt
+
+omit hb₁ hb₂
+theorem fold_insert_of_notMem' {f : β → α → β} {z x hh} (hx : x ∉ s) :
+(s.insert x).fold f z hh = s.fold f (f z x) hh := by
+  classical
+  simp_rw [fold_eq_foldl_toList]  
+  have h₁ : x ∈ (s.insert x).toList; simp
+  have h₂ : s.insert x |>.toList.Nodup; simp
+  rw [List.mem_iff_append] at h₁
+  choose xs ys h₁ using h₁
+  rw [h₁] at h₂ ⊢
+  suffices h₃ : s.toList = xs ++ ys
+  · rw [h₃]
+    simp
+    congr
+    clear! ys x
+    rw [List.foldl_apply_comm]
+    apply hh
+  have h₅ := s.insert x |>.sorted_toList
+  rw [h₁] at h₅
+  replace h₅ := h₅.lt_of_le h₂
+  induction s using ind_ofList
+  nm zs H₁ H₂
+  replace H₂ := H₂.lt_of_le H₁
+  rw [toList_ofList_of_sorted H₂]
+  simp at hx
+  have H₃ := h₂.of_append_left
+  have H₄ : (xs ++ x :: ys).erase x = (xs ++ ys)
+  · grind
+  have H₅ : xs ++ ys |>.Nodup
+  · rw [←H₄]; exact List.nodup_erase h₂
+  have H₆ := List.nodup_append_comm.mp H₅
+  apply List.eq_of_perm_of_sorted_loc (r := (· ≤ ·)) <;> try simp
+  · symm
+    apply List.perm_of_nodup_and_subset_and_length_eq H₁
+    · intro y hy
+      simp
+      replace h₁ := congrArg (y ∈ ·) h₁
+      simp at h₁
+      grind
+    · rw [←H₄, ←h₁]
+      simp
+      rw [size_insert # by simpa]
+      simp
+      rw [size_ofList_of_nodup H₁]
+  · apply H₂.le_of_lt
+  · rw [←H₄, ←h₁]; apply List.sorted_erase; simp
+
+omit hb₁ hb₂
+theorem fold_insert_of_notMem {f : β → α → β} {z x hh} (hx : x ∉ s) :
+(s.insert x).fold f z hh = f (s.fold f z hh) x := by
+  classical
+  rw [fold_insert_of_notMem' hx]
+  simp_rw [fold_eq_foldl_toList]
+  rw [List.foldl_apply_comm]
+  apply hh
+
+@[simp]
+theorem toFinset_insert {x} : (s.insert x).toFinset = insert x s.toFinset := by
+  classical
+  by_cases hx : x ∈ s
+  · rw [insert_eq_of_mem hx, Finset.insert_eq_of_mem]
+    exact mem_toFinset_of_mem hx
+  exact fold_insert_of_notMem hx
+
+@[simp]
+theorem mem_toFinset {x} : x ∈ s.toFinset ↔ x ∈ s := by
+  classical
+  refine ⟨?_, mem_toFinset_of_mem⟩
+  intro h
+  rw [toFinset] at h
+  rw [s.fold_eq_foldl_toList] at h
+  rw [←mem_toList]
+  generalize s.toList = xs at h ⊢; clear! s
+  induction xs using List.reverseRecOn <;> grind
+
+theorem toSet_union : (s₁ ∪ s₂).toSet = s₁.toSet ∪ s₂.toSet := by
+  ext; simp
+
+theorem toSet_inter : (s₁ ∩ s₂).toSet = s₁.toSet ∩ s₂.toSet := by
+  ext; simp
+
+theorem toFinset_union : (s₁ ∪ s₂).toFinset = s₁.toFinset ∪ s₂.toFinset := by
+  ext; simp
+
+theorem toFinset_inter : (s₁ ∩ s₂).toFinset = s₁.toFinset ∩ s₂.toFinset := by
+  ext; simp
+
+@[simp]
+theorem finite_toSet : s.toSet.Finite := by
+  apply Set.finite_of_subset_finset s.toFinset; simp
+
+@[simp]
+theorem toFinset_coe_set : (s.toFinset : Set α) = s.toSet := by
+  ext; simp
+
+@[simp]
+theorem card_toFinset : s.toFinset.card = s.size := by
+  induction s using ind; simp
+  clear! s; nm s x hx ih
+  simp
+  rw [size_insert hx, Finset.card_insert_of_notMem, ih]
+  simpa
+
+@[simp]
+theorem ncard_toSet : s.toSet.ncard = s.size := by
+  rw [←toFinset_coe_set, Set.ncard_coe_finset]; simp
+
+@[simp]
+theorem ofSet_toSet_list {xs : List α} : ofSet xs.toSet = ofList xs := by
+  ext; simp; rw [mem_ofSet] <;> simp
+
+@[simp]
+theorem list_toSet_ofList {xs : List α} : (ofList xs).toSet = xs.toSet := by
+  ext; simp;
+
+-- #check 0 #exit
+
+end Set'
+
+namespace System
+
+universe u
+variable {S T : Type u}
+variable {sys : System S T}
+
+theorem exi_simulate_full_of_simulate_eq' {f n s s₁ r}
+(h : sys.simulate f s n = (s₁, r)) : ∃ k, sys.simulate f s k = (s₁, 0) := by
+  have := exi_simulate_full_of_simulate_eq h; grind
+
+-- #check 0 #exit
+
+end System
 
 namespace AP
 
@@ -65,6 +349,10 @@ def State.lastMove (s : State) : PointZ :=
 
 def State.IsInit (s : State) : Prop :=
   sys.Initial s
+
+noncomputable
+def State.aPtsSimNcard (s : State) (st : Strat) (set : Set PointZ) : Option ℕ :=
+  s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.ncard?
 
 -- #check 0 #exit
 
@@ -482,6 +770,176 @@ theorem State.prev_eq_of_tr {s s' p} [hs : sys.WF s]
   have H₂ := wf_prev H₁
   obtain ⟨rfl, rfl⟩ := tr_inj h h₁; rfl
 
-theorem State.eq_of_mem_aPtsSimAt_and_state_eq {s : State} {s₁ p₁ p₂ st} [hs : sys.WF s]
+theorem State.aPtsSimAt_point_eq_of_state_eq {s : State} {s₁ p₁ p₂ st} [hs : sys.WF s]
 (h₁ : (s₁, p₁) ∈ s.aPtsSimAt st) (h₂ : (s₁, p₂) ∈ s.aPtsSimAt st) : p₁ = p₂ := by
   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁ h₂; grind
+
+@[simp]
+theorem State.aPtsSimNcard_empty {s : State} {st} : s.aPtsSimNcard st ∅ = some 0 := by
+  simp [aPtsSimNcard]
+
+@[simp]
+theorem State.aPtsSimNcard_eq_zero_iff {s : State} {st set} [hs : sys.WF s] :
+s.aPtsSimNcard st set = some 0 ↔ ∀ n s₁ s₂ [AState s₁],
+sys.simulate st.f s n = (s₁, 0) → sys.tr s₁ (st.a.f s₁) = some s₂ → s₂.aPos ∉ set := by
+  rw [aPtsSimNcard, Set.ncard?]
+  split_ifs with h₁; rotate_left
+  · simp at h₁ ⊢
+    replace h₁ := Set.exi_mem_of_infinite h₁
+    rcases h₁ with ⟨⟨s₁, p⟩, h₁⟩
+    simp at h₁
+    rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+    obtain ⟨⟨hs₁, n, h₁, s₂, h₂, h₃⟩, h₄⟩ := h₁
+    use n, s₁, hs₁, h₁, s₂, h₂
+    rwa [AState.aPos_eq_of_tr h₂, h₃]
+  simp
+  rw [Set.ncard_eq_zero # by grind]
+  rw [Set.eq_empty_iff]
+  simp
+  constructor
+  · intro h n s₁ s₂ hs₁ h₂ h₃
+    specialize h s₁ (st.a.f s₁)
+    rw [mem_aPtsSimAt_iff_simulate_tr] at h
+    rw [AState.aPos_eq_of_tr h₃]
+    apply h; clear h
+    use hs₁, n, h₂, s₂
+  · intro h s₁ p h₂
+    rw [mem_aPtsSimAt_iff_simulate_tr] at h₂
+    choose hs₁ n h₂ s₂ h₃ h₄ using h₂
+    specialize h n s₁ s₂ h₂ h₃
+    rwa [←h₄, ←AState.aPos_eq_of_tr h₃]
+
+theorem State.aPtsSimAt_eq_of_length_hist_eq {s s₁ s₂ p₁ p₂ st} [hs : sys.WF s]
+(h₁ : (s₁, p₁) ∈ s.aPtsSimAt st) (h₂ : (s₂, p₂) ∈ s.aPtsSimAt st)
+(h₃ : s₁.hist.length = s₂.hist.length) : s₁ = s₂ := by
+  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁ h₂
+  choose hs₁ n h₁ h₄ h₅ h₆ using h₁
+  choose hs₂ k h₂ h₇ h₈ h₉ using h₂
+  simp [length_hist_eq_of_simulate_eq h₁, length_hist_eq_of_simulate_eq h₂] at h₃
+  subst h₃
+  simp [h₁] at h₂
+  exact h₂
+
+theorem State.finite_filter_aPtsSimAt_iff_image_length_hist {s : State} {st p}
+[hs : sys.WF s] : (s.aPtsSimAt st |>.filter p |>.Finite) ↔
+(s.aPtsSimAt st |>.filter p |>.image (·.1.hist.length) |>.Finite) := by
+  rw [Set.finite_image_iff]
+  rintro ⟨s₂, p₂⟩ h₄ ⟨s₃, p₃⟩ h₅ h₆
+  simp at h₄ h₅ h₆ ⊢
+  rcases h₄ with ⟨h₄, hp₂⟩
+  rcases h₅ with ⟨h₅, hp₃⟩
+  apply and_of # aPtsSimAt_eq_of_length_hist_eq h₄ h₅ h₆
+  rintro rfl; exact aPtsSimAt_point_eq_of_state_eq h₄ h₅
+
+theorem State.infinite_filter_aPtsSimAt_iff_image_length_hist {s : State} {st p}
+[hs : sys.WF s] : (s.aPtsSimAt st |>.filter p |>.Infinite) ↔
+(s.aPtsSimAt st |>.filter p |>.image (·.1.hist.length) |>.Infinite) := by
+  rw [iff_iff_not']; simp [finite_filter_aPtsSimAt_iff_image_length_hist]
+
+theorem State.nonempty_filter_aPtsSimAt_iff_image_length_hist {s : State} {st p} :
+(s.aPtsSimAt st |>.filter p |>.Nonempty) ↔
+(s.aPtsSimAt st |>.filter p |>.image (·.1.hist.length) |>.Nonempty) := by
+  simp
+
+-- theorem State.exi_aPtsSimNcard_eq_succ_iff.aux₁
+-- {s : State} {st : Strat} {set : Set PointZ} [hs : sys.WF s] [hst : st.WF]
+-- (h₁ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Finite)
+-- (h₂ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Nonempty) :
+-- ∃ n s₁, n ≠ 0 ∧ AState s₁ ∧ sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧
+-- ∀ k s₂, k ≠ 0 → sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
+--   rw [finite_filter_aPtsSimAt_iff_image_length_hist] at h₁
+--   rw [nonempty_filter_aPtsSimAt_iff_image_length_hist] at h₂
+--   
+--   generalize h₃ : (s.aPtsSimAt st |>.filter (·.2 ∈ set)
+--     |>.image (·.1.hist.length)) = sn at h₁ h₂
+--   
+--   choose N h₄ h₅ using Set.exi_max h₁ h₂
+--   clear h₁ h₂
+--   
+--   simp [←h₃] at h₄
+--   obtain ⟨s₁, ⟨p, h₁, h₂⟩, rfl⟩ := h₄
+--   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+--   choose hs₁ n h₁ s₂ h₄ h₆ using h₁
+--   subst h₆
+--   simp [length_hist_eq_of_simulate_eq h₁] at h₅
+--   
+--   -- cases n
+--   -- ·
+--     -- exfalso
+--     -- simp at h₁
+--     -- subst h₁ h₃
+--     -- simp at h₅
+--     -- 
+--     -- let N : ℕ := by sorry
+--     -- 
+--     -- specialize h₅ N s (st.a.f s) _ h₂
+--     -- ·
+--     --   rw [mem_aPtsSimAt_iff_simulate_tr]
+--     --   use hs₁, 0
+--     --   simp [h₄]
+--   
+--   have hs₂ := DState.of_tr h₄
+--   
+--   choose s₃ h₆ using st.d.validTr s₂
+--   have hs₃ := AState.of_tr h₆
+--   
+--   use n + 2, s₃, by simp, hs₃
+--   split_ands
+--   ·
+--     simpa [h₁, h₄]
+--   ·
+--     rwa [DState.aPos_eq_of_tr h₆, AState.aPos_eq_of_tr h₄]
+--   
+--   intro k s₄ h₇
+--   
+--   subst h₃
+--   simp at h₅
+--   
+--   -- specialize h₅ (s.hist.length + n + k) s₄
+--   
+--   sorry
+-- 
+-- -- #check 0 #exit
+-- 
+-- theorem State.exi_aPtsSimNcard_eq_succ_iff.aux₂
+-- {s : State} {st : Strat} {set : Set PointZ} [hs : sys.WF s] [hst : st.WF]
+-- (h₁ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Finite)
+-- (h₂ : ∃ n s₁, n ≠ 0 ∧ AState s₁ ∧ sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧
+-- ∀ k s₂, k ≠ 0 → sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set) :
+-- s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Nonempty := by
+--   choose n s₁ hn hs₁ h₂ h₃ h₄ using h₂
+--   clear h₁
+--   
+--   -- use ⟨s, s₁.aPos⟩
+--   -- simp [h₃]
+--   -- rw [mem_aPtsSimAt_iff_simulate_tr]
+-- 
+-- -- #check 0 #exit
+-- 
+-- theorem State.exi_aPtsSimNcard_eq_succ_iff
+-- {s : State} {st : Strat} {set} [hs : sys.WF s] [hst : st.WF] :
+-- (∃ n, s.aPtsSimNcard st set = some (n + 1)) ↔ ∃ n s₁, n ≠ 0 ∧ AState s₁ ∧
+-- sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧ ∀ k s₂, k ≠ 0 →
+-- sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
+--   rw [aPtsSimNcard, Set.ncard?]; split_ifs with h₁
+--   · simp; rw [Set.ncard_pos # by grind]
+--     exact ⟨sorry, exi_aPtsSimNcard_eq_succ_iff.aux₂ h₁⟩
+--   simp at h₁ ⊢
+--   intro n s₁ hs₁ hn h₂ h₃
+--   rw [infinite_filter_aPtsSimAt_iff_image_length_hist] at h₁
+--   replace h₁ := h₁.exists_gt # s.hist.length + n
+--   choose m h₁ using h₁
+--   simp at h₁
+--   obtain ⟨⟨sa, ⟨pn, h₁, h₄⟩, h₅⟩, h₆⟩ := h₁
+--   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+--   choose hsa k h₁ sd h₇ h₈ using h₁
+--   subst h₈
+--   simp [length_hist_eq_of_simulate_eq h₁] at h₅
+--   subst h₅
+--   simp at h₆
+--   replace h₆ := le_of_lt h₆
+--   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
+--   simp [h₂] at h₁
+--   use k, sd
+--   simp [h₁, h₇]
+--   rwa [AState.aPos_eq_of_tr h₇]
