@@ -544,105 +544,111 @@ theorem State.nonempty_filter_aPtsSimAt_iff_image_length_hist {s : State} {st p}
 (s.aPtsSimAt st |>.filter p |>.image (·.1.hist.length) |>.Nonempty) := by
   simp
 
--- theorem State.exi_aPtsSimNcard_eq_succ_iff.aux₁
--- {s : State} {st : Strat} {set : Set PointZ} [hs : sys.WF s] [hst : st.WF]
--- (h₁ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Finite)
--- (h₂ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Nonempty) :
--- ∃ n s₁, n ≠ 0 ∧ AState s₁ ∧ sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧
--- ∀ k s₂, k ≠ 0 → sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
---   rw [finite_filter_aPtsSimAt_iff_image_length_hist] at h₁
---   rw [nonempty_filter_aPtsSimAt_iff_image_length_hist] at h₂
---   
---   generalize h₃ : (s.aPtsSimAt st |>.filter (·.2 ∈ set)
---     |>.image (·.1.hist.length)) = sn at h₁ h₂
---   
---   choose N h₄ h₅ using Set.exi_max h₁ h₂
---   clear h₁ h₂
---   
---   simp [←h₃] at h₄
---   obtain ⟨s₁, ⟨p, h₁, h₂⟩, rfl⟩ := h₄
---   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
---   choose hs₁ n h₁ s₂ h₄ h₆ using h₁
---   subst h₆
---   simp [length_hist_eq_of_simulate_eq h₁] at h₅
---   
---   -- cases n
---   -- ·
---     -- exfalso
---     -- simp at h₁
---     -- subst h₁ h₃
---     -- simp at h₅
---     -- 
---     -- let N : ℕ := by sorry
---     -- 
---     -- specialize h₅ N s (st.a.f s) _ h₂
---     -- ·
---     --   rw [mem_aPtsSimAt_iff_simulate_tr]
---     --   use hs₁, 0
---     --   simp [h₄]
---   
---   have hs₂ := DState.of_tr h₄
---   
---   choose s₃ h₆ using st.d.validTr s₂
---   have hs₃ := AState.of_tr h₆
---   
---   use n + 2, s₃, by simp, hs₃
---   split_ands
---   ·
---     simpa [h₁, h₄]
---   ·
---     rwa [DState.aPos_eq_of_tr h₆, AState.aPos_eq_of_tr h₄]
---   
---   intro k s₄ h₇
---   
---   subst h₃
---   simp at h₅
---   
---   -- specialize h₅ (s.hist.length + n + k) s₄
---   
---   sorry
--- 
--- -- #check 0 #exit
--- 
--- theorem State.exi_aPtsSimNcard_eq_succ_iff.aux₂
--- {s : State} {st : Strat} {set : Set PointZ} [hs : sys.WF s] [hst : st.WF]
--- (h₁ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Finite)
--- (h₂ : ∃ n s₁, n ≠ 0 ∧ AState s₁ ∧ sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧
--- ∀ k s₂, k ≠ 0 → sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set) :
--- s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Nonempty := by
---   choose n s₁ hn hs₁ h₂ h₃ h₄ using h₂
---   clear h₁
---   
---   -- use ⟨s, s₁.aPos⟩
---   -- simp [h₃]
---   -- rw [mem_aPtsSimAt_iff_simulate_tr]
--- 
--- -- #check 0 #exit
--- 
--- theorem State.exi_aPtsSimNcard_eq_succ_iff
--- {s : State} {st : Strat} {set} [hs : sys.WF s] [hst : st.WF] :
--- (∃ n, s.aPtsSimNcard st set = some (n + 1)) ↔ ∃ n s₁, n ≠ 0 ∧ AState s₁ ∧
--- sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧ ∀ k s₂, k ≠ 0 →
--- sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
---   rw [aPtsSimNcard, Set.ncard?]; split_ifs with h₁
---   · simp; rw [Set.ncard_pos # by grind]
---     exact ⟨sorry, exi_aPtsSimNcard_eq_succ_iff.aux₂ h₁⟩
---   simp at h₁ ⊢
---   intro n s₁ hs₁ hn h₂ h₃
---   rw [infinite_filter_aPtsSimAt_iff_image_length_hist] at h₁
---   replace h₁ := h₁.exists_gt # s.hist.length + n
---   choose m h₁ using h₁
---   simp at h₁
---   obtain ⟨⟨sa, ⟨pn, h₁, h₄⟩, h₅⟩, h₆⟩ := h₁
---   rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
---   choose hsa k h₁ sd h₇ h₈ using h₁
---   subst h₈
---   simp [length_hist_eq_of_simulate_eq h₁] at h₅
---   subst h₅
---   simp at h₆
---   replace h₆ := le_of_lt h₆
---   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
---   simp [h₂] at h₁
---   use k, sd
---   simp [h₁, h₇]
---   rwa [AState.aPos_eq_of_tr h₇]
+-- #check 0 #exit
+
+theorem State.exi_aPtsSimNcard_eq_succ_iff.aux₁
+{s : State} {st : Strat} {set : Set PointZ} [hs : sys.WF s] [hst : st.WF]
+(h₁ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Finite)
+(h₂ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Nonempty) :
+∃ n, n ≠ 0 ∧ ∃ s₁, AState s₁ ∧ sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧
+∀ k s₂, k ≠ 0 → sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
+  rw [finite_filter_aPtsSimAt_iff_image_length_hist] at h₁
+  rw [nonempty_filter_aPtsSimAt_iff_image_length_hist] at h₂
+  
+  generalize h₃ : (s.aPtsSimAt st |>.filter (·.2 ∈ set)
+    |>.image (·.1.hist.length)) = sn at h₁ h₂
+  
+  choose N h₄ h₅ using Set.exi_max h₁ h₂
+  clear h₁ h₂
+  
+  simp [←h₃] at h₄
+  obtain ⟨s₁, ⟨p, h₁, h₂⟩, rfl⟩ := h₄
+  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+  choose hs₁ n h₁ s₂ h₄ h₆ using h₁
+  subst h₆
+  simp [length_hist_eq_of_simulate_eq h₁] at h₅
+  
+  -- cases n
+  -- ·
+    -- exfalso
+    -- simp at h₁
+    -- subst h₁ h₃
+    -- simp at h₅
+    -- 
+    -- let N : ℕ := by sorry
+    -- 
+    -- specialize h₅ N s (st.a.f s) _ h₂
+    -- ·
+    --   rw [mem_aPtsSimAt_iff_simulate_tr]
+    --   use hs₁, 0
+    --   simp [h₄]
+  
+  have hs₂ := DState.of_tr h₄
+  
+  choose s₃ h₆ using st.d.validTr s₂
+  have hs₃ := AState.of_tr h₆
+  
+  use n + 2, by simp, s₃, hs₃
+  split_ands
+  ·
+    simpa [h₁, h₄]
+  ·
+    rwa [DState.aPos_eq_of_tr h₆, AState.aPos_eq_of_tr h₄]
+  
+  intro k s₄ h₇
+  
+  subst h₃
+  simp at h₅
+  
+  -- specialize h₅ (s.hist.length + n + k) s₄
+  
+  sorry
+
+-- #check 0 #exit
+
+theorem State.exi_aPtsSimNcard_eq_succ_iff.aux₂
+{s : State} {st : Strat} {set : Set PointZ} [hs : sys.WF s] [hst : st.WF]
+(h₁ : s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Finite)
+(h₂ : ∃ n, n ≠ 0 ∧ ∃ s₁, AState s₁ ∧ sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧
+∀ k s₂, k ≠ 0 → sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set) :
+s.aPtsSimAt st |>.filter (·.2 ∈ set) |>.Nonempty := by
+  choose n s₁ hn hs₁ h₂ h₃ h₄ using h₂
+  clear h₁
+  
+  -- use ⟨s, s₁.aPos⟩
+  -- simp [h₃]
+  -- rw [mem_aPtsSimAt_iff_simulate_tr]
+  
+  sorry
+
+#check 0 #exit
+
+theorem State.exi_aPtsSimNcard_eq_succ_iff
+{s : State} {st : Strat} {set} [hs : sys.WF s] [hst : st.WF] :
+(∃ n, s.aPtsSimNcard st set = some (n + 1)) ↔ ∃ n, n ≠ 0 ∧ ∃ s₁, AState s₁ ∧
+sys.simulate st.f s n = (s₁, 0) ∧ s₁.aPos ∈ set ∧ ∀ k s₂, k ≠ 0 →
+sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
+  rw [aPtsSimNcard, Set.ncard?]; split_ifs with h₁
+  ·
+    simp only [Option.some.injEq, Nat.exists_eq_add_one]
+    rw [Set.ncard_pos # by grind]
+    exact ⟨exi_aPtsSimNcard_eq_succ_iff.aux₁ h₁, exi_aPtsSimNcard_eq_succ_iff.aux₂ h₁⟩
+  simp at h₁ ⊢
+  intro n s₁ hs₁ hn h₂ h₃
+  rw [infinite_filter_aPtsSimAt_iff_image_length_hist] at h₁
+  replace h₁ := h₁.exists_gt # s.hist.length + n
+  choose m h₁ using h₁
+  simp at h₁
+  obtain ⟨⟨sa, ⟨pn, h₁, h₄⟩, h₅⟩, h₆⟩ := h₁
+  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁
+  choose hsa k h₁ sd h₇ h₈ using h₁
+  subst h₈
+  simp [length_hist_eq_of_simulate_eq h₁] at h₅
+  subst h₅
+  simp at h₆
+  replace h₆ := le_of_lt h₆
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₆; clear h₆
+  simp [h₂] at h₁
+  use k, sd
+  simp [h₁, h₇]
+  rwa [AState.aPos_eq_of_tr h₇]
