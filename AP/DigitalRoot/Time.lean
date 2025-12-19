@@ -143,8 +143,7 @@ theorem freqTimeDig'_eq_some_of_freqTimeDig_eq_some {d}
       simp at h₄ h₅
       exact ⟨h₄.2, h₅.2⟩
     have H₃ : xs.Sorted # λ a b => b.2 ≤ a.2
-    · have h₄ := @List.sorted_mergeSort (ℕ × ℕ) (λ a b => b.2 ≤ a.2)
-        (by simp; intro a b c; apply le_trans') (by simp [le_total])
+    · have h₄ := @List.sorted_mergeSort (ℕ × ℕ) (λ a b => b.2 ≤ a.2) (by simp) (by simp)
         (Set'.ofFinset (Finset.range 10) |>.toMap (freqTimeCount 10) |>.toList)
       simp at h₄; rwa [←hx]
     simp [h₃] at H₃

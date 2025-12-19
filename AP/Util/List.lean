@@ -1330,3 +1330,17 @@ theorem take_length_sub_one : xs.take (xs.length - 1) = xs.init := by
 @[simp]
 theorem length_init : xs.init.length = xs.length - 1 := by
   induction xs using List.reverseRecOn <;> simp
+
+theorem nodup_of_sorted_lt [ha : LinearOrder α] (h : xs.Sorted (· < ·)) : xs.Nodup := by
+  induction h
+  · simp
+  clear! xs; nm x xs h₁ h₂ ih
+  simp [ih]
+  intro hx
+  specialize h₁ x hx
+  simp at h₁
+
+theorem foldl_apply_comm {f : β → α → β} {z x}
+(h : ∀ ⦃x y z⦄, f (f x y) z = f (f x z) y) :
+xs.foldl f (f z x) = f (xs.foldl f z) x := by
+  induction xs generalizing z; simp; nm y xs ih; simp; rw [←ih, h]

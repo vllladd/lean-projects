@@ -571,3 +571,21 @@ theorem Set.ncard_toSet_list_of_nodup {α : Type*} {xs : List α}
   specialize ih h₂
   rw [Set.ncard_insert_eq_ite]
   simpa [h₁]
+
+namespace Set
+
+variable {α β : Type*}
+variable {s s' s₁ s₂ s₃ : Set α}
+
+open Classical in noncomputable
+def ncard? (s : Set α) : Option ℕ :=
+  if s.Finite then some s.ncard else none
+
+@[simp]
+theorem ncard?_empty : (∅ : Set α).ncard? = some 0 := by
+  simp [ncard?]
+
+theorem ncard?_image_of_injOn {f : α → β} (h : s.InjOn f) : (f '' s).ncard? = s.ncard? := by
+  unfold ncard?; rw [finite_image_iff h]
+  split_ifs with h₁; on_goal 2 => rfl
+  simpa [ncard_image_eq_iff_injOn h₁]

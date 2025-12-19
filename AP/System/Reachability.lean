@@ -751,7 +751,7 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts} [ha : sys.WF a]
   rw [h₄ _ # by rfl]
   simp [simulate, hb, hc]
 
-theorem exi_simulate_full_of_simulate_eq {f a n r}
+theorem exi_simulate_full_of_simulate_eq' {f a n r}
 (hr : sys.simulate f a n = r) : ∃ k ≤ n, sys.simulate f a k = (r.1, 0) := by
   induction n generalizing a r
   · use 0; simp [←hr]
@@ -767,10 +767,14 @@ theorem exi_simulate_full_of_simulate_eq {f a n r}
   simp_rw [simulate_succ_full']
   simpa [h₁]
 
+theorem exi_simulate_full_of_simulate_eq {f n s s₁ r}
+(h : sys.simulate f s n = (s₁, r)) : ∃ k, sys.simulate f s k = (s₁, 0) := by
+  have := exi_simulate_full_of_simulate_eq' h; grind
+
 theorem exi_simulate_full_of_simulate_fst_eq {f a n b}
 (hr : (sys.simulate f a n).1 = b) : ∃ k ≤ n, sys.simulate f a k = (b, 0) := by
   generalize h₁ : sys.simulate f a n = r at hr
-  obtain ⟨k, hk, h₂⟩ := exi_simulate_full_of_simulate_eq h₁
+  obtain ⟨k, hk, h₂⟩ := exi_simulate_full_of_simulate_eq' h₁
   subst h₁
   use k, hk
   simpa [h₂]

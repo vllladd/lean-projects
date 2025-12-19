@@ -149,7 +149,7 @@ theorem nodup_toList [LinearOrder α] : s.toList.Nodup := by
   simp
 
 @[simp]
-theorem sorted_toList [LinearOrder α] : s.toList.Sorted (· ≤ ·) := by
+theorem sorted_toList' [LinearOrder α] : s.toList.Sorted (· ≤ ·) := by
   rcases s with ⟨⟨s⟩⟩; unfold toList Std.ExtDHashMap.lift
   apply s.ind; simp
 
@@ -280,7 +280,7 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List α}
     rintro ⟨x, _⟩ ⟨y, _⟩ h; simp at h; simp [h]
   simp [ofList]; rfl
 
-theorem ind_ofList [ha : LinearOrder α] {p : Set' α → Prop}
+theorem ind_ofList' [ha : LinearOrder α] {p : Set' α → Prop}
 (h : ∀ (xs : List α), xs.Nodup → xs.Sorted (· ≤ ·) → p (ofList xs))
 (s : Set' α) : p s := by
   rw [←ofList_toList (s := s)]; apply h <;> simp
@@ -1167,3 +1167,170 @@ theorem erase_singleton_self {x : α} : (singleton x).erase x = ∅ := by
 @[simp]
 theorem insert_singleton_self {x : α} : (singleton x).insert x = singleton x := by
   ext; simp
+
+def toFinset (s : Set' α) : Finset α :=
+  s.fold (λ s₁ x => insert x s₁) ∅ # by grind
+
+@[simp]
+theorem toFinset_empty : (∅ : Set' α).toFinset = ∅ := by
+  simp [toFinset]
+
+theorem mem_toFinset_of_mem {x} (hx : x ∈ s) : x ∈ s.toFinset := by
+  classical
+  unfold toFinset
+  rw [fold_eq_foldl_toList]
+  rw [←mem_toList] at hx
+  generalize s.toList = xs at hx ⊢; clear! s
+  induction xs using List.reverseRecOn <;> grind
+
+@[simp]
+theorem ofList_cons {xs : List α} {x} : ofList (x :: xs) = (ofList xs).insert x := by
+  ext; simp
+
+@[simp]
+theorem ofList_append {xs ys : List α} : ofList (xs ++ ys) = ofList xs ∪ ofList ys := by
+  ext; simp
+
+theorem ind_ofList [ha : LinearOrder α] {p : Set' α → Prop}
+(h : ∀ (xs : List α), xs.Sorted (· < ·) → p (ofList xs)) (s : Set' α) : p s := by
+  induction s using ind_ofList'; nm xs h₁ h₂; apply h _ # h₂.lt_of_le h₁
+
+@[simp]
+theorem sorted_toList [ha : LinearOrder α] : s.toList.Sorted (· < ·) :=
+  sorted_toList'.lt_of_le nodup_toList
+
+theorem toList_ofList_of_nodup [ha : LinearOrder α] {xs : List α}
+(h : xs.Nodup) : (ofList xs).toList = xs.mergeSort := by
+  induction xs; simp
+  nm x xs ih
+  simp at h ⊢
+  rcases h with ⟨h₁, h₂⟩
+  specialize ih h₂
+  rw [List.eq_iff_of_nodup_and_sorted (r := (· < ·))] <;> try simp [h₁, h₂]
+  · intro y z h₃ h₄ h₅ h₆
+    replace h₅ := h₅.trans h₆
+    simp at h₅
+  · have H := @(x :: xs).sorted_mergeSort α (le := (· ≤ ·))
+    simp at H
+    apply List.Sorted.lt_of_le _ # by simp [h₁, h₂]
+    apply H
+
+theorem toList_ofList_of_sorted [ha : LinearOrder α] {xs : List α}
+(h : xs.Sorted (· < ·)) : (ofList xs).toList = xs := by
+  rw [toList_ofList_of_nodup h.nodup]
+  rw [List.mergeSort_of_sorted]
+  simp; exact h.le_of_lt
+
+omit hb₁ hb₂
+theorem fold_insert_of_notMem' {f : β → α → β} {z x hh} (hx : x ∉ s) :
+(s.insert x).fold f z hh = s.fold f (f z x) hh := by
+  classical
+  simp_rw [fold_eq_foldl_toList]  
+  have h₁ : x ∈ (s.insert x).toList; simp
+  have h₂ : s.insert x |>.toList.Nodup; simp
+  rw [List.mem_iff_append] at h₁
+  choose xs ys h₁ using h₁
+  rw [h₁] at h₂ ⊢
+  suffices h₃ : s.toList = xs ++ ys
+  · rw [h₃]
+    simp
+    congr
+    clear! ys x
+    rw [List.foldl_apply_comm]
+    apply hh
+  have h₅ := s.insert x |>.sorted_toList
+  rw [h₁] at h₅
+  induction s using ind_ofList'
+  nm zs H₁ H₂
+  replace H₂ := H₂.lt_of_le H₁
+  rw [toList_ofList_of_sorted H₂]
+  simp at hx
+  have H₃ := h₂.of_append_left
+  have H₄ : (xs ++ x :: ys).erase x = (xs ++ ys)
+  · grind
+  have H₅ : xs ++ ys |>.Nodup
+  · rw [←H₄]; exact List.nodup_erase h₂
+  have H₆ := List.nodup_append_comm.mp H₅
+  apply List.eq_of_perm_of_sorted_loc (r := (· ≤ ·)) <;> try simp
+  · symm
+    apply List.perm_of_nodup_and_subset_and_length_eq H₁
+    · intro y hy
+      simp
+      replace h₁ := congrArg (y ∈ ·) h₁
+      simp at h₁
+      grind
+    · rw [←H₄, ←h₁]
+      simp
+      rw [size_insert # by simpa]
+      simp
+      rw [size_ofList_of_nodup H₁]
+  · apply H₂.le_of_lt
+  · rw [←H₄, ←h₁]; apply List.sorted_erase; simp
+
+omit hb₁ hb₂
+theorem fold_insert_of_notMem {f : β → α → β} {z x hh} (hx : x ∉ s) :
+(s.insert x).fold f z hh = f (s.fold f z hh) x := by
+  classical
+  rw [fold_insert_of_notMem' hx]
+  simp_rw [fold_eq_foldl_toList]
+  rw [List.foldl_apply_comm]
+  apply hh
+
+@[simp]
+theorem toFinset_insert {x} : (s.insert x).toFinset = insert x s.toFinset := by
+  classical
+  by_cases hx : x ∈ s
+  · rw [insert_eq_of_mem hx, Finset.insert_eq_of_mem]
+    exact mem_toFinset_of_mem hx
+  exact fold_insert_of_notMem hx
+
+@[simp]
+theorem mem_toFinset {x} : x ∈ s.toFinset ↔ x ∈ s := by
+  classical
+  refine ⟨?_, mem_toFinset_of_mem⟩
+  intro h
+  rw [toFinset] at h
+  rw [s.fold_eq_foldl_toList] at h
+  rw [←mem_toList]
+  generalize s.toList = xs at h ⊢; clear! s
+  induction xs using List.reverseRecOn <;> grind
+
+theorem toSet_union : (s₁ ∪ s₂).toSet = s₁.toSet ∪ s₂.toSet := by
+  ext; simp
+
+theorem toSet_inter : (s₁ ∩ s₂).toSet = s₁.toSet ∩ s₂.toSet := by
+  ext; simp
+
+theorem toFinset_union : (s₁ ∪ s₂).toFinset = s₁.toFinset ∪ s₂.toFinset := by
+  ext; simp
+
+theorem toFinset_inter : (s₁ ∩ s₂).toFinset = s₁.toFinset ∩ s₂.toFinset := by
+  ext; simp
+
+@[simp]
+theorem finite_toSet : s.toSet.Finite := by
+  apply Set.finite_of_subset_finset s.toFinset; simp
+
+@[simp]
+theorem toFinset_coe_set : (s.toFinset : Set α) = s.toSet := by
+  ext; simp
+
+@[simp]
+theorem card_toFinset : s.toFinset.card = s.size := by
+  induction s using ind; simp
+  clear! s; nm s x hx ih
+  simp
+  rw [size_insert hx, Finset.card_insert_of_notMem, ih]
+  simpa
+
+@[simp]
+theorem ncard_toSet : s.toSet.ncard = s.size := by
+  rw [←toFinset_coe_set, Set.ncard_coe_finset]; simp
+
+@[simp]
+theorem ofSet_toSet_list {xs : List α} : ofSet xs.toSet = ofList xs := by
+  ext; simp; rw [mem_ofSet] <;> simp
+
+@[simp]
+theorem list_toSet_ofList {xs : List α} : (ofList xs).toSet = xs.toSet := by
+  ext; simp;

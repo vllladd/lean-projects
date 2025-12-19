@@ -10,7 +10,8 @@ def Set.Finite.toFintype {α : Type*}
 
 namespace Set
 
-variable {α β : Type*} {s s' : Set α}
+variable {α β : Type*}
+variable {s s' s₁ s₂ s₃ : Set α}
 
 def erase (x : α) (s : Set α) := s \ {x}
 
@@ -108,3 +109,39 @@ theorem ne_empty_of (x : α) (h : x ∈ s) : s ≠ ∅ := by
 @[simp]
 theorem erase_singleton {x : α} : ({x} : Set α).erase x = ∅ := by
   ext; simp
+
+def filter (s : Set α) (p : α → Prop) : Set α :=
+  {x ∈ s | p x}
+
+@[simp]
+theorem mem_filter {p x} : x ∈ s.filter p ↔ x ∈ s ∧ p x := by
+  simp [filter]
+
+@[simp]
+theorem filter_const_true : s.filter (λ _ => True) = s := by
+  simp [filter]
+
+@[simp]
+theorem filter_const_false : s.filter (λ _ => False) = ∅ := by
+  simp [filter]
+
+theorem filter_fn_mem : s.filter (· ∈ s₁) = s ∩ s₁ := by
+  simp [filter]
+
+theorem forall_not_mem_iff : (∀ x, x ∉ s) ↔ s = ∅ := by
+  grind
+
+@[simp]
+theorem not_finite_iff_infinite : ¬s.Finite ↔ s.Infinite := by
+  rfl
+
+theorem exi_mem_of_infinite (h : s.Infinite) : ∃ x, x ∈ s := by
+  contrapose! h; rw [forall_not_mem_iff] at h; simp [h]
+
+theorem exi_min [ha : LinearOrder α]
+(h₁ : s.Finite) (h₂ : s.Nonempty) : ∃ x ∈ s, ∀ y ∈ s, x ≤ y :=
+  exists_min_image _ id h₁ h₂
+
+theorem exi_max [ha : LinearOrder α]
+(h₁ : s.Finite) (h₂ : s.Nonempty) : ∃ x ∈ s, ∀ y ∈ s, y ≤ x :=
+  exists_max_image _ id h₁ h₂

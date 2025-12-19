@@ -520,3 +520,26 @@ end
 theorem le_congr {α : Type*} [ha : LinearOrder α] {a b c d : α}
 (h₁ : a = c) (h₂ : b = d) : a ≤ b ↔ c ≤ d := by
   rw [h₁, h₂]
+
+section
+
+variable {α : Type*}
+variable [ha : LinearOrder α]
+
+@[simp]
+theorem le_trans_simp {a b c : α} : (a ≤ b → b ≤ c → a ≤ c) ↔ True := by
+  simp; exact le_trans
+
+@[simp]
+theorem le_trans_simp' {a b c : α} : (b ≤ c → a ≤ b → a ≤ c) ↔ True := by
+  simp; exact le_trans'
+
+@[simp]
+theorem le_total_simp {a b : α} : (a ≤ b ∨ b ≤ a) ↔ True := by
+  simp; apply le_total
+
+@[simp]
+theorem le_antisymm_simp {a b : α} : (a ≤ b → b ≤ a → a = b) ↔ True := by
+  simp; apply le_antisymm
+
+end
