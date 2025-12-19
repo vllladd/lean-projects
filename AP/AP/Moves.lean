@@ -1,5 +1,18 @@
 import AP.AP.WF
 
+namespace Set
+
+variable {α β : Type*}
+variable {s s₁ s₂ : Set α}
+
+open Classical in noncomputable
+def ncard? (s : Set α) : Option ℕ :=
+  if s.Finite then some s.ncard else none
+
+-- #check 0 #exit
+
+end Set
+
 namespace AP
 
 def State.diff (s₁ s : State) : ℕ :=
@@ -468,3 +481,7 @@ theorem State.prev_eq_of_tr {s s' p} [hs : sys.WF s]
   have h₁ := s'.prev_tr_lastMove H₁
   have H₂ := wf_prev H₁
   obtain ⟨rfl, rfl⟩ := tr_inj h h₁; rfl
+
+theorem State.eq_of_mem_aPtsSimAt_and_state_eq {s : State} {s₁ p₁ p₂ st} [hs : sys.WF s]
+(h₁ : (s₁, p₁) ∈ s.aPtsSimAt st) (h₂ : (s₁, p₂) ∈ s.aPtsSimAt st) : p₁ = p₂ := by
+  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁ h₂; grind

@@ -86,3 +86,9 @@ theorem abs_bounds_of_tendsTo {a L n} (h : tendsTo a L) : |bounds a n| = bounds 
 
 theorem abs_bounds_of_converges {a n} (h : converges a) : |bounds a n| = bounds a n := by
   choose L h using h; exact abs_bounds_of_tendsTo h
+
+theorem monoGe_bounds_of_tendsTo {a L} (h : tendsTo a L) : monoGe (bounds a) :=
+  λ _ _ h₁ => bounds_le_bounds_of_tendsTo h h₁
+
+theorem monoGe_bounds_of_converges {a} (h : converges a) : monoGe (bounds a) :=
+  λ _ _ h₁ => bounds_le_bounds_of_converges h h₁

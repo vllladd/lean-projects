@@ -7,7 +7,7 @@ def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
   ∀ s₁ p, (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → p ∉ s.aVisited s₁
 
-def AStrat.Fresh1Alt (a : AStrat) (s : State) (fsp : FSP) : Prop :=
+def AStrat.Fresh1Aux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
   sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
   s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisited s₁).toSet)
@@ -90,8 +90,8 @@ theorem State.hasTr_of_aHwsDisj {s fsp} [hs : sys.WF s]
 instance {s fsp} : aFresh1 s fsp |>.WF := by
   unfold aFresh1; infer_instance
 
-theorem AState.aForallWinsDisj_of_fresh1Alt {s fsp} {a : AStrat} [hs : AState s]
-(h : a.Fresh1Alt s fsp) : s.aForallWinsDisj fsp a := by
+theorem AState.aForallWinsDisj_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
+(h : a.Fresh1Aux s fsp) : s.aForallWinsDisj fsp a := by
   choose ha h₀ h using h
   intro d hd n
   specialize h d hd
@@ -127,11 +127,11 @@ theorem AState.aForallWinsDisj_of_fresh1Alt {s fsp} {a : AStrat} [hs : AState s]
     simp [FSP.hasLe]
     exact h₃.2
 
-theorem AState.fresh1_of_alt {s fsp} {a : AStrat} [hs : AState s]
-(h : a.Fresh1Alt s fsp) : a.Fresh1 s fsp := by
+theorem AState.fresh1_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
+(h : a.Fresh1Aux s fsp) : a.Fresh1 s fsp := by
   have H₀ := h
   choose ha h₀ h using h
-  use ha, aForallWinsDisj_of_fresh1Alt H₀
+  use ha, aForallWinsDisj_of_fresh1Aux H₀
   intro d hd s₁ p h₁
   rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
   choose hs₁ n h₁ s₂ h₂ h₃ using h₁
@@ -148,7 +148,7 @@ theorem AState.fresh1_of_alt {s fsp} {a : AStrat} [hs : AState s]
 theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
 (h : s.aHwsDisj fsp) : ∃ (a : AStrat), a.Fresh1 s fsp := by
   use aFresh1 s fsp
-  apply hs.fresh1_of_alt
+  apply hs.fresh1_of_fresh1Aux
   use inferInstance
   use State.aPos_notMem_of_aHwsDisj h
   intro d hd n
