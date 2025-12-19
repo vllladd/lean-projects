@@ -49,8 +49,6 @@ theorem not_converges_series_inv : ¬converges (series (λ n => (n + 1 : ℝ)⁻
 theorem not_absConv_altInv : ¬AbsConv altInv := by
   simp [AbsConv]
 
-#check 0 #exit
-
 @[simp]
 theorem condConv_altInv : CondConv altInv :=
   ⟨converges_series_altInv, not_absConv_altInv⟩
