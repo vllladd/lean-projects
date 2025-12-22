@@ -589,3 +589,11 @@ theorem ncard?_image_of_injOn {f : α → β} (h : s.InjOn f) : (f '' s).ncard? 
   unfold ncard?; rw [finite_image_iff h]
   split_ifs with h₁; on_goal 2 => rfl
   simpa [ncard_image_eq_iff_injOn h₁]
+
+theorem ssubset_of (x : α) (h₁ : s₁ ⊆ s₂) (h₂ : x ∉ s₁) (h₃ : x ∈ s₂) : s₁ ⊂ s₂ := by
+  use h₁; contrapose! h₂; exact h₂ h₃
+
+theorem ncard_eq_ite : s.ncard =
+have := Classical.propDecidable
+if s.Finite then s.ncard else 0 := by
+  simp; exact Infinite.ncard

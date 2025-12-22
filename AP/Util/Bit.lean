@@ -53,3 +53,11 @@ def Bit.iff : Bit → Bit → Bit
 def Bit.xor : Bit → Bit → Bit
 | 0, a => a
 | 1, a => a.not
+
+@[simp]
+def ofBool (b : Bool) : Bit :=
+  match b with
+  | true => 1
+  | false => 0
+
+instance : Coe Bool Bit := ⟨ofBool⟩

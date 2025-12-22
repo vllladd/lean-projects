@@ -7,7 +7,7 @@ structure Serializer where
 
 namespace Serializer
 
-variable (s : Serializer)
+abbrev Ser := StateM Serializer
 
 def empty : Serializer where
   bytes := ∅
@@ -17,26 +17,28 @@ def empty : Serializer where
 instance : EmptyCollection Serializer := ⟨empty⟩
 theorem empty_def : (∅ : Serializer) = empty := rfl
 
-def flush' : Serializer where
-  bytes := s.bytes.push s.curByte
-  curByte := 0
-  bitMask := 1
+def flush' : Ser Unit := modify # λ s =>
+  { bytes := s.bytes.push s.curByte
+    curByte := 0
+    bitMask := 1
+  }
 
-def flush : Serializer :=
-  bif s.bitMask != 0 then s else s.flush'
+def flush : Ser Unit := do
+  bif (←get).bitMask != 0 then pure () else flush'
 
-def writeBit' (b : Bit) : Serializer where
-  bytes := s.bytes
-  curByte := match b with
-    | .B₀ => s.curByte
-    | .B₁ => s.curByte ||| s.bitMask
-  bitMask := s.bitMask <<< 1
+def writeBit' (b : Bit) : Ser Unit := modify # λ s =>
+  { bytes := s.bytes
+    curByte := match b with
+      | .B₀ => s.curByte
+      | .B₁ => s.curByte ||| s.bitMask
+    bitMask := s.bitMask <<< 1
+  }
 
-def writeBit (b : Bit) : Serializer :=
-  s.writeBit' b |>.flush
+def writeBit (b : Bit) : Ser Unit := do
+  writeBit' b; flush
 
-def writeBits (bs : List Bit) : Serializer :=
-  bs.foldl (λ s b => s.writeBit b) s
+def writeBits (bs : List Bit) : Ser Unit :=
+  bs.forM writeBit
 
-def getOutput : ByteArray :=
-  s.flush.bytes
+def getOutput : Ser ByteArray := do
+  flush; gets (·.bytes)

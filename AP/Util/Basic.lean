@@ -11,6 +11,7 @@ import AP.Util.Equiv
 import AP.Util.Array
 import AP.Util.Sigma
 import AP.Util.Order
+import AP.Util.Monad
 import AP.Util.Option
 import AP.Util.String
 import AP.Util.Fintype

@@ -1334,3 +1334,6 @@ theorem ofSet_toSet_list {xs : List α} : ofSet xs.toSet = ofList xs := by
 @[simp]
 theorem list_toSet_ofList {xs : List α} : (ofList xs).toSet = xs.toSet := by
   ext; simp;
+
+theorem ssubset_of (x : α) (h₁ : s₁ ⊆ s₂) (h₂ : x ∉ s₁) (h₃ : x ∈ s₂) : s₁ ⊂ s₂ := by
+  use h₁; rintro rfl; contradiction

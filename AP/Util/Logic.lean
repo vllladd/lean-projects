@@ -298,3 +298,5 @@ Classical.epsilon (λ y => x = y) = x := by
 
 @[simp] theorem iff_not_left_imp_iff {P Q : Prop} : (P ↔ (¬P → Q)) ↔ (Q → P) := by tauto
 @[simp] theorem not_left_iff_imp_iff {P Q : Prop} : (¬P ↔ (P → Q)) ↔ (Q → ¬P) := by tauto
+
+theorem ne_def {α : Type*} {x y : α} : x ≠ y ↔ ¬(x = y) := by rfl

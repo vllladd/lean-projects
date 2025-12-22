@@ -1,64 +1,54 @@
 import AP.Util.Basic
-
-namespace Bit
-
-@[simp]
-def ofBool (b : Bool) : Bit :=
-  match b with
-  | true => 1
-  | false => 0
-
-instance : Coe Bool Bit := ⟨ofBool⟩
-
--- #check 0 #exit
-
-end Bit
+import AP.Util.Serializable.Serializer
 
 structure Deserializer where
   bytes : ByteArray
   bitIndex : ℕ
 
-namespace Deserializer
+abbrev DSer := StateM Deserializer
 
-variable (d : Deserializer)
+namespace Deserializer
 
 def init (bytes : ByteArray) : Deserializer where
   bytes := bytes
   bitIndex := 0
 
-def byteIndex : ℕ :=
-  d.bitIndex >>> 3
+def byteIndex : DSer ℕ :=
+  gets (·.bitIndex >>> 3)
 
-def inByteBitIndex : UInt8 :=
-  d.bitIndex &&& 7 |>.toUInt8
+def inByteBitIndex : DSer UInt8 :=
+  gets (·.bitIndex &&& 7 |>.toUInt8)
 
-def curByte : UInt8 :=
-  d.bytes.getD 0 d.byteIndex
+def curByte : DSer UInt8 := do
+  pure # (←get).bytes.getD 0 (←byteIndex)
 
-def next' : Deserializer where
-  bytes := d.bytes
-  bitIndex := d.bitIndex + 1
+def next' : DSer Unit := modify # λ d =>
+  { bytes := d.bytes
+    bitIndex := d.bitIndex + 1
+  }
 
-def eof : Bool :=
-  d.bytes.size ≤ d.bitIndex
+def eof : DSer Bool :=
+  gets # λ d => d.bytes.size ≤ d.bitIndex
 
-def toEof : Deserializer where
-  bytes := d.bytes
-  bitIndex := d.bytes.size
+def toEof : DSer Unit := modify # λ d =>
+  { bytes := d.bytes
+    bitIndex := d.bytes.size
+  }
 
-def next : Deserializer :=
-  if d.eof then d else d.next'
+def next : DSer Unit := do
+  if ←eof then pure () else next'
 
-def readBit' : Bit :=
-  (d.curByte >>> d.inByteBitIndex) &&& 1 != 0
+def readBit' : DSer Bit := do
+  pure # ((←curByte) >>> (←inByteBitIndex)) &&& 1 != 0
 
-def readBit : Bit × Deserializer where
-  fst := d.readBit'
-  snd := d.next
+def readBit : DSer Bit := do
+  let b ← readBit'
+  next; pure b
 
-def drop (n : ℕ) : Deserializer where
-  bytes := d.bytes
-  bitIndex := min d.bytes.size # d.bitIndex + n
+def drop (n : ℕ) : DSer Unit := modify # λ d =>
+  { bytes := d.bytes
+    bitIndex := min d.bytes.size # d.bitIndex + n
+  }
 
 def getBits' (d : Deserializer) (n : ℕ) : List Bit :=
   match n with
@@ -67,5 +57,5 @@ def getBits' (d : Deserializer) (n : ℕ) : List Bit :=
     let (b, d') := d.readBit
     b :: d'.getBits' n
 
-def getBits : List Bit :=
-  d.getBits' # d.bytes.size - d.bitIndex
+def getBits : DSer # List Bit :=
+  gets # λ d => getBits' d # d.bytes.size - d.bitIndex
