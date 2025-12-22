@@ -466,6 +466,10 @@ theorem hist_suffix_of_reachable {s₁ s₂ : State}
   rw [hist_eq_of_tr h₁]
   simp
 
+theorem not_reachable_of_not_hist_suffix {s₁ s₂ : State}
+(h : ¬(s₁.hist <:+ s₂.hist)) : ¬sys.Reachable s₁ s₂ := by
+  contrapose! h; exact hist_suffix_of_reachable h
+
 theorem length_hist_le_of_reachable {s₁ s₂ : State}
 (h : sys.Reachable s₁ s₂) : s₁.hist.length ≤ s₂.hist.length :=
   hist_suffix_of_reachable h |>.length_le

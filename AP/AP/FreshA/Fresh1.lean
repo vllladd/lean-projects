@@ -25,37 +25,6 @@ def aFresh1 (s : State) (fsp : FSP) : AStrat :=
 
 theorem AStrat.Fresh1.wf {a : AStrat} {s fsp} (h : a.Fresh1 s fsp) : a.WF := h.1
 
-theorem State.false_of_aState_and_dState s [hs₁ : AState s] [hs₂ : DState s] : False := by
-  have h₁ := hs₁.2; rw [hs₂.2] at h₁; simp at h₁
-
-theorem AState.even_of_simulate {s s₁ f n} [hs : AState s] [hs₁ : AState s₁]
-(h : sys.simulate f s n = (s₁, 0)) : Even n := by
-  by_contra h₁; simp at h₁
-  obtain ⟨n, rfl⟩ := h₁
-  rw [mul_comm] at h
-  have h₁ := DState.of_simulate_mul_two_add_one_eq_full h
-  exact s₁.false_of_aState_and_dState
-
-theorem AState.aSeek_exi_tr_of {s P} [hs : AState s]
-(h : ∃ p s₁, sys.tr s p = some s₁ ∧ P s₁) :
-∃ s₁, sys.tr s (aSeek P |>.f s) = some s₁ ∧ P s₁ := by
-  simp [aSeek]
-  rw [choose?_eq_of_exi]
-  rotate_left; exact h
-  simp
-  have h₁ := Classical.epsilon_spec h
-  generalize hp : Classical.epsilon (λ p => ∃ s₁, sys.tr s p = some s₁ ∧ P s₁) = p at h₁ ⊢
-  choose s₁ h₁ h₂ using h₁
-  simpa [sys.validTr_of_eq_some h₁, h₁]
-
-theorem AState.ne_of_tr {s s₁ p} [hs : AState s]
-(h : sys.tr s p = some s₁) : p ≠ s.aPos := by
-  rw [tr_eq_some_iff] at h; grind
-
-theorem AState.aPos_ne_of_tr {s s₁ p} [hs : AState s]
-(h : sys.tr s p = some s₁) : s₁.aPos ≠ s.aPos := by
-  rw [tr_eq_some_iff] at h; grind
-
 theorem State.aPos_notMem_of_aWinsDisj {s : State} {fsp a d}
 (h : s.aWinsDisj fsp ⟨a, d⟩) : s.aPos ∉ fsp.get 0 := by
   specialize h 0; simp at h; exact h
