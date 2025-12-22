@@ -19,8 +19,6 @@ noncomputable
 def aFresh1 (s : State) (fsp : FSP) : AStrat :=
   aSeek # aFresh1Cnd s fsp
 
--- #check 0 #exit
-
 -----
 
 theorem AStrat.Fresh1.wf {a : AStrat} {s fsp} (h : a.Fresh1 s fsp) : a.WF := h.1
@@ -253,8 +251,6 @@ theorem State.aPtsSimAt_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} 
   right
   use n₁, H₄, s₁, hs₁, h₁
   simpa
-
--- #check 0 #exit
 
 theorem State.aPtsSimNcard_spec_of_fresh1 {s fsp} {a : AStrat} [hs : sys.WF s]
 (h : a.Fresh1 s fsp) (set : Set' PointZ) : ∀ (d : DStrat) [d.WF],
