@@ -179,6 +179,7 @@ theorem AState.dwn_lt_of_tr {sa sd p} [hsa : AState sa]
   contrapose! h₁
   cases n; simp at hp₁; nm n
   dsimp at h₁
+  rw [sys.snd_simulate_add_one_eq_zero_iff']
   simp [h₂]
   convert h₁ using 2
   apply State.simulate_set_a_eq_of_length_hist_lt ⟨_, h₂⟩
@@ -201,6 +202,7 @@ theorem DState.exi_tr_dHws_and_dwn_lt {sd} [hsd : DState sd]
     specialize h₁ a Ha
     use n - 1
     cases n; simp at hp₁; nm n
+    rw [ne_def, sys.snd_simulate_add_one_eq_zero_iff'] at h₁
     simp [h₃] at h₁
     exact h₁
   rw [State.dHws_iff_dHws_bounded] at h₄
@@ -216,6 +218,7 @@ theorem DState.exi_tr_dHws_and_dwn_lt {sd} [hsd : DState sd]
     intro a Ha
     specialize h₁ a Ha
     use n
+    rw [ne_def, sys.snd_simulate_add_one_eq_zero_iff'] at h₁
     simp [h₃] at h₁
     exact h₁
   specialize h₅ (n - 1) _
@@ -227,6 +230,7 @@ theorem DState.exi_tr_dHws_and_dwn_lt {sd} [hsd : DState sd]
   specialize h₁ a Ha
   contrapose! h₁
   cases n; simp at hp₁; nm n
+  rw [sys.snd_simulate_add_one_eq_zero_iff']
   simpa [h₃]
 
 theorem DState.exi_tr_dwn_lt {sd} [hsd : DState sd]

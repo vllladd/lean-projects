@@ -12,6 +12,7 @@ theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
   · intro sd hd sa ih h₁ n
     specialize ih (n + 1)
     obtain ⟨a, Ha, ih⟩ := ih
+    rw [sys.snd_simulate_add_one_eq_zero_iff'] at ih
     simp [h₁] at ih
     use a
   intro sa ha ih
@@ -30,6 +31,7 @@ theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
       specialize hf n
       rcases hf with ⟨h₁, h₂⟩
       cases n <;> simp; nm n
+      rw [sys.snd_simulate_add_one_eq_zero_iff'] at h₂
       simp at h₂; choose sd h₃ using h₂
       simp [ha.tr_eq_some_iff] at h₃
       tauto
@@ -49,6 +51,7 @@ theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
     intro n
     specialize h₅ (n + 1) (by simp)
     obtain ⟨a, Ha, h₅, h₆⟩ := h₅
+    rw [sys.snd_simulate_add_one_eq_zero_iff'] at h₆
     simp [h₅, h₈] at h₆
     use a
   suffices h₅ : ∀ (k : ℕ), ∃ (n : ℕ), k ≤ n ∧ g n = ⟨pa, h₃⟩

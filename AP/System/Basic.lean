@@ -564,8 +564,7 @@ theorem simulate_one_of_snd_add_one {f s s' r} :
 sys.simulate f s 1 = (s', r + 1) ↔ sys.tr s (f s) = none ∧ s = s' ∧ r = 0 :=
   simulate_one_of_snd_succ
 
-@[simp high]
-theorem snd_simulate_add_one_eq_zero_iff {f s n} : (sys.simulate f s (n + 1)).2 = 0 ↔
+theorem snd_simulate_add_one_eq_zero_iff' {f s n} : (sys.simulate f s (n + 1)).2 = 0 ↔
 ∃ s₁, sys.tr s (f s) = some s₁ ∧ (sys.simulate f s₁ n).2 = 0 := by
   simp [add_comm n 1, Prod.ext_iff]
 

@@ -107,8 +107,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     ·
       ext c :1
       apply simulate_congr; simp
-      intro r hr
-      intro sd hsd H₃ H₄ H₅
+      intro r hr sd hsd H₃ H₄ H₅
       simp [←H₁]
       rw [if_neg]
       rotate_left
@@ -141,8 +140,9 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     
     -----
     
-    specialize h₁ d₂
-    choose N hN H₅ H₆ using h₁
+    specialize h₃ d₂
+    contrapose! h₃
+    simp [←hg, ←hf]
     
     sorry
   

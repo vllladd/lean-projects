@@ -223,6 +223,7 @@ sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
   replace h : s₁.aWins st
   · intro n
     specialize h (n + 1)
+    rw [sys.snd_simulate_add_one_eq_zero_iff'] at h
     simp [h₁] at h
     exact h
   obtain ⟨n, s₂,hs₂, h₂, h₃⟩ := hs₁.exi_d_move_not_mem_of_aWins set h

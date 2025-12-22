@@ -1065,7 +1065,7 @@ theorem acyclic_of_tr {a} [ha : sys.Acyclic a] {t b}
 
 theorem simulate_succ_snd_eq_zero_of_tr_and_eq_zero {f a b n}
 (h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.tr a (f a) = some b) :
-(sys.simulate f a # n + 1).2 = 0 := by simpa [h₂]
+(sys.simulate f a # n + 1).2 = 0 := by simpa [snd_simulate_add_one_eq_zero_iff', h₂]
 
 theorem simulate_snd_eq_zero_of_tr_and_eq_zero {f a b n}
 (h₁ : (sys.simulate f b n).2 = 0) (h₂ : sys.tr a (f a) = some b) :
@@ -1080,7 +1080,7 @@ theorem simulate_finset_card_eq_of_acyclic
   induction n generalizing a
   · simp
   nm n ih
-  simp at h₁
+  simp [snd_simulate_add_one_eq_zero_iff'] at h₁
   choose b h₂ h₁ using h₁
   rw [Finset.mkRaw_fin_succ_eq_insert]
   have hb := acyclic_of_tr h₂
@@ -1095,7 +1095,7 @@ theorem simulate_finset_card_eq_of_acyclic
   intro h₄
   specialize ha f k (n + 1)
     (simulate_snd_eq_zero_of_le_and_eq_zero h₃ hk)
-  simp [h₂] at ha
+  simp [snd_simulate_add_one_eq_zero_iff', h₂] at ha
   specialize ha h₁ h₄
   simp [ha] at hk
 
@@ -1292,7 +1292,7 @@ sys.simulate g a₂ k = (b₂, 0) → r b₁ b₂ → sys.tr b₁ (f b₁) = som
       rw [h₂]; linarith
     obtain ⟨c₁, hc₁⟩ : ∃ c₁, sys.tr b₁ (f b₁) = some c₁
     · rw [simulate_add] at h₆
-      simp [hb₁] at h₆
+      simp [hb₁, snd_simulate_add_one_eq_zero_iff'] at h₆
       exact h₆
     specialize h₃ c₁ hb₁ hb₂ h₅ hc₁
     obtain ⟨c₂, hc₂, h₇⟩ := h₃

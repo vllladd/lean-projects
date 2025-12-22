@@ -1,4 +1,5 @@
 import AP.AP.Basic
+import AP.Temp
 
 namespace AP
 
@@ -345,6 +346,8 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   specialize h₅ a hsa
   obtain ⟨n, h₅⟩ := h₅
   use n + 2
+  simp only [show 2 = 1 + 1 by rfl, ←add_assoc, ne_def,
+    sys.snd_simulate_add_one_eq_zero_iff']
   simp [hpa, h₁]
   have h₆ : sys.tr sd (dStratOfDWins sa |>.f sd) = some sa'
   · have h₆ : sd.getMoveAt sa = some pa
@@ -411,6 +414,7 @@ theorem AState.dHws_of_tr' {sd sa pd} [hd : DState sd]
   simp at h₃ ⊢
   intro n
   specialize h₃ # n + 1
+  rw [sys.snd_simulate_add_one_eq_zero_iff'] at h₃
   simp [h₁] at h₃
   rw [←h₃]
   congr 1
@@ -437,6 +441,7 @@ theorem DState.aHws_of_tr' {sa sd pa} [ha : AState sa]
   intro n
   cases n; simp; nm n
   specialize h₃ n
+  rw [sys.snd_simulate_add_one_eq_zero_iff']
   simp [h₁]
   rw [←h₃]
   congr 1
@@ -460,6 +465,7 @@ theorem State.aHws_of_not_dHws {s : State} [hs : sys.WF s]
   intro d hd n
   cases n; rfl; nm n
   obtain ⟨sa, h₁⟩ := hd.validTr sd
+  rw [sys.snd_simulate_add_one_eq_zero_iff']
   simp [h₁]
   have ha := AState.of_tr h₁
   replace h : ¬sa.dHws
@@ -508,6 +514,7 @@ sa.aHws ↔ ∃ p sd, sys.tr sa p = some sd ∧ sd.aHws := by
     use a.f sa, sd, h₂, a, ha
     intro d hd n
     specialize h d hd (n + 1)
+    rw [sys.snd_simulate_add_one_eq_zero_iff'] at h
     simp [h₂] at h
     exact h
   · rintro ⟨p, sd, h₁, h₂⟩
@@ -532,7 +539,8 @@ sd.dHws ↔ ∃ p sa, sys.tr sd p = some sa ∧ sa.dHws := by
     specialize h a ha
     obtain ⟨n, h⟩ := h
     cases n; simp at h; nm n
-    use n; simp [h₂] at h; exact h
+    use n; rw [ne_def, sys.snd_simulate_add_one_eq_zero_iff'] at h
+    simp [h₂] at h; exact h
   · rintro ⟨p, sa, h₁, h₂⟩
     have h₃ := AState.of_tr h₁
     exact AState.dHws_of_tr' h₁ h₂
@@ -605,6 +613,7 @@ sys.tr sd (st.d.f sd) = some sa → p sa) : s.aWins st ∧ p s := by
     use λ n => h n |>.1
   intro n
   cases n; simpa; nm n
+  rw [sys.snd_simulate_add_one_eq_zero_iff']
   simp
   obtain ⟨sa, h₄⟩ := hst.wf_d.validTr s
   simp [h₄]
@@ -757,6 +766,7 @@ sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.dWins ⟨a, d⟩ := b
     specialize ih (f s') h₆ h₅ rfl
     obtain ⟨n, ih⟩ := ih
     use n + 1
+    rw [ne_def, sys.snd_simulate_add_one_eq_zero_iff']
     simpa [h₄]
   · have h₄ := d.validTr s
     obtain ⟨s', h₄⟩ := h₄
@@ -765,6 +775,7 @@ sys.tr sd (d.f sd) = some sa → p sa ∧ f sa < f sd) : s.dWins ⟨a, d⟩ := b
     specialize ih (f s') h₆ h₅ rfl
     obtain ⟨n, ih⟩ := ih
     use n + 1
+    rw [ne_def, sys.snd_simulate_add_one_eq_zero_iff']
     simpa [h₄]
 
 theorem State.dWins_of_le_lt {s} [hs : sys.WF s]

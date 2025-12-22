@@ -462,6 +462,7 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
   use a, inferInstance
   intro d hd n
   specialize H₂ d hd (n + 1)
+  rw [sys.snd_simulate_add_one_eq_zero_iff'] at H₂
   simp [H₈] at H₂
   convert H₂
   simp

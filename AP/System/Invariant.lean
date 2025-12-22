@@ -65,3 +65,18 @@ theorem simulate_snd_eq_zero_of_tr {f} [hf : sys.SimFn f] {a b c t n r} [ha : sy
 (h₁ : sys.simulate f a n = (b, r)) (h₂ : sys.tr b t = some c) : r = 0 := by
   rw [Prod.fst_eq_of_eq_mk h₁] at h₂; rw [Prod.snd_eq_of_eq_mk h₁]
   exact simulate_snd_eq_zero_of_hasTr # hasTr_of_eq_some h₂
+
+@[simp high]
+theorem snd_simulate_add_one_eq_zero_iff {f s n} :
+(sys.simulate f s (n + 1)).2 = 0 ↔ ∃ s₁ s₂,
+sys.simulate f s n = (s₁, 0) ∧ sys.tr s₁ (f s₁) = some s₂ := by
+  generalize hr : sys.simulate f s (n + 1) = r
+  rcases r with ⟨s₂, r⟩
+  constructor
+  · rintro rfl
+    simp at hr
+    rw [exists_comm]; use s₂
+  rintro ⟨s₁, s₂', h₁, h₂⟩
+  simp [simulate_add, h₁] at hr
+  simp [simulate, h₂] at hr
+  simp [hr]
