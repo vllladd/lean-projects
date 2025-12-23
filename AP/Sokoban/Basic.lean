@@ -1,4 +1,5 @@
 import AP.Sokoban.Defs
+import AP.Temp
 
 namespace Sokoban
 
@@ -20,10 +21,10 @@ theorem State.Get.eq_of {s : State} {p d₁ d₂}
 theorem State.Get.get' {s : State} {p d} (hd : s.Get p d) : s.Get' d := ⟨⟨_, hd⟩⟩
 
 theorem State.Get.wf {s : State} {p d} [hs : s.WF] (hd : s.Get p d) : d.WF :=
-  hs.h_grid hd.get'
+  hs.wf_get hd.get'
 
 theorem State.Get'.wf {s : State} {d} [hs : s.WF] (hd : s.Get' d) : d.WF :=
-  hs.h_grid hd
+  hs.wf_get hd
 
 theorem State.Get.mem {s : State} {p d} (hd : s.Get p d) : p ∈ s.grid := by
   rw [get_iff] at hd
@@ -127,27 +128,21 @@ theorem get_moveBox {s : State} {p₁ p₂ p d} :
 else if p₁ = p then {d' with box := false} else d') = d := by
   simp [get_iff]
 
-theorem movePlayer_moveBox {s : State} {p₁ p₂ p₃} :
-(s.moveBox p₁ p₂).movePlayer p₃ = (s.movePlayer p₃).moveBox p₁ p₂ := by
-  ext:1 <;> try simp
-  ext:1; nm p
-  simp [Map.get?_eq_ite]
-  split_ifs with h₁ <;> simp
-  rw [Map.mem_iff_get?_eq_some] at h₁
-  rcases h₁ with ⟨d, hd⟩
-  simp [Map.get!_eq_get?_get!, hd]
-  split_ifs <;> simp
+@[simp]
+theorem unsolvedNum_move_player {s : State} {p} :
+(s.movePlayer p).unsolvedNum = s.unsolvedNum := rfl
 
 theorem moveBox_movePlayer {s : State} {p₁ p₂ p₃} :
 (s.movePlayer p₁).moveBox p₂ p₃ = (s.moveBox p₂ p₃).movePlayer p₁ := by
-  ext:1 <;> try simp
-  ext:1; nm p
-  simp [Map.get?_eq_ite]
-  split_ifs with h₁ <;> simp
-  rw [Map.mem_iff_get?_eq_some] at h₁
-  rcases h₁ with ⟨d, hd⟩
-  simp [Map.get!_eq_get?_get!, hd]
-  split_ifs <;> simp
+  ext :1 <;> try simp
+  · dsimp [State.movePlayer, State.moveBox]; ext; simp
+    split_ifs <;> simp_all only [Option.map_map, Function.comp_def', Option.map_eq_some_iff]
+  · dsimp [State.movePlayer, State.moveBox]
+    split_ifs <;> simp_all [Map.get!_eq_get!_get?, Option.get!] <;> grind
+
+theorem movePlayer_moveBox {s : State} {p₁ p₂ p₃} :
+(s.moveBox p₁ p₂).movePlayer p₃ = (s.movePlayer p₃).moveBox p₁ p₂ :=
+  moveBox_movePlayer.symm
 
 @[simp]
 theorem move_eq_some_iff {s s' : State} (t : Move) : s.move t = some s' ↔
@@ -172,7 +167,7 @@ d₂.wall = false ∧ s₁.moveBox p₁ p₂ = s' := by
   simp [movePlayer_moveBox]
 
 theorem State.Get.player_eq {s : State} {p d} [hs : s.WF] (hd : s.Get p d) :
-s.player = p ↔ d.player := hs.h_player_iff hd |>.symm
+s.player = p ↔ d.player := hs.tile_player_iff hd |>.symm
 
 theorem State.Get.player_iff {s : State} {p d} [hs : s.WF] (hd : s.Get p d) :
 d.player = decide (s.player = p) := by simp [hd.player_eq]
@@ -182,13 +177,30 @@ theorem State.Get.player_of_get_player {s : State} {d} [hs : s.WF]
 
 theorem State.Get.not_box_and_not_wall_of_get_player {s : State} {d} [hs : s.WF]
 (hd : s.Get s.player d) : d.box = false ∧ d.wall = false := by
-  have h₁ := hd.wf.h_pbw
+  have h₁ := hd.wf.pbw
   simp [hd.player_of_get_player] at h₁
   exact h₁
 
+@[simp]
+theorem countP_box_target_movePlayer {s : State} {p} :
+List.countP (λ d => d.box && !d.target) (s.movePlayer p).grid.values =
+List.countP (λ d => d.box && !d.target) s.grid.values := by
+  apply Map.countP_values_modifyMany_eq_of; grind
+
+@[simp]
+theorem get?_grid_of_get {s : State} {p d} [h : s.Get p d] : s.grid.get? p = some d := h.1
+
+@[simp]
+theorem get!_grid_of_get {s : State} {p d} [h : s.Get p d] : s.grid.get! p = d := by
+  simp [Map.get!_eq_get?_get!]
+
+@[simp]
+theorem mem_grid_of_get {s : State} {p d} [h : s.Get p d] : p ∈ s.grid := by
+  simp [Map.mem_iff_get?_eq_some]
+
 theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   symm; constructor
-  · simp [System.wf_def]; intro h; use s
+  · simp [sys.wf_def]; intro h; use s
   intro h
   apply sys.invariant_wf h; simp
   clear! s
@@ -198,7 +210,7 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   split_ifs at h₄ with h₅
   · obtain ⟨d₂, h₄, h₆, h₇, rfl⟩ := h₄
     constructor
-    · simp; exact h₁.h_bounds
+    · simp; exact h₁.mem_grid_iff_bounds
     · intro d ⟨p, hd⟩
       simp at hd
       obtain ⟨d₃, H₁, H₂⟩ := hd
@@ -219,7 +231,7 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
         subst H₂ H₅
         constructor <;> simp [H₁.not_box_and_not_wall_of_get_player]
       · subst H₂; exact H₁.wf
-    · simp; exact h₂.mem
+    · simp
     · simp; intro p d hp
       split_ifs
       · nm H₁ H₂; simp [←H₁] at H₂
@@ -232,9 +244,29 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
       · nm H₁ H₂; clear H₁; rw [H₂] at h₂; simpa
       · nm H₁ H₂ H₃; clear H₁ H₂; simp [H₃]
       · nm H₁ H₂ H₃; simpa [H₂, hp.player_iff]
+    · simp [moveBox_movePlayer]
+      simp [State.moveBox, h₁.unsolvedNum_eq]
+      rw [Map.countP_values_modify_eq_ite_of_get? # by simp; rfl]
+      rw [Map.countP_values_modify_eq_ite_of_get? # by simp; rfl]
+      simp [h₅, h₆]
+      simp_all only [sys_initial_iff, System.instWFOfInitial]
+      split
+      next h =>
+        simp_all only [tsub_zero]
+        split
+        next h_1 => simp_all only [add_tsub_cancel_right, add_zero]
+        next h_1 => simp_all only [Bool.not_eq_true, tsub_zero]
+      next h =>
+        simp_all only [Bool.not_eq_true, add_zero]
+        split
+        next h_1 => simp_all only [add_zero]
+        next h_1 =>
+          simp_all only [Bool.not_eq_true, tsub_zero]
+          rw [Nat.sub_add_cancel]
+          simp; exact ⟨d₁, ⟨s.player + t.point, by simp⟩, h₅, h⟩
   subst h₄
   constructor;
-  · simp; exact h₁.h_bounds
+  · simp; exact h₁.mem_grid_iff_bounds
   · intro d₂ ⟨p, h₆⟩
     simp at h₆
     obtain ⟨d₃, hp, hp₁⟩ := h₆
@@ -245,13 +277,14 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
     · nm H₁ H₂; subst H₂
       constructor <;> simp [hp.not_box_and_not_wall_of_get_player]
     · exact hp.wf
-  · simp; exact h₂.mem
+  · simp
   · intro p d hp
     simp at hp
     obtain ⟨d₂, hp, hp₁⟩ := hp
     split_ifs at hp₁ <;> subst hp₁ <;> simp
     any_goals assumption
     nm H₁ H₂; simpa [H₁, hp.player_iff]
+  · simp [h₁.unsolvedNum_eq]
 
 theorem wf_of_reachable {s s' : State} [hs : s.WF]
 (hr : sys.Reachable s s') : s'.WF := by
@@ -261,13 +294,13 @@ theorem wf_of_reachable {s s' : State} [hs : s.WF]
 
 @[simp]
 theorem player_mem {s : State} [hs : s.WF] : s.player ∈ s.grid :=
-  hs.h_player_mem
+  hs.player_mem
 
 theorem width_ne_zero {s : State} [hs : s.WF] : s.width ≠ 0 := by
-  intro h₁; have h₂ := hs.h_player_mem; rw [hs.h_bounds] at h₂; linarith
+  intro h₁; have h₂ := hs.player_mem; rw [hs.mem_grid_iff_bounds] at h₂; linarith
 
 theorem height_ne_zero {s : State} [hs : s.WF] : s.height ≠ 0 := by
-  intro h₁; have h₂ := hs.h_player_mem; rw [hs.h_bounds] at h₂; linarith
+  intro h₁; have h₂ := hs.player_mem; rw [hs.mem_grid_iff_bounds] at h₂; linarith
 
 instance {s : State} [hs : s.WF] : NeZero s.width := ⟨width_ne_zero⟩
 instance {s : State} [hs : s.WF] : NeZero s.height := ⟨height_ne_zero⟩
@@ -295,4 +328,5 @@ theorem height_eq_of_reachable {s₀ s : State} [hs₀ : s₀.WF]
 theorem mem_grid_iff_of_reachable {s₀ s : State} [hs₀ : s₀.WF] {p}
 (h : sys.Reachable s₀ s) : p ∈ s.grid ↔ p ∈ s₀.grid := by
   have hs := wf_of_reachable h
-  rw [hs₀.h_bounds, hs.h_bounds, width_eq_of_reachable h, height_eq_of_reachable h]
+  rw [hs₀.mem_grid_iff_bounds, hs.mem_grid_iff_bounds, width_eq_of_reachable h,
+    height_eq_of_reachable h]

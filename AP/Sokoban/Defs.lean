@@ -17,6 +17,7 @@ structure State where
   height : ℕ
   grid : Map PointZ Tile
   player : PointZ
+  unsolvedNum : ℕ
 deriving Inhabited, DecidableEq
 
 abbrev Move := Dir
@@ -24,7 +25,7 @@ abbrev Move := Dir
 -----
 
 @[class]
-structure State.Get (s : State) (p : PointZ) (d : Tile) : Prop where
+structure State.Get (s : State) (p : PointZ) (d : outParam Tile) : Prop where
   h : s.grid.get? p = d
 
 @[class]
@@ -33,16 +34,17 @@ structure State.Get' (s : State) (d : Tile) : Prop where
 
 @[class]
 structure Tile.WF (d : Tile) : Prop where
-  h_tw : [d.target, d.wall].atMostOne
-  h_pbw : [d.player, d.box, d.wall].atMostOne
+  tw : [d.target, d.wall].atMostOne
+  pbw : [d.player, d.box, d.wall].atMostOne
 
 @[class]
 structure State.WF (s : State) : Prop where
-  h_bounds : ∀ {p}, p ∈ s.grid ↔ 0 ≤ p.x ∧ 0 ≤ p.y ∧
+  mem_grid_iff_bounds {p} : p ∈ s.grid ↔ 0 ≤ p.x ∧ 0 ≤ p.y ∧
     p.x < s.width ∧ p.y < s.height
-  h_grid : ∀ {d}, s.Get' d → d.WF
-  h_player_mem : s.player ∈ s.grid
-  h_player_iff : ∀ {p d}, s.Get p d → (d.player ↔ s.player = p)
+  wf_get {d} : s.Get' d → d.WF
+  player_mem : s.player ∈ s.grid
+  tile_player_iff {p d} : s.Get p d → (d.player ↔ s.player = p)
+  unsolvedNum_eq : s.unsolvedNum = s.grid.values.countP (λ d => d.box && !d.target)
 
 @[class]
 structure State.WFTargets (s : State) extends State.WF s where
@@ -65,6 +67,9 @@ def State.moveBox (s : State) (p₁ p₂ : PointZ) : State :=
       [ (p₁, λ d => {d with box := false})
       , (p₂, λ d => {d with box := true})
       ]
+    unsolvedNum := s.unsolvedNum +
+      (if s.grid.get! p₁ |>.target then 1 else 0) -
+      (if s.grid.get! p₂ |>.target then 1 else 0)
   }
 
 def State.move (s : State) (m : Move) : Option State := do

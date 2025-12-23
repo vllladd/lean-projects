@@ -6,7 +6,7 @@ theorem point_eq_of_fin {s : State} [hs : s.WF] {p : PointZ}
 (h : p ∈ s.grid) : p = ⟨(p.x.toFin : Fin s.width), (p.y.toFin : Fin s.height)⟩ := by
   rcases p with ⟨x, y⟩
   simp
-  simp [hs.h_bounds] at h
+  simp [hs.mem_grid_iff_bounds] at h
   rcases h with ⟨h₁, h₂, h₃, h₄⟩
   rw [eq_comm]; nth_rw 2 [eq_comm]
   simp [Int.toFin, Nat.toFin]
@@ -101,3 +101,12 @@ theorem finite_reachable {s : State} [hs : s.WF] :
     rw [y_toFin_width_eq_iff (height_eq_of_reachable hs₁)
       (height_eq_of_reachable hs₂) player_mem player_mem] at h₃
     ext <;> assumption
+  ·
+    rw [h₄.unsolvedNum_eq, h₅.unsolvedNum_eq]
+    congr 2
+    ext p d
+    constructor <;> intro h
+    ·
+      sorry
+    ·
+      sorry
