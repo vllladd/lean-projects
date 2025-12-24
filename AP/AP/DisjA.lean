@@ -495,6 +495,12 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₃
   exact h₁
 
+theorem State.aHwsDisj_erase_taken' {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s']
+(h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
+(hpa : s'.aPos = s.aPos) (hp : s'.taken = s.taken.erase p)
+(h₁ : p ∈ s.taken) : s'.aHwsDisj fsp :=
+  aHwsDisj_of_aHwsDisj_insert # aHwsDisj_erase_taken h hpw ht hpa hp h₁
+
 theorem State.aHwsDisj_of_taken_subset {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
 (h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
 (hpa : s'.aPos = s.aPos) (h₁ : s'.taken ⊆ s.taken) :
@@ -559,6 +565,11 @@ s'.aHwsDisj # fsp.insertSet 0 s.taken.toSet := by
   have H₁ := s₁.aHwsDisj_erase_taken ih (p := p) (by rw [hpw, hpw₁])
     (by rw [ht, ht₁]) (by rw [hpa, hpa₁]) (by rwa [h₃]) (by simpa [h₃, ←H])
   exact aHwsDisj_of_aHwsDisj_insertSet H₁
+
+theorem State.aHwsDisj_of_taken_subset' {fsp s s'} [hs : sys.WF s] [hs' : sys.WF s']
+(h : s.aHwsDisj fsp) (hpw : s'.pw = s.pw) (ht : s'.aTurn = s.aTurn)
+(hpa : s'.aPos = s.aPos) (h₁ : s'.taken ⊆ s.taken) : s'.aHwsDisj fsp :=
+  aHwsDisj_of_aHwsDisj_insertSet # aHwsDisj_of_taken_subset h hpw ht hpa h₁
 
 open Classical in noncomputable
 def dChooseFromSet (ps : Set' PointZ) : DStrat :=
