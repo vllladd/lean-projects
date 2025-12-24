@@ -1,5 +1,4 @@
 import AP.Sokoban.Defs
-import AP.Temp
 
 namespace Sokoban
 
@@ -18,15 +17,15 @@ theorem State.Get.eq_of {s : State} {p d₁ d₂}
 (h₁ : s.Get p d₁) (h₂ : s.Get p d₂) : d₁ = d₂ := by
   rw [get_iff] at h₁ h₂; simp [h₁] at h₂; exact h₂
 
-theorem State.Get.get' {s : State} {p d} (hd : s.Get p d) : s.Get' d := ⟨⟨_, hd⟩⟩
+theorem State.Get.get' {s : State} {p d} [hd : s.Get p d] : s.Get' d := ⟨⟨_, hd⟩⟩
 
-theorem State.Get.wf {s : State} {p d} [hs : s.WF] (hd : s.Get p d) : d.WF :=
+theorem State.Get.wf {s : State} {p d} [hs : s.WF] [hd : s.Get p d] : d.WF :=
   hs.wf_get hd.get'
 
-theorem State.Get'.wf {s : State} {d} [hs : s.WF] (hd : s.Get' d) : d.WF :=
+theorem State.Get'.wf {s : State} {d} [hs : s.WF] [hd : s.Get' d] : d.WF :=
   hs.wf_get hd
 
-theorem State.Get.mem {s : State} {p d} (hd : s.Get p d) : p ∈ s.grid := by
+theorem State.Get.mem {s : State} {p d} [hd : s.Get p d] : p ∈ s.grid := by
   rw [get_iff] at hd
   rw [Map.mem_iff_get?_eq_some]
   simp [hd]

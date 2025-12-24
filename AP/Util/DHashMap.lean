@@ -1103,3 +1103,11 @@ theorem length_toSortedList [ha : LinearOrder α] : mp.toSortedList.length = mp.
 @[simp]
 theorem length_toSortedKeys [ha : LinearOrder α] : mp.toSortedKeys.length = mp.size := by
   simp [toSortedKeys]
+
+theorem eq_iff_inner : mp₁ = mp₂ ↔ mp₁.inner = mp₂.inner := by
+  cases mp₁; cases mp₂; simp
+
+theorem modify_of_notMem {i f} (h : i ∉ mp) : mp.modify i f = mp := by
+  simp [eq_iff_inner, modify, Internal.Raw₀.modify]
+  rw [if_neg]; simp; change ¬mp.contains i at h
+  simp [contains, Internal.Raw₀.contains] at h; exact h

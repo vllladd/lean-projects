@@ -12,6 +12,8 @@ variable [ha₁ : DecidableEq α] [ha₂ : Hashable α]
 variable [hb₁ : DecidableEq β] [hb₂ : Hashable β]
 variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
 variable {s s' s₁ s₂ s₃ : Set' α}
+variable [ha : LinearOrder α]
+omit ha
 
 namespace Set'
 

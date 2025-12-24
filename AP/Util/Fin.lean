@@ -1,4 +1,4 @@
-import AP.Util.Nat
+import AP.Util.Int
 
 namespace Fin
 
@@ -22,3 +22,14 @@ theorem Nat.toFin_congr {n m} [hn : NeZero n] [hm : NeZero m] {k₁ k₂ : ℕ}
 theorem Int.toFin_congr {n m} [hn : NeZero n] [hm : NeZero m] {k₁ k₂ : ℤ}
 (h₁ : n = m) (h₂ : k₁ = k₂) : (↑(k₁.toFin : Fin n) : ℕ) = (↑(k₂.toFin : Fin m) : ℕ) := by
   subst h₁ h₂; rfl
+
+theorem Nat.toFin_eq_self_of {k n : ℕ} [hk : NeZero k] (h : n < k) : (n.toFin : Fin k) = n := by
+  rw! [toFin, Fin.ofNat, Nat.mod_eq_of_lt h]
+
+theorem Int.toFin_eq_self_of {k : ℕ} {z : ℤ} [hk : NeZero k]
+(h₁ : 0 ≤ z) (h₂ : z < k) : (z.toFin : Fin k) = z := by
+  rw [toFin, Nat.toFin_eq_self_of # by grind, toNat_eq_self_of h₁]
+
+theorem Int.toFin_eq_toNat_of {k : ℕ} {z : ℤ} [hk : NeZero k]
+(h₁ : 0 ≤ z) (h₂ : z < k) : (z.toFin : Fin k) = z.toNat := by
+  rw [toFin, Nat.toFin_eq_self_of]; grind

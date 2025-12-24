@@ -2,7 +2,9 @@ import AP.Util.DHashMap
 
 variable {α : Type*} {β : α → Type*} {γ : α → Type*}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
-variable {mp : Std.ExtDHashMap α β}
+variable {mp mp₁ mp₂ : Std.ExtDHashMap α β}
+variable [ha : LinearOrder α]
+omit ha
 
 namespace Std.ExtDHashMap
 
@@ -654,3 +656,37 @@ theorem count_insert {p i x} (h : i ∉ mp) :
 (mp.insert i x).count p = mp.count p + if p i x then 1 else 0 := by
   revert h; rcases mp with ⟨mp⟩; apply mp.ind; intro m
   simp [count, insert, lift]; exact m.count_insert
+
+theorem eq_iff_inner : mp₁ = mp₂ ↔ mp₁.inner = mp₂.inner := by
+  cases mp₁; cases mp₂; simp
+
+@[simp]
+theorem mem_mk_iff {mp : DHashMap α β} {i} : i ∈ (⟨⟦mp⟧⟩ : ExtDHashMap α β) ↔ i ∈ mp := by
+  rfl
+
+theorem modify_of_notMem {i f} (h : i ∉ mp) : mp.modify i f = mp := by
+  rcases mp with ⟨mp⟩
+  induction mp using Quotient.inductionOn
+  nm mp
+  simp [modify, lift]
+  simp at h
+  apply setoid_apply_of_eq # DHashMap.modify_of_notMem h
+
+include ha in
+theorem toList_insert_perm_cons_of_notMem {i x} (h : i ∉ mp) :
+(mp.insert i x).toList.Perm (⟨i, x⟩ :: mp.toList) := by
+  rcases mp with ⟨mp⟩
+  induction mp using Quotient.inductionOn; nm mp
+  simp at h
+  simp [insert, lift, toList, DHashMap.toSortedList]
+  exact DHashMap.toList_insert_perm_cons_of_not_mem h
+
+include ha in @[simp]
+theorem nodup_keys : mp.keys.Nodup := by
+  rcases mp with ⟨mp⟩
+  induction mp using Quotient.inductionOn; nm mp
+  simp [keys, lift]
+
+include ha in @[simp]
+theorem sorted_keys' : mp.keys.Sorted (· < ·) := by
+  apply List.sorted_lt_of_sorted_le <;> simp

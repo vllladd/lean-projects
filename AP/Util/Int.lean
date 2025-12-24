@@ -104,3 +104,6 @@ theorem max_abs_eq_zero_iff {n m : ℤ} : max |n| |m| = 0 ↔ n = 0 ∧ m = 0 :=
 @[simp]
 theorem eq_self_sub_iff {a b : ℤ} : a = a - b ↔ b = 0 := by
   omega
+
+theorem toNat_eq_self_of {z : ℤ} (h₁ : 0 ≤ z) : z.toNat = z :=
+  toNat_of_nonneg h₁

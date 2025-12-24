@@ -37,25 +37,50 @@ theorem y_toFin_width_eq_iff {n} [hn : NeZero n] {s₁ s₂ : State}
   nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
   congr!; exact hw₁.symm; exact hw₂.symm
 
-private structure FinState (w h : ℕ) [NeZero w] [NeZero h] where
+structure Card.FinState (w h : ℕ) [NeZero w] [NeZero h] where
   grid : Map (Fin w × Fin h) Tile
   player : Fin w × Fin h
 deriving Fintype
 
-private def fn (s₀ : State) [hs : s₀.WF] (s : State) :
+def Card.fn (s₀ : State) [hs : s₀.WF] (s : State) :
 FinState s₀.width s₀.height :=
   { grid := Map.range # λ p => s.grid.get! ⟨p.1, p.2⟩
     player := (s.player.x.toFin, s.player.y.toFin)
   }
+
+theorem nonneg_x_of_get {s : State} {x y d}
+[hs : s.WF] [h : s.Get ⟨x, y⟩ d] : 0 ≤ x := by
+  replace h := Map.mem_of_get?_eq_some h.1; rw [hs.mem_grid_iff_bounds] at h; grind
+
+theorem nonneg_y_of_get {s : State} {x y d}
+[hs : s.WF] [h : s.Get ⟨x, y⟩ d] : 0 ≤ y := by
+  replace h := Map.mem_of_get?_eq_some h.1; rw [hs.mem_grid_iff_bounds] at h; grind
+
+theorem x_lt_width_of_get {s : State} {x y d}
+[hs : s.WF] [h : s.Get ⟨x, y⟩ d] : x < s.width := by
+  replace h := Map.mem_of_get?_eq_some h.1; rw [hs.mem_grid_iff_bounds] at h; grind
+
+theorem y_lt_height_of_get {s : State} {x y d}
+[hs : s.WF] [h : s.Get ⟨x, y⟩ d] : y < s.height := by
+  replace h := Map.mem_of_get?_eq_some h.1; rw [hs.mem_grid_iff_bounds] at h; grind
+
+theorem toFin_eq_of_get? {s s' : State} {p d} [hs : s.WF] [hs' : s'.WF]
+(h₁ : sys.Reachable s s') (h₂ : s'.grid.get? p = some d) :
+⟨(p.1.toFin : Fin s.width), (p.2.toFin : Fin s.height)⟩ = p := by
+  rcases p with ⟨x, y⟩; simp; replace h₂ : s'.Get _ _ := ⟨h₂⟩; split_ands
+  · apply Int.toFin_eq_self_of # nonneg_x_of_get (h := h₂)
+    rw [←width_eq_of_reachable h₁]; exact x_lt_width_of_get (h := h₂)
+  · apply Int.toFin_eq_self_of # nonneg_y_of_get (h := h₂)
+    rw [←height_eq_of_reachable h₁]; exact y_lt_height_of_get (h := h₂)
 
 theorem finite_reachable {s : State} [hs : s.WF] :
 {s' | sys.Reachable s s'}.Finite := by
   rename' s => s₀
   unfold Set.Finite
   simp
-  apply Finite.of_injective # λ ⟨s, _⟩ => fn s₀ s
+  apply Finite.of_injective # λ ⟨s, _⟩ => Card.fn s₀ s
   rintro ⟨s₁, hs₁⟩ ⟨s₂, hs₂⟩ h
-  simp [fn] at h
+  simp [Card.fn] at h
   rcases h with ⟨h₁, h₂, h₃⟩
   simp
   have h₄ : s₁.WF := wf_of_reachable hs₁
@@ -101,12 +126,33 @@ theorem finite_reachable {s : State} [hs : s.WF] :
     rw [y_toFin_width_eq_iff (height_eq_of_reachable hs₁)
       (height_eq_of_reachable hs₂) player_mem player_mem] at h₃
     ext <;> assumption
-  ·
-    rw [h₄.unsolvedNum_eq, h₅.unsolvedNum_eq]
+  · rw [h₄.unsolvedNum_eq, h₅.unsolvedNum_eq]
     congr 2
     ext p d
+    specialize h₁ p.x.toFin p.y.toFin
+    simp_rw [Map.get!_eq_get!_get?] at h₁
     constructor <;> intro h
-    ·
-      sorry
-    ·
-      sorry
+    · have H₁ := h
+      rw [←toFin_eq_of_get? hs₁ h] at H₁ ⊢
+      simp [H₁] at h₁
+      subst h₁
+      clear H₁
+      replace h := Map.mem_of_get?_eq_some h
+      simp [h₄.mem_grid_iff_bounds] at h
+      simp [h₅.mem_grid_iff_bounds]
+      rw [width_eq_of_reachable hs₁, height_eq_of_reachable hs₁] at h
+      rw [width_eq_of_reachable hs₂, height_eq_of_reachable hs₂]
+      iterate 2 rw [Int.toFin_eq_toNat_of]
+      all_goals omega
+    · have H₁ := h
+      rw [←toFin_eq_of_get? hs₂ h] at H₁ ⊢
+      simp [H₁] at h₁
+      subst h₁
+      clear H₁
+      replace h := Map.mem_of_get?_eq_some h
+      simp [h₅.mem_grid_iff_bounds] at h
+      simp [h₄.mem_grid_iff_bounds]
+      rw [width_eq_of_reachable hs₂, height_eq_of_reachable hs₂] at h
+      rw [width_eq_of_reachable hs₁, height_eq_of_reachable hs₁]
+      iterate 2 rw [Int.toFin_eq_toNat_of]
+      all_goals omega

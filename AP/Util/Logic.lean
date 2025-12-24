@@ -1,5 +1,7 @@
 import AP.Util.Meta
 
+variable {α β γ : Type*}
+
 theorem hv {α : Type*} (x : α) : ∃ y, y = x := exists_eq
 
 theorem ne_of_congr {α β : Type*} {x y : α} (f : α → β)
@@ -300,3 +302,17 @@ Classical.epsilon (λ y => x = y) = x := by
 @[simp] theorem not_left_iff_imp_iff {P Q : Prop} : (¬P ↔ (P → Q)) ↔ (Q → ¬P) := by tauto
 
 theorem ne_def {α : Type*} {x y : α} : x ≠ y ↔ ¬(x = y) := by rfl
+
+theorem setoid_apply_of_eq {s : Setoid α} {x y : α} (h : x = y) : s x y := by
+  rw [h]
+
+theorem Equivalence.comm {r : α → α → Prop} {a b} (h : Equivalence r) : r a b ↔ r b a :=
+  ⟨h.symm, h.symm⟩
+
+theorem Equivalence.iff_of_left {r : α → α → Prop} {a b c}
+(h₁ : Equivalence r) (h₂ : r a b) : r a c ↔ r b c :=
+  ⟨h₁.trans # h₁.symm h₂, h₁.trans h₂⟩
+
+theorem Equivalence.iff_of_right {r : α → α → Prop} {a b c}
+(h₁ : Equivalence r) (h₂ : r a b) : r c a ↔ r c b := by
+  nth_rw 1 [h₁.comm]; nth_rw 2 [h₁.comm]; exact h₁.iff_of_left h₂

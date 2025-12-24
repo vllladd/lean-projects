@@ -12,7 +12,8 @@ instance {α : Type*} [ha : LinearOrder α] : Std.LawfulOrderMax α where
 
 namespace List
 
-variable {α β : Type*} {xs ys : List α}
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
 
 @[simp]
 def init {α : Type*} : List α → List α
@@ -1344,3 +1345,59 @@ theorem foldl_apply_comm {f : β → α → β} {z x}
 (h : ∀ ⦃x y z⦄, f (f x y) z = f (f x z) y) :
 xs.foldl f (f z x) = f (xs.foldl f z) x := by
   induction xs generalizing z; simp; nm y xs ih; simp; rw [←ih, h]
+
+@[simp]
+theorem perm_comm_simp : (xs ~ ys ↔ ys ~ xs) ↔ True := by
+  simp [perm_comm]
+
+@[simp]
+theorem equivalence_perm : Equivalence # @Perm α where
+  refl := Perm.refl
+  symm := Perm.symm
+  trans := Perm.trans
+
+theorem perm_iff_perm_of_left (h : xs ~ ys) : xs ~ zs ↔ ys ~ zs :=
+  Equivalence.iff_of_left (by simp) h
+
+theorem perm_iff_perm_of_right (h : xs ~ ys) : zs ~ xs ↔ zs ~ ys :=
+  Equivalence.iff_of_right (by simp) h
+
+@[simp]
+theorem mergeSort_perm_iff {p} : xs.mergeSort p ~ ys ↔ xs ~ ys := by
+  constructor; all_goals intro h; symm at h ⊢; apply h.trans; simp
+
+@[simp]
+theorem perm_mergeSort_iff {p} : xs ~ ys.mergeSort p ↔ xs ~ ys := by
+  nth_rw 1 [perm_comm]; simp
+
+@[simp]
+theorem cons_mergeSort_perm_iff {p x} : x :: xs.mergeSort p ~ ys ↔ x :: xs ~ ys := by
+  apply perm_iff_perm_of_left; trans (x :: xs).mergeSort p <;> simp
+
+@[simp]
+theorem perm_cons_mergeSort_iff {p y} : xs ~ y :: ys.mergeSort p ↔ xs ~ y :: ys := by
+  apply perm_iff_perm_of_right; trans (y :: ys).mergeSort p <;> simp
+
+@[simp]
+theorem modify_length_append {f} : (xs ++ ys).modify xs.length f = xs ++ ys.modify 0 f := by
+  induction xs; simp; simpa
+
+theorem sorted_lt_of_sorted_le [ha : LinearOrder α]
+(h₁ : xs.Sorted (· ≤ ·)) (h₂ : xs.Nodup) : xs.Sorted (· < ·) :=
+  Sorted.lt_of_le h₁ h₂
+
+theorem eq_and_eq_of_append_cons_eq {xs' ys' x} (h₁ : xs ++ x :: ys = xs' ++ x :: ys')
+(h₂ : x ∉ xs) (h₃ : x ∉ xs') : xs = xs' ∧ ys = ys' := by
+  induction xs generalizing xs' <;> cases xs' <;> grind
+
+theorem map_modify_eq_of {i} {f : α → α} {g : α → β}
+(h : ∀ x ∈ xs, g (f x) = g x) : (xs.modify i f).map g = xs.map g := by
+  induction xs generalizing i
+  · simp
+  clear! xs; nm x xs ih
+  simp [modify_cons]
+  cases i <;> simp
+  · apply h; simp
+  nm i
+  apply ih
+  grind

@@ -14,6 +14,8 @@ open Std.DHashMap
 variable {α : Type u} {β : α → Type v} {γ : α → Type w}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
 variable {mp : DMap α β}
+variable [ha : LinearOrder α]
+omit ha
 
 def empty : DMap α β := ⟨∅⟩
 
