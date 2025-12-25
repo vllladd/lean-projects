@@ -197,6 +197,84 @@ theorem get!_grid_of_get {s : State} {p d} [h : s.Get p d] : s.grid.get! p = d :
 theorem mem_grid_of_get {s : State} {p d} [h : s.Get p d] : p ∈ s.grid := by
   simp [Map.mem_iff_get?_eq_some]
 
+@[simp]
+theorem State.points_moveBox {s : State} {p₁ p₂} : (s.moveBox p₁ p₂).points = s.points := by
+  simp [moveBox, points]
+
+@[simp]
+theorem State.mem_points_of_get {s : State} {p d} [h : s.Get p d] : p ∈ s.points := by
+  simp [points]
+
+theorem State.mem_points_iff_exi_get {s : State} {p} : p ∈ s.points ↔ ∃ d, s.Get p d := by
+  simp [get_iff, points, Map.mem_iff_get?_eq_some]
+
+theorem State.boxes_moveBox {s : State} {p₁ p₂ d₁ d₂} [h₁ : s.Get p₁ d₁] [h₂ : s.Get p₂ d₂] :
+(s.moveBox p₁ p₂).boxes = (s.boxes.erase p₁).insert p₂ := by
+  ext p; simp [boxes]
+  by_cases h₃ : p ∈ s.points <;> simp [h₃]
+  rotate_left
+  · rintro rfl; simp at h₃
+  by_cases h₄ : p = p₁
+  · subst h₄
+    simp [moveBox, Map.get!_eq_get!_get?]
+    grind
+  rw [mem_points_iff_exi_get] at h₃
+  choose d h₃ using h₃
+  simp [ne_symm' h₄, moveBox, Map.get!_eq_get!_get?]; grind
+
+theorem State.eq_of_get_and_get {s : State} {p d₁ d₂}
+[h₁ : s.Get p d₁] [h₂ : s.Get p d₂] : d₁ = d₂ := by
+  rw [get_iff] at h₁ h₂; simp [h₁] at h₂; exact h₂
+
+theorem State.size_boxes_moveBox {s : State} {p₁ p₂ d₁ d₂} [h₁ : s.Get p₁ d₁] [h₂ : s.Get p₂ d₂]
+(h₃ : d₁.box) (h₄ : d₂.box = false) : (s.moveBox p₁ p₂).boxes.size = s.boxes.size := by
+  simp [boxes_moveBox]
+  by_cases h₅ : p₁ = p₂
+  · subst h₅
+    simp
+    rw[Set'.insert_eq_of_mem]
+    obtain rfl := @s.eq_of_get_and_get _ _ _ h₁ h₂
+    simpa [boxes]
+  by_cases h₆ : p₁ ∈ s.boxes
+  · rw [Set'.size_insert # by simpa [h₅, boxes]]
+    rw [Set'.size_erase h₆]
+    rw [Nat.sub_add_cancel]
+    simp [boxes]
+    use p₁
+    simpa
+  simp [h₃, boxes] at h₆
+
+@[simp]
+theorem State.points_movePlayer {s : State} {p} : (s.movePlayer p).points = s.points := by
+  ext; simp [points]
+
+@[simp]
+theorem State.box_get!_grid_movePlayer {s : State} {p p₁} :
+(s.movePlayer p |>.grid.get! p₁).box = (s.grid.get! p₁).box := by
+  simp [movePlayer, Map.get!_eq_get!_get?, Option.get!]; grind
+
+@[simp]
+theorem State.boxes_movePlayer {s : State} {p} : (s.movePlayer p).boxes = s.boxes := by
+  ext; simp [boxes]
+
+@[simp]
+theorem State.target_get!_grid_movePlayer {s : State} {p p₁} :
+(s.movePlayer p |>.grid.get! p₁).target = (s.grid.get! p₁).target := by
+  simp [movePlayer, Map.get!_eq_get!_get?, Option.get!]; grind
+
+@[simp]
+theorem State.targets_movePlayer {s : State} {p} : (s.movePlayer p).targets = s.targets := by
+  ext; simp [targets]
+
+@[simp]
+theorem State.target_get!_grid_moveBox {s : State} {p₁ p₂ p} :
+(s.moveBox p₁ p₂ |>.grid.get! p).target = (s.grid.get! p).target := by
+  simp [moveBox, Map.get!_eq_get!_get?, Option.get!]; grind
+
+@[simp]
+theorem State.targets_moveBox {s : State} {p₁ p₂} : (s.moveBox p₁ p₂).targets = s.targets := by
+  ext; simp [targets]
+
 theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   symm; constructor
   · simp [sys.wf_def]; intro h; use s
@@ -263,6 +341,8 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
           simp_all only [Bool.not_eq_true, tsub_zero]
           rw [Nat.sub_add_cancel]
           simp; exact ⟨d₁, ⟨s.player + t.point, by simp⟩, h₅, h⟩
+    · simp [moveBox_movePlayer]
+      rwa [State.size_boxes_moveBox _ h₆, h₁.size_boxes_eq_size_targets]
   subst h₄
   constructor;
   · simp; exact h₁.mem_grid_iff_bounds
@@ -284,6 +364,7 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
     any_goals assumption
     nm H₁ H₂; simpa [H₁, hp.player_iff]
   · simp [h₁.unsolvedNum_eq]
+  · simp [h₁.size_boxes_eq_size_targets]
 
 theorem wf_of_reachable {s s' : State} [hs : s.WF]
 (hr : sys.Reachable s s') : s'.WF := by
@@ -329,3 +410,34 @@ theorem mem_grid_iff_of_reachable {s₀ s : State} [hs₀ : s₀.WF] {p}
   have hs := wf_of_reachable h
   rw [hs₀.mem_grid_iff_bounds, hs.mem_grid_iff_bounds, width_eq_of_reachable h,
     height_eq_of_reachable h]
+
+theorem State.targets_eq_of_tr {s s' p}
+(h : sys.tr s p = some s') : s'.targets = s.targets := by
+  simp [sys] at h
+  choose d₁ h₁ h₂ h₃ using h
+  split_ifs at h₃ with h₄
+  · choose d₂ h₃ h₅ h₆ h₇ using h₃
+    subst h₇
+    simp
+  · subst h₃
+    simp
+
+theorem State.targets_eq_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : s'.targets = s.targets :=
+  sys.invariant_val h targets_eq_of_tr
+
+theorem State.size_boxes_eq_of_tr {s s' p}
+(h : sys.tr s p = some s') : s'.boxes.size = s.boxes.size := by
+  simp [sys] at h
+  choose d₁ h₁ h₂ h₃ using h
+  split_ifs at h₃ with h₄
+  · choose d₂ h₃ h₅ h₆ h₇ using h₃
+    subst h₇
+    simp [moveBox_movePlayer]
+    exact size_boxes_moveBox h₄ h₅
+  · subst h₃
+    simp
+
+theorem State.size_boxes_eq_of_reachable {s s'} [hs : sys.WF s]
+(h : sys.Reachable s s') : s'.boxes.size = s.boxes.size :=
+  sys.invariant_val h size_boxes_eq_of_tr

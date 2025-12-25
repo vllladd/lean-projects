@@ -1,5 +1,6 @@
 import AP.Dir
 import AP.System
+import AP.Temp
 
 namespace Sokoban
 
@@ -21,6 +22,15 @@ structure State where
 deriving Inhabited, DecidableEq
 
 abbrev Move := Dir
+
+def State.points (s : State) : Set' PointZ :=
+  s.grid.keysSet
+
+def State.boxes (s : State) : Set' PointZ :=
+  s.points.filter # λ p => s.grid.get! p |>.box
+
+def State.targets (s : State) : Set' PointZ :=
+  s.points.filter # λ p => s.grid.get! p |>.target
 
 -----
 
@@ -45,10 +55,7 @@ structure State.WF (s : State) : Prop where
   player_mem : s.player ∈ s.grid
   tile_player_iff {p d} : s.Get p d → (d.player ↔ s.player = p)
   unsolvedNum_eq : s.unsolvedNum = s.grid.values.countP (λ d => d.box && !d.target)
-
-@[class]
-structure State.WFTargets (s : State) extends State.WF s where
-  h₄ : s.grid.values.countP (·.box) = s.grid.values.countP (·.target)
+  size_boxes_eq_size_targets : s.boxes.size = s.targets.size
 
 -----
 

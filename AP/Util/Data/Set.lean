@@ -1339,3 +1339,33 @@ theorem list_toSet_ofList {xs : List α} : (ofList xs).toSet = xs.toSet := by
 
 theorem ssubset_of (x : α) (h₁ : s₁ ⊆ s₂) (h₂ : x ∉ s₁) (h₃ : x ∈ s₂) : s₁ ⊂ s₂ := by
   use h₁; rintro rfl; contradiction
+
+def _root_.Map.keysSet (mp : Map α β) : Set' α :=
+  ⟨mp.1.map (λ _ _ => ())⟩
+
+omit hb₁ hb₂ in @[simp]
+theorem _root_.Map.mem_keysSet {mp : Map α β} {k} : k ∈ mp.keysSet ↔ k ∈ mp := by
+  simp [Map.keysSet, mem_def]; rfl
+
+omit hb₁ hb₂ in @[simp]
+theorem _root_.Map.keySet_modify {mp : Map α β} {k f} :
+(mp.modify k f).keysSet = mp.keysSet := by
+  ext; simp
+
+@[simp]
+theorem insert_erase_self {x} : (s.erase x).insert x = s.insert x := by
+  ext; simp; grind
+
+@[simp]
+theorem erase_insert_self {x} : (s.insert x).erase x = s.erase x := by
+  ext; simp; grind
+
+@[simp]
+theorem filter_eq_empty_iff {p} : s.filter p = ∅ ↔ ∀ x ∈ s, p x = false := by
+  simp [ext_iff]
+
+attribute [simp] count_eq_zero_iff
+
+@[simp]
+theorem one_le_count_iff {p} : 1 ≤ s.count p ↔ ∃ x ∈ s, p x := by
+  simp [Nat.one_le_iff_ne_zero]

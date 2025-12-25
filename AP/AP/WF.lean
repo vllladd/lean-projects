@@ -117,7 +117,7 @@ theorem State.exi_hist_wf_of_exi_p2 {s : State} {p₁ p₂ : PointZ}
     · simp [←hs₁, sys, move, dMove]
       constructor
       · rintro rfl; contradiction
-      ext:1 <;> simp [ht, Set'.insert_erase_eq_of_mem hp]
+      ext:1 <;> simp [ht, Set'.insert_eq_of_mem hp]
     exact ⟨_, sys.wf_of_tr H₂⟩
   · simp at ht; simp [ht] at hn h₆
     clear H
@@ -174,7 +174,7 @@ theorem State.exi_hist_wf_of_wfCnd_and_not_aTurn {s} (h : WFCnd s)
   · rintro rfl; contradiction
   have H₂ : sys.tr s₂ p = some (s₁.setHist [p])
   · simp [←hs₁, ←hs₂, sys, move, dMove, ne_symm' G₁]
-    ext:1 <;> simp; exact Set'.insert_erase_eq_of_mem hp
+    ext:1 <;> simp; exact Set'.insert_eq_of_mem hp
   cases H₃ : s.taken.size; simp [h₂] at H₃; nm k
   simp [H₃] at h₆
   have G₂ : Even s₂.taken.size
