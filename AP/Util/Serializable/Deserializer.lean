@@ -9,6 +9,8 @@ abbrev DSer := StateM Deserializer
 
 namespace Deserializer
 
+open Serializer
+
 def init (bytes : ByteArray) : Deserializer where
   bytes := bytes
   bitIndex := 0
@@ -50,12 +52,41 @@ def drop (n : ℕ) : DSer Unit := modify # λ d =>
     bitIndex := min d.bytes.size # d.bitIndex + n
   }
 
-def getBits' (d : Deserializer) (n : ℕ) : List Bit :=
+def queryAllBits' (d : Deserializer) (n : ℕ) : List Bit :=
   match n with
   | 0 => []
   | n + 1 =>
     let (b, d') := d.readBit
-    b :: d'.getBits' n
+    b :: d'.queryAllBits' n
 
-def getBits : DSer # List Bit :=
-  gets # λ d => getBits' d # d.bytes.size - d.bitIndex
+def queryAllBits : DSer # List Bit :=
+  gets # λ d => queryAllBits' d # d.bytes.size - d.bitIndex
+
+def skipBits (n : ℕ) : DSer Unit := modify # λ d =>
+  { bytes := d.bytes
+    bitIndex := d.bitIndex + n
+  }
+
+-----
+
+variable {α β γ : Type}
+variable {d : Deserializer}
+
+@[simp]
+theorem skipBits_zero : skipBits 0 = pure () := rfl
+
+@[simp]
+theorem const_fmap_queryAllBits {x : α} : (λ _ => x) <$> queryAllBits = pure x := rfl
+
+@[simp]
+theorem run_queryAllBits_init_empty : queryAllBits.run (init ∅) = ([], init ∅) := rfl
+
+@[simp]
+theorem queryAllBits_init_bytes_ofBits {bs} : queryAllBits.run (init (ofBits bs).bytes) =
+(bs ++ .replicate (bs.length % 8) 0, init (ofBits bs).bytes) := by
+  unfold ofBits
+  induction bs
+  ·
+    simp
+  nm b bs ih
+  sorry

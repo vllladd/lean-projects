@@ -316,3 +316,9 @@ theorem Equivalence.iff_of_left {r : α → α → Prop} {a b c}
 theorem Equivalence.iff_of_right {r : α → α → Prop} {a b c}
 (h₁ : Equivalence r) (h₂ : r a b) : r c a ↔ r c b := by
   nth_rw 1 [h₁.comm]; nth_rw 2 [h₁.comm]; exact h₁.iff_of_left h₂
+
+attribute [simp] Id.instMonad
+
+@[simp]
+theorem bif_eq_if {b : Bool} {x y : α} : (bif b then x else y) = (if b then x else y) := by
+  simp

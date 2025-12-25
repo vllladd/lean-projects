@@ -1,36 +1,84 @@
 import AP.Util.Serializable.Serializer
 import AP.Util.Serializable.Deserializer
 
-namespace Serializable
-
-open Serializer
+open Serializer Deserializer
 
 variable {α : Type}
 
-structure Cnd (ser : α → Ser Unit) (dser : DSer α)
+structure Serializable.Cnd (ser : α → Ser Unit) (dser : DSer α)
 (f : α → List Bit) (g : List Bit → ℕ × α) : Prop where
   ser_eq_writeBits {x : α} : ser x = writeBits (f x)
-  -- dser_eq_queryAllBits :
-  -- dser = do
-  --   let bs <- queryAllBits
-  --   let (n, x) := g bs
-  --   skipBits n
-  --   pure x
+  dser_eq_queryAllBits : dser = do
+    let bs <- queryAllBits
+    let (n, x) := g bs
+    skipBits n
+    pure x
   g_f_append {x : α} {bs : List Bit} : g (f x ++ bs) = (f x |>.length, x)
   g_snoc_zero {bs : List Bit} : g (bs ++ [0]) = g bs
 
--- def cnd {α : Type} (ser : α → Ser Unit) (dser : DSer α) : Prop :=
---   ∃ (f : α → List Bit) (g : List Bit → α × ℕ),
---   (∀ s x, (ser x |>.run s).2 = s.writeBits (f x)) ∧
---   (∀ d d' x, dser.run d = (x, d') ↔ (g d.getBits).1 = x ∧ d.drop (g d.getBits).2 = d') ∧
---   (∀ x y, f x <+: f y -> x = y) ∧
---   (∀ x bs, g (f x ++ bs).trim = (x, (f x).length)) ∧
---   (∀ bs1 bs2, (g bs1).1 = (g bs2).1 -> (g bs1).2 = (g bs2).2 ∧
---     bs1.take (g bs1).2 = bs2.take (g bs2).2)
+class Serializable (α : Type) where
+  ser : α → Ser Unit
+  dser : DSer α
+  cnd : ∃ f h, Serializable.Cnd ser dser f h
+
+namespace Serializable
+
+variable [H : Serializable α]
+
+instance : Nonempty α := by
+  choose f g h using H.cnd; use g [] |>.2
+
+noncomputable
+def f : α → List Bit :=
+  Classical.epsilon # λ f => ∃ g, Cnd ser dser f g
+
+noncomputable
+def g : List Bit → ℕ × α :=
+  Classical.epsilon # λ g => Cnd ser dser f g
+
+def serialize (x : α) : ByteArray :=
+  StateT.run' (m := Id) (do ser x; getOutput) ∅
+
+def deserialize (bs : ByteArray) : α :=
+  StateT.run' (m := Id) dser # init bs
 
 -- #check 0 #exit
 
--- class Serializable (α : Type) where
---   ser : α → Ser Unit
---   dser : DSer α
---   h : Serializable.cnd ser dser
+-----
+
+include H
+
+theorem cnd_fg : @Cnd α ser dser f g :=
+  Classical.epsilon_spec # Classical.epsilon_spec H.cnd
+
+theorem ser_eq_writeBits {x : α} : ser x = writeBits (f x) :=
+  cnd_fg.ser_eq_writeBits
+
+theorem dser_eq_queryAllBits :
+dser (α := α) = (do let bs <- queryAllBits; let (n, x) := g bs; skipBits n; pure x) :=
+  cnd_fg.dser_eq_queryAllBits
+
+@[simp]
+theorem g_f_append {x : α} {bs} : g (f x ++ bs) = (f x |>.length, x) :=
+  cnd_fg.g_f_append
+
+@[simp]
+theorem g_snoc_zero {bs} : g (α := α) (bs ++ [0]) = g bs :=
+  cnd_fg.g_snoc_zero
+
+@[simp]
+theorem g_append_replicate_zero {bs n} : g (α := α) (bs ++ .replicate n 0) = g bs := by
+  induction n; simp; rwa [List.replicate_succ', ←List.append_assoc, g_snoc_zero]
+
+theorem g_append_of_all_zero {bs zs} (h : ∀ b ∈ zs, b = 0) : g (α := α) (bs ++ zs) = g bs := by
+  rw [List.eq_replicate_of_mem h]; simp
+
+@[simp]
+theorem g_f {x : α} : g (f x) = (f x |>.length, x) := by
+  have h := g_f_append (x := x) (bs := []); simp at h; exact h
+
+@[simp]
+theorem deserialize_serialize {x : α} : deserialize (serialize x) = x := by
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := H.cnd_fg
+  unfold serialize deserialize
+  rw [h₁, h₂]; simp [skipBits]

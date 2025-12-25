@@ -42,3 +42,63 @@ def writeBits (bs : List Bit) : Ser Unit :=
 
 def getOutput : Ser ByteArray := do
   flush; gets (·.bytes)
+
+def ofBits (bs : List Bit) : Serializer :=
+  StateT.run (m := Id) (writeBits bs) ∅ |>.2
+
+-- #check 0 #exit
+
+-----
+
+variable {α β γ : Type}
+variable {s : Serializer}
+
+@[simp]
+theorem writeBits_nil : writeBits [] = pure () := rfl
+
+@[simp]
+theorem getOutput_empty : getOutput.run ∅ = (∅, ∅) := rfl
+
+@[simp low]
+theorem writeBits_empty {bs} : (writeBits bs).run ∅ = ((), ofBits bs) := rfl
+
+@[simp]
+theorem ofBits_nil : ofBits [] = ∅ := rfl
+
+@[simp]
+theorem flush_empty : flush.run ∅ = ((), ∅) := rfl
+
+@[simp]
+theorem writeBits_cons {b bs} : writeBits (b :: bs) = (do writeBit b; writeBits bs) := rfl
+
+@[simp]
+theorem writeBits_append {bs₁ bs₂} :
+writeBits (bs₁ ++ bs₂) = (do writeBits bs₁; writeBits bs₂) := by
+  simp [writeBits]
+
+@[simp]
+theorem flush_flush' : flush.run (flush'.run s).2 = flush'.run s := rfl
+
+@[simp]
+theorem flush_flush : flush.run (flush.run s).2 = flush.run s := by
+  nth_rw 2 [flush]; simp
+  split_ifs with h
+  · simp; simp [flush, h]
+  · simp
+
+@[simp]
+theorem flush_ofBits {bs} : flush.run (ofBits bs) = ((), ofBits bs) := by
+  induction bs using List.reverseRecOn; simp
+  unfold ofBits; simp [writeBit, writeBit', Id.instMonad]; rfl
+
+@[simp]
+theorem getOutput_ofBits {bs} : getOutput.run (ofBits bs) = (ofBits bs |>.bytes, ofBits bs) := by
+  simp [getOutput]; rfl
+
+@[simp]
+theorem bytes_empty : (∅ : Serializer).bytes = ∅ := rfl
+
+@[simp]
+theorem ofBits_append {bs₁ bs₂} :
+ofBits (bs₁ ++ bs₂) = (writeBits bs₂ |>.run (ofBits bs₁) |>.2) := by
+  unfold ofBits; simp
