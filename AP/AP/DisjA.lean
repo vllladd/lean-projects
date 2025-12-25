@@ -817,3 +817,25 @@ s.aForallWinsDisj (fsp.insertSet 0 set) a := by
   specialize h₃ k hk
   simp [FSP.insertSet]
   grind
+
+-- @[simp]
+-- theorem State.aForallWinsDisj_empty {s} [hs : sys.WF s] {a} :
+-- s.aForallWinsDisj ∅ a ↔ s.aHws := by
+--   simp [aForallWinsDisj, aHws]
+
+-- @[simp]
+-- theorem State.aHwsDisj_empty {s} [hs : sys.WF s] : s.aHwsDisj ∅ ↔ s.aHws := by
+--   simp [aHwsDisj, aHws]
+
+theorem State.aHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
+(h₁ : s.aHws) (hpw : s'.pw = s.pw) (h₂ : s'.aTurn = s.aTurn) (h₃ : s'.aPos = s.aPos)
+(h₄ : s'.taken ⊆ s.taken) : s'.aHws := by
+  sorry
+
+-- #check 0 #exit
+
+theorem State.dHws_of_taken_subset {s s'} [hs : sys.WF s] [hs' : sys.WF s']
+(h₁ : s.dHws) (hpw : s'.pw = s.pw) (h₂ : s'.aTurn = s.aTurn) (h₃ : s'.aPos = s.aPos)
+(h₄ : s.taken ⊆ s'.taken) : s'.dHws := by
+  contrapose h₁; simp at h₁ ⊢; symm at hpw h₂ h₃
+  exact s'.aHws_of_taken_subset h₁ hpw h₂ h₃ h₄
