@@ -24,14 +24,14 @@ theorem tendsTo_of_eventually_subseq_cover {a : ℕ → ℝ} {s : Finset (ℕ �
   · subst hp; intro σ hσ; exact h₃ σ hσ ε hε
   replace h₃ : ∃ N, ∀ σ ∈ s, p N σ
   · clear! N
-    generalize h₄ : (s.image # λ σ => Nat.findRaw (p · σ)).max' (by simpa) = N
+    generalize h₄ : (s.image # λ σ => Nat.find! (p · σ)).max' (by simpa) = N
     use N
     intro σ hσ
     simp_rw [←hp]
     intro n hn
     specialize h₃ σ hσ
-    replace h₃ := Nat.findRaw_spec h₃
-    generalize hM : Nat.findRaw (p · σ) = M at h₃
+    replace h₃ := Nat.find!_spec h₃
+    generalize hM : Nat.find! (p · σ) = M at h₃
     have h₇ : M ≤ N
     · subst h₄ hM
       apply Finset.le_max'

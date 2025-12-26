@@ -3,7 +3,7 @@ import AP.Util.Function
 namespace Nat
 
 noncomputable
-def findRaw (P : ℕ → Prop) : ℕ :=
+def find! (P : ℕ → Prop) : ℕ :=
   haveI := Classical.propDecidable
   if h : ∃ n, P n ∧ ∀ k < n, ¬P k then h.choose else 0
 
@@ -209,11 +209,11 @@ theorem mul_2_succ_div_2_eq (n : ℕ) : (n * 2 + 1) / 2 = n := by
   suffices (n * 2 + 1) / 2 = n * 2 / 2 by simp at this; assumption
   rw [succ_div_2_eq_div_iff]; simp
 
-theorem findRaw_eq {P} :
+theorem find!_eq {P} :
 haveI := Classical.propDecidable
-findRaw P = if h : ∃ n, P n then Nat.find h else 0 := by
+find! P = if h : ∃ n, P n then Nat.find h else 0 := by
   classical
-  unfold findRaw
+  unfold find!
   symm
   by_cases h₁ : ∃ n, P n
   · have h₂ : ∃ n, P n ∧ ∀ k < n, ¬P k :=
@@ -230,21 +230,21 @@ findRaw P = if h : ∃ n, P n then Nat.find h else 0 := by
     cases h₁ n h₂.1
   rfl
 
-theorem findRaw_spec' {P : ℕ → Prop} (h : ∃ n, P n) : P (findRaw P) ∧
-∀ k, P k → findRaw P ≤ k := by
+theorem find!_spec' {P : ℕ → Prop} (h : ∃ n, P n) : P (find! P) ∧
+∀ k, P k → find! P ≤ k := by
   classical
-  simp [findRaw_eq, h]
+  simp [find!_eq, h]
   use Nat.find_spec h
   intro k hk
   use k
 
-theorem findRaw_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (findRaw P) := by
-  exact (findRaw_spec' h).1
+theorem find!_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (find! P) := by
+  exact (find!_spec' h).1
 
-theorem findRaw_eq_of {P : ℕ → Prop} {n} (h₁ : P n) (h₂ : ∀ k < n, ¬P k) :
-findRaw P = n := by
+theorem find!_eq_of {P : ℕ → Prop} {n} (h₁ : P n) (h₂ : ∀ k < n, ¬P k) :
+find! P = n := by
   classical
-  rw [findRaw_eq]
+  rw [find!_eq]
   split_ifs with h₃
   · rw [Nat.find_eq_iff]
     tauto
@@ -252,31 +252,31 @@ findRaw P = n := by
   specialize h₃ n
   contradiction
 
-theorem findRaw_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : findRaw P = 0 := by
-  rw [findRaw_eq]
+theorem find!_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : find! P = 0 := by
+  rw [find!_eq]
   split_ifs with h₁
   · contrapose! h
     exact h₁
   rfl
 
-theorem findRaw_eq_iff {P : ℕ → Prop} {n} : by classical exact (
-findRaw P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0)) := by
+theorem find!_eq_iff {P : ℕ → Prop} {n} : by classical exact (
+find! P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0)) := by
   split_ifs with h₁
-  · rw [findRaw_eq]; simp [h₁, Nat.find_eq_iff]
+  · rw [find!_eq]; simp [h₁, Nat.find_eq_iff]
   simp at h₁
-  rw [findRaw_eq_zero_of h₁, eq_comm]
+  rw [find!_eq_zero_of h₁, eq_comm]
 
-theorem findRaw_min {P : ℕ → Prop} {n} (h : n < findRaw P) : ¬P n := by
+theorem find!_min {P : ℕ → Prop} {n} (h : n < find! P) : ¬P n := by
   classical
-  rw [findRaw_eq] at h
+  rw [find!_eq] at h
   split_ifs at h with h₁
   · exact Nat.find_min h₁ h
   simp at h
 
-theorem findRaw_eq_of_not_ap_zero {P : ℕ → Prop}
-(h₁ : ∃ n, P n) (h₂ : ¬P 0) : findRaw P = findRaw (λ m => P (m + 1)) + 1 := by
-  apply findRaw_eq_of
-  · apply @findRaw_spec (P # · + 1)
+theorem find!_eq_of_not_ap_zero {P : ℕ → Prop}
+(h₁ : ∃ n, P n) (h₂ : ¬P 0) : find! P = find! (λ m => P (m + 1)) + 1 := by
+  apply find!_eq_of
+  · apply @find!_spec (P # · + 1)
     obtain ⟨n, hn⟩ := h₁
     cases n
     · contradiction
@@ -287,12 +287,12 @@ theorem findRaw_eq_of_not_ap_zero {P : ℕ → Prop}
   · exact h₂
   nm k
   simp at hk
-  apply @findRaw_min (P # · + 1)
+  apply @find!_min (P # · + 1)
   exact hk
 
-theorem findRaw_eq_of_not_ap_le {P : ℕ → Prop}
+theorem find!_eq_of_not_ap_le {P : ℕ → Prop}
 (n : ℕ) (h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
-findRaw P = findRaw (λ m => P (n + m)) + n := by
+find! P = find! (λ m => P (n + m)) + n := by
   classical
   induction n generalizing P
   · simp
@@ -309,7 +309,7 @@ findRaw P = findRaw (λ m => P (n + m)) + n := by
   · intro k hk
     apply h₂
     simpa
-  rw [findRaw_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
+  rw [find!_eq_of_not_ap_zero h₁ h₃, ih]; clear ih
   ring_nf
 
 theorem add_one_add {a b : ℕ} : a + 1 + b = a + b + 1 := by ring
@@ -388,7 +388,7 @@ theorem ite_even {α : Type*} {n : ℕ} {x y : α} : ite (Even n) x y = ite (Odd
   ite_odd.symm
 
 theorem exi_least_of_exi {p : ℕ → Prop} (h : ∃ n, p n) : ∃ n, p n ∧ ∀ k, k < n → ¬p k := by
-  use Nat.findRaw p; convert Nat.findRaw_spec' h using 1
+  use Nat.find! p; convert Nat.find!_spec' h using 1
   constructor <;> intro h k hk
   · by_contra! h₁; exact h _ h₁ hk
   · intro h₁; specialize h _ h₁; linarith
@@ -400,8 +400,8 @@ theorem exi_iff_exi_least {p : ℕ → Prop} : (∃ n, p n) ↔ ∃ n, p n ∧ �
 theorem le_self_sub_add_one_iff {a b : ℕ} : a ≤ a - (b + 1) ↔ a = 0 := by
   omega
 
-theorem findRaw_pos_of {p} (h₁ : ¬p 0) (h₂ : ∃ n, p n) : 0 < findRaw p := by
-  choose h₃ h₄ using Nat.findRaw_spec' h₂
-  cases h₅ : findRaw p
+theorem find!_pos_of {p} (h₁ : ¬p 0) (h₂ : ∃ n, p n) : 0 < find! p := by
+  choose h₃ h₄ using Nat.find!_spec' h₂
+  cases h₅ : find! p
   · simp [h₁, h₅] at h₃
   · simp

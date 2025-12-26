@@ -4,11 +4,11 @@ namespace AP
 
 noncomputable
 def State.dwn (s : State) : ℕ :=
-  Nat.findRaw # λ n => ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF →
+  Nat.find! # λ n => ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF →
   (sys.simulate (Strat.f ⟨a, d⟩) s n).2 ≠ 0
 
 theorem State.dwn_eq_zero_of_aHws {s} [hs : sys.WF s] (h : s.aHws) : s.dwn = 0 := by
-  apply Nat.findRaw_eq_zero_of
+  apply Nat.find!_eq_zero_of
   rw [←not_dHws_iff, dHws_iff_dHws_bounded] at h
   push_neg at h ⊢; exact h
 
@@ -21,8 +21,8 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
   simp at h₁
   have H₁ : s.setHist hist |>.dHws; simpa
   rw [dHws_iff_dHws_bounded] at h₁ H₁
-  have ⟨⟨d, hd, h₂⟩, h₃⟩ := Nat.findRaw_spec' h₁
-  have ⟨⟨d', hd', H₂⟩, H₃⟩ := Nat.findRaw_spec' H₁
+  have ⟨⟨d, hd, h₂⟩, h₃⟩ := Nat.find!_spec' h₁
+  have ⟨⟨d', hd', H₂⟩, H₃⟩ := Nat.find!_spec' H₁
   rw [←dwn] at h₂ h₃ H₂ H₃
   generalize h₄ : s.setHist hist = s' at hs' H₂ H₃ ⊢
   generalize hn : s.dwn = n at h₂ h₃ ⊢
@@ -142,7 +142,7 @@ theorem State.aHws_of_dwn_eq_zero {s} [hs : sys.WF s]
   by_contra h₁
   simp at h₁
   rw [dHws_iff_dHws_bounded] at h₁
-  replace h₁ := Nat.findRaw_spec' h₁
+  replace h₁ := Nat.find!_spec' h₁
   rw [←dwn] at h₁
   simp [h] at h₁
   exact h₁.2 default inferInstance
@@ -162,8 +162,8 @@ theorem AState.dwn_lt_of_tr {sa sd p} [hsa : AState sa]
   have h₃ := dHws_of_tr h₂ h₁
   have hp₁ := State.dwn_pos_of_dHws h₁
   rw [State.dHws_iff_dHws_bounded] at h₁ h₃
-  replace h₁ := Nat.findRaw_spec' h₁
-  replace h₃ := Nat.findRaw_spec' h₃
+  replace h₁ := Nat.find!_spec' h₁
+  replace h₃ := Nat.find!_spec' h₃
   rw [←State.dwn] at h₁ h₃
   generalize hn : sa.dwn = n at h₁ h₃ hp₁ ⊢
   generalize hn' : sd.dwn = n' at h₁ h₃ hp₁ ⊢
@@ -189,7 +189,7 @@ theorem DState.exi_tr_dHws_and_dwn_lt {sd} [hsd : DState sd]
 (h₁ : sd.dHws) : ∃ p sa, sys.tr sd p = some sa ∧ sa.dHws ∧ sa.dwn < sd.dwn := by
   have hp₁ := State.dwn_pos_of_dHws h₁
   rw [State.dHws_iff_dHws_bounded] at h₁
-  replace h₁ := Nat.findRaw_spec' h₁
+  replace h₁ := Nat.find!_spec' h₁
   rw [←State.dwn] at h₁
   rcases h₁ with ⟨⟨d, Hd, h₁⟩, h₂⟩
   obtain ⟨sa, h₃⟩ := Hd.validTr sd
@@ -206,7 +206,7 @@ theorem DState.exi_tr_dHws_and_dwn_lt {sd} [hsd : DState sd]
     simp [h₃] at h₁
     exact h₁
   rw [State.dHws_iff_dHws_bounded] at h₄
-  replace h₄ := Nat.findRaw_spec' h₄
+  replace h₄ := Nat.find!_spec' h₄
   rw [←State.dwn] at h₄
   generalize hn' : sa.dwn = n' at h₁ h₂ hp₁ h₄ ⊢
   rcases h₄ with ⟨h₄, h₅⟩

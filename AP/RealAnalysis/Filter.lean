@@ -38,14 +38,14 @@ theorem unBddCnd_iff_alt₂ {a p} : unBddCnd p a ↔ {n | p # a n}.Infinite := b
 
 @[simp] noncomputable
 def filter (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℝ :=
-  let n₀ := Nat.findRaw (p # a ·)
+  let n₀ := Nat.find! (p # a ·)
   match n with
   | 0 => a n₀
   | n + 1 => filter p (a # n₀ + 1 + ·) n
 
 @[simp] noncomputable
 def filterSubseq (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℕ :=
-  let n₀ := Nat.findRaw (p # a ·)
+  let n₀ := Nat.find! (p # a ·)
   match n with
   | 0 => n₀
   | n + 1 => n₀ + 1 + filterSubseq p (a # n₀ + 1 + ·) n
@@ -75,7 +75,7 @@ theorem subseq_filterSubseq {a p} (h : unBddCnd p a) : Subseq (filterSubseq p a)
   · simp; linarith
   nm n ih
   simp
-  generalize hk₁ : Nat.findRaw (p # a ·) = k₁
+  generalize hk₁ : Nat.find! (p # a ·) = k₁
   exact @ih (a # k₁ + 1 + ·) # unBddCnd_drop_of h
 
 theorem filter_eq_filterSubseq {a p} (h : unBddCnd p a) : filter p a = a ∘ filterSubseq p a := by
@@ -85,7 +85,7 @@ theorem filter_eq_filterSubseq {a p} (h : unBddCnd p a) : filter p a = a ∘ fil
   · simp
   nm n ih
   simp
-  generalize hk : Nat.findRaw (p # a ·) = k
+  generalize hk : Nat.find! (p # a ·) = k
   exact @ih (a # k + 1 + ·) # unBddCnd_drop_of h
 
 theorem tendsTo_filter {a L p} (h₁ : tendsTo a L) (h₂ : unBddCnd p a) : tendsTo (filter p a) L := by
@@ -108,19 +108,19 @@ unBddCnd p₁ a ∨ unBddCnd p₂ a := by
 theorem unBddCnd_le_or_ge {a M} : unBddCnd (· ≤ M) a ∨ unBddCnd (M ≤ ·) a := by
   apply unBddCnd_or_of_or; intro N; apply le_total
 
-theorem apply_nat_findRaw_of_unBddCnd {a p} (h : unBddCnd p a) : p # a # Nat.findRaw (p # a ·) := by
-  apply Nat.findRaw_spec (P := (p # a ·))
+theorem apply_nat_find!_of_unBddCnd {a p} (h : unBddCnd p a) : p # a # Nat.find! (p # a ·) := by
+  apply Nat.find!_spec (P := (p # a ·))
   specialize h 0
   choose n h₁ h₂ using h
   use n
 
 theorem apply_filterSubseq {a p n} (h : unBddCnd p a) : p (a # filterSubseq p a n) := by
   induction n generalizing a
-  · simp; exact apply_nat_findRaw_of_unBddCnd h
+  · simp; exact apply_nat_find!_of_unBddCnd h
   nm n ih
   simp
-  have h₁ := apply_nat_findRaw_of_unBddCnd h
-  generalize hk : Nat.findRaw (p # a ·) = k at h₁ ⊢
+  have h₁ := apply_nat_find!_of_unBddCnd h
+  generalize hk : Nat.find! (p # a ·) = k at h₁ ⊢
   exact @ih (a # k + 1 + ·) # unBddCnd_drop_of h
 
 theorem apply_filter {a p n} (h : unBddCnd p a) : p (filter p a n) := by
@@ -135,7 +135,7 @@ def monoLtSubseq (a : ℕ → ℝ) (n : ℕ) : ℕ :=
   | 0 => 0
   | n + 1 =>
     let n₀ := monoLtSubseq a n
-    n₀ + Nat.findRaw (λ k => a n₀ < a (n₀ + k))
+    n₀ + Nat.find! (λ k => a n₀ < a (n₀ + k))
 
 theorem exi_cnd_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 ∃ k, a n < a (m + k) := by
@@ -152,24 +152,24 @@ theorem exi_cnd_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L)
   have h₃ := exi_cnd_add_of_lt_limit (n := n) (m := 0) h₁ h₂
   simp at h₃; exact h₃
 
-theorem apply_natFindRaw_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
-a n < a (Nat.findRaw (a n < a ·)) :=
-  Nat.findRaw_spec (P := (a n < a ·)) # exi_cnd_of_lt_limit h₁ h₂
+theorem apply_natfind!_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+a n < a (Nat.find! (a n < a ·)) :=
+  Nat.find!_spec (P := (a n < a ·)) # exi_cnd_of_lt_limit h₁ h₂
 
-theorem apply_natFindRaw_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
-a n < a (m + Nat.findRaw (λ k => a n < a (m + k))) :=
-  Nat.findRaw_spec (P := λ k => a n < a (m + k)) # exi_cnd_add_of_lt_limit h₁ h₂
+theorem apply_natfind!_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+a n < a (m + Nat.find! (λ k => a n < a (m + k))) :=
+  Nat.find!_spec (P := λ k => a n < a (m + k)) # exi_cnd_add_of_lt_limit h₁ h₂
 
-theorem pos_natFindRaw_add_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
-0 < Nat.findRaw (λ k => a n < a (n + k)) := by
-  apply Nat.findRaw_pos_of; simp; exact exi_cnd_add_of_lt_limit h₁ h₂
+theorem pos_natfind!_add_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+0 < Nat.find! (λ k => a n < a (n + k)) := by
+  apply Nat.find!_pos_of; simp; exact exi_cnd_add_of_lt_limit h₁ h₂
 
 theorem subseq_monoLtSubseq {a L} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 Subseq # monoLtSubseq a := by
   rw [subseq_iff_lt_add_one]
   intro n
   simp
-  exact pos_natFindRaw_add_of_lt_limit h₁ h₂
+  exact pos_natfind!_add_of_lt_limit h₁ h₂
 
 theorem monoLt_monoLtSubseq {a L} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 monoLt (a ∘ monoLtSubseq a) := by
@@ -177,7 +177,7 @@ monoLt (a ∘ monoLtSubseq a) := by
   intro n
   simp
   generalize monoLtSubseq a n = n; nm x; clear x
-  exact apply_natFindRaw_add_of_lt_limit h₁ h₂
+  exact apply_natfind!_add_of_lt_limit h₁ h₂
   
 theorem exi_monoLt_subseq_of_forall_lt_limit {a L} (h₁ : tendsTo a L)
 (h₂ : ∀ n, a n < L) : ∃ σ, Subseq σ ∧ monoLt (a ∘ σ) := by

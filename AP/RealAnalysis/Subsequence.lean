@@ -8,10 +8,10 @@ def Infp (a : ℕ → ℝ) (p : ℝ → Prop) : Prop :=
 open Classical in noncomputable
 def mkSubseq (a : ℕ → ℝ) (p : ℝ → Prop) (n : ℕ) : ℕ :=
   match n with
-  | 0 => Nat.findRaw (p # a ·)
+  | 0 => Nat.find! (p # a ·)
   | n + 1 =>
     let k := mkSubseq a p n
-    k + 1 + Nat.findRaw (p # a # k + 1 + ·)
+    k + 1 + Nat.find! (p # a # k + 1 + ·)
 
 -- #check 0 #exit
 
@@ -51,8 +51,8 @@ theorem exi_of_infp {a p} (h : Infp a p) : ∃ n, p (a n) := by
 
 theorem mkSubseq_spec {a p n} (h : Infp a p) : p # a # mkSubseq a p n := by
   cases n <;> rw [mkSubseq]
-  · exact Nat.findRaw_spec (P := (p # a ·)) # exi_of_infp h
-  nm n; apply Nat.findRaw_spec (P := λ k => p (a (mkSubseq a p n + 1 + k)))
+  · exact Nat.find!_spec (P := (p # a ·)) # exi_of_infp h
+  nm n; apply Nat.find!_spec (P := λ k => p (a (mkSubseq a p n + 1 + k)))
   exact exi_add_of_infp h
 
 theorem apply_of_mkSubseq_eq {a p n k} (h : Infp a p)
@@ -84,7 +84,7 @@ theorem exi_mkSubseq_eq_of_apply {a p n} (h : Infp a p)
   by_cases h₂ : ∀ k < n, ¬p (a k)
   · use 0
     rw [mkSubseq]
-    rw [Nat.findRaw_eq_iff, if_pos ⟨_, h₁⟩]
+    rw [Nat.find!_eq_iff, if_pos ⟨_, h₁⟩]
     exact ⟨h₁, h₂⟩
   push_neg at h₂
   replace h₂ : ∃ k, k < n ∧ p (a k) ∧ ∀ r, k < r → r < n → ¬p (a r)
@@ -93,8 +93,8 @@ theorem exi_mkSubseq_eq_of_apply {a p n} (h : Infp a p)
     have h₃ : ∃ d, p # a # k + n - d
     · use n
       simpa
-    replace h₃ := Nat.findRaw_spec' h₃
-    generalize Nat.findRaw (λ d => p # a # k + n - d) = d at h₃
+    replace h₃ := Nat.find!_spec' h₃
+    generalize Nat.find! (λ d => p # a # k + n - d) = d at h₃
     rcases h₃ with ⟨h₃, h₄⟩
     use k + n - d, by omega, h₃
     intro r h₅ h₆ h₇
@@ -113,7 +113,7 @@ theorem exi_mkSubseq_eq_of_apply {a p n} (h : Infp a p)
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt h₂; clear h₂
   ring_nf at h₁ ⊢
   simp
-  rw [Nat.findRaw_eq_iff]
+  rw [Nat.find!_eq_iff]
   rw [if_pos ⟨_, h₁⟩]
   use h₁
   intro w hw
@@ -276,7 +276,7 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
 
 theorem not_of_lt_mkSubseq_zero {a p n}
 (h : n < mkSubseq a p 0) : ¬p (a n) := by
-  simp [mkSubseq] at h; exact Nat.findRaw_min h
+  simp [mkSubseq] at h; exact Nat.find!_min h
 
 @[simp]
 theorem mkSubseq_lt_mkSubseq_succ {a p n} : mkSubseq a p n < mkSubseq a p (n + 1) := by

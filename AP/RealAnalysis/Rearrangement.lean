@@ -11,11 +11,11 @@ def rinv (σ : ℕ → ℕ) (n : ℕ) : ℕ :=
 
 noncomputable
 def mkRmentP (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ i => i ∉ is ∧ 0 ≤ a i
+  Nat.find! # λ i => i ∉ is ∧ 0 ≤ a i
 
 noncomputable
 def mkRmentN (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # λ j => j ∉ is ∧ a j < 0
+  Nat.find! # λ j => j ∉ is ∧ a j < 0
 
 noncomputable
 def mkRmentList1 (a : ℕ → ℝ) (is : List ℕ) : List ℕ :=
@@ -33,11 +33,11 @@ def mkRmentGeNCnd (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (N : ℕ) : Prop :
 
 noncomputable
 def mkRmentLeN (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # mkRmentLeNCnd a n is
+  Nat.find! # mkRmentLeNCnd a n is
 
 noncomputable
 def mkRmentGeN (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # mkRmentGeNCnd a n is
+  Nat.find! # mkRmentGeNCnd a n is
 
 noncomputable
 def mkRmentLeF (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : List ℕ :=
@@ -55,11 +55,11 @@ def mkRmentGeKCnd (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) (k : ℕ
 
 noncomputable
 def mkRmentLeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # mkRmentLeKCnd a L n is
+  Nat.find! # mkRmentLeKCnd a L n is
 
 noncomputable
 def mkRmentGeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
-  Nat.findRaw # mkRmentGeKCnd a L n is
+  Nat.find! # mkRmentGeKCnd a L n is
 
 noncomputable
 def mkRmentLe (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : List ℕ :=
@@ -188,7 +188,7 @@ theorem getElem!_mkRmentList_eq_of_lt {a L n m k} (h₁ : k < n) (h₂ : k < m) 
 
 theorem mkRmentP_spec' {a is} (H : CondConv a) :
 (mkRmentP a is ∉ is ∧ 0 ≤ a (mkRmentP a is)) ∧ ∀ k, k ∉ is ∧ 0 ≤ a k → mkRmentP a is ≤ k := by
-  apply Nat.findRaw_spec' (P := λ i => i ∉ is ∧ 0 ≤ a i)
+  apply Nat.find!_spec' (P := λ i => i ∉ is ∧ 0 ≤ a i)
   choose n h₁ h₂ using H.infp_nonneg # is.sum + 1
   refine ⟨n, ?_, h₂⟩
   intro h₃
@@ -197,7 +197,7 @@ theorem mkRmentP_spec' {a is} (H : CondConv a) :
 
 theorem mkRmentN_spec' {a is} (H : CondConv a) :
 (mkRmentN a is ∉ is ∧ a (mkRmentN a is) < 0) ∧ ∀ k, k ∉ is ∧ a k < 0 → mkRmentN a is ≤ k := by
-  apply Nat.findRaw_spec' (P := λ i => i ∉ is ∧ a i < 0)
+  apply Nat.find!_spec' (P := λ i => i ∉ is ∧ a i < 0)
   choose n h₁ h₂ using H.infp_neg # is.sum + 1
   refine ⟨n, ?_, h₂⟩
   intro h₃
@@ -232,8 +232,8 @@ theorem mem_mkRmentList_succ {a L n} : n ∈ mkRmentList a L (n + 1) := by
     omega
   simp_rw [eq_comm (a := n)]
   by_cases h₃ : 0 ≤ a n
-  · rw [mkRmentP, Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩]; grind
-  · rw [mkRmentN, Nat.findRaw_eq_iff, if_pos ⟨n, by grind⟩]; grind
+  · rw [mkRmentP, Nat.find!_eq_iff, if_pos ⟨n, by grind⟩]; grind
+  · rw [mkRmentN, Nat.find!_eq_iff, if_pos ⟨n, by grind⟩]; grind
 
 theorem getElem_mkRmentList_of_le.proof₁ {a L n₁ n₂ k} (h₁ : n₁ ≤ n₂)
 (h₂ : k < (mkRmentList a L n₁).length) : k < (mkRmentList a L n₂).length :=
@@ -334,12 +334,12 @@ theorem nodup_mkRmentGe {a L n is} : (mkRmentGe a L n is).Nodup := by
 theorem mkRmentLeK_spec' {a L n is} (H : CondConv a) :
 mkRmentLeKCnd a L n is (mkRmentLeK a L n is) ∧
 ∀ k, mkRmentLeKCnd a L n is k → mkRmentLeK a L n is ≤ k :=
-  Nat.findRaw_spec' # H.exi_ap_map_range_drop_gt _ _
+  Nat.find!_spec' # H.exi_ap_map_range_drop_gt _ _
 
 theorem mkRmentGeK_spec' {a L n is} (H : CondConv a) :
 mkRmentGeKCnd a L n is (mkRmentGeK a L n is) ∧
 ∀ k, mkRmentGeKCnd a L n is k → mkRmentGeK a L n is ≤ k :=
-  Nat.findRaw_spec' # H.exi_an_map_range_drop_lt _ _
+  Nat.find!_spec' # H.exi_an_map_range_drop_lt _ _
 
 theorem mkRmentLeK_spec {a L n is} (H : CondConv a) :
 L - 1 / (n + 2) < (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) :=
@@ -352,7 +352,7 @@ theorem mkRmentGeK_spec {a L n is} (H : CondConv a) :
 theorem mkRmentLeN_spec' {a n is} (H : CondConv a) :
 mkRmentLeNCnd a n is (mkRmentLeN a n is) ∧
 ∀ k, mkRmentLeNCnd a n is k → mkRmentLeN a n is ≤ k := by
-  apply Nat.findRaw_spec'
+  apply Nat.find!_spec'
   generalize hN₁ : is.sum + 1 = N₁
   choose N₂ h₁ using tendsTo_zero_of_converges_series H.converges_series
     (1 / (n + 2)) (by subst hN₁; positivity)
@@ -372,7 +372,7 @@ mkRmentLeNCnd a n is (mkRmentLeN a n is) ∧
 theorem mkRmentGeN_spec' {a n is} (H : CondConv a) :
 mkRmentGeNCnd a n is (mkRmentGeN a n is) ∧
 ∀ k, mkRmentGeNCnd a n is k → mkRmentGeN a n is ≤ k := by
-  apply Nat.findRaw_spec'
+  apply Nat.find!_spec'
   generalize hN₁ : is.sum + 1 = N₁
   choose N₂ h₁ using tendsTo_zero_of_converges_series H.converges_series
     (1 / (n + 2)) (by subst hN₁; positivity)

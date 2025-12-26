@@ -40,9 +40,9 @@ theorem eventually_iff_exi_least {p : ℕ → Prop} : eventually p ↔
   obtain ⟨n₀, h₀⟩ := h₀
   constructor
   · intro h
-    use Nat.findRaw (λ N => ∀ n, N ≤ n → p n) - 1
-    obtain ⟨h₁, h₂⟩ := Nat.findRaw_spec' h; clear h
-    generalize Nat.findRaw (λ N => ∀ n, N ≤ n → p n) = m at h₁ h₂ ⊢
+    use Nat.find! (λ N => ∀ n, N ≤ n → p n) - 1
+    obtain ⟨h₁, h₂⟩ := Nat.find!_spec' h; clear h
+    generalize Nat.find! (λ N => ∀ n, N ≤ n → p n) = m at h₁ h₂ ⊢
     constructor
     · cases m
       · simp

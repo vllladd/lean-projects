@@ -411,7 +411,7 @@ theorem exi_simulate_of_simp_path [ht : Inhabited # S → T] {a b ts} [hs : sys.
 sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   classical
   obtain ⟨f, hf⟩ := hv # sys.mk_simFn # λ s =>
-    ts[Nat.findRaw # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dflt_simFn s
+    ts[Nat.find! # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dflt_simFn s
   use f
   constructor
   · rw [hf]; infer_instance
@@ -428,7 +428,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   subst hf
   unfold mk_simFn
   dsimp
-  rw [Nat.findRaw_eq_of (n := k)]
+  rw [Nat.find!_eq_of (n := k)]
   rotate_left
   · ext1
     rfl
@@ -1122,7 +1122,7 @@ theorem simulate_exi_snd_pos_of_finite
 ∃ x N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
   classical
   obtain ⟨N, h₄⟩ := @simulate_exi_snd_pos_of_finite' S T sys h₁ s h₂ f h₃
-  obtain ⟨m, hm⟩ := hv # Nat.findRaw λ n => (sys.simulate f s n).2 ≠ 0
+  obtain ⟨m, hm⟩ := hv # Nat.find! λ n => (sys.simulate f s n).2 ≠ 0
   use (sys.simulate f s m).1, N
   intro n hn
   specialize h₄ n hn
@@ -1133,7 +1133,7 @@ theorem simulate_exi_snd_pos_of_finite
   have h₅ : (sys.simulate f s m).2 ≠ 0 :=
     by
       subst hm
-      rw [Nat.findRaw_eq]
+      rw [Nat.find!_eq]
       split_ifs with h₅
       · have h₆ := Nat.find_spec h₅
         convert h₆
