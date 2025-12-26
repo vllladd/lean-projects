@@ -7,3 +7,7 @@ def State.AlwaysMovable (s : State) : Prop :=
 
 def MovableBoxConjecture : Prop :=
   ∃ (s : State), s.AlwaysMovable
+
+open Classical in noncomputable
+def State.boxesReachable (s : State) : Set' PointZ :=
+  s.points.filter # λ p => ∃ s', sys.Reachable s s' ∧ p ∈ s'.boxes

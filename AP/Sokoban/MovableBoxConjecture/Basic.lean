@@ -24,3 +24,10 @@ theorem alwaysMovable_iff_alt₁ : s.AlwaysMovable ↔ sys.WF s ∧ s.boxes ≠ 
     use h.wf, boxes_ne_empty_of_alwaysMovable h, h.2
   · rintro ⟨h₁, h₂, h₃⟩
     exact ⟨h₁, h₃⟩
+
+theorem mem_points_of_mem_boxes {p} (h : p ∈ s.boxes) : p ∈ s.points := by
+  simp [boxes] at h; exact h.1
+
+@[simp]
+theorem boxes_subset_boxesReachable : s.boxes ⊆ s.boxesReachable := by
+  intro p h; simp [boxesReachable]; use mem_points_of_mem_boxes h, s
