@@ -13,7 +13,7 @@ def AStrat.Fresh1Aux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisited s₁).toSet)
 
 def aFresh1Cnd (s : State) (fsp : FSP) (s₂ : State) : Prop :=
-  s₂.aHwsDisj (fsp.offset (s₂.diff s) |>.insertSet 0 (s.aVisited s₂.prev).toSet)
+  s₂.aHwsDisj # fsp.offset (s₂.diff s) |>.insertSet 0 # s.aVisited s₂.prev |>.toSet
 
 noncomputable
 def aFresh1 (s : State) (fsp : FSP) : AStrat :=

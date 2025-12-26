@@ -530,9 +530,10 @@ theorem abs_map_sum_mkRmentIte_sub_lt {a L n is} (H : CondConv a) :
     have h₂ := @mkRmentLeK_spec a L n is H
     simp at h₂
     rw [mkRmentSum] at h₁
-    generalize (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a).sum = s at h₂ ⊢
+    generalize h₃ : (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a).sum = s at h₂ ⊢
     rw [sub_lt_iff_lt_add] at h₂
     rw [←sub_lt_iff_lt_add'] at h₂
+    
     -- apply lt_of_le_of_lt _ h₂; clear h₂
     -- rw [abs_le]
     -- split_ands
@@ -540,7 +541,15 @@ theorem abs_map_sum_mkRmentIte_sub_lt {a L n is} (H : CondConv a) :
     --   simp
     -- ·
     --   linarith
-    sorry
+    
+    rw [abs_sub_le_iff]
+    split_ands
+    ·
+      suffices : s * 3 ≤ L * 2; linarith
+      unfold mkRmentLeF at h₃
+      sorry
+    ·
+      sorry
   ·
     sorry
 
@@ -580,7 +589,7 @@ theorem abs_series_mkRment_sub_lt_of_between {a L n i} (H : CondConv a)
 -- #check 0 #exit
 
 -- moreover, all elements or series of rearrangement of `a` after `f n`
---   are at distance from `L` at most `2 * |a n| + 1 / (n + 1)`
+--   are at distance from `L` at most `2 * bounds a n + 1 / (n + 1)`
 theorem abs_series_mkRment_sub_lt_of_le {a L n i} (H : CondConv a) (h : mkRmentLen a L n ≤ i) :
 |series (a # mkRment a L ·) i - L| ≤ 2 * bounds a n + 1 / (n + 1) := by
   sorry
