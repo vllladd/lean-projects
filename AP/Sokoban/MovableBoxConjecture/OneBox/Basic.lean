@@ -8,9 +8,6 @@ variable {s s₁ s₂ s₃ : State}
 variable [H : MovableBoxConjecture1]
 include H
 
-omit H in @[simp]
-instance [H : AlwaysMovable1 s] : AlwaysMovable s := H.1
-
 theorem exi_stateCnd₀ : ∃ n s, stateCnd₀ n s := by
   choose s H using H.1; exact ⟨_, s, H, rfl⟩
 
