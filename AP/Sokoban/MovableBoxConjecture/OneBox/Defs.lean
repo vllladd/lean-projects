@@ -12,13 +12,13 @@ namespace MovableBoxConjecture1
 
 open State MovableBoxConjecture
 
-def stateAM1Cnd (n : ℕ) (s : State) : Prop :=
+def stateCnd₀ (n : ℕ) (s : State) : Prop :=
   AlwaysMovable1 s ∧ s.boxesReachable.size = n
 
 open Classical in noncomputable
-def sizeAM1Min : ℕ :=
-  Nat.find! λ n => ∃ s, stateAM1Cnd n s
+def size₀ : ℕ :=
+  Nat.find! λ n => ∃ s, stateCnd₀ n s
 
 open Classical in noncomputable
-def stateAM1Min : State :=
-  Classical.epsilon # stateAM1Cnd sizeAM1Min
+def state₀ : State :=
+  Classical.epsilon # stateCnd₀ size₀
