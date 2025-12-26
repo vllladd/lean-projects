@@ -2,12 +2,8 @@ import AP.Sokoban.Card
 
 namespace Sokoban
 
-def State.AlwaysMovable (s : State) : Prop :=
-  sys.WF s ∧ ∀ s₁, sys.Reachable s s₁ → ∃ s₂, sys.Reachable s₁ s₂ ∧ s₁.boxes ≠ s₂.boxes
+class AlwaysMovable (s : State) extends sys.WF s where
+  h₁ : ∀ s₁, sys.Reachable s s₁ → ∃ s₂, sys.Reachable s₁ s₂ ∧ s₁.boxes ≠ s₂.boxes
 
-def MovableBoxConjecture : Prop :=
-  ∃ (s : State), s.AlwaysMovable
-
-open Classical in noncomputable
-def State.boxesReachable (s : State) : Set' PointZ :=
-  s.points.filter # λ p => ∃ s', sys.Reachable s s' ∧ p ∈ s'.boxes
+class MovableBoxConjecture : Prop where
+  h : ∃ (s : State), AlwaysMovable s

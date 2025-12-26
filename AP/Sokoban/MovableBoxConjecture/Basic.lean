@@ -1,33 +1,22 @@
 import AP.Sokoban.MovableBoxConjecture.Defs
 
-namespace Sokoban
+namespace Sokoban.MovableBoxConjecture
 
 open State
 
 variable {s s₁ s₂ s₃ : State}
 
-theorem State.AlwaysMovable.wf (h : s.AlwaysMovable) : sys.WF s := h.1
-
-theorem boxes_ne_empty_of_alwaysMovable (h : s.AlwaysMovable) : s.boxes ≠ ∅ := by
-  rcases h with ⟨h₁, h₂⟩
+theorem boxes_ne_empty_of_alwaysMovable (h : AlwaysMovable s) : s.boxes ≠ ∅ := by
+  cases h; nm h₁ h₂
   specialize h₂ s (by rfl)
   choose s₁ h₂ h₃ using h₂
   contrapose! h₃
   symm; simp [h₃]
   rw [←Set'.size_eq_zero_iff] at h₃ ⊢; rw [←h₃]
-  exact State.size_boxes_eq_of_reachable h₂
+  exact size_boxes_eq_of_reachable h₂
 
-theorem alwaysMovable_iff_alt₁ : s.AlwaysMovable ↔ sys.WF s ∧ s.boxes ≠ ∅ ∧
+theorem alwaysMovable_iff_alt₁ : AlwaysMovable s ↔ sys.WF s ∧ s.boxes ≠ ∅ ∧
 ∀ s₁, sys.Reachable s s₁ → ∃ s₂, sys.Reachable s₁ s₂ ∧ s₁.boxes ≠ s₂.boxes := by
   constructor
-  · intro h
-    use h.wf, boxes_ne_empty_of_alwaysMovable h, h.2
-  · rintro ⟨h₁, h₂, h₃⟩
-    exact ⟨h₁, h₃⟩
-
-theorem mem_points_of_mem_boxes {p} (h : p ∈ s.boxes) : p ∈ s.points := by
-  simp [boxes] at h; exact h.1
-
-@[simp]
-theorem boxes_subset_boxesReachable : s.boxes ⊆ s.boxesReachable := by
-  intro p h; simp [boxesReachable]; use mem_points_of_mem_boxes h, s
+  · intro h; use inferInstance, boxes_ne_empty_of_alwaysMovable h, h.2
+  · rintro ⟨h₁, h₂, h₃⟩; use h₃
