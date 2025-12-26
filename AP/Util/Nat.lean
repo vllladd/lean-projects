@@ -3,9 +3,9 @@ import AP.Util.Function
 namespace Nat
 
 noncomputable
-def find! (P : ℕ → Prop) : ℕ :=
+def find! (p : ℕ → Prop) : ℕ :=
   haveI := Classical.propDecidable
-  if h : ∃ n, P n ∧ ∀ k < n, ¬P k then h.choose else 0
+  if h : ∃ n, p n ∧ ∀ k < n, ¬p k then h.choose else 0
 
 -----
 
@@ -131,8 +131,8 @@ theorem even_iff_exi {n : ℕ} : Even n ↔ ∃ k, n = k * 2 := by
 theorem odd_iff_exi {n : ℕ} : Odd n ↔ ∃ k, n = k * 2 + 1 := by
   rw [Odd]; ring_nf
 
-theorem mod_2_ind {P : ℕ → Prop}
-(h₁ : ∀ n, P (n * 2)) (h₂ : ∀ n, P (n * 2 + 1)) (n : ℕ) : P n := by
+theorem mod_2_ind {p : ℕ → Prop}
+(h₁ : ∀ n, p (n * 2)) (h₂ : ∀ n, p (n * 2 + 1)) (n : ℕ) : p n := by
   rcases even_or_odd n with h | h
   · obtain ⟨k, rfl⟩ := even_iff_exi.mp h; apply h₁
   · obtain ⟨k, rfl⟩ := odd_iff_exi.mp h; apply h₂
@@ -209,14 +209,14 @@ theorem mul_2_succ_div_2_eq (n : ℕ) : (n * 2 + 1) / 2 = n := by
   suffices (n * 2 + 1) / 2 = n * 2 / 2 by simp at this; assumption
   rw [succ_div_2_eq_div_iff]; simp
 
-theorem find!_eq {P} :
+theorem find!_eq {p} :
 haveI := Classical.propDecidable
-find! P = if h : ∃ n, P n then Nat.find h else 0 := by
+find! p = if h : ∃ n, p n then Nat.find h else 0 := by
   classical
   unfold find!
   symm
-  by_cases h₁ : ∃ n, P n
-  · have h₂ : ∃ n, P n ∧ ∀ k < n, ¬P k :=
+  by_cases h₁ : ∃ n, p n
+  · have h₂ : ∃ n, p n ∧ ∀ k < n, ¬p k :=
       by
         use Nat.find h₁
         rw [←Nat.find_eq_iff h₁]
@@ -230,19 +230,19 @@ find! P = if h : ∃ n, P n then Nat.find h else 0 := by
     cases h₁ n h₂.1
   rfl
 
-theorem find!_spec' {P : ℕ → Prop} (h : ∃ n, P n) : P (find! P) ∧
-∀ k, P k → find! P ≤ k := by
+theorem find!_spec' {p : ℕ → Prop} (h : ∃ n, p n) : p (find! p) ∧
+∀ k, p k → find! p ≤ k := by
   classical
   simp [find!_eq, h]
   use Nat.find_spec h
   intro k hk
   use k
 
-theorem find!_spec {P : ℕ → Prop} (h : ∃ n, P n) : P (find! P) := by
+theorem find!_spec {p : ℕ → Prop} (h : ∃ n, p n) : p (find! p) := by
   exact (find!_spec' h).1
 
-theorem find!_eq_of {P : ℕ → Prop} {n} (h₁ : P n) (h₂ : ∀ k < n, ¬P k) :
-find! P = n := by
+theorem find!_eq_of {p : ℕ → Prop} {n} (h₁ : p n) (h₂ : ∀ k < n, ¬p k) :
+find! p = n := by
   classical
   rw [find!_eq]
   split_ifs with h₃
@@ -252,31 +252,31 @@ find! P = n := by
   specialize h₃ n
   contradiction
 
-theorem find!_eq_zero_of {P : ℕ → Prop} (h : ∀ n, ¬P n) : find! P = 0 := by
+theorem find!_eq_zero_of {p : ℕ → Prop} (h : ∀ n, ¬p n) : find! p = 0 := by
   rw [find!_eq]
   split_ifs with h₁
   · contrapose! h
     exact h₁
   rfl
 
-theorem find!_eq_iff {P : ℕ → Prop} {n} : by classical exact (
-find! P = n ↔ ite (∃ n, P n) (P n ∧ ∀ k < n, ¬P k) (n = 0)) := by
+theorem find!_eq_iff {p : ℕ → Prop} {n} : by classical exact (
+find! p = n ↔ ite (∃ n, p n) (p n ∧ ∀ k < n, ¬p k) (n = 0)) := by
   split_ifs with h₁
   · rw [find!_eq]; simp [h₁, Nat.find_eq_iff]
   simp at h₁
   rw [find!_eq_zero_of h₁, eq_comm]
 
-theorem find!_min {P : ℕ → Prop} {n} (h : n < find! P) : ¬P n := by
+theorem find!_min {p : ℕ → Prop} {n} (h : n < find! p) : ¬p n := by
   classical
   rw [find!_eq] at h
   split_ifs at h with h₁
   · exact Nat.find_min h₁ h
   simp at h
 
-theorem find!_eq_of_not_ap_zero {P : ℕ → Prop}
-(h₁ : ∃ n, P n) (h₂ : ¬P 0) : find! P = find! (λ m => P (m + 1)) + 1 := by
+theorem find!_eq_of_not_ap_zero {p : ℕ → Prop}
+(h₁ : ∃ n, p n) (h₂ : ¬p 0) : find! p = find! (λ m => p # m + 1) + 1 := by
   apply find!_eq_of
-  · apply @find!_spec (P # · + 1)
+  · apply @find!_spec (p # · + 1)
     obtain ⟨n, hn⟩ := h₁
     cases n
     · contradiction
@@ -287,20 +287,20 @@ theorem find!_eq_of_not_ap_zero {P : ℕ → Prop}
   · exact h₂
   nm k
   simp at hk
-  apply @find!_min (P # · + 1)
+  apply @find!_min (p # · + 1)
   exact hk
 
-theorem find!_eq_of_not_ap_le {P : ℕ → Prop}
-(n : ℕ) (h₁ : ∃ n, P n) (h₂ : ∀ k ≤ n, ¬P k) :
-find! P = find! (λ m => P (n + m)) + n := by
+theorem find!_eq_of_not_ap_le {p : ℕ → Prop}
+(n : ℕ) (h₁ : ∃ n, p n) (h₂ : ∀ k ≤ n, ¬p k) :
+find! p = find! (λ m => p (n + m)) + n := by
   classical
-  induction n generalizing P
+  induction n generalizing p
   · simp
   nm n ih
-  have h₃ : ¬P 0 :=
+  have h₃ : ¬p 0 :=
     by
       apply h₂; simp
-  specialize @ih (P # · + 1) _ _ <;> try dsimp
+  specialize @ih (p # · + 1) _ _ <;> try dsimp
   · obtain ⟨k, hk⟩ := h₁
     cases k
     · contradiction

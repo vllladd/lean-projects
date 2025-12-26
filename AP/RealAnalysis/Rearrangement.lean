@@ -188,7 +188,7 @@ theorem getElem!_mkRmentList_eq_of_lt {a L n m k} (h₁ : k < n) (h₂ : k < m) 
 
 theorem mkRmentP_spec' {a is} (H : CondConv a) :
 (mkRmentP a is ∉ is ∧ 0 ≤ a (mkRmentP a is)) ∧ ∀ k, k ∉ is ∧ 0 ≤ a k → mkRmentP a is ≤ k := by
-  apply Nat.find!_spec' (P := λ i => i ∉ is ∧ 0 ≤ a i)
+  apply Nat.find!_spec' (p := λ i => i ∉ is ∧ 0 ≤ a i)
   choose n h₁ h₂ using H.infp_nonneg # is.sum + 1
   refine ⟨n, ?_, h₂⟩
   intro h₃
@@ -197,7 +197,7 @@ theorem mkRmentP_spec' {a is} (H : CondConv a) :
 
 theorem mkRmentN_spec' {a is} (H : CondConv a) :
 (mkRmentN a is ∉ is ∧ a (mkRmentN a is) < 0) ∧ ∀ k, k ∉ is ∧ a k < 0 → mkRmentN a is ≤ k := by
-  apply Nat.find!_spec' (P := λ i => i ∉ is ∧ a i < 0)
+  apply Nat.find!_spec' (p := λ i => i ∉ is ∧ a i < 0)
   choose n h₁ h₂ using H.infp_neg # is.sum + 1
   refine ⟨n, ?_, h₂⟩
   intro h₃

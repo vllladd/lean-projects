@@ -13,8 +13,6 @@ def mkSubseq (a : ℕ → ℝ) (p : ℝ → Prop) (n : ℕ) : ℕ :=
     let k := mkSubseq a p n
     k + 1 + Nat.find! (p # a # k + 1 + ·)
 
--- #check 0 #exit
-
 -----
 
 theorem absConv_drop_of {a N} (h : AbsConv a) : AbsConv (a # N + ·) := by
@@ -51,8 +49,8 @@ theorem exi_of_infp {a p} (h : Infp a p) : ∃ n, p (a n) := by
 
 theorem mkSubseq_spec {a p n} (h : Infp a p) : p # a # mkSubseq a p n := by
   cases n <;> rw [mkSubseq]
-  · exact Nat.find!_spec (P := (p # a ·)) # exi_of_infp h
-  nm n; apply Nat.find!_spec (P := λ k => p (a (mkSubseq a p n + 1 + k)))
+  · exact Nat.find!_spec (p := (p # a ·)) # exi_of_infp h
+  nm n; apply Nat.find!_spec (p := λ k => p (a (mkSubseq a p n + 1 + k)))
   exact exi_add_of_infp h
 
 theorem apply_of_mkSubseq_eq {a p n k} (h : Infp a p)

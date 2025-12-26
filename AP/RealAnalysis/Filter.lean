@@ -8,6 +8,39 @@ def unBddCnd' (p : ℕ → Prop) : Prop :=
 def unBddCnd (p : ℝ → Prop) (a : ℕ → ℝ) : Prop :=
   unBddCnd' (p # a ·)
 
+@[simp] noncomputable
+def filter (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℝ :=
+  let n₀ := Nat.find! (p # a ·)
+  match n with
+  | 0 => a n₀
+  | n + 1 => filter p (a # n₀ + 1 + ·) n
+
+@[simp] noncomputable
+def filterSubseq (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℕ :=
+  let n₀ := Nat.find! (p # a ·)
+  match n with
+  | 0 => n₀
+  | n + 1 => n₀ + 1 + filterSubseq p (a # n₀ + 1 + ·) n
+
+@[simp] noncomputable
+def monoLtSubseq (a : ℕ → ℝ) (n : ℕ) : ℕ :=
+  match n with
+  | 0 => 0
+  | n + 1 =>
+    let n₀ := monoLtSubseq a n
+    n₀ + Nat.find! (λ k => a n₀ < a (n₀ + k))
+
+def isPeak (a : ℕ → ℝ) (k : ℕ) : Prop :=
+  ∀ n, k ≤ n → a n ≤ a k
+
+def unBddPeaks (a : ℕ → ℝ) : Prop :=
+  unBddCnd' # isPeak a
+
+def convAndNotMono (a : ℕ → ℝ) : Prop :=
+  converges a ∧ ¬monoLe a ∧ ¬monoGe a
+
+-----
+
 theorem unBddCnd'_iff_alt₁ {p} : unBddCnd' p ↔ ∀ N, ∃ n, N < n ∧ p n := by
   constructor; all_goals
     intro h N
@@ -35,20 +68,6 @@ theorem unBddCnd_iff_alt₂ {a p} : unBddCnd p a ↔ {n | p # a n}.Infinite := b
   rw [unBddCnd_iff_alt₁]
   apply forall_congr'; intro N
   tauto
-
-@[simp] noncomputable
-def filter (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℝ :=
-  let n₀ := Nat.find! (p # a ·)
-  match n with
-  | 0 => a n₀
-  | n + 1 => filter p (a # n₀ + 1 + ·) n
-
-@[simp] noncomputable
-def filterSubseq (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℕ :=
-  let n₀ := Nat.find! (p # a ·)
-  match n with
-  | 0 => n₀
-  | n + 1 => n₀ + 1 + filterSubseq p (a # n₀ + 1 + ·) n
 
 theorem unBddCnd_drop_of {a p k} (h : unBddCnd p a) : unBddCnd p (a # k + ·) := by
   intro N
@@ -109,7 +128,7 @@ theorem unBddCnd_le_or_ge {a M} : unBddCnd (· ≤ M) a ∨ unBddCnd (M ≤ ·) 
   apply unBddCnd_or_of_or; intro N; apply le_total
 
 theorem apply_nat_find!_of_unBddCnd {a p} (h : unBddCnd p a) : p # a # Nat.find! (p # a ·) := by
-  apply Nat.find!_spec (P := (p # a ·))
+  apply Nat.find!_spec (p := (p # a ·))
   specialize h 0
   choose n h₁ h₂ using h
   use n
@@ -129,14 +148,6 @@ theorem apply_filter {a p n} (h : unBddCnd p a) : p (filter p a n) := by
 theorem unBddCnd_filter {a p} (h : unBddCnd p a) : unBddCnd p (filter p a) :=
   λ N => ⟨N, by rfl, apply_filter h⟩
 
-@[simp] noncomputable
-def monoLtSubseq (a : ℕ → ℝ) (n : ℕ) : ℕ :=
-  match n with
-  | 0 => 0
-  | n + 1 =>
-    let n₀ := monoLtSubseq a n
-    n₀ + Nat.find! (λ k => a n₀ < a (n₀ + k))
-
 theorem exi_cnd_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 ∃ k, a n < a (m + k) := by
   specialize h₁ (L - a n) # by linarith [h₂ n]
@@ -154,11 +165,11 @@ theorem exi_cnd_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L)
 
 theorem apply_natfind!_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 a n < a (Nat.find! (a n < a ·)) :=
-  Nat.find!_spec (P := (a n < a ·)) # exi_cnd_of_lt_limit h₁ h₂
+  Nat.find!_spec (p := (a n < a ·)) # exi_cnd_of_lt_limit h₁ h₂
 
 theorem apply_natfind!_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 a n < a (m + Nat.find! (λ k => a n < a (m + k))) :=
-  Nat.find!_spec (P := λ k => a n < a (m + k)) # exi_cnd_add_of_lt_limit h₁ h₂
+  Nat.find!_spec (p := λ k => a n < a (m + k)) # exi_cnd_add_of_lt_limit h₁ h₂
 
 theorem pos_natfind!_add_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
 0 < Nat.find! (λ k => a n < a (n + k)) := by
@@ -253,9 +264,6 @@ theorem exi_monoGt_subseq_of_unBddCnd_limit_lt {a L} (h₁ : tendsTo a L)
   simp at h₄ ⊢
   exact h₄
 
-def isPeak (a : ℕ → ℝ) (k : ℕ) : Prop :=
-  ∀ n, k ≤ n → a n ≤ a k
-
 theorem isPeak_iff_alt₁ {a k} : isPeak a k ↔ ∀ n, k < n → a n ≤ a k := by
   constructor
   · intro h N h₁
@@ -267,9 +275,6 @@ theorem isPeak_iff_alt₁ {a k} : isPeak a k ↔ ∀ n, k < n → a n ≤ a k :=
     · rfl
     apply h
     exact h₁
-
-def unBddPeaks (a : ℕ → ℝ) : Prop :=
-  unBddCnd' # isPeak a
 
 theorem exi_drop_eq_subseq {a : ℕ → ℝ} {k} : ∃ σ, Subseq σ ∧ (a # k + ·) = (a ∘ σ) := by
   use (k + ·)
@@ -342,9 +347,6 @@ theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, Subseq σ ∧ (monoLe (a ∘ �
   by_cases h : unBddPeaks a
   · choose σ h₁ h₂ using exi_monoGe_subseq_of_unBddPeaks h; use σ, h₁; right; exact h₂
   · choose σ h₁ h₂ using exi_monoLe_subseq_of_not_unBddPeaks h; use σ, h₁; left; exact h₂
-
-def convAndNotMono (a : ℕ → ℝ) : Prop :=
-  converges a ∧ ¬monoLe a ∧ ¬monoGe a
 
 theorem convAndNotMono_neg_one_pow_div_add_one : convAndNotMono # λ n => (-1) ^ n / (n + 1) := by
   split_ands
