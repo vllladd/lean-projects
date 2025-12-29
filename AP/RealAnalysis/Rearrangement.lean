@@ -630,25 +630,83 @@ theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) (hn : n �
   congr 1
   simp
 
+theorem subseq_exi_ge {σ n} (h : Subseq σ) : ∃ k, n ≤ σ k :=
+  ⟨n, nat_le_of_subseq h⟩
+
+theorem subseq_exi_gt {σ n} (h : Subseq σ) : ∃ k, n < σ k := by
+  choose k hk using subseq_exi_ge h (n := n)
+  use σ # k + 1
+  apply lt_of_le_of_lt hk
+  apply lt_of_le_of_lt # nat_le_of_subseq h
+  simp [subseq_lt_iff h]
+
+theorem subseq_exi_ge_and_between_of_le {σ n i} (h₁ : Subseq σ) (h₂ : σ n ≤ i) :
+∃ k, n ≤ k ∧ σ k ≤ i ∧ i < σ (k + 1) := by
+  have h₃ : ∃ k, i < σ k
+  · apply subseq_exi_gt
+    intro i j h₃
+    simpa [subseq_lt_iff h₁]
+  generalize hk : Nat.find! (λ k => i < σ k) = k
+  choose h₄ h₅ using Nat.find!_spec' h₃
+  rw [hk] at h₄ h₅
+  clear h₃ hk
+  cases k
+  · have h₆ : σ n < σ 0; linarith
+    simp [subseq_lt_iff h₁] at h₆
+  nm k
+  have h₆ := h₅ k
+  simp at h₆
+  refine ⟨k, ?_, h₆, h₄⟩
+  by_contra! h₃
+  rw [←Nat.add_one_le_iff, ←subseq_le_iff h₁] at h₃
+  linarith
+
+@[simp]
+theorem mkRmentLen_lt_succ {a L n} : mkRmentLen a L n < mkRmentLen a L (n + 1) := by
+  simp [mkRmentLen]; rw [mkRmentList, mkRmentIte]
+  simp; apply Nat.lt_add_right; simp [mkRmentList1]
+
+@[simp]
+theorem subseq_mkRmentLen {a L} : Subseq (mkRmentLen a L) := by
+  intro i j h
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt h; clear h
+  induction j
+  · simp
+  nm n ih
+  apply ih.trans; clear ih
+  rw [←Nat.add_assoc]
+  simp
+
+-- #check 0 #exit
+
 -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
 --   are at distance from `L` at most `2 * bounds a n + 1 / (n + 1)`
 theorem abs_series_mkRment_sub_lt_of_between {a L n i} (H : CondConv a)
-(h₁ : mkRmentLen a L n ≤ i) (h₂ : i < mkRmentLen a L (n + 1)) :
+(hn : n ≠ 0) (h₁ : mkRmentLen a L n ≤ i) (h₂ : i < mkRmentLen a L (n + 1)) :
 |series (a # mkRment a L ·) i - L| ≤ 2 * bounds a n + 1 / (n + 1) := by
+  -- rw [mkRmentLen, mkRmentList] at h₂
+  simp
+  obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
+  rw [series_add]
+  
+  have h₁ := @abs_series_mkRment_mkRmentLen_sub_lt a L n H hn
+  simp at h₁
+  
+  generalize hs₀ : series (a # mkRment a L ·) (mkRmentLen a L n) = s₀ at h₁ ⊢
+  
   sorry
 
 -- #check 0 #exit
 
--- moreover, all elements or series of rearrangement of `a` after `f n`
---   are at distance from `L` at most `2 * bounds a n + 1 / (n + 1)`
-theorem abs_series_mkRment_sub_lt_of_le {a L n i} (H : CondConv a) (h : mkRmentLen a L n ≤ i) :
+theorem abs_series_mkRment_sub_lt_of_le {a L n i} (H : CondConv a)
+(hn : n ≠ 0) (h : mkRmentLen a L n ≤ i) :
 |series (a # mkRment a L ·) i - L| ≤ 2 * bounds a n + 1 / (n + 1) := by
-  sorry
+  choose k hk h₁ h₂ using subseq_exi_ge_and_between_of_le (by simp) h
+  apply abs_series_mkRment_sub_lt_of_between H (by omega) h₁ h₂ |>.trans
+  apply add_le_add
+  · simp; apply bounds_le_bounds_of_tendsTo H.tendsTo_zero hk
+  field_simp; norm_cast; omega
 
--- #check 0 #exit
-
--- since `a` tends to `0` and `1 / (n + 1)` also tends to `0`,
---   the series of rearrangement of `a` tends to `L`
 theorem tendsTo_series_mkRment {a L} (H : CondConv a) :
 tendsTo (series # λ i => a # mkRment a L i) L := by
   rw [tendsTo_iff_eps_lt_one]
@@ -665,48 +723,19 @@ tendsTo (series # λ i => a # mkRment a L i) L := by
     omega
   choose N₂ hN₂ using H.bounds_tendsTo_zero (ε / 8) (by positivity)
   simp at hN₂
-  use mkRmentLen a L (N₁ + N₂)
+  generalize hn₁ : N₁ + N₂ + 1 = n₁
+  use mkRmentLen a L n₁
   intro n hn
-  have h₁ : N₁ + N₂ ≤ n
+  have h₁ : n₁ ≤ n
   · apply hn.trans'; simp
-  specialize hN₁ (N₁ + N₂) (by omega)
-  specialize hN₂ (N₁ + N₂) (by omega)
+  specialize hN₁ n₁ (by omega)
+  specialize hN₂ n₁ (by omega)
   apply lt_of_le_of_lt (b := ε / 2) _ (by linarith)
-  apply abs_series_mkRment_sub_lt_of_le H hn |>.trans
+  apply abs_series_mkRment_sub_lt_of_le H (by omega) hn |>.trans
   rw [abs_bounds_of_tendsTo H.tendsTo_zero] at hN₂
   linarith
 
 open CondConv in
 theorem exi_rment_tendsTo_of_condConv {a L} (H : CondConv a) :
 ∃ σ, Rment σ ∧ tendsTo (series (a # σ ·)) L :=
-  -- have h₁ := H.tendsTo_series
-  -- have h₂ := H.not_absConv
-  -- have h₃ := H.infp_nonneg
-  -- have h₄ := H.infp_neg
-  -- have hp₁ := CondConv.subseq_σp a
-  -- have hn₁ := CondConv.subseq_σn a
-  -- have hp₂ := @H.σp_spec'
-  -- have hn₂ := @H.σn_spec'
-  -- have h₅ := H.monoLe_series_ap
-  -- have h₆ := H.monoGe_series_an
-  -- have G₁ := H.ap_fn_nonneg
-  -- have G₂ := H.an_fn_nonpos
-  -- have G₃ := H.abs_ap_fn
-  -- have G₄ := H.abs_an_fn
-  -- have G₅ := H.series_ap_fn_nonneg
-  -- have G₆ := H.series_an_fn_nonpos
-  -- have hfg := @H.f_add_g
-  -- have hf := @H.f_le_of_le
-  -- have hg := @H.g_le_of_le
-  -- have Hf := @H.exi_f_ge
-  -- have Hg := @H.exi_g_ge
-  -- have Hfg := @H.series_eq_f_add_g
-  -- have hfg' := @H.f'_add_g'
-  -- have hf' := @H.f'_le_of_le
-  -- have hg' := @H.g'_le_of_le
-  -- have Hf' := @H.exi_f'_ge
-  -- have Hg' := @H.exi_g'_ge
-  -- have Hfg' := @H.series_eq_f'_add_g'
-  -- have h₇ := H.not_converges_series_ap
-  -- have h₈ := H.not_converges_series_an
   ⟨_, rment_mkRment H, tendsTo_series_mkRment H⟩
