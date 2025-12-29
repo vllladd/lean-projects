@@ -683,6 +683,22 @@ theorem take_mkRmentLen_mkRmentList_add {a L n k} :
 (mkRmentList a L # n + k).take (mkRmentLen a L n) = mkRmentList a L n := by
   choose xs h using @mkRmentList_prefix a L n (n + k) (by omega); simp [←h, mkRmentLen]
 
+theorem mem_mkRmentList_of_lt {a L n k} (h : k < n) : k ∈ mkRmentList a L n := by
+  rw [←Nat.add_one_le_iff] at h
+  have h₁ := @mem_mkRmentList_succ a L k
+  apply List.IsPrefix.mem h₁
+  exact mkRmentList_prefix h
+
+theorem le_mkRmentP_mkRmentList {a L n} (H : CondConv a) :
+n ≤ mkRmentP a (mkRmentList a L n) := by
+  have h := @mkRmentP_spec a (mkRmentList a L n) H |>.1
+  contrapose! h; exact mem_mkRmentList_of_lt h
+
+theorem le_mkRmentN_mkRmentList {a L n} (H : CondConv a) :
+n ≤ mkRmentN a (mkRmentList a L n) := by
+  have h := @mkRmentN_spec a (mkRmentList a L n) H |>.1
+  contrapose! h; exact mem_mkRmentList_of_lt h
+
 -- #check 0 #exit
 
 theorem abs_series_add_sum_mkRmentList_sub_lt {a L n N k}
@@ -722,7 +738,7 @@ theorem abs_series_add_sum_mkRmentList_sub_lt {a L n N k}
     obtain ⟨⟨h₄, h₅⟩, h₆⟩ := @mkRmentP_spec' a is H
     apply abs_le_bounds_of_tendsTo ha |>.trans
     apply bounds_le_bounds_of_tendsTo ha
-    sorry -- because `mkRmentList a L n` contains each of the first `n` nonnegative elements
+    rw [←h₁]; exact le_mkRmentP_mkRmentList H
   
   have hb₂ : |s₀ - L + a (mkRmentP a is) + a (mkRmentN a is)| ≤ |s₀ - L| + 2 * bounds a n
   ·
@@ -731,7 +747,7 @@ theorem abs_series_add_sum_mkRmentList_sub_lt {a L n N k}
     obtain ⟨⟨h₄, h₅⟩, h₆⟩ := @mkRmentN_spec' a is H
     apply abs_le_bounds_of_tendsTo ha |>.trans
     apply bounds_le_bounds_of_tendsTo ha
-    sorry -- because `mkRmentList a L n` contains each of the first `n` negative elements
+    rw [←h₁]; exact le_mkRmentN_mkRmentList H
   
   have H₁ : 0 ≤ (n + 1 : ℝ)⁻¹; positivity
   
