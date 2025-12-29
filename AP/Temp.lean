@@ -25,33 +25,6 @@ namespace List
 variable {α β γ : Type*}
 variable {xs ys zs : List α}
 
-theorem nodup_take {n} (h : xs.Nodup) : (xs.take n).Nodup := by
-  induction xs generalizing n
-  · simp
-  clear! xs; nm x xs ih
-  simp at h
-  rcases h with ⟨h₁, h₂⟩
-  cases n
-  · simp
-  nm n
-  simp
-  split_ands
-  · contrapose! h₁
-    exact mem_of_mem_take h₁
-  exact ih h₂
-
-theorem nodup_drop {n} (h : xs.Nodup) : (xs.drop n).Nodup := by
-  induction xs generalizing n
-  · simp
-  clear! xs; nm x xs ih
-  simp at h
-  rcases h with ⟨h₁, h₂⟩
-  cases n
-  · simp [h₁, h₂]
-  nm n
-  simp
-  exact ih h₂
-
 -- #check 0 #exit
 
 end List
