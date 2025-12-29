@@ -370,6 +370,12 @@ theorem exi_an_map_range_lt L :
 ∃ n, (List.range n |>.filter (a · < 0) |>.map a |>.sum) < L := by
   choose n h₁ using H.exi_an_lt L; use σn a n; rwa [H.sum_map_filter_range_σn]
 
+theorem tendsTo_zero : tendsTo a 0 :=
+  tendsTo_zero_of_converges_series H.converges_series
+
+theorem bounds_tendsTo_zero : tendsTo (bounds a) 0 := by
+  rw [←abs_zero]; exact tendsTo_bounds_of_tendsTo H.tendsTo_zero
+
 theorem exi_ap_map_range_drop_gt L k :
 ∃ n, L < (List.range n |>.map (k + ·) |>.filter (0 ≤ a ·) |>.map a |>.sum) := by
   replace H := H.drop (N := k)
@@ -398,8 +404,10 @@ theorem exi_an_map_range_drop_lt L k :
   rw [ih]; clear ih
   grind
 
-theorem tendsTo_zero : tendsTo a 0 :=
-  tendsTo_zero_of_converges_series H.converges_series
+theorem exi_add_ap_map_range_drop_gt s L k :
+∃ n, L < s + (List.range n |>.map (k + ·) |>.filter (0 ≤ a ·) |>.map a |>.sum) := by
+  simp_rw [←sub_lt_iff_lt_add']; apply H.exi_ap_map_range_drop_gt
 
-theorem bounds_tendsTo_zero : tendsTo (bounds a) 0 := by
-  rw [←abs_zero]; exact tendsTo_bounds_of_tendsTo H.tendsTo_zero
+theorem exi_add_an_map_range_drop_lt s L k :
+∃ n, s + (List.range n |>.map (k + ·) |>.filter (a · < 0) |>.map a |>.sum) < L := by
+  simp_rw [←lt_sub_iff_add_lt']; apply H.exi_an_map_range_drop_lt

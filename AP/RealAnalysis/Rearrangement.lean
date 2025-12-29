@@ -48,10 +48,10 @@ def mkRmentGeF (a : ℕ → ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : List ℕ 
   List.range k |>.map (mkRmentGeN a n is + ·) |>.filter (a · < 0)
 
 def mkRmentLeKCnd (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : Prop :=
-  L - 1 / (n + 2) < (mkRmentLeF a n is k |>.map a |>.sum)
+  L - 1 / (n + 2) < mkRmentSum a is + (mkRmentLeF a n is k |>.map a |>.sum)
 
 def mkRmentGeKCnd (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) (k : ℕ) : Prop :=
-  (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2)
+  mkRmentSum a is + (mkRmentGeF a n is k |>.map a |>.sum) < L + 1 / (n + 2)
 
 noncomputable
 def mkRmentLeK (a : ℕ → ℝ) (L : ℝ) (n : ℕ) (is : List ℕ) : ℕ :=
@@ -334,18 +334,18 @@ theorem nodup_mkRmentGe {a L n is} : (mkRmentGe a L n is).Nodup := by
 theorem mkRmentLeK_spec' {a L n is} (H : CondConv a) :
 mkRmentLeKCnd a L n is (mkRmentLeK a L n is) ∧
 ∀ k, mkRmentLeKCnd a L n is k → mkRmentLeK a L n is ≤ k :=
-  Nat.find!_spec' # H.exi_ap_map_range_drop_gt _ _
+  Nat.find!_spec' # H.exi_add_ap_map_range_drop_gt _ _ _
 
 theorem mkRmentGeK_spec' {a L n is} (H : CondConv a) :
 mkRmentGeKCnd a L n is (mkRmentGeK a L n is) ∧
 ∀ k, mkRmentGeKCnd a L n is k → mkRmentGeK a L n is ≤ k :=
-  Nat.find!_spec' # H.exi_an_map_range_drop_lt _ _
+  Nat.find!_spec' # H.exi_add_an_map_range_drop_lt _ _ _
 
-theorem mkRmentLeK_spec {a L n is} (H : CondConv a) :
-L - 1 / (n + 2) < (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) :=
+theorem mkRmentLeK_spec {a L n is} (H : CondConv a) : L - 1 / (n + 2) < mkRmentSum a is +
+(mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a |>.sum) :=
   mkRmentLeK_spec' H |>.1
 
-theorem mkRmentGeK_spec {a L n is} (H : CondConv a) :
+theorem mkRmentGeK_spec {a L n is} (H : CondConv a) : mkRmentSum a is +
 (mkRmentGeF a n is (mkRmentGeK a L n is) |>.map a |>.sum) < L + 1 / (n + 2) :=
   mkRmentGeK_spec' H |>.1
 
@@ -515,45 +515,98 @@ theorem take_mkRmentLen_mkRmentList {a L n} :
 (mkRmentList a L # mkRmentLen a L n).take (mkRmentLen a L n) = mkRmentList a L n :=
   take_length_mkRmentList rfl
 
+@[simp]
+theorem mkRmentLeF_zero {a n is} : mkRmentLeF a n is 0 = [] := rfl
+
+@[simp]
+theorem mkRmentGeF_zero {a n is} : mkRmentGeF a n is 0 = [] := rfl
+
+theorem abs_map_sum_mkRmentLe_sub_lt {a L is} {n : ℕ} (H : CondConv a)
+(h₁ : mkRmentSum a is ≤ L - (n + 2 : ℝ)⁻¹) :
+|(is.map a |>.sum) + (mkRmentLe a L n is |>.map a |>.sum) - L| ≤ (n + 2 : ℝ)⁻¹ := by
+  rw [←mkRmentSum, mkRmentLe]
+  generalize hs : (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a).sum = s
+  generalize hk : mkRmentLeK a L n is = k at hs
+  choose h₂ h₃ using @mkRmentLeK_spec' a L n is H
+  simp [mkRmentLeKCnd, hk, hs] at h₂
+  rw [hk] at h₃
+  change ∀ r, _ at h₃
+  generalize hd : (n + 2 : ℝ)⁻¹ = d at h₁ h₂ ⊢
+  generalize hs₀ : mkRmentSum a is = s₀ at h₁ ⊢
+  have hd₁ : 0 < d; subst hd; positivity
+  suffices h : L - d ≤ s₀ + s ∧ s₀ + s ≤ L
+  · rw [abs_sub_le_iff]; split_ands <;> linarith
+  split_ands; linarith
+  rw [hs₀] at h₂
+  cases k
+  · simp at hs; linarith
+  nm k
+  specialize h₃ k
+  simp [mkRmentLeKCnd, hs₀] at h₃
+  simp [mkRmentLeF, List.range_succ] at hs
+  rw [←mkRmentLeF] at hs
+  generalize hs' : (mkRmentLeF a n is k |>.map a |>.sum) = s' at h₃ hs
+  rw [hd] at h₃
+  simp [List.filter_cons] at hs
+  choose h₄ h₅ h₆ using @mkRmentLeN_spec a n is H
+  generalize hN : mkRmentLeN a n is = N at hs h₄ h₅ h₆
+  split_ifs at hs with h₇
+  rotate_left
+  · simp at hs; linarith
+  suffices h : a (N + k) ≤ d
+  · simp at hs; linarith
+  specialize h₆ (N + k) (by omega) h₇
+  simp [hd] at h₆
+  exact le_of_lt h₆
+
+-- #check 0 #exit
+
+theorem abs_map_sum_mkRmentGe_sub_lt {a L is} {n : ℕ} (H : CondConv a)
+(h₁ : L + (n + 2 : ℝ)⁻¹ ≤ mkRmentSum a is) :
+|(is.map a |>.sum) + (mkRmentGe a L n is |>.map a |>.sum) - L| ≤ (n + 2 : ℝ)⁻¹ := by
+  rw [←mkRmentSum, mkRmentGe]
+  generalize hs : (mkRmentGeF a n is (mkRmentGeK a L n is) |>.map a).sum = s
+  generalize hk : mkRmentGeK a L n is = k at hs
+  choose h₂ h₃ using @mkRmentGeK_spec' a L n is H
+  simp [mkRmentGeKCnd, hk, hs] at h₂
+  rw [hk] at h₃
+  change ∀ r, _ at h₃
+  generalize hd : (n + 2 : ℝ)⁻¹ = d at h₁ h₂ ⊢
+  generalize hs₀ : mkRmentSum a is = s₀ at h₁ ⊢
+  have hd₁ : 0 < d; subst hd; positivity
+  suffices h : L ≤ s₀ + s ∧ s₀ + s ≤ L + d
+  · rw [abs_sub_le_iff]; split_ands <;> linarith
+  symm; split_ands; linarith
+  rw [hs₀] at h₂
+  cases k
+  · simp at hs; linarith
+  nm k
+  specialize h₃ k
+  simp [mkRmentGeKCnd, hs₀] at h₃
+  simp [mkRmentGeF, List.range_succ] at hs
+  rw [←mkRmentGeF] at hs
+  generalize hs' : (mkRmentGeF a n is k |>.map a |>.sum) = s' at h₃ hs
+  rw [hd] at h₃
+  simp [List.filter_cons] at hs
+  choose h₄ h₅ h₆ using @mkRmentGeN_spec a n is H
+  generalize hN : mkRmentGeN a n is = N at hs h₄ h₅ h₆
+  split_ifs at hs with h₇
+  rotate_left
+  · simp at hs; linarith
+  suffices h : -d < a (N + k)
+  · simp at hs; linarith
+  specialize h₆ (N + k) (by omega) h₇
+  simp [neg_div, hd] at h₆
+  exact h₆
+
 -- we now have `|s - L| < 1 / (n + 1)`
 -- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
 theorem abs_map_sum_mkRmentIte_sub_lt {a L n is} (H : CondConv a) :
 |(mkRmentIte a L n is |>.map a |>.sum) - L| ≤ 1 / (n + 2) := by
-  rw [mkRmentIte]
-  simp
-  split_ifs with h₁ h₂
-  rotate_right
-  · simp [mkRmentSum] at h₁ h₂
-    simp [abs_le]; split_ands <;> linarith
-  ·
-    rw [mkRmentLe]
-    have h₂ := @mkRmentLeK_spec a L n is H
-    simp at h₂
-    rw [mkRmentSum] at h₁
-    generalize h₃ : (mkRmentLeF a n is (mkRmentLeK a L n is) |>.map a).sum = s at h₂ ⊢
-    rw [sub_lt_iff_lt_add] at h₂
-    rw [←sub_lt_iff_lt_add'] at h₂
-    
-    -- apply lt_of_le_of_lt _ h₂; clear h₂
-    -- rw [abs_le]
-    -- split_ands
-    -- ·
-    --   simp
-    -- ·
-    --   linarith
-    
-    rw [abs_sub_le_iff]
-    split_ands
-    ·
-      suffices : s * 3 ≤ L * 2; linarith
-      unfold mkRmentLeF at h₃
-      sorry
-    ·
-      sorry
-  ·
-    sorry
-
--- #check 0 #exit
+  rw [mkRmentIte]; simp; split_ifs with h₁ h₂
+  · exact abs_map_sum_mkRmentLe_sub_lt H h₁
+  · exact abs_map_sum_mkRmentGe_sub_lt H h₂
+  · simp [mkRmentSum] at h₁ h₂; simp [abs_le]; split_ands <;> linarith
 
 theorem abs_map_sum_mkRmentList_sub_lt {a L n} (H : CondConv a) (hn : n ≠ 0) :
 |(mkRmentList a L n |>.map a |>.sum) - L| ≤ 1 / (n + 1) := by
@@ -576,8 +629,6 @@ theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) (hn : n �
   rw [mkRment_eq_getElem]
   congr 1
   simp
-
--- #check 0 #exit
 
 -- elements of series of rearrangement of `a` between `f n` and `f (n + 1)`
 --   are at distance from `L` at most `2 * bounds a n + 1 / (n + 1)`
