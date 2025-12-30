@@ -1455,3 +1455,11 @@ theorem size_eq_one_iff_singleton : s.size = 1 ↔ ∃ x, s = singleton x := by
   intro x
   simp [ext_iff]
   grind
+
+@[simp]
+theorem ofFinset_empty : ofFinset (∅ : Finset α) = ∅ := by
+  ext; simp
+
+@[simp]
+theorem ofSet_empty : ofSet (∅ : Set α) = ∅ := by
+  simp [ofSet]
