@@ -216,3 +216,11 @@ p ∈ (fsp.offset n).get (k + 1) ↔ p ∈ fsp.get (n + k + 1) := by
   rw [offset_succ']
   simp [next, ih]
   ring_nf
+
+@[simp]
+theorem get_empty : (∅ : FSP).get = λ _ => ∅ := by
+  simp [empty_def]
+
+@[simp]
+theorem hasLe_empty : (∅ : FSP).hasLe = λ _ _ => False := by
+  unfold hasLe; simp
