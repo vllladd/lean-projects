@@ -844,3 +844,7 @@ s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f 
     rw [←hm] at H₁
     simp at h₂
     simpa [H₁]
+
+theorem State.validTr_of_mem_aPtsSimAt {s s' p st} [hs : sys.WF s]
+(h : (s', p) ∈ s.aPtsSimAt st) : sys.validTr s' p := by
+  rw [mem_aPtsSimAt_iff_simulate_tr] at h; rw [sys.validTr_iff_isSome]; grind

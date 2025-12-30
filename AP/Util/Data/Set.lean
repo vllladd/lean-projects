@@ -1,5 +1,24 @@
 import AP.Util.Data.Map
 
+namespace List
+
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
+
+theorem head!_eq_iget_head [ha : Inhabited α] : xs.head! = xs.head?.iget := by
+  cases xs <;> rfl
+
+@[simp]
+theorem head!_mem_iff [ha : Inhabited α] : xs.head! ∈ xs ↔ xs ≠ [] := by
+  cases xs <;> simp
+
+theorem head!_mem [ha : Inhabited α] (h : xs ≠ []) : xs.head! ∈ xs := by
+  simpa
+
+-- #check 0 #exit
+
+end List
+
 universe u v w
 
 structure Set' (α : Type u)
@@ -392,7 +411,7 @@ theorem fold_empty {f : β → α → β} {z : β} {h} : (∅ : Set' α).fold f 
   Std.ExtDHashMap.fold_empty
 
 omit hb₁ hb₂ in
-theorem fold_insert {f : β → α → β} {z : β} {h x}
+theorem fold_insert' {f : β → α → β} {z : β} {h x}
 (h₁ : x ∉ s) : (s.insert x).fold f z h = s.fold f (f z x) h :=
   Std.ExtDHashMap.fold_insert # by simpa
 
@@ -500,7 +519,7 @@ theorem map_insert {f : α → β} {x : α} : (s.insert x).map f = (s.map f).ins
   intro z hh
   dsimp at hh
   induction s using Set'.ind generalizing z
-  · rw [fold_insert # by simp]; simp
+  · rw [fold_insert' # by simp]; simp
   clear! s; nm s y h ih
   by_cases h₁ : x ∈ s.insert y
   · simp at h₁
@@ -508,15 +527,15 @@ theorem map_insert {f : α → β} {x : α} : (s.insert x).map f = (s.map f).ins
     · simp [ih]
     rw [insert_comm]
     rw [insert_eq_of_mem h₁] at ih ⊢
-    rw [fold_insert h]
+    rw [fold_insert' h]
     apply ih
-  rw [fold_insert h₁]
+  rw [fold_insert' h₁]
   simp at h₁
   rcases h₁ with ⟨h₁, h₂⟩
-  simp_rw [fold_insert h₂] at ih
+  simp_rw [fold_insert' h₂] at ih
   by_cases h₃ : y ∈ s
   · rw [insert_eq_of_mem h₃, ih]
-  simp [fold_insert h₃]
+  simp [fold_insert' h₃]
   rw [insert_comm, ih]
 
 @[simp]
@@ -585,6 +604,7 @@ theorem count_eq_size_filter {p} : s.count p = (s.filter p).size :=
 theorem count_le_size {p} : s.count p ≤ s.size :=
   s.1.count_le_size
 
+@[simp]
 theorem count_eq_zero_iff {p} : s.count p = 0 ↔ ∀ x, x ∈ s → ¬p x := by
   convert s.1.count_eq_zero_iff; nm x; simp
   use λ h₁ h₂ => h₁ # s.1.mem_of_get?_eq_some h₂
@@ -1224,56 +1244,10 @@ theorem toList_ofList_of_sorted [ha : LinearOrder α] {xs : List α}
   simp; exact h.le_of_lt
 
 omit hb₁ hb₂
-theorem fold_insert_of_notMem' {f : β → α → β} {z x hh} (hx : x ∉ s) :
-(s.insert x).fold f z hh = s.fold f (f z x) hh := by
-  classical
-  simp_rw [fold_eq_foldl_toList]  
-  have h₁ : x ∈ (s.insert x).toList; simp
-  have h₂ : s.insert x |>.toList.Nodup; simp
-  rw [List.mem_iff_append] at h₁
-  choose xs ys h₁ using h₁
-  rw [h₁] at h₂ ⊢
-  suffices h₃ : s.toList = xs ++ ys
-  · rw [h₃]
-    simp
-    congr
-    clear! ys x
-    rw [List.foldl_apply_comm]
-    apply hh
-  have h₅ := s.insert x |>.sorted_toList
-  rw [h₁] at h₅
-  induction s using ind_ofList'
-  nm zs H₁ H₂
-  replace H₂ := H₂.lt_of_le H₁
-  rw [toList_ofList_of_sorted H₂]
-  simp at hx
-  have H₃ := h₂.of_append_left
-  have H₄ : (xs ++ x :: ys).erase x = (xs ++ ys)
-  · grind
-  have H₅ : xs ++ ys |>.Nodup
-  · rw [←H₄]; exact List.nodup_erase h₂
-  have H₆ := List.nodup_append_comm.mp H₅
-  apply List.eq_of_perm_of_sorted_loc (r := (· ≤ ·)) <;> try simp
-  · symm
-    apply List.perm_of_nodup_and_subset_and_length_eq H₁
-    · intro y hy
-      simp
-      replace h₁ := congrArg (y ∈ ·) h₁
-      simp at h₁
-      grind
-    · rw [←H₄, ←h₁]
-      simp
-      rw [size_insert # by simpa]
-      simp
-      rw [size_ofList_of_nodup H₁]
-  · apply H₂.le_of_lt
-  · rw [←H₄, ←h₁]; apply List.sorted_erase; simp
-
-omit hb₁ hb₂
-theorem fold_insert_of_notMem {f : β → α → β} {z x hh} (hx : x ∉ s) :
+theorem fold_insert {f : β → α → β} {z x hh} (hx : x ∉ s) :
 (s.insert x).fold f z hh = f (s.fold f z hh) x := by
   classical
-  rw [fold_insert_of_notMem' hx]
+  rw [fold_insert' hx]
   simp_rw [fold_eq_foldl_toList]
   rw [List.foldl_apply_comm]
   apply hh
@@ -1284,7 +1258,7 @@ theorem toFinset_insert {x} : (s.insert x).toFinset = insert x s.toFinset := by
   by_cases hx : x ∈ s
   · rw [insert_eq_of_mem hx, Finset.insert_eq_of_mem]
     exact mem_toFinset_of_mem hx
-  exact fold_insert_of_notMem hx
+  exact fold_insert hx
 
 @[simp]
 theorem mem_toFinset {x} : x ∈ s.toFinset ↔ x ∈ s := by
@@ -1364,8 +1338,113 @@ theorem erase_insert_self {x} : (s.insert x).erase x = s.erase x := by
 theorem filter_eq_empty_iff {p} : s.filter p = ∅ ↔ ∀ x ∈ s, p x = false := by
   simp [ext_iff]
 
-attribute [simp] count_eq_zero_iff
-
 @[simp]
 theorem one_le_count_iff {p} : 1 ≤ s.count p ↔ ∃ x ∈ s, p x := by
   simp [Nat.one_le_iff_ne_zero]
+
+def bind (s : Set' α) (f : α → Set' β) : Set' β :=
+  s.fold (λ s₁ x => s₁ ∪ f x) ∅ # by simp [union_assoc]; simp [union_comm]
+
+include hb₁ hb₂ in @[simp]
+theorem bind_empty {f : α → Set' β} : (∅ : Set' α).bind f = ∅ := by
+  simp [bind]
+
+theorem singleton_eq_insert {x : α} : singleton x = (∅ : Set' α).insert x := by
+  ext; simp
+
+@[simp]
+theorem fold_singleton {f : β → α → β} {x z hh} : (singleton x).fold f z hh = f z x := by
+  rw [singleton_eq_insert, fold_insert # by simp]; simp
+
+include hb₁ hb₂ in @[simp]
+theorem bind_singleton {f : α → Set' β} {x} : (singleton x).bind f = f x := by
+  simp [bind]
+
+include hb₁ hb₂ in @[simp]
+theorem bind_insert {f : α → Set' β} {x} : (s.insert x).bind f = s.bind f ∪ f x := by
+  induction s using ind; simp
+  nm s y hy ih
+  by_cases h₁ : x = y
+  · subst h₁; simp [ih, union_assoc]
+  rw [insert_comm, bind, fold_insert # by simp [hy, ne_symm' h₁]]
+  rw [←bind, ih]; clear ih
+  nth_rw 2 [bind]
+  rw [fold_insert hy]
+  rw [←bind]
+  simp [union_assoc]
+  simp [union_comm]
+
+include hb₁ hb₂ in @[simp]
+theorem mem_bind {f : α → Set' β} {y} : y ∈ s.bind f ↔ ∃ x ∈ s, y ∈ f x := by
+  induction s using ind <;> simp; grind
+
+def head! [Inhabited α] [LinearOrder α] (s : Set' α) : α :=
+  s.toList.head!
+
+def headMap! [Inhabited α] [LinearOrder α] [LinearOrder β] (s : Set' α) (f : α → β) : α :=
+  s.toList.mergeSort (f · ≤ f ·) |>.head!
+
+theorem head!_spec [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
+(h : s ≠ ∅) : s.head! ∈ s ∧ ∀ x ∈ s, s.head! ≤ x := by
+  simp_rw [head!]
+  replace h : s.toList ≠ []; simpa
+  simp_rw [←mem_toList]
+  have h₁ := s.sorted_toList'
+  generalize hx : s.toList = xs at h h₁ ⊢
+  cases xs; simp at h; clear h
+  nm x xs
+  simp at h₁ ⊢
+  exact h₁.1
+
+@[simp]
+theorem head!_mem_iff [ha₃ : Inhabited α] [ha₄ : LinearOrder α] : s.head! ∈ s ↔ s ≠ ∅ := by
+  rw [head!, ←mem_toList, List.head!_mem_iff]; simp
+
+theorem head!_mem [ha₃ : Inhabited α] [ha₄ : LinearOrder α] (h : s ≠ ∅) : s.head! ∈ s := by
+  simpa
+
+theorem head!_le_of_mem [ha₃ : Inhabited α] [ha₄ : LinearOrder α] {x}
+(h : x ∈ s) : s.head! ≤ x := by
+  apply head!_spec _ |>.2 x h; rintro rfl; simp at h
+
+theorem headMap!_spec [ha₃ : Inhabited α] [ha₄ : LinearOrder α] [hb : LinearOrder β]
+{f : α → β} (h : s ≠ ∅) : s.headMap! f ∈ s ∧ ∀ x ∈ s, f (s.headMap! f) ≤ f x := by
+  simp_rw [headMap!]
+  generalize hx : s.toList.mergeSort (f · ≤ f ·) = xs
+  split_ands
+  · rw [←mem_toList]
+    rw [List.Perm.mem_iff (l₂ := xs) # by simp [←hx]]
+    simp
+    rintro rfl
+    simp [h] at hx
+  intro y hy
+  cases xs
+  · simp [h] at hx
+  nm x xs
+  have h₁ := @List.sorted_mergeSort α (f · ≤ f ·) (by simp) (by simp) s.toList
+  simp [hx] at h₁
+  replace h₁ := h₁.1
+  simp
+  by_cases h₂ : x = y
+  · subst h₂; rfl
+  apply h₁
+  rw [←mem_toList] at hy
+  rw [List.Perm.mem_iff (l₂ := x :: xs) # by simp [←hx]] at hy
+  simp [ne_symm' h₂] at hy
+  exact hy
+
+@[simp]
+theorem headMap!_mem_iff [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
+[hb : LinearOrder β] {f : α → β} : s.headMap! f ∈ s ↔ s ≠ ∅ := by
+  rw [headMap!, ←mem_toList]
+  generalize (decide # f · ≤ f ·) = g
+  rw [List.Perm.mem_iff (l₂ := s.toList.mergeSort g) # by simp]
+  rw [List.head!_mem_iff]; simp
+
+theorem headMap!_mem [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
+[hb : LinearOrder β] {f : α → β} (h : s ≠ ∅) : s.headMap! f ∈ s := by
+  simpa
+
+theorem headMap!_le_of_mem [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
+[hb : LinearOrder β] {f : α → β} {x} (h : x ∈ s) : f (s.headMap! f) ≤ f x := by
+  apply headMap!_spec _ |>.2 x h; rintro rfl; simp at h
