@@ -22,3 +22,15 @@ def size₀ : ℕ :=
 open Classical in noncomputable
 def state₀ : State :=
   Classical.epsilon # stateCnd₀ size₀
+
+open Classical in noncomputable
+def trBox₁ : PointZ :=
+  state₀.trBox
+
+open Classical in noncomputable
+def state₁ : State :=
+  Classical.epsilon # λ s => sys.Reachable state₀ s ∧ s.boxes = .singleton trBox₁
+
+open Classical in noncomputable
+def state₂ : State :=
+  Classical.epsilon # λ s => sys.Reachable state₁ s ∧ s.boxes ≠ .singleton trBox₁

@@ -2,12 +2,6 @@ import AP.Sokoban.Defs
 
 namespace Sokoban
 
-open Classical in noncomputable
-def State.boxesReachable (s : State) : Set' PointZ :=
-  s.points.filter # λ p => ∃ s', sys.Reachable s s' ∧ p ∈ s'.boxes
-
------
-
 open State
 
 variable {s s₁ s₂ s₃ : State}
@@ -454,7 +448,3 @@ theorem size_boxes_eq_of_reachable {s s'} [hs : sys.WF s]
 
 theorem mem_points_of_mem_boxes {p} (h : p ∈ s.boxes) : p ∈ s.points := by
   simp [boxes] at h; exact h.1
-
-@[simp]
-theorem boxes_subset_boxesReachable : s.boxes ⊆ s.boxesReachable := by
-  intro p h; simp [boxesReachable]; use mem_points_of_mem_boxes h, s

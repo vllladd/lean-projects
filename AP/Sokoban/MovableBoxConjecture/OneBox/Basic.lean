@@ -29,13 +29,85 @@ theorem state₀_spec : stateCnd₀ size₀ state₀ :=
   Classical.epsilon_spec size₀_spec
 
 @[simp]
-theorem alwaysMovable1_state₀ : AlwaysMovable1 state₀ :=
+instance alwaysMovable1_state₀ : AlwaysMovable1 state₀ :=
   state₀_spec.1
 
 omit H in @[simp]
 theorem stateCnd₀_self : stateCnd₀ s.boxesReachable.size s ↔ AlwaysMovable1 s := by
   simp [stateCnd₀]
 
-theorem state₀_size_boxesReachable_le {s} (h : stateCnd₀ size₀ s) :
+theorem state₀_size_boxesReachable_le (h : stateCnd₀ size₀ s) :
 s.boxesReachable.size ≤ state₀.boxesReachable.size := by
   choose n h₁ using id h; rw [h₁]; apply size₀_le'; use state₀; simp
+
+omit H in @[simp]
+theorem size_boxes_of_alwaysMovable1 [hs : AlwaysMovable1 s] : s.boxes.size = 1 :=
+  hs.2
+
+@[simp]
+theorem boxes_state₀_ne_empty : state₀.boxes ≠ ∅ := by
+  rw [ne_eq, ←Set'.size_eq_zero_iff, size_boxes_of_alwaysMovable1]; simp
+
+@[simp]
+theorem trBox₁_mem : trBox₁ ∈ state₀.boxesReachable := by
+  simp [trBox₁]
+
+theorem trBox₁_spec {p} (h : p ∈ state₀.boxesReachable) :
+trBox₁.y ≤ p.y ∧ (trBox₁.y = p.y → p.x ≤ trBox₁.x) :=
+  trBox_spec (by simp) h
+
+theorem state₁_spec : sys.Reachable state₀ state₁ ∧ state₁.boxes = .singleton trBox₁ := by
+  apply Classical.epsilon_spec (p := λ s =>
+    sys.Reachable state₀ s ∧ s.boxes = Set'.singleton trBox₁)
+  have h₁ := trBox₁_mem
+  rw [boxesReachable] at h₁
+  simp at h₁
+  obtain ⟨-, s₁, h₁, h₂⟩ := h₁
+  use s₁, h₁
+  have h₃ : s₁.boxes.size = 1
+  · rw [size_boxes_eq_of_reachable h₁]; simp
+  rw [Set'.size_eq_one_iff] at h₃
+  obtain ⟨p, h₃, h₄⟩ := h₃
+  ext p₁
+  simp
+  grind
+
+@[simp]
+theorem reachable_state₀_state₁ : sys.Reachable state₀ state₁ :=
+  state₁_spec.1
+
+@[simp]
+theorem boxes_state₁ : state₁.boxes = .singleton trBox₁ :=
+  state₁_spec.2
+
+omit H in
+theorem alwaysMovable1_of_reachable [hs : AlwaysMovable1 s]
+(h : sys.Reachable s s₁) : AlwaysMovable1 s₁ := by
+  cases hs; nm hs h₁; have hs₁ := alwaysMovable_of_reachable h
+  constructor; rwa [size_boxes_eq_of_reachable h]
+
+@[simp]
+instance alwaysMovable1_state₁ : AlwaysMovable1 state₁ :=
+  alwaysMovable1_of_reachable (s := state₀) # by simp
+
+theorem state₂_spec : sys.Reachable state₁ state₂ ∧ state₂.boxes ≠ .singleton trBox₁ := by
+  apply Classical.epsilon_spec (p := λ s =>
+    sys.Reachable state₁ s ∧ s.boxes ≠ Set'.singleton trBox₁)
+  have h₁ := alwaysMovable1_state₁.1.2
+  specialize h₁ _ (by rfl)
+  choose s₁ h₁ h₂ using h₁
+  use s₁, h₁
+  simp at h₂
+  exact ne_symm' h₂
+
+@[simp]
+theorem reachable_state₁_state₂ : sys.Reachable state₁ state₂ :=
+  state₂_spec.1
+
+@[simp]
+theorem boxes_state₂_ne : state₂.boxes ≠ .singleton trBox₁ :=
+  state₂_spec.2
+
+@[simp]
+theorem reachable_state₀_state₂ : sys.Reachable state₀ state₂ :=
+  reachable_state₀_state₁.trans reachable_state₁_state₂

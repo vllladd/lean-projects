@@ -1,4 +1,4 @@
-import AP.Sokoban.Card
+import AP.Sokoban.Reachability
 
 namespace Sokoban
 

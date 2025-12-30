@@ -1,5 +1,4 @@
 import AP.RealAnalysis.AlternatingInverse
-import AP.Temp
 
 namespace RealAnalysis
 

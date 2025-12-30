@@ -1448,3 +1448,10 @@ theorem headMap!_mem [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
 theorem headMap!_le_of_mem [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
 [hb : LinearOrder β] {f : α → β} {x} (h : x ∈ s) : f (s.headMap! f) ≤ f x := by
   apply headMap!_spec _ |>.2 x h; rintro rfl; simp at h
+
+theorem size_eq_one_iff_singleton : s.size = 1 ↔ ∃ x, s = singleton x := by
+  rw [size_eq_one_iff]
+  apply exists_congr
+  intro x
+  simp [ext_iff]
+  grind

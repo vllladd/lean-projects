@@ -20,3 +20,11 @@ theorem alwaysMovable_iff_alt₁ : AlwaysMovable s ↔ sys.WF s ∧ s.boxes ≠ 
   constructor
   · intro h; use inferInstance, boxes_ne_empty_of_alwaysMovable h, h.2
   · rintro ⟨h₁, h₂, h₃⟩; use h₃
+
+theorem alwaysMovable_of_reachable [H : AlwaysMovable s]
+(h : sys.Reachable s s₁) : AlwaysMovable s₁ := by
+  cases H; nm hs H
+  have hs₁ := sys.wf_of_reachable h
+  constructor
+  intro s₂ h₁
+  exact H s₂ # h.trans h₁

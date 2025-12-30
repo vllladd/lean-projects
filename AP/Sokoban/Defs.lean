@@ -1,6 +1,5 @@
 import AP.Dir
 import AP.System
-import AP.Temp
 
 namespace Sokoban
 
