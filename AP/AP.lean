@@ -1,4 +1,5 @@
 import AP.AP.Defs
+import AP.AP.Alts
 import AP.AP.Basic
 import AP.AP.Determinacy
 import AP.AP.Trap
