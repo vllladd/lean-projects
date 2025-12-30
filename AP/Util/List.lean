@@ -407,8 +407,8 @@ xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
   apply eq_iff_of_nodup_and_sorted (· ≤ ·) hx₁ hy₁ _ hx₂ hy₂
   intro _ _ _ _; exact le_antisymm
 
-theorem take_length_add {n} :
-xs.take (xs.length + n) = xs := by
+@[simp]
+theorem take_length_add {n} : xs.take (xs.length + n) = xs := by
   simp [take_add]
 
 @[simp]
@@ -1428,3 +1428,57 @@ theorem nodup_drop {n} (h : xs.Nodup) : (xs.drop n).Nodup := by
   nm n
   simp
   exact ih h₂
+
+theorem take_take_append {k} (h : k ≤ xs.length) :
+(xs.take k ++ ys).take k = xs.take k := by
+  induction k generalizing xs ys
+  · simp
+  nm k ih
+  cases xs
+  · simp at h
+  nm x xs
+  simp
+  simp at h
+  exact ih h
+
+theorem sum_nonpos [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+(h : ∀ x ∈ xs, x ≤ 0) : xs.sum ≤ 0 := by
+  induction xs
+  · simp
+  clear! xs; nm x xs ih
+  simp
+  specialize ih # by grind
+  specialize h x (by simp)
+  exact add_nonpos h ih
+
+@[simp]
+theorem sum_map_neg [ha : Ring α] : (xs.map (-·)).sum = -xs.sum := by
+  induction xs; simp; grind
+
+theorem sum_take_le_of_nonneg [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+{k} (h₁ : ∀ x ∈ xs, 0 ≤ x) : (xs.take k).sum ≤ xs.sum := by
+  wlog h₂ : k ≤ xs.length with ih
+  · push_neg at h₂
+    specialize @ih α xs _ _ _ xs.length h₁ (by rfl)
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le # le_of_lt h₂
+    simp
+  nm x y; clear! x y
+  choose ys h₃ using show take k xs <+: xs by simp
+  rw [←h₃, take_take_append h₂]
+  simp
+  apply List.sum_nonneg
+  intro y hy
+  rw [←h₃] at h₁
+  apply h₁
+  simp [hy]
+
+theorem le_sum_take_of_nonpos [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
+{k} (h₁ : ∀ x ∈ xs, x ≤ 0) : xs.sum ≤ (xs.take k).sum := by
+  generalize hy : xs.map (-·) = ys
+  replace h₁ : ∀ y ∈ ys, 0 ≤ y; grind
+  replace h₁ := sum_take_le_of_nonneg h₁ (k := k)
+  simp [←hy] at h₁
+  rw [le_neg] at h₁
+  apply h₁.trans
+  rw [←map_take, sum_map_neg]
+  simp

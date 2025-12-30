@@ -1,4 +1,5 @@
 import AP.RealAnalysis.AlternatingInverse
+import AP.Temp
 
 namespace RealAnalysis
 
@@ -88,8 +89,6 @@ def mkRment (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : ℕ :=
 noncomputable
 def mkRmentLen (a : ℕ → ℝ) (L : ℝ) (n : ℕ) : ℕ :=
   mkRmentList a L n |>.length
-
--- #check 0 #exit
 
 -----
 
@@ -257,50 +256,6 @@ theorem getElem_mkRmentList_eq_iff_true {a L n₁ n₂ k}
 (mkRmentList a L n₁)[k] = (mkRmentList a L n₂)[k] ↔ True := by
   simp; exact getElem_mkRmentList_eq
 
--- #check 0 #exit
-
--- h : CondConv a
--- h₂ : ¬AbsConv a
--- M : ℝ
--- h₁ : tendsTo (series a) M
--- h₃ : Infp a fun x ↦ 0 ≤ x
--- h₄ : Infp a fun x ↦ x < 0
--- σp : ℕ → ℕ
--- hp₁ : Subseq σp
--- hp₂ : ∀ (n : ℕ), 0 ≤ a n ↔ ∃ k, σp k = n
--- ap : ℕ → ℝ
--- hp : (fun x ↦ a (σp x)) = ap
--- σn : ℕ → ℕ
--- hn₁ : Subseq σn
--- hn₂ : ∀ (n : ℕ), a n < 0 ↔ ∃ k, σn k = n
--- an : ℕ → ℝ
--- hn : (fun x ↦ a (σn x)) = an
--- h₅ : monoLe (series ap)
--- h₆ : monoGe (series an)
--- G₁ : 0 ≤ ap
--- G₂ : an ≤ 0
--- G₃ : |ap| = ap
--- G₄ : |an| = -an
--- G₅ : 0 ≤ series ap
--- G₆ : series an ≤ 0
--- f g : ℕ → ℕ
--- hfg : ∀ (n : ℕ), f n + g n = n
--- hf : ∀ (i j : ℕ), i ≤ j → f i ≤ f j
--- hg : ∀ (i j : ℕ), i ≤ j → g i ≤ g j
--- f' g' : ℕ → ℕ
--- hfg' : ∀ (n : ℕ), f' n + g' n = n
--- hf' : ∀ (i j : ℕ), i ≤ j → f' i ≤ f' j
--- hg' : ∀ (i j : ℕ), i ≤ j → g' i ≤ g' j
--- Hf : ∀ (n : ℕ), ∃ k, n ≤ f k
--- Hf' : ∀ (n : ℕ), ∃ k, n ≤ f' k
--- Hg : ∀ (n : ℕ), ∃ k, n ≤ g k
--- Hg' : ∀ (n : ℕ), ∃ k, n ≤ g' k
--- Hfg : ∀ (n : ℕ), series a n = series ap (f n) + series an (g n)
--- Hfg' : ∀ (n : ℕ), series |a| n = series |ap| (f' n) + series |an| (g' n)
--- h₇ : ¬converges (series ap)
--- h₈ : ¬converges (series an)
--- ⊢ ∃ σ, Rment σ ∧ tendsTo (series fun x ↦ a (σ x)) L
-
 @[simp]
 theorem mkRmentList_zero {a L} : mkRmentList a L 0 = [] := rfl
 
@@ -397,12 +352,6 @@ theorem mkRmentLeN_spec {a n is} (H : CondConv a) : 0 ≤ a (mkRmentLeN a n is) 
 theorem mkRmentGeN_spec {a n is} (H : CondConv a) : a (mkRmentGeN a n is) < 0 ∧
 ∀ r, mkRmentGeN a n is ≤ r → a r < 0 → r ∉ is ∧ -1 / (n + 2) < a r :=
   mkRmentGeN_spec' H |>.1
-
--- theorem mkRmentLeN_add_not_mem_is {a n is k} (H : CondConv a) :
--- mkRmentLeN a n is + k ∉ is := by
---   have h := @mkRmentLeN_spec a n is H |>.2 (mkRmentLeN a n is + k) (by omega)
-
--- #check 0 #exit
 
 theorem notMem_mkRmentLe_of_mem {a L n is i} (H : CondConv a)
 (h : i ∈ is) : i ∉ mkRmentLe a L n is := by
@@ -559,8 +508,6 @@ theorem abs_map_sum_mkRmentLe_sub_lt {a L is} {n : ℕ} (H : CondConv a)
   simp [hd] at h₆
   exact le_of_lt h₆
 
--- #check 0 #exit
-
 theorem abs_map_sum_mkRmentGe_sub_lt {a L is} {n : ℕ} (H : CondConv a)
 (h₁ : L + (n + 2 : ℝ)⁻¹ ≤ mkRmentSum a is) :
 |(is.map a |>.sum) + (mkRmentGe a L n is |>.map a |>.sum) - L| ≤ (n + 2 : ℝ)⁻¹ := by
@@ -599,8 +546,6 @@ theorem abs_map_sum_mkRmentGe_sub_lt {a L is} {n : ℕ} (H : CondConv a)
   simp [neg_div, hd] at h₆
   exact h₆
 
--- we now have `|s - L| < 1 / (n + 1)`
--- the new total sum will be between `L` and `L + 1 / (n + 2)` inclusively
 theorem abs_map_sum_mkRmentIte_sub_lt {a L n is} (H : CondConv a) :
 |(mkRmentIte a L n is |>.map a |>.sum) - L| ≤ 1 / (n + 2) := by
   rw [mkRmentIte]; simp; split_ifs with h₁ h₂
@@ -615,8 +560,6 @@ theorem abs_map_sum_mkRmentList_sub_lt {a L n} (H : CondConv a) (hn : n ≠ 0) :
   convert abs_map_sum_mkRmentIte_sub_lt H using 1
   grind
 
--- for all `n`, sum of rearrangement of `a` up to `f n` (inclusively) is
---   at distance from `L` at most `1 / (n + 1)`
 theorem abs_series_mkRment_mkRmentLen_sub_lt {a L n} (H : CondConv a) (hn : n ≠ 0) :
 |series (a # mkRment a L ·) (mkRmentLen a L n) - L| ≤ 1 / (n + 1) := by
   convert @abs_map_sum_mkRmentList_sub_lt a L n H hn using 3
@@ -698,96 +641,221 @@ n ≤ mkRmentN a (mkRmentList a L n) := by
   have h := @mkRmentN_spec a (mkRmentList a L n) H |>.1
   contrapose! h; exact mem_mkRmentList_of_lt h
 
--- #check 0 #exit
+theorem nonneg_of_mem_mkRmentLe {a L n is i} (h : i ∈ mkRmentLe a L n is) : 0 ≤ a i := by
+  simp [mkRmentLe, mkRmentLeF] at h; exact h.2
+
+theorem neg_of_mem_mkRmentGe {a L n is i} (h : i ∈ mkRmentGe a L n is) : a i < 0 := by
+  simp [mkRmentGe, mkRmentGeF] at h; exact h.2
+
+theorem abs_series_add_sum_mkRmentList_sub_lt.aux₁ {a L n N k i j s₀ s s₁ is is₁ d}
+(H : CondConv a)
+(h₂ : mkRmentSum a (mkRmentList a L n) = s₀)
+(h₁ : mkRmentList a L n = is)
+(_hN : is.length = N)
+(h₃ : |s₀ - L| ≤ (n + 1 : ℝ)⁻¹)
+(ha : tendsTo a 0)
+(hi : mkRmentP a is = i)
+(hj : mkRmentN a is = j)
+(h₄ : is ++ [i, j] = is₁)
+(hs : mkRmentSum a is₁ = s)
+(hd : (n + 2 : ℝ)⁻¹ = d)
+(hs₁ : (mkRmentLe a L n is₁ |>.map a |>.take k |>.sum) = s₁)
+(H₂ : s ≤ L - d) : |s₁| ≤ 4 * bounds a n + 2 * (n + 1 : ℝ)⁻¹ := by
+  rw [abs_of_nonneg]
+  rotate_left
+  · rw [←hs₁]
+    apply List.sum_nonneg
+    intro r hr
+    replace hr := List.mem_of_mem_take hr
+    simp at hr
+    rcases hr with ⟨x, hr, rfl⟩
+    exact nonneg_of_mem_mkRmentLe hr
+  rw [←hs₁]
+  apply List.sum_take_le_of_nonneg _ |>.trans _
+  · simp
+    intro y hy
+    exact nonneg_of_mem_mkRmentLe hy
+  clear! s₁ k
+  have hN' : mkRmentLen a L n = N
+  · rwa [mkRmentLen, h₁]
+  have H₃ := @abs_series_mkRment_mkRmentLen_sub_lt a L (n + 1) H (by simp)
+  rw [series_mkRment_eq_sum] at H₃
+  rw [take_mkRmentLen_mkRmentList] at H₃
+  rw [mkRmentList, h₁, mkRmentIte] at H₃
+  rw [mkRmentList1, hi, hj, h₄, hs] at H₃
+  simp at H₃
+  rw [hd, if_pos H₂, ←mkRmentSum, hs] at H₃
+  rw [show (n + 1 + 1 : ℝ) = n + 2 by ring_nf, hd] at H₃
+  generalize hs₁ : (mkRmentLe a L n is₁ |>.map a).sum = s₁ at H₃ ⊢
+  rw [abs_le] at H₃
+  replace H₃ := H₃.2
+  have H₄ : s₀ + a i + a j = s
+  · rw [←hs, mkRmentSum, ←h₄]
+    simp
+    rw [←h₂, h₁, mkRmentSum, add_assoc]
+  have H₅ : L - (n + 1 : ℝ)⁻¹ ≤ s₀
+  · rw [abs_le] at h₃; linarith
+  have H₆ : L - 2 * bounds a n - (n + 1 : ℝ)⁻¹ ≤ s
+  · rw [←H₄]
+    suffices : -bounds a n + -bounds a n ≤ a i + a j; linarith
+    apply add_le_add
+    · rw [neg_le]
+      trans bounds a i
+      · rw [←bounds_neg]
+        change (-a) i ≤ _
+        apply le_of_abs_le
+        exact abs_le_bounds_of_tendsTo # tendsTo_neg ha
+      apply bounds_le_bounds_of_tendsTo ha
+      rw [←hi, ←h₁]
+      exact le_mkRmentP_mkRmentList H
+    · rw [neg_le]
+      trans bounds a j
+      · rw [←bounds_neg]
+        change (-a) j ≤ _
+        apply le_of_abs_le
+        exact abs_le_bounds_of_tendsTo # tendsTo_neg ha
+      apply bounds_le_bounds_of_tendsTo ha
+      rw [←hj, ←h₁]
+      exact le_mkRmentN_mkRmentList H
+  linarith
+
+theorem abs_series_add_sum_mkRmentList_sub_lt.aux₂ {a L n N k i j s₀ s s₁ is is₁ d}
+(H : CondConv a)
+(h₂ : mkRmentSum a (mkRmentList a L n) = s₀)
+(h₁ : mkRmentList a L n = is)
+(_hN : is.length = N)
+(h₃ : |s₀ - L| ≤ (n + 1 : ℝ)⁻¹)
+(ha : tendsTo a 0)
+(hi : mkRmentP a is = i)
+(hj : mkRmentN a is = j)
+(h₄ : is ++ [i, j] = is₁)
+(hs : mkRmentSum a is₁ = s)
+(hd : (n + 2 : ℝ)⁻¹ = d)
+(hs₁ : (mkRmentGe a L n is₁ |>.map a |>.take k |>.sum) = s₁)
+(H₂ : L + d ≤ s) : |s₁| ≤ 4 * bounds a n + 2 * (n + 1 : ℝ)⁻¹ := by
+  rw [abs_of_nonpos]
+  rotate_left
+  · rw [←hs₁]
+    apply List.sum_nonpos
+    intro r hr
+    replace hr := List.mem_of_mem_take hr
+    simp at hr
+    rcases hr with ⟨x, hr, rfl⟩
+    exact le_of_lt # neg_of_mem_mkRmentGe hr
+  rw [neg_le, ←hs₁]
+  apply List.le_sum_take_of_nonpos _ |>.trans' _
+  · simp
+    intro y hy
+    exact le_of_lt # neg_of_mem_mkRmentGe hy
+  clear! s₁ k
+  have hN' : mkRmentLen a L n = N
+  · rwa [mkRmentLen, h₁]
+  have H₃ := @abs_series_mkRment_mkRmentLen_sub_lt a L (n + 1) H (by simp)
+  rw [series_mkRment_eq_sum] at H₃
+  rw [take_mkRmentLen_mkRmentList] at H₃
+  rw [mkRmentList, h₁, mkRmentIte] at H₃
+  rw [mkRmentList1, hi, hj, h₄, hs] at H₃
+  simp at H₃
+  rw [hd] at H₃
+  have hd₀ : 0 < d
+  · rw [←hd]; positivity
+  rw [if_neg # by linarith] at H₃
+  rw [if_pos H₂] at H₃
+  rw [←mkRmentSum, hs] at H₃
+  rw [show (n + 1 + 1 : ℝ) = n + 2 by ring_nf, hd] at H₃
+  generalize hs₁ : (mkRmentGe a L n is₁ |>.map a).sum = s₁ at H₃ ⊢
+  rw [abs_le] at H₃
+  replace H₃ := H₃.1
+  have H₄ : s₀ + a i + a j = s
+  · rw [←hs, mkRmentSum, ←h₄]
+    simp
+    rw [←h₂, h₁, mkRmentSum, add_assoc]
+  have H₅ : s₀ ≤ L + (n + 1 : ℝ)⁻¹
+  · rw [abs_le] at h₃; linarith
+  have H₆ : s ≤ L + 2 * bounds a n + (n + 1 : ℝ)⁻¹
+  · rw [←H₄]
+    suffices : a i + a j ≤ bounds a n + bounds a n; linarith
+    apply add_le_add
+    · trans bounds a i
+      · apply le_of_abs_le
+        exact abs_le_bounds_of_tendsTo ha
+      apply bounds_le_bounds_of_tendsTo ha
+      rw [←hi, ←h₁]
+      exact le_mkRmentP_mkRmentList H
+    · trans bounds a j
+      · apply le_of_abs_le
+        exact abs_le_bounds_of_tendsTo ha
+      apply bounds_le_bounds_of_tendsTo ha
+      rw [←hj, ←h₁]
+      exact le_mkRmentN_mkRmentList H
+  linarith
 
 theorem abs_series_add_sum_mkRmentList_sub_lt {a L n N k}
 (H : CondConv a) (hN : mkRmentLen a L n = N) (hn : n ≠ 0) :
 |series (a # mkRment a L ·) N + (mkRmentList a L (n + 1) |>.drop N |>.take k
-|>.map a |>.sum) - L| ≤ 2 * bounds a n + 2 * (n + 1 : ℝ)⁻¹ := by
+|>.map a |>.sum) - L| ≤ 8 * bounds a n + 4 * (n + 1 : ℝ)⁻¹ := by
   generalize hs₀ : series (a # mkRment a L ·) N = s₀
   have h₂ : mkRmentSum a (mkRmentList a L n) = s₀
-  ·
-    subst hs₀ hN
+  · subst hs₀ hN
     rw [series_mkRment_eq_sum, mkRmentSum]
     congr
     rw [take_mkRmentLen_mkRmentList]
   rw [mkRmentLen] at hN
   generalize h₁ : mkRmentList a L n = is at hN hs₀
-  
   rw [mkRmentList, h₁]
-  
   have h₃ : |s₀ - L| ≤ (n + 1 : ℝ)⁻¹
-  ·
-    have h₃ := @abs_series_mkRment_mkRmentLen_sub_lt a L n H hn
+  · have h₃ := @abs_series_mkRment_mkRmentLen_sub_lt a L n H hn
     simp [mkRmentLen, h₁, hN, hs₀] at h₃
     exact h₃
-  
   rw [mkRmentIte, mkRmentList1, ←hN]
   simp
-  
   have ha := H.tendsTo_zero
-  
   have hb₀ : 0 ≤ bounds a n
   · exact bounds_nonneg_of_tendsTo H.tendsTo_zero
-  
   have hb₁ : |s₀ - L + a (mkRmentP a is)| ≤ |s₀ - L| + bounds a n
-  ·
-    apply abs_add_le _ _ |>.trans
+  · apply abs_add_le _ _ |>.trans
     simp
     obtain ⟨⟨h₄, h₅⟩, h₆⟩ := @mkRmentP_spec' a is H
     apply abs_le_bounds_of_tendsTo ha |>.trans
     apply bounds_le_bounds_of_tendsTo ha
     rw [←h₁]; exact le_mkRmentP_mkRmentList H
-  
   have hb₂ : |s₀ - L + a (mkRmentP a is) + a (mkRmentN a is)| ≤ |s₀ - L| + 2 * bounds a n
-  ·
-    apply abs_add_le _ _ |>.trans
+  · apply abs_add_le _ _ |>.trans
     suffices : |a # mkRmentN a is| ≤ bounds a n; linarith
     obtain ⟨⟨h₄, h₅⟩, h₆⟩ := @mkRmentN_spec' a is H
     apply abs_le_bounds_of_tendsTo ha |>.trans
     apply bounds_le_bounds_of_tendsTo ha
     rw [←h₁]; exact le_mkRmentN_mkRmentList H
-  
   have H₁ : 0 ≤ (n + 1 : ℝ)⁻¹; positivity
-  
   cases k
-  ·
-    simp
+  · simp
     linarith
   nm k
-  
   cases k
-  ·
-    simp; ring_nf at H₁ h₃ hb₁ ⊢; linarith
+  · simp; ring_nf at H₁ h₃ hb₁ ⊢; linarith
   nm k
-  
-  -- cases i
-  -- ·
-  --   simp; ring_nf at h₃ hb₂ ⊢; linarith
-  -- nm i
-  
   simp
   generalize hx : mkRmentP a is = i at hb₁ hb₂ ⊢
   generalize hy : mkRmentN a is = j at hb₂ ⊢
   generalize h₄ : is ++ [i, j] = is₁
   generalize hs : mkRmentSum a is₁ = s
   generalize hd : (n + 2 : ℝ)⁻¹ = d
-  
   generalize hs₁ : ((if s ≤ L - d then mkRmentLe a L n is₁ else if L + d ≤ s
     then mkRmentGe a L n is₁ else []) |>.map a |>.take k |>.sum) = s₁
-  
-  suffices h : |s₀ - L + a i + a j + s₁| ≤ 2 * bounds a n + 2 * (n + 1 : ℝ)⁻¹
+  suffices h : |s₀ - L + a i + a j + s₁| ≤ 8 * bounds a n + 4 * (n + 1 : ℝ)⁻¹
   · ring_nf at h ⊢; exact h
   apply abs_add_le _ _ |>.trans
-  suffices : |s₁| ≤ (n + 1 : ℝ)⁻¹; linarith
-  
-  sorry
-
--- #check 0 #exit
+  suffices : |s₁| ≤ 4 * bounds a n + 2 * (n + 1 : ℝ)⁻¹; linarith
+  split_ifs at hs₁ with H₂ H₃
+  · exact abs_series_add_sum_mkRmentList_sub_lt.aux₁
+      H h₂ h₁ hN h₃ ha hx hy h₄ hs hd hs₁ H₂
+  · apply abs_series_add_sum_mkRmentList_sub_lt.aux₂
+      H h₂ h₁ hN h₃ ha hx hy h₄ hs hd hs₁ H₃
+  simp at hs₁; subst hs₁; simp; positivity
 
 theorem abs_series_mkRment_sub_lt_of_between {a L n i} (H : CondConv a)
 (hn : n ≠ 0) (h₁ : mkRmentLen a L n ≤ i) (h₂ : i < mkRmentLen a L (n + 1)) :
-|series (a # mkRment a L ·) i - L| ≤ 2 * bounds a n + 2 * (n + 1 : ℝ)⁻¹ := by
+|series (a # mkRment a L ·) i - L| ≤ 8 * bounds a n + 4 * (n + 1 : ℝ)⁻¹ := by
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
   rw [series_add]
   generalize hN : mkRmentLen a L n = N at h₂ ⊢
@@ -851,7 +919,7 @@ theorem abs_series_mkRment_sub_lt_of_between {a L n i} (H : CondConv a)
 
 theorem abs_series_mkRment_sub_lt_of_le {a L n i} (H : CondConv a)
 (hn : n ≠ 0) (h : mkRmentLen a L n ≤ i) :
-|series (a # mkRment a L ·) i - L| ≤ 2 * bounds a n + 2 * (n + 1 : ℝ)⁻¹ := by
+|series (a # mkRment a L ·) i - L| ≤ 8 * bounds a n + 4 * (n + 1 : ℝ)⁻¹ := by
   choose k hk h₁ h₂ using subseq_exi_ge_and_between_of_le (by simp) h
   apply abs_series_mkRment_sub_lt_of_between H (by omega) h₁ h₂ |>.trans
   apply add_le_add
@@ -863,8 +931,8 @@ theorem tendsTo_series_mkRment {a L} (H : CondConv a) :
 tendsTo (series # λ i => a # mkRment a L i) L := by
   rw [tendsTo_iff_eps_lt_one]
   intro ε hε hε'
-  obtain ⟨N₁, hN₁⟩ : ∃ (N : ℕ), ∀ n, N ≤ n → 1 / (n + 1) < ε / 8
-  · obtain ⟨N, hN⟩ := exists_nat_ge (ε / 8)⁻¹
+  obtain ⟨N₁, hN₁⟩ : ∃ (N : ℕ), ∀ n, N ≤ n → 1 / (n + 1) < ε / 16
+  · obtain ⟨N, hN⟩ := exists_nat_ge (ε / 16)⁻¹
     use N
     intro n hn
     rw [div_lt_iff₀] <;> try positivity
@@ -872,7 +940,7 @@ tendsTo (series # λ i => a # mkRment a L i) L := by
     apply lt_of_le_of_lt hN
     rw [mul_lt_mul_iff_right₀ hε]
     norm_cast; omega
-  choose N₂ hN₂ using H.bounds_tendsTo_zero (ε / 8) (by positivity)
+  choose N₂ hN₂ using H.bounds_tendsTo_zero (ε / 32) (by positivity)
   simp at hN₂
   generalize hn₁ : N₁ + N₂ + 1 = n₁
   use mkRmentLen a L n₁

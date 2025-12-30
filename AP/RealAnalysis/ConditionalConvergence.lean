@@ -56,8 +56,6 @@ noncomputable
 def g' (a : ℕ → ℝ) : ℕ → ℕ :=
   gAux abs a
 
--- #check 0 #exit
-
 -----
 
 variable {a : ℕ → ℝ} (H : CondConv a)

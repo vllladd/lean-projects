@@ -6,8 +6,6 @@ noncomputable
 def bounds (a : ℕ → ℝ) (n : ℕ) : ℝ :=
   lub |(a # n + ·)|
 
--- #check 0 #exit
-
 -----
 
 theorem bounds_le_bounds_of_tendsTo {a L k n}
@@ -92,3 +90,7 @@ theorem monoGe_bounds_of_tendsTo {a L} (h : tendsTo a L) : monoGe (bounds a) :=
 
 theorem monoGe_bounds_of_converges {a} (h : converges a) : monoGe (bounds a) :=
   λ _ _ h₁ => bounds_le_bounds_of_converges h h₁
+
+@[simp]
+theorem bounds_neg {a} : bounds (-a) = bounds a := by
+  ext n; unfold bounds; simp; change lub |-_| = _; rw [abs_neg]
