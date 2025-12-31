@@ -61,7 +61,7 @@ theorem eq_of_re_eq_re {a b : ℂ} (h₁ : a.im = 0) (h₂ : b.im = 0) (h₃ : a
   simp [Complex.ext_iff, h₁, h₂, h₃]
 
 @[simp]
-theorem sq_sqrt {a : ℂ} : (√a) ^ 2 = a := by
+theorem sq_sqrt {a : ℂ} : √a ^ 2 = a := by
   simp [sqrt]
 
 theorem nnr_of_sqrt_im_eq_zero {x : ℂ} (h : (√x).im = 0) : x.nnr := by
@@ -163,3 +163,9 @@ theorem sqrt_sq_nat {n : ℕ} : √(ofNat(n) ^ 2) = ofNat(n) := by
   simp_rw [ofNat_eq]
   apply sqrt_sq_of_nnr
   simp
+
+attribute [simp] log_neg_one
+
+@[simp]
+theorem sqrt_neg_one : √(-1) = I := by
+  simp [sqrt, cpow_def]; convert_to cexp (Real.pi / 2 * I) = _; ring_nf; simp
