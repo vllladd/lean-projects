@@ -864,3 +864,15 @@ theorem card_eq_one_iff_exiu : s.card = 1 ↔ ∃! x, x ∈ s := by
   apply exists_congr; intro x
   simp [Finset.ext_iff]
   grind
+
+theorem forall_iff_of_fintype [ha : Fintype α] {p : α → Prop} :
+(∀ x, p x) ↔ ∀ x ∈ ha.elems, p x := by
+  constructor
+  · intro h
+    simp [h]
+  intro h b
+  simp at h
+  simp [h]
+
+instance [ha : Fintype α] {p : α → Prop} [hp : DecidablePred p] : Decidable (∀ x, p x) :=
+  decidable_of_iff' _ forall_iff_of_fintype

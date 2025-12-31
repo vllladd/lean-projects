@@ -16,25 +16,27 @@ theorem point_eq_of_fin {s : State} [hs : s.WF] {p : PointZ}
 theorem x_toFin_width_eq_iff' {s : State} [hs : s.WF] {p₁ p₂ : PointZ}
 (h₁ : p₁ ∈ s.grid) (h₂ : p₂ ∈ s.grid) :
 (p₁.x.toFin : Fin s.width) = p₂.x.toFin ↔ p₁.x = p₂.x := by
-  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
+  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp
 
 theorem y_toFin_width_eq_iff' {s : State} [hs : s.WF] {p₁ p₂ : PointZ}
 (h₁ : p₁ ∈ s.grid) (h₂ : p₂ ∈ s.grid) :
 (p₁.y.toFin : Fin s.height) = p₂.y.toFin ↔ p₁.y = p₂.y := by
-  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
+  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp
 
 theorem x_toFin_width_eq_iff {n} [hn : NeZero n] {s₁ s₂ : State}
 [hs₁ : s₁.WF] [hs₂ : s₂.WF] {p₁ p₂}
 (hw₁ : s₁.width = n) (hw₂ : s₂.width = n) (h₁ : p₁ ∈ s₁.grid) (h₂ : p₂ ∈ s₂.grid) :
 (p₁.x.toFin : Fin n) = p₂.x.toFin ↔ p₁.x = p₂.x := by
-  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
+  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂];
+  simp [Fin.ext_iff, -Fin.val_eq_val_iff]
   congr!; exact hw₁.symm; exact hw₂.symm
 
 theorem y_toFin_width_eq_iff {n} [hn : NeZero n] {s₁ s₂ : State}
 [hs₁ : s₁.WF] [hs₂ : s₂.WF] {p₁ p₂}
 (hw₁ : s₁.height = n) (hw₂ : s₂.height = n) (h₁ : p₁ ∈ s₁.grid) (h₂ : p₂ ∈ s₂.grid) :
 (p₁.y.toFin : Fin n) = p₂.y.toFin ↔ p₁.y = p₂.y := by
-  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂]; simp [Fin.ext_iff]
+  nth_rw 2 [point_eq_of_fin h₁, point_eq_of_fin h₂];
+  simp [Fin.ext_iff, -Fin.val_eq_val_iff]
   congr!; exact hw₁.symm; exact hw₂.symm
 
 structure Card.FinState (w h : ℕ) [NeZero w] [NeZero h] where

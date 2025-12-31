@@ -322,3 +322,5 @@ attribute [simp] Id.instMonad
 @[simp]
 theorem bif_eq_if {b : Bool} {x y : α} : (bif b then x else y) = (if b then x else y) := by
   simp
+
+instance [ha : DecidableEq α] : DecidableEq (Id α) := ha

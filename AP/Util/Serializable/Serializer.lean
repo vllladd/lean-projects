@@ -4,6 +4,7 @@ structure Serializer where
   bytes : ByteArray
   curByte : UInt8
   bitMask : UInt8
+deriving DecidableEq
 
 namespace Serializer
 

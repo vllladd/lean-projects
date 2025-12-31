@@ -68,7 +68,7 @@ Nat.toStr n = ⟨[⟨_, isValidChar_of_lt_base h⟩]⟩ := by
 
 @[simp]
 theorem Nat.toStr_base : Nat.toStr 10 = "10" := by
-  native_decide
+  simp [Nat.toStr, Nat.toStr']; rfl
 
 theorem Nat.toStr'_append {xs ys n} : Nat.toStr' (xs ++ ys) n = Nat.toStr' xs n ++ ys := by
   induction n using Nat.strong_induction_on generalizing xs ys
@@ -201,7 +201,7 @@ theorem toNat_Nat.toStr {n} : String.toNat (Nat.toStr n) = n := by
   push_neg at h
   rw [le_iff_eq_or_lt] at h
   rcases h with rfl | h
-  · native_decide
+  · simp [toNat, toNat']
   rw [Nat.toStr_of_base_lt h]
   simp [String.toNat_append]
   rw [ih] <;> omega

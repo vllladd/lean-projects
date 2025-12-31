@@ -4,7 +4,7 @@ inductive Bit where
 | B₀ : Bit
 | B₁ : Bit
 
-open Bit
+namespace Bit
 
 @[simp] instance : OfNat Bit 0 := ⟨B₀⟩
 @[simp] instance : OfNat Bit 1 := ⟨B₁⟩
@@ -21,36 +21,33 @@ instance : {a b : Bit} → Decidable (a = b)
 | 1, 0 => Decidable.isFalse (by simp)
 | 1, 1 => Decidable.isTrue (by rfl)
 
-instance : DecidableEq Bit := by
-  intro a b; exact instDecidableEqBit
-
 @[simp]
-def Bit.not : Bit → Bit
+def not : Bit → Bit
 | 0 => 1
 | 1 => 0
 
 @[simp]
-def Bit.imp : Bit → Bit → Bit
+def imp : Bit → Bit → Bit
 | 0, _ => 1
 | 1, a => a
 
 @[simp]
-def Bit.or : Bit → Bit → Bit
+def or : Bit → Bit → Bit
 | 0, a => a
 | 1, _ => 1
 
 @[simp]
-def Bit.and : Bit → Bit → Bit
+def and : Bit → Bit → Bit
 | 0, _ => 0
 | 1, a => a
 
 @[simp]
-def Bit.iff : Bit → Bit → Bit
+def iff : Bit → Bit → Bit
 | 0, a => a.not
 | 1, a => a
 
 @[simp]
-def Bit.xor : Bit → Bit → Bit
+def xor : Bit → Bit → Bit
 | 0, a => a
 | 1, a => a.not
 
@@ -61,3 +58,25 @@ def ofBool (b : Bool) : Bit :=
   | false => 0
 
 instance : Coe Bool Bit := ⟨ofBool⟩
+
+-----
+
+variable {b b₁ b₂ b₃ : Bit}
+
+@[simp]
+theorem eq_zero_or_eq_one : b = 0 ∨ b = 1 := by
+  cases b <;> simp
+
+@[simp]
+theorem eq_one_or_eq_zero : b = 1 ∨ b = 0 := by
+  cases b <;> simp
+
+instance : Inhabited Bit where
+  default := 0
+
+instance : Fintype Bit where
+  elems := {0, 1}
+  complete := by simp
+
+@[simp]
+theorem default_def : (default : Bit) = 0 := rfl

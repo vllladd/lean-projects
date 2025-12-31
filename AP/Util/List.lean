@@ -14,6 +14,7 @@ namespace List
 
 variable {α β γ : Type*}
 variable {xs ys zs : List α}
+variable {L : List (List α)}
 
 @[simp]
 def init {α : Type*} : List α → List α
@@ -1482,3 +1483,86 @@ theorem le_sum_take_of_nonpos [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ 
   apply h₁.trans
   rw [←map_take, sum_map_neg]
   simp
+
+def combinations (xs : List α) (n : ℕ) : List (List α) :=
+  sequence # replicate n xs
+
+@[simp]
+theorem combinations_zero : xs.combinations 0 = [[]] := rfl
+
+@[simp]
+theorem sequence_nil_cons : sequence ([] :: L) = [] := rfl
+
+theorem sequence_cons : sequence (xs :: L) = xs.flatMap (λ x => sequence L |>.map (x :: ·)) := by
+  simp [sequence, traverse, List.traverse]; change flatMap _ _ = _; rw [flatMap_map]
+
+@[simp]
+theorem sequence_snoc_nil : sequence (L ++ [[]]) = [] := by
+  induction L; simp; nm xs L ih; rw [cons_append, sequence_cons, ih]; simp
+
+@[simp]
+theorem combinations_nil_succ {n} : ([] : List α).combinations (n + 1) = [] := by
+  simp [combinations, replicate_succ]
+
+@[simp]
+theorem sequence_nil : sequence ([] : List (List α)) = [[]] := rfl
+
+@[simp]
+theorem sequence_eq_nil_iff : sequence L = [] ↔ [] ∈ L := by
+  constructor <;> intro h
+  · induction L
+    · simp at h
+    clear! L; nm xs L ih
+    simp
+    rw [sequence_cons] at h
+    cases h₁ : sequence L
+    · simp [ih h₁]
+    nm ys L₁
+    simp [h₁] at h
+    left
+    rwa [eq_nil_iff_forall_not_mem]
+  · rw [mem_iff_append] at h
+    obtain ⟨L₁, L₂, rfl⟩ := h
+    induction L₁
+    · simp
+    nm xs L₁ ih
+    simp [sequence_cons, ih]
+
+attribute [simp] instSingletonList
+
+@[simp]
+theorem sequence_singleton : sequence [xs] = xs.map ({·}) := by
+  simp [sequence_cons]
+
+@[simp]
+theorem combinations_one : xs.combinations 1 = xs.map ([·]) := by
+  simp [combinations]
+
+theorem combinations_succ {n} : xs.combinations (n + 1) =
+xs.flatMap (λ x => xs.combinations n |>.map (x :: ·)) := by
+  simp [combinations, replicate_succ, sequence_cons]
+
+@[simp]
+theorem length_combinations {n} : (xs.combinations n).length = xs.length ^ n := by
+  induction n
+  · simp
+  nm n ih
+  rw [combinations_succ]
+  simp [ih, pow_succ']
+
+@[simp]
+theorem mem_combinations {n} : ys ∈ xs.combinations n ↔ ys.length = n ∧ ys ⊆ xs := by
+  induction n generalizing xs ys
+  · simp
+    rintro rfl; simp
+  nm n ih
+  simp [combinations_succ, ih]; clear ih
+  constructor
+  · rintro ⟨x, hx, ys, ⟨h₁, h₂⟩, rfl⟩
+    simp; tauto
+  · rintro ⟨h₁, h₂⟩
+    cases ys <;> simp at h₁
+    nm y ys
+    simp at h₂
+    choose hy h₂ using h₂
+    use y, hy, ys

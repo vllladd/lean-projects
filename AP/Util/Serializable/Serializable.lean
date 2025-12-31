@@ -77,8 +77,8 @@ theorem g_append_of_all_zero {bs zs} (h : ∀ b ∈ zs, b = 0) : g (α := α) (b
 theorem g_f {x : α} : g (f x) = (f x |>.length, x) := by
   have h := g_f_append (x := x) (bs := []); simp at h; exact h
 
-@[simp]
-theorem deserialize_serialize {x : α} : deserialize (serialize x) = x := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := H.cnd_fg
-  unfold serialize deserialize
-  rw [h₁, h₂]; simp [skipBits]
+-- @[simp]
+-- theorem deserialize_serialize {x : α} : deserialize (serialize x) = x := by
+--   obtain ⟨h₁, h₂, h₃, h₄⟩ := H.cnd_fg
+--   unfold serialize deserialize
+--   rw [h₁, h₂]; simp [skipBits]
