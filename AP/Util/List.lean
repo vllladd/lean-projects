@@ -549,9 +549,7 @@ theorem exi_get_iff_subset {α  : Type*} {xs ys : List α} :
 (∀ x ∈ xs, ∃ (i : ℕ) (_ : i < ys.length), ys[i] = x) ↔ xs ⊆ ys :=
   subset_iff_exi_get.symm
 
-@[simp]
-theorem take_prefix' {n} :
-xs.take n <+: xs := take_prefix _ _
+attribute [simp] take_prefix
 
 instance {α : Type*} : IsEquiv (List α) List.Perm where
   refl := Perm.refl
@@ -914,8 +912,8 @@ theorem Perm.linearIndep_iff (h : xs ~ ys) : linearIndep xs ↔ linearIndep ys :
 
 end linearIndep
 
-theorem min?_eq_some_iff_1 {ha : LinearOrder α} {x} :
-xs.min? = some x ↔ (x ∈ xs ∧ ∀ y ∈ xs, x ≤ y) := by
+theorem min?_eq_some_iff₁ {ha : LinearOrder α} {x} :
+xs.min? = some x ↔ x ∈ xs ∧ ∀ y ∈ xs, x ≤ y := by
   induction xs generalizing x; simp; clear! xs; nm z xs ih
   simp; cases h : xs.min?; aesop; nm m; dsimp; simp [ih] at h
   rcases h with ⟨h₁, h₂⟩; constructor
@@ -928,21 +926,6 @@ xs.min? = some x ↔ (x ∈ xs ∧ ∀ y ∈ xs, x ≤ y) := by
   · have h₆ := h₂ _ h₃; have h₇ := h₆.trans h₄
     rw [min_eq_right h₇]; have h₈ := h₅ _ h₁
     exact le_antisymm h₆ h₈
-
-theorem max?_eq_some_iff_1 {ha : LinearOrder α} {x} :
-xs.max? = some x ↔ (x ∈ xs ∧ ∀ y ∈ xs, y ≤ x) := by
-  induction xs generalizing x; simp; clear! xs; nm z xs ih
-  simp; cases h : xs.max?; aesop; nm m; dsimp; simp [ih] at h
-  rcases h with ⟨h₁, h₂⟩; constructor
-  · rintro rfl; simp; constructor
-    · rw [or_iff_not_imp_left]; intro h₃
-      simp at h₃; rwa [max_eq_right_of_lt h₃]
-    · intro b hb; specialize h₂ b hb; simp [h₂]
-  rintro ⟨rfl | h₃, h₄, h₅⟩
-  · simp; exact h₅ _ h₁
-  · have h₆ := h₂ _ h₃; have h₇ := h₄.trans h₆
-    rw [max_eq_right h₇]; have h₈ := h₅ _ h₁
-    exact le_antisymm h₈ h₆
 
 theorem mem_iff_append_of_nodup {x} (h : xs.Nodup) :
 x ∈ xs ↔ ∃ ys zs, x ∉ ys ∧ x ∉ zs ∧ xs = ys ++ x :: zs := by

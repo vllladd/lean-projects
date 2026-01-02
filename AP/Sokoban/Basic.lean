@@ -139,7 +139,7 @@ theorem moveBox_movePlayer {s : State} {p₁ p₂ p₃} :
 (s.movePlayer p₁).moveBox p₂ p₃ = (s.moveBox p₂ p₃).movePlayer p₁ := by
   ext :1 <;> try simp
   · dsimp [State.movePlayer, State.moveBox]; ext; simp
-    split_ifs <;> simp_all only [Option.map_map, Function.comp_def', Option.map_eq_some_iff]
+    split_ifs <;> simp_all only [Option.map_map, Function.comp_def, Option.map_eq_some_iff]
   · dsimp [State.movePlayer, State.moveBox]
     split_ifs <;> simp_all [Map.get!_eq_get!_get?, Option.get!] <;> grind
 

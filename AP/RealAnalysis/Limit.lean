@@ -227,7 +227,7 @@ theorem tendsTo_inv_aux₂ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
   cases x; simp at hx
   nm x
   use x
-  rw [List.min?_eq_some_iff_1] at hx
+  rw [List.min?_eq_some_iff₁] at hx
   simp at hx
   rcases hx with ⟨rfl | ⟨k, hk, rfl⟩, h₃, h₄⟩
   · clear h₃
@@ -306,7 +306,7 @@ theorem bddBelow_of_converges {a} (h : converges a) : BddBelow (Set.range a) := 
     rw [abs_lt] at h
     linarith
   nm m; subst hm
-  simp [List.min?_eq_some_iff_1] at h₁
+  simp [List.min?_eq_some_iff₁] at h₁
   rcases h₁ with ⟨⟨j, h₁, rfl⟩, h₂⟩
   by_cases h₃ : i < N
   · exact inf_le_of_right_le # h₂ i h₃

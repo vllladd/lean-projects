@@ -377,9 +377,7 @@ theorem subset_of_nodup_and_subset_and_length_eq
 (h₁ : xs.Nodup) (h₂ : xs ⊆ ys) (h₃ : xs.length = ys.length) : ys ⊆ xs := by
   apply Perm.subset; exact perm_of_nodup_and_subset_and_length_eq h₁ h₂ h₃
 
-@[simp]
-theorem count_eq_zero' [ha : DecidableEq α]
-{xs : List α} {x} : xs.count x = 0 ↔ x ∉ xs := count_eq_zero
+attribute [simp] count_eq_zero
 
 theorem mem_iff_count_ne_zero [ha : DecidableEq α] {x} : x ∈ xs ↔ xs.count x ≠ 0 := by
   rw [←not_iff_comm']; simp

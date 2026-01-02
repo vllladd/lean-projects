@@ -92,7 +92,7 @@ theorem rotLeft_rotRight : e.rotRight.rotLeft = e := by
 @[simp]
 theorem ptsArr_rotRight {s} : e.rotRight.ptsArr s = e.ptsArr (rotRight.fs' s) := by
   ext:2; simp only [ptsArr, getBorderPoint_rotRight, List.pure_def, List.bind_eq_flatMap,
-    List.flatMap_fn_singleton, List.map_map, Function.comp_def', taken_sym_of_basicSym',
+    List.flatMap_fn_singleton, List.map_map, Function.comp_def, taken_sym_of_basicSym',
     aPos_sym_of_basicSym', Set'.mem_map, ft'_eq_iff, exists_eq_right]
 
 @[simp]

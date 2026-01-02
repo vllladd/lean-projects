@@ -104,9 +104,7 @@ theorem fn_set_ext {α β : Type*} [DecidableEq α] {f g : α → β} {a : α} {
   · unfold fn_set; split_ifs with h₁; rfl
     exact h _ h₁
 
-@[simp]
-theorem Function.comp_def' {α β γ : Type*} {f : β → γ} {g : α → β} :
-f ∘ g = λ x => f (g x) := comp_def _ _
+attribute [simp] Function.comp_def
 
 @[simp] theorem leftInverse_id {α : Type*} : (@id α).LeftInverse id := congrFun rfl
 @[simp] theorem rightInverse_id {α : Type*} : (@id α).RightInverse id := congrFun rfl

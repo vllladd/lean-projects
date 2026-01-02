@@ -553,7 +553,7 @@ mp.toList = mp.buckets.toList.flatMap (·.toList) := by
   rw [Array.foldrM_eq_reverse_foldlM_toList]
   generalize mp.buckets.toList = bs
   simp only [List.foldlM_reverse, List.foldrM_eq_foldr, Id.run, Id.instMonad,
-    Function.comp_def', Function.const_apply]
+    Function.comp_def, Function.const_apply]
   induction bs; rfl
   nm b bs ih
   simp only [List.foldr_cons, List.flatMap_cons, ←ih]
@@ -566,7 +566,7 @@ theorem bucket_nodup_keys {mp : Raw α β} (wf : mp.WF) {b}
 (h : b ∈ mp.buckets) : b.toList.map (·.1) |>.Nodup := by
   have h₁ := DHashMap.nodup_keys' (mp := ⟨mp, wf⟩)
   rw [←DHashMap.map_fst_toList_eq_keys, DHashMap.toList, toList_eq_flat_buckets] at h₁
-  simp only [List.flatMap, List.map_flatten, List.map_map, Function.comp_def'] at h₁
+  simp only [List.flatMap, List.map_flatten, List.map_map, Function.comp_def] at h₁
   rw [List.nodup_flatten] at h₁
   rcases h₁ with ⟨h₁, h₂⟩
   apply h₁ (b.toList.map (·.1))
