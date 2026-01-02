@@ -3,6 +3,8 @@ import AP.Util.Nat
 def eventually (p : ℕ → Prop) : Prop :=
   ∃ N, ∀ n, N ≤ n → p n
 
+-----
+
 theorem eventually_and {p q : ℕ → Prop} :
 eventually (λ n => p n ∧ q n) ↔ eventually p ∧ eventually q := by
   constructor

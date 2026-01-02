@@ -51,7 +51,7 @@ theorem getBorderPoints_translate_of_down {dy p d} [H : Fact # e.dir = .down] :
 theorem ptsArr_translate_of_down {dy s} [H : Fact # e.dir = .down] :
 (e.translate ⟨0, dy⟩).ptsArr s = e.ptsArr (translate ⟨0, dy⟩ |>.fs' s) := by
   ext:2; simp only [ptsArr, getBorderPoint_translate_of_down, List.pure_def, List.bind_eq_flatMap,
-    List.flatMap_fn_singletonc, List.map_map, Function.comp_def', taken_sym_of_basicSym',
+    List.flatMap_fn_singleton, List.map_map, Function.comp_def', taken_sym_of_basicSym',
     aPos_sym_of_basicSym', Set'.mem_map, ft'_eq_iff, exists_eq_right]
 
 theorem defense_translate_of_down {dy} [H : Fact # e.dir = .down] :

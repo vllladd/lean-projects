@@ -845,7 +845,7 @@ theorem sorted_le_of_sorted_lt [ha : LinearOrder α]
   sorted_of_sorted_and_imp h le_of_lt
 
 @[simp]
-theorem flatMap_fn_singletonc {f : α → β} : xs.flatMap ([f ·]) = xs.map f := by
+theorem flatMap_fn_singleton {f : α → β} : xs.flatMap ([f ·]) = xs.map f := by
   induction xs; rfl; simpa
 
 theorem reverse_snoc {x} : (xs ++ [x]).reverse = x :: xs.reverse := by
