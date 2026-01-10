@@ -29,7 +29,7 @@ def State.aVisited' (s : State) (ps : List PointZ) : Set' PointZ :=
   match ps with
   | [] => ∅
   | p :: ps =>
-    let set := sys.tr s p |>.iget.aVisited' ps
+    let set := sys.tr s p |>.getd.aVisited' ps
     if s.aTurn then set.insert p else set
 
 def State.aVisited (s s₁ : State) : Set' PointZ :=
@@ -201,7 +201,6 @@ theorem State.mem_aVisited_iff {s f n s₁ p} [hs : sys.WF s]
   · grind
   apply iff_of_eq; congr 1; apply propext
   apply exists_congr; intro k
-  rw [Nat.lt_add_one_iff]
   by_cases h : k ≠ n
   · simp [le_iff_eq_or_lt, h]
   push_neg at h; subst h
@@ -719,17 +718,17 @@ sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
   rw [sys.simulate_succ_full']
   simpa [h₅]
 
-theorem AState.iget_aPtsSimNcard_lt_of_odd {s st₁ st₂ set} (n : ℕ)
+theorem AState.getd_aPtsSimNcard_lt_of_odd {s st₁ st₂ set} (n : ℕ)
 [hs : AState s] (hn : Odd n) (h₁ : s.aWins st₁) (h₂ : s.aWins st₂)
 (h₃ : s.aPtsSimNcard st₁ set |>.isSome) (h₄ : s.aPtsSimNcard st₂ set |>.isSome)
 (h₅ : ∀ k s₁ s₂, sys.simulate st₁.f s k = (s₁, 0) → sys.simulate st₂.f s k = (s₂, 0) →
 s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f s n = (s₁, 0) → s₁.aPos ∉ set)
 (h₇ : ∀ s₁, sys.simulate st₂.f s n = (s₁, 0) → s₁.aPos ∈ set) :
-(s.aPtsSimNcard st₁ set).iget < (s.aPtsSimNcard st₂ set).iget := by
+(s.aPtsSimNcard st₁ set).getd < (s.aPtsSimNcard st₂ set).getd := by
   obtain ⟨n, rfl⟩ := Nat.odd_iff_exi.mp hn; clear hn
   rw [Option.isSome_iff_exists] at h₃ h₄
   rcases h₃, h₄ with ⟨⟨N₁, h₃⟩, ⟨N₂, h₄⟩⟩
-  simp [h₃, h₄, Option.iget]
+  simp [h₃, h₄, Option.getd]
   simp [State.aPtsSimNcard, Set.ncard?] at h₃ h₄
   rcases h₃ with ⟨H₁, rfl⟩
   rcases h₄ with ⟨H₃, rfl⟩
@@ -802,16 +801,16 @@ s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f 
     · rwa [←AState.aPos_eq_of_tr G₆]
     · rw [State.length_hist_eq_of_simulate_eq G₃]; rfl
 
-theorem AState.iget_aPtsSimNcard_lt_of {s st₁ st₂ set} (n : ℕ)
+theorem AState.getd_aPtsSimNcard_lt_of {s st₁ st₂ set} (n : ℕ)
 [hs : AState s] (h₁ : s.aWins st₁) (h₂ : s.aWins st₂)
 (h₃ : s.aPtsSimNcard st₁ set |>.isSome) (h₄ : s.aPtsSimNcard st₂ set |>.isSome)
 (h₅ : ∀ k s₁ s₂, sys.simulate st₁.f s k = (s₁, 0) → sys.simulate st₂.f s k = (s₂, 0) →
 s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f s n = (s₁, 0) → s₁.aPos ∉ set)
 (h₇ : ∀ s₁, sys.simulate st₂.f s n = (s₁, 0) → s₁.aPos ∈ set) :
-(s.aPtsSimNcard st₁ set).iget < (s.aPtsSimNcard st₂ set).iget := by
+(s.aPtsSimNcard st₁ set).getd < (s.aPtsSimNcard st₂ set).getd := by
   induction n using Nat.mod_2_ind <;> nm n
   rotate_left
-  · apply iget_aPtsSimNcard_lt_of_odd (n * 2 + 1) <;> try assumption;; simp
+  · apply getd_aPtsSimNcard_lt_of_odd (n * 2 + 1) <;> try assumption;; simp
   generalize hk : n * 2 - 1 = k
   replace hk : n * 2 = k + 1
   · cases n
@@ -820,7 +819,7 @@ s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f 
   rw [hk] at h₆ h₇
   obtain ⟨m, hm⟩ : ∃ m, k = m * 2 + 1
   · rw [←Nat.odd_iff_exi, Nat.odd_iff]; omega
-  apply iget_aPtsSimNcard_lt_of_odd k <;> try assumption
+  apply getd_aPtsSimNcard_lt_of_odd k <;> try assumption
   · simp [hm]
   · intro s₁ H₁
     specialize h₁ (k + 1)

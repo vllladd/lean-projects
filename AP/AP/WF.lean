@@ -28,7 +28,6 @@ theorem State.exi_hist_wf_of_not_aTurn_and_taken_eq_empty {s : State}
   rw [wf_iff]
   use []
   simp
-  rw [Option.iget]
   ext:1 <;> simp [ht, h₁]
 
 theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken : Set' PointZ}
@@ -47,7 +46,7 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
   rw [Nat.sub_eq_zero_iff_le] at hn
   replace hn : s.taken.size * 2 ≤ 1; apply hn.trans; simp
   replace hn : s.taken.size / 2 ≤ 1 / 2; omega
-  simp [Nat.lt_succ, Nat.le_one_iff, H₁] at hn
+  simp [Nat.lt_succ_iff, Nat.le_one_iff, H₁] at hn
   simp [hn, Nat.one_add] at h₆
   have H₃ : s.aPos ∉ s.taken
   · split_ifs at h₆ <;> subst h₆ <;> apply Set'.not_mem_of_subset h₅ <;> assumption
@@ -59,7 +58,6 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
     rw [wf_iff]
     use [p]
     simp [sys, move, dMove]
-    rw [Option.iget]
     simp [H₂]
     ext:1 <;> simp [hn, ht]
   · have H₄ : p₁ ≠ p
@@ -68,7 +66,6 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
     rw [wf_iff]
     use [p, s.aPos]
     simp [sys, move, aMove, dMove]
-    rw [Option.iget]
     rw [Point.dist_comm] at h₂
     simp [h₁, H₄, H₂, h₂]
     ext:1 <;> simp [hn, ht]
@@ -206,7 +203,6 @@ theorem State.exi_hist_wf_of_wfCnd {s} (h : WFCnd s) : ∃ hist, sys.WF # s.setH
     use [p, s.aPos]
     rw [wf_iff]
     use [p]
-    simp; rw [Option.iget_some]
     simp [sys, move, dMove, guard]
     split_ands
     · rintro rfl; exact h.aPos_not_mem_taken hp

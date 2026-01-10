@@ -102,12 +102,10 @@ theorem digRoot'_eq_of_lt_base {n} (h : n < b) : digRoot' b n = n := by
     simp [Nat.mul_add] at h
     cases b; simp at h₁; nm b
     ring_nf at h
-    contrapose! h
-    simp [Nat.add_assoc]
-    trans b * 2 <;> simp
+    simp at h
   · cases b; simp at h; nm b
     simp_all only [add_tsub_cancel_right]
-    rw [Nat.lt_succ, le_iff_eq_or_lt] at h
+    rw [Nat.lt_succ_iff, le_iff_eq_or_lt] at h
     rcases h with rfl | h; simp at h₂
     rw [Nat.mod_eq_of_lt h]
 

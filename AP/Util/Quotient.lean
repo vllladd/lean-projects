@@ -36,13 +36,13 @@ s (Quotient.mk s y).out a → s (Quotient.mk s y).out b → f a = f b) => f y)
   have h₂ : s (Quotient.mk s x).out (Quotient.mk s y).out :=
     by
       apply Quotient.out_equiv_out.mpr
-      simpa
+      exact Quotient.sound h
   apply h₁ x y
   · apply s.symm
     exact Quotient.eq_mk_iff_out.mp rfl
   · apply s.symm
     apply Quotient.eq_mk_iff_out.mp
-    simpa
+    exact Quotient.sound h
 
 def Quotient.liftWith {α β : Type*} {s : Setoid α} (q : Quotient s) (f : α → β)
 (h : ∀ (x y : α), s q.out x → s q.out y → f x = f y) : β := by
@@ -236,3 +236,5 @@ theorem Quotient.apply_lift {α β γ : Type*} {s : Setoid α} {q : Quotient s}
 {f : β → γ} {g : α → β} {h₁} (h₂ : ∀ a b, a ≈ b → f (g a) = f (g b)) :
 f (q.lift g h₁) = q.lift (f ∘ g) h₂ := by
   apply q.ind; intros; rfl
+
+attribute [simp] Quotient.eq_iff_equiv

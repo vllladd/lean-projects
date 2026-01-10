@@ -1,11 +1,31 @@
 import AP.AP.Defense.Corner
 
+section Logic
+
+variable {α : Type*}
+
+noncomputable
+def idNC (x : α) : α :=
+  haveI : Inhabited α := ⟨x⟩
+  Classical.epsilon (x = ·)
+
+theorem idNC_def : idNC = λ (x : α) => x := by
+  ext; simp [idNC]
+
+-- #check 0 #exit
+
+end Logic
+
 namespace AP.Box
 
 def offset : ℕ := 106
 
 def interior : Set' PointZ :=
   (0 : PointZ).nbhd Box.offset
+
+noncomputable
+def interiorNC : Set' PointZ :=
+  idNC (0 : PointZ).nbhd Box.offset
 
 def interior₁ : Set' PointZ :=
   (0 : PointZ).nbhd (offset - 1)
@@ -109,11 +129,11 @@ theorem ps_defense : defense.ps = Set.univ \ interior₁.toSet := by
     rcases hd with rfl | rfl | rfl | rfl
     all_goals
       by_contra! h₂
-      simp [abs_le] at h₁ h₂
+      simp [abs_lt] at h₁ h₂
       simp [corner₀, Corner.points, Corner.edge₁, Corner.edge₂, Edge.points,
         Edge.memPoints, offset] at h; omega
   · intro h
-    simp [imp_iff_or_not, lt_abs, offset] at h
+    simp [imp_iff_or_not, abs_lt, le_abs, offset] at h
     simp [defenses, corners, corner₀, Corner.points, Corner.edge₁, Corner.edge₂, Edge.points,
       Edge.memPoints, offset]; omega
 
@@ -267,3 +287,6 @@ theorem dist_zero_eq_of_f_eq_some {s p} [hs : sys.WF s] (h : defense.f s = some 
 theorem mem_interior_of_f_eq_some {s p} [hs : sys.WF s] (h : defense.f s = some p)
 (H₁ : s.aPos ∈ interior₁) (H₂ : guardTiles ⊆ s.taken) : p ∈ interior := by
   simp [interior, offset]; rw [Point.dist_comm, dist_zero_eq_of_f_eq_some h H₁ H₂]
+
+theorem interior_eq_interiorNC : interior = interiorNC := by
+  rw [interiorNC, idNC_def]; rfl

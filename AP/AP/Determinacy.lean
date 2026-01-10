@@ -323,7 +323,7 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   intro sa ha H h
   unfold State.dHws at h ⊢
   contrapose h
-  push_neg at h ⊢
+  push_neg at h
   use dStratOfDWins sa, inferInstance
   intro a hsa
   by_cases h₁ : ¬sys.hasTr sa

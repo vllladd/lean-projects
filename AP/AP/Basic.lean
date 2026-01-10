@@ -2,6 +2,60 @@ import AP.AP.Defs
 
 namespace AP
 
+def State.aPos₀ (s : State) : PointZ :=
+  s.hist.getLast?.getd
+
+def State.aMoves (s : State) : List PointZ :=
+  s.aPos.nbhd s.pw |>.filter (sys.validTr s)
+
+def State.aHasMove (s : State) : Bool :=
+  s.aMoves ≠ []
+
+@[simp]
+def State.hasMove (s : State) : Bool :=
+  if s.aTurn then s.aHasMove else true
+
+def State.setHist (s : State) (hist : List PointZ) : State :=
+  {s with hist := hist}
+
+def State.setPw (s : State) (pw : ℕ) : State :=
+  {s with pw := pw}
+
+def State.chooseAMove (s : State) : PointZ :=
+  s.aPos.nbhd s.pw |>.filter (sys.validTr s) |>.head?.getD 0
+
+def State.chooseDMove (s : State) : PointZ :=
+  (insert s.aPos s.taken).max! + ⟨1, 0⟩
+
+def State.chooseMove (s : State) : PointZ :=
+  if s.aTurn then s.chooseAMove else s.chooseDMove
+
+def State.decideWF (s : State) : Bool :=
+  sys.trs (initState s.pw s.aPos₀) s.hist.reverse.tail = (s, [])
+
+def State.decideAState (s : State) : Bool :=
+  s.decideWF && s.aTurn
+
+def State.decideDState (s : State) : Bool :=
+  s.decideWF && !s.aTurn
+
+@[simp]
+def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
+  (·.getD s.chooseMove) # do
+    let p ← f s
+    guard # sys.validTr s p
+    return p
+
+@[simp]
+def AStrat.mk (f : State → Option PointZ) : AStrat :=
+  ⟨mk_strat_fn f⟩
+
+@[simp]
+def DStrat.mk (f : State → Option PointZ) : DStrat :=
+  ⟨mk_strat_fn f⟩
+
+-----
+
 theorem AStrat.wf_def {a : AStrat} : a.WF ↔ ∀ {s} [sys.WF s],
 sys.hasTr s → s.aTurn → sys.validTr s (a.f s) := ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
 
@@ -64,9 +118,6 @@ theorem DState.iff {s : State} : DState s ↔ sys.WF s ∧ s.aTurn = false :=
 @[simp] theorem AState.turn' {s : State} [hs : AState s] : s.aTurn := hs.turn
 @[simp] theorem DState.turn' {s : State} [hs : DState s] : s.aTurn = false := hs.turn
 
-def State.chooseDMove (s : State) : PointZ :=
-  (insert s.aPos s.taken).max! + ⟨1, 0⟩
-
 theorem State.validTr_iff_of_aTurn {s : State} {p} (ht : s.aTurn) :
 sys.validTr s p ↔ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   constructor
@@ -116,12 +167,6 @@ theorem State.hasTr_of_not_aTurn {s : State} (ht : s.aTurn = false) : sys.hasTr 
 theorem DState.hasTr {s : State} [hs : DState s] : sys.hasTr s := by
   apply s.hasTr_of_not_aTurn; simp
 
-def State.aMoves (s : State) : List PointZ :=
-  s.aPos.nbhd s.pw |>.filter (sys.validTr s)
-
-def State.aHasMove (s : State) : Bool :=
-  s.aMoves ≠ []
-
 theorem State.hasTr_iff_of_aTurn {s : State} (ht : s.aTurn) :
 sys.hasTr s ↔ ∃ p, s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   simp [sys, System.hasTr_iff, move, aMove, ht]
@@ -152,10 +197,6 @@ theorem State.WF.ind_turn {P : State → Prop}
   · apply h₂; constructor <;> assumption
   · apply h₁; constructor <;> assumption
 
-@[simp]
-def State.hasMove (s : State) : Bool :=
-  if s.aTurn then s.aHasMove else true
-
 theorem State.hasTr_iff_hasMove {s : State} : sys.hasTr s ↔ s.hasMove := by
   simp; cases ht : s.aTurn <;> simp
   · exact hasTr_of_not_aTurn ht
@@ -165,9 +206,6 @@ instance {s : State} : Decidable (sys.hasTr s) :=
   match h : s.hasMove with
   | true => .isTrue # by rwa [s.hasTr_iff_hasMove]
   | false => .isFalse # by rw [s.hasTr_iff_hasMove, h]; simp
-
-def State.setHist (s : State) (hist : List PointZ) : State :=
-  {s with hist := hist}
 
 @[simp] theorem State.pw_setHist {s : State} {hist} :
 (s.setHist hist).pw = s.pw := rfl
@@ -203,9 +241,6 @@ AState # s.setHist hist := ⟨hs', by simp⟩
 @[simp]
 instance {s hist} [hs : DState s] [hs' : sys.WF # s.setHist hist] :
 DState # s.setHist hist := ⟨hs', by simp⟩
-
-def State.setPw (s : State) (pw : ℕ) : State :=
-  {s with pw := pw}
 
 @[simp] theorem State.pw_setPw {s : State} {pw} : (s.setPw pw).pw = pw := rfl
 @[simp] theorem State.aPos_setPw {s : State} {pw} : (s.setPw pw).aPos = s.aPos := rfl
@@ -368,9 +403,6 @@ theorem Strat.WF.validTr {s} [hs : sys.WF s] {st : Strat} [hst : st.WF]
 (h : sys.hasTr s) : sys.validTr s (st.f s) := by
   rw [Strat.wf_def] at hst; exact hst h
 
-def State.chooseAMove (s : State) : PointZ :=
-  s.aPos.nbhd s.pw |>.filter (sys.validTr s) |>.head?.getD 0
-
 theorem State.validTr_chooseAMove {s : State} (ht : s.aTurn)
 (h : sys.hasTr s) : sys.validTr s s.chooseAMove := by
   generalize hp : s.chooseAMove = p
@@ -398,9 +430,6 @@ theorem State.validTr_chooseAMove {s : State} (ht : s.aTurn)
 theorem AState.validTr_chooseAMove {s : State} [hs : AState s]
 (h : sys.hasTr s) : sys.validTr s s.chooseAMove :=
   s.validTr_chooseAMove hs.turn h
-
-def State.chooseMove (s : State) : PointZ :=
-  if s.aTurn then s.chooseAMove else s.chooseDMove
 
 @[simp]
 theorem State.validTr_chooseMove {s : State}
@@ -443,9 +472,6 @@ theorem pw_eq_of_tr {s s' p} (h : sys.tr s p = some s') : s'.pw = s.pw := by
 
 @[simp]
 theorem pw_initState {pw p} : (initState pw p).pw = pw := rfl
-
-def State.aPos₀ (s : State) : PointZ :=
-  s.hist.getLast?.iget
 
 theorem hist_eq_of_tr {s s' p}
 (h : sys.tr s p = some s') : s'.hist = p :: s.hist := by
@@ -498,7 +524,7 @@ theorem State.hist_ne_nil {s} [hs : sys.WF s] : s.hist ≠ [] := by
 
 @[simp]
 theorem Option.getD_eq_iget_iff {α : Type*} [ha : Inhabited α] {m : Option α} {x} :
-m.getD x = m.iget ↔ m.isSome ∨ x = default := by
+m.getD x = m.getd ↔ m.isSome ∨ x = default := by
   cases m <;> simp
 
 theorem State.aPos₀_eq_of_tr {s s' t} [hs : sys.WF s]
@@ -714,15 +740,6 @@ sys.trs (initState s.pw s.aPos₀) s.hist.reverse.tail = (s, []) := by
 theorem State.eq_trs_reverse_hist {s} [hs : sys.WF s] :
 s = (sys.trs (initState s.pw s.aPos₀) s.hist.reverse.tail).1 := by
   rw [trs_reverse_hist_eq]
-
-def State.decideWF (s : State) : Bool :=
-  sys.trs (initState s.pw s.aPos₀) s.hist.reverse.tail = (s, [])
-
-def State.decideAState (s : State) : Bool :=
-  s.decideWF && s.aTurn
-
-def State.decideDState (s : State) : Bool :=
-  s.decideWF && !s.aTurn
 
 theorem State.wf_iff_decideWF {s} : sys.WF s ↔ s.decideWF := by
   unfold decideWF; constructor <;> intro h <;> simp [-List.tail_reverse] at h ⊢
@@ -1052,22 +1069,12 @@ instance {pw p} : DState (initState pw p) := by
 instance {pw pw' p} : DState # (initState pw p).setPw pw' := by
   simp; infer_instance
 
-@[simp]
-def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
-  (·.getD s.chooseMove) # do
-    let p ← f s
-    guard # sys.validTr s p
-    return p
-
 instance {f} : sys.SimFn # mk_strat_fn f := by
   constructor; intro s hs h; unfold mk_strat_fn
   have h₁ := Classical.epsilon_spec h; dsimp
   cases h₂ : f s; simp; exact State.validTr_chooseMove h
   nm s'; simp [guard]; split_ifs with h₃; simpa
   simp; exact State.validTr_chooseMove h
-
-@[simp] def AStrat.mk (f : State → Option PointZ) : AStrat := ⟨mk_strat_fn f⟩
-@[simp] def DStrat.mk (f : State → Option PointZ) : DStrat := ⟨mk_strat_fn f⟩
 
 instance {f} : (AStrat.mk f).WF := by simp; infer_instance
 instance {f} : (DStrat.mk f).WF := by simp; infer_instance
@@ -1227,7 +1234,7 @@ theorem AState.size_taken_eq_one_of_pw_eq_zero {s} [hs : AState s]
 
 @[simp]
 theorem State.aPos₀_setHist {s : State} {hist} :
-(s.setHist hist).aPos₀ = hist.getLast?.iget := rfl
+(s.setHist hist).aPos₀ = hist.getLast?.getd := rfl
 
 theorem State.length_hist_eq_of_trs_eq {s s' ps r}
 (h : sys.trs s ps = (s', r)) : s'.hist.length = s.hist.length + ps.length - r.length := by

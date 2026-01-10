@@ -202,7 +202,7 @@ s.aHwsDisj fsp ↔ ∀ p, ∃ (a : AStrat), a.WF ∧
   use forall_tr_exi_aForallWinsDisj_of_aHwsDisj
   intro h
   choose A hA h using h
-  use .mk # λ s₁ => A (s₁.getMoveAt s).iget |>.f s₁
+  use .mk # λ s₁ => A (s₁.getMoveAt s).getd |>.f s₁
   use inferInstance
   intro d hd
   obtain ⟨s', h₁⟩ := d.validTr s
@@ -232,7 +232,7 @@ s.aHwsDisj fsp ↔ ∀ p, ∃ (a : AStrat), a.WF ∧
   have H₄ : sa.getMoveAt s = some (d.f s)
   · apply getMoveAt_eq_some_of_tr_and_reachable h₁
     exact sys.reachable_of_simulate_eq H₂
-  simp [H₄, Option.iget, AStrat.validTr H₃]
+  simp [H₄, Option.getd, AStrat.validTr H₃]
 
 theorem DState.aHwsDisj_iff_forall_tr {s fsp} [hs : DState s] :
 s.aHwsDisj fsp ↔ ∀ p s', sys.tr s p = some s' → s'.aHwsDisj fsp.next := by

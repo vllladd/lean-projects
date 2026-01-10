@@ -60,7 +60,7 @@ def cndMp : Map ℤ # List # Array Bool := Map.ofList #
   , (4, ["0100100", "0100010", "0011000", "0010010", "0001100"])
   , (5, ["0010000", "0001000", "0000100"])
   ].map # λ (d, xs) => (d, ·) #
-  xs.map # λ ⟨s⟩ => ⟨s.map ('1' == ·)⟩
+  xs.map # λ s => ⟨s.toList.map ('1' == ·)⟩
 
 def cnd (d : ℤ) (f : ℕ → Bool) : Bool :=
   match cndMp.get? d with

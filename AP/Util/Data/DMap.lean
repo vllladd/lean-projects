@@ -189,8 +189,8 @@ theorem nodup_toList [LinearOrder α] : mp.toList.Nodup :=
   Std.ExtDHashMap.nodup_toList
 
 @[simp]
-theorem sorted_toList [LinearOrder α] : mp.toList.Sorted (·.1 ≤ ·.1) :=
-  Std.ExtDHashMap.sorted_toList
+theorem pairwise_toList [LinearOrder α] : mp.toList.Pairwise (·.1 ≤ ·.1) :=
+  Std.ExtDHashMap.pairwise_toList
 
 @[simp]
 theorem mem_toList [LinearOrder α] {x} : x ∈ mp.toList ↔ mp.get? x.1 = x.2 :=
@@ -326,8 +326,12 @@ def keys [ha : LinearOrder α] (mp : DMap α β) : List α :=
   mp.inner.keys
 
 @[simp]
-theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) :=
-  Std.ExtDHashMap.sorted_keys
+theorem sortedLE_keys [ha : LinearOrder α] : mp.keys.SortedLE :=
+  Std.ExtDHashMap.sortedLE_keys
+
+@[simp]
+theorem sortedLT_keys [ha : LinearOrder α] : mp.keys.SortedLT :=
+  Std.ExtDHashMap.sortedLT_keys
 
 theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) :=
   Std.ExtDHashMap.keys_eq_map_fst_toList

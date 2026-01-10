@@ -149,7 +149,7 @@ theorem monoGt_series_of_neg {a} (h : ∀ n, a n < 0) : monoGt (series a) := by
   rw [monoGt_iff_succ_lt]; intro n; rw [series_succ]; linarith [h n]
 
 theorem subseq_nat_succ_le {σ n} (h : Subseq σ) : σ n + 1 ≤ σ (n + 1) := by
-  simp [Nat.add_one_le_iff, subseq_lt_iff h]
+  simp [subseq_lt_iff h]
 
 theorem subseq_nat_eq_succ_of_subseq_eq_succ {σ n m}
 (h₁ : Subseq σ) (h₂ : σ n = σ m + 1) : n = m + 1 := by
@@ -157,7 +157,7 @@ theorem subseq_nat_eq_succ_of_subseq_eq_succ {σ n m}
   · apply lt_of_le_of_ne
     · contrapose! h₂
       apply ne_of_lt
-      rw [Nat.lt_succ]
+      rw [Nat.lt_succ_iff]
       apply le_of_lt
       apply h₁
       exact h₂
@@ -221,7 +221,7 @@ theorem exi_fn_series_of_subseq_cover {a : ℕ → ℝ} {p : ℝ → Prop} {σ�
   use λ n => Finset.range n |>.filter (λ n => p (a n)) |>.card
   use λ n => Finset.range n |>.filter (λ n => ¬p (a n)) |>.card
   split_ands
-  · intro n; convert Finset.card_filter_add_card_filter_not; simp
+  · intro n; convert Finset.card_filter_add_card_filter_not _; simp
   · exact λ _ _ => Finset.card_filter_range_le_of_le
   · exact λ _ _ => Finset.card_filter_range_le_of_le
   · intro H n

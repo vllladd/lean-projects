@@ -198,7 +198,7 @@ theorem nodup_toList [LinearOrder α] : mp.toList.Nodup := by
   simp
 
 @[simp]
-theorem sorted_toList [LinearOrder α] : mp.toList.Sorted (·.1 ≤ ·.1) := by
+theorem pairwise_toList [LinearOrder α] : mp.toList.Pairwise (·.1 ≤ ·.1) := by
   rcases mp with ⟨⟨mp⟩⟩; unfold toList ExtDHashMap.lift
   apply mp.ind; simp
 
@@ -397,8 +397,12 @@ def keys [ha : LinearOrder α] (mp : Map α β) : List α :=
   mp.inner.keys
 
 @[simp]
-theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) :=
-  ExtDHashMap.sorted_keys
+theorem sortedLE_keys [ha : LinearOrder α] : mp.keys.SortedLE :=
+  ExtDHashMap.sortedLE_keys
+
+@[simp]
+theorem sortedLT_keys [ha : LinearOrder α] : mp.keys.SortedLT :=
+  ExtDHashMap.sortedLT_keys
 
 theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) := by
   rcases mp with ⟨mp⟩; simp [keys, toList, ExtDHashMap.lift]; symm
@@ -641,10 +645,6 @@ theorem nodup_keys : mp.keys.Nodup := by
   simp [keys]
 
 include ha in @[simp]
-theorem sorted_keys' : mp.keys.Sorted (· < ·) := by
-  simp [keys]
-
-include ha in @[simp]
 theorem mem_keys_iff_mem {k} : k ∈ mp.keys ↔ k ∈ mp := by
   simp [←mem_iff_mem_keys]
 
@@ -654,7 +654,7 @@ theorem length_keys : mp.keys.length = mp.size := by
 
 include ha in @[simp]
 theorem keys_modify {i f} : (mp.modify i f).keys = mp.keys := by
-  apply List.eq_of_perm_of_sorted (r := (· < ·)) <;> try simp
+  apply List.eq_of_perm_of_pairwise (r := (· ≤ ·)) <;> try simp [←List.sortedLE_iff_pairwise]
   apply List.perm_of_nodup_and_subset_and_length_eq <;> try simp
   intro; simp
 
@@ -666,9 +666,9 @@ theorem mem_erase {i j} : j ∈ mp.erase i ↔ j ≠ i ∧ j ∈ mp := by
   rcases mp with ⟨mp⟩; simp [erase]; grind
 
 include ha in @[simp]
-theorem sorted_toList' : mp.toList.Sorted (·.1 < ·.1) := by
-  suffices h : mp.toList.map (·.1) |>.Sorted (· < ·)
-  · simp at h; exact h
+theorem pairwise_toList' : mp.toList.Pairwise (·.1 < ·.1) := by
+  suffices h : mp.toList.map (·.1) |>.SortedLT
+  · simp [List.sortedLT_iff_pairwise] at h; exact h
   rw [←keys_eq_map_fst_toList]; simp
 
 include ha in
@@ -680,8 +680,6 @@ def keyIdx (mp : Map α β) (i : α) : ℕ :=
 include ha in
 theorem keyIdx_lt_size {i} (h : i ∈ mp) : mp.keyIdx i < mp.size := by
   rw [keyIdx, ←length_keys]; apply List.idxOf_lt_length_of_mem; simpa
-
--- #check 0 #exit
 
 include ha in
 theorem toList_modify_eq_list_modify {i f} (h : i ∈ mp) :
@@ -769,17 +767,17 @@ theorem toList_modify_eq_list_modify {i f} (h : i ∈ mp) :
       grind
   have H₁' : (xs.map (·.1)).Nodup
   · simp [←H₁, ←keys_eq_map_fst_toList]
-  replace H₁ : xs.Sorted (·.1 ≤ ·.1)
+  replace H₁ : xs.Pairwise (·.1 ≤ ·.1)
   · simp [←H₁]
-  have H₃ : ys.Sorted (·.1 < ·.1)
-  · rw [←H₂, ←List.sorted_map]; simp [List.map_modify_eq_of]
-  replace H₂ : ys.Sorted (·.1 ≤ ·.1)
-  · rw [←H₂, ←List.sorted_map]; simp [List.map_modify_eq_of]
+  have H₃ : ys.Pairwise (·.1 < ·.1)
+  · rw [←H₂, ←List.pairwise_map]; simp [List.map_modify_eq_of]
+  replace H₂ : ys.Pairwise (·.1 ≤ ·.1)
+  · rw [←H₂, ←List.pairwise_map]; simp [List.map_modify_eq_of]
   replace H₃ : (ys.map (·.1)).Nodup
-  · rw [←List.sorted_map] at H₃
+  · rw [←List.pairwise_map] at H₃
     exact H₃.nodup
   nm a b; clear! a b xs' ys' z j f k y
-  apply List.eq_of_perm_of_sorted_loc (r := (·.1 ≤ ·.1)) _ H₁ H₂ <;> try simp
+  apply List.eq_of_perm_of_pairwise (r := (·.1 ≤ ·.1)) _ H₁ H₂ <;> try simp
   · intro i x j y h₁ h₂ h₃ h₄
     apply and_of
     · exact _root_.le_antisymm h₃ h₄
@@ -793,8 +791,8 @@ theorem toList_modify_eq_list_modify {i f} (h : i ∈ mp) :
     replace h₁ : (xs.map (·.1))[k₁]'(by grind) = i; grind
     replace h₂ : (ys.map (·.1))[k₂]'(by grind) = i; grind
     apply h₄
-    rw! [←H] at h₂
-    rw! [←h₂] at h₁
+    rewrite! [←H] at h₂
+    rewrite! [←h₂] at h₁
     rwa [←H₁'.getElem_inj_iff]
   apply List.perm_of_nodup_and_subset_and_length_eq
   · exact List.Nodup.of_map _ H₃

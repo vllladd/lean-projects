@@ -444,7 +444,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
     omega
   rw [List.getElem?_eq_getElem # by linarith]
   simp
-  rw [List.take_succ, List.getElem?_eq_getElem # by linarith, Option.toList_some,
+  rw [List.take_add_one, List.getElem?_eq_getElem # by linarith, Option.toList_some,
     trs_append]
   simp
   rw [trs_snd_eq_nil_of_prefix_and_eq_nil (ys := ts) (by simp) (by rw [h₁])]
@@ -1372,7 +1372,7 @@ theorem reachable_of_trs' {s ts s' r} (h₁ : sys.trs s ts = (s', r)) :
 sys.Reachable s s' := reachable_of_trs h₁
 
 @[simp]
-theorem trs_snoc_full_iff {s s₁ ts t} [H : DecidableEq T] :
+theorem trs_snoc_full_iff {s s₁ ts t} :
 sys.trs s (ts ++ [t]) = (s₁, []) ↔ ∃ s', sys.trs s ts = (s', []) ∧
 sys.tr s' t = some s₁ := by
   simp_all only [trs_append, ne_eq, trs, ite_not, List.nil_append, Prod.mk.eta]

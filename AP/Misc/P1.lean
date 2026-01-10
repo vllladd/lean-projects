@@ -496,7 +496,7 @@ theorem main_alt_pnat {a : PNat → PNat}
   · simp at hn
   nm n
   specialize h₃ n (by linarith)
-  rw [Subtype.eq_iff]
+  rw [Subtype.ext_iff]
   exact h₃
 
 end P10 namespace P11

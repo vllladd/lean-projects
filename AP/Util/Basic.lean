@@ -14,6 +14,7 @@ import AP.Util.Order
 import AP.Util.Monad
 import AP.Util.Option
 import AP.Util.String
+import AP.Util.Finset
 import AP.Util.Fintype
 import AP.Util.Algebra
 import AP.Util.Complex

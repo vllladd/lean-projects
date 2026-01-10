@@ -303,32 +303,33 @@ theorem add_self_eq_zero_iff {α : Type*}
 
 class LocallyFiniteOrderList (α : Type*) extends LinearOrder α where
   listIcc : α → α → List α
-  sorted_listIcc : ∀ {a b}, (listIcc a b).Sorted (· < ·)
+  sortedLT_listIcc : ∀ {a b}, listIcc a b |>.SortedLT
   mem_listIcc : ∀ {a b x}, x ∈ listIcc a b ↔ a ≤ x ∧ x ≤ b
 
 instance : LocallyFiniteOrderList ℕ := by
   use λ a b => List.range (b + 1 - a) |>.map (a + ·)
-  · intro a b; simp; apply List.sorted_lt_range
+  · intro a b; simp [List.sortedLT_iff_pairwise]; apply List.pairwise_lt_range
   · intro a b x; simp; exact ⟨by omega, λ _ => ⟨x - a, by omega⟩⟩
 
 instance : LocallyFiniteOrderList ℤ := by
   use λ a b => List.range (b + 1 - a).toNat |>.map (a + ·)
-  · intro a b; simp; apply List.sorted_lt_range
+  · intro a b; simp [List.sortedLT_iff_pairwise]; apply List.pairwise_lt_range
   · intro a b x; simp; exact ⟨by omega, λ _ => ⟨x - a |>.toNat, by omega⟩⟩
 
 namespace List
 
 variable {α : Type*} [ha : LocallyFiniteOrderList α]
 
-def icc : α → α → List α := ha.listIcc
+def icc : α → α → List α :=
+  ha.listIcc
 
 @[simp]
-theorem sorted_lt_icc {a b : α} :
-(icc a b).Sorted (· < ·) := ha.sorted_listIcc
+theorem sortedLT_icc {a b : α} : (icc a b).SortedLT :=
+  ha.sortedLT_listIcc
 
 @[simp]
-theorem sorted_le_icc {a b : α} :
-(icc a b).Sorted (· ≤ ·) := sorted_le_of_sorted_lt ha.sorted_listIcc
+theorem sortedLE_icc {a b : α} : (icc a b).SortedLE :=
+  sortedLT_icc.sortedLE
 
 @[simp]
 theorem mem_icc {a b x : α} :
@@ -341,12 +342,8 @@ theorem icc_eq_nil_iff {a b : α} : icc a b = [] ↔ b < a := by
   · intro h₁ c h₂; exact lt_of_lt_of_le h₁ h₂
 
 @[simp]
-theorem nodup_icc {x y : α} : (icc x y).Nodup := by
-  simp [icc]
-  have h := @LocallyFiniteOrderList.sorted_listIcc α _ x y
-  apply nodup_of_pairwise h
-  simp [LocallyFiniteOrderList.mem_listIcc]
-  intros; rintro rfl; simp_all only [lt_self_iff_false]
+theorem nodup_icc {x y : α} : (icc x y).Nodup :=
+  sortedLT_icc.nodup
 
 @[simp]
 theorem length_icc_int_nat {z : ℤ} {a b : ℕ} :
@@ -436,7 +433,7 @@ def fintypeIdx (x : α) : ℕ :=
 @[simp]
 theorem fintypeIdx_eq_iff {x y : α} : fintypeIdx x = fintypeIdx y ↔ x = y := by
   symm; constructor; rintro rfl; rfl; intro h; unfold fintypeIdx at h
-  rwa [List.idxOf_inj] at h <;> simp
+  rwa [List.idxOf_inj] at h; simp
 
 open Classical in noncomputable
 def fintypeToLinearOrder : LinearOrder α where
@@ -520,26 +517,3 @@ end
 theorem le_congr {α : Type*} [ha : LinearOrder α] {a b c d : α}
 (h₁ : a = c) (h₂ : b = d) : a ≤ b ↔ c ≤ d := by
   rw [h₁, h₂]
-
-section
-
-variable {α : Type*}
-variable [ha : LinearOrder α]
-
-@[simp]
-theorem le_trans_simp {a b c : α} : (a ≤ b → b ≤ c → a ≤ c) ↔ True := by
-  simp; exact le_trans
-
-@[simp]
-theorem le_trans_simp' {a b c : α} : (b ≤ c → a ≤ b → a ≤ c) ↔ True := by
-  simp; exact le_trans'
-
-@[simp]
-theorem le_total_simp {a b : α} : (a ≤ b ∨ b ≤ a) ↔ True := by
-  simp; apply le_total
-
-@[simp]
-theorem le_antisymm_simp {a b : α} : (a ≤ b → b ≤ a → a = b) ↔ True := by
-  simp; apply le_antisymm
-
-end

@@ -21,7 +21,7 @@ theorem not_odd_mul_2 {n : ℤ} : ¬Odd (n * 2) := by simp
 
 theorem le_one_iff {n : ℤ} (h : 0 ≤ n) : n ≤ 1 ↔ n = 0 ∨ n = 1 := by
   cases n; nm n; cases n; simp; nm n; cases n; simp; nm n; simp
-  have h₁ := Int.ofNat_zero_le n; apply iff_of_not_and
+  have h₁ := Int.natCast_nonneg n; apply iff_of_not_and
   simp; simp; constructor <;> linarith; simp at h
 
 theorem of_between_succ {a b : ℤ} (h₁ : a ≤ b) (h₂ : b ≤ a + 1) :
@@ -40,7 +40,7 @@ Int.negSucc (n + 1) = Int.negSucc n - 1 := by rfl
 
 @[simp]
 theorem even_succ_iff {n : ℤ} : Even (n + 1) ↔ Odd n := by
-  simp [Int.even_add_one]
+  simp
 
 @[simp]
 theorem odd_succ_iff {n : ℤ} : Odd (n + 1) ↔ Even n := by
@@ -68,7 +68,7 @@ theorem succ_div_2_eq_div_succ_iff {n : ℤ} (hp : 0 ≤ n) :
   by_cases hn : n = 0; simp [hn]; obtain ⟨k, hk⟩ := hv # n - 1
   replace hk := congrArg (· + 1) hk; simp at hk; subst hk
   replace hp : 0 ≤ k := by
-    cases k <;> nm k; simp only [Int.ofNat_eq_coe, Nat.cast_nonneg]
+    cases k <;> nm k; simp only [Int.ofNat_eq_natCast, Nat.cast_nonneg]
     cases k; simp only [Int.reduceNegSucc, neg_add_cancel,
       not_true_eq_false] at hn
     nm k; rw [negSucc_succ] at hp

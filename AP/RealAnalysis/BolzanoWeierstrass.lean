@@ -272,7 +272,8 @@ y₁ ≤ a i ∧ a i ≤ y₂ := by
   apply hm.trans'
   rw [←hN]
   rw [Nat.lt_one_add_iff]
-  replace hk : k ∈ Finset.range (n + 1); simpa
+  replace hk : k ∈ Finset.range (n + 1)
+  · simp at hk; simpa
   exact Finset.single_le_sum_of_canonicallyOrdered hk
 
 theorem bwSubseq_cnd {a : ℕ → ℝ} {M : ℚ} {n : ℕ} (h : ∀ n, |a n| < M) :

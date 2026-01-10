@@ -142,8 +142,8 @@ theorem freqTimeDig'_eq_some_of_freqTimeDig_eq_some {d}
       have h₅ := congrArg ((c, e) ∈ ·) h₃
       simp at h₄ h₅
       exact ⟨h₄.2, h₅.2⟩
-    have H₃ : xs.Sorted # λ a b => b.2 ≤ a.2
-    · have h₄ := @List.sorted_mergeSort (ℕ × ℕ) (λ a b => b.2 ≤ a.2) (by simp) (by simp)
+    have H₃ : xs.Pairwise # λ a b => b.2 ≤ a.2
+    · have h₄ := @List.pairwise_mergeSort (ℕ × ℕ) (λ a b => b.2 ≤ a.2) (by simp) (by simp)
         (Set'.ofFinset (Finset.range 10) |>.toMap (freqTimeCount 10) |>.toList)
       simp at h₄; rwa [←hx]
     simp [h₃] at H₃
@@ -224,10 +224,10 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
     simp at h₃; exact h₃
     exact H₁ _ y h₃'
   
-  have H₂ : A.Sorted (λ a b => b.2 ≤ a.2)
+  have H₂ : A.Pairwise (λ a b => b.2 ≤ a.2)
   ·
     rw [←hA]
-    have h₂ := (freqTimeMp 10).toList.sorted_mergeSort (le := λ a b => b.2 ≤ a.2)
+    have h₂ := (freqTimeMp 10).toList.pairwise_mergeSort (le := λ a b => b.2 ≤ a.2)
     specialize h₂ _ _
     · simp only [decide_eq_true_eq, Prod.forall, forall_const]
       intro a b c h₂ h₃; exact h₃.trans h₂

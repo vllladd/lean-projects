@@ -30,7 +30,7 @@ theorem Int.toFin_congr {n m} [hn : NeZero n] [hm : NeZero m] {k₁ k₂ : ℤ}
   subst h₁ h₂; rfl
 
 theorem Nat.toFin_eq_self_of {k n : ℕ} [hk : NeZero k] (h : n < k) : (n.toFin : Fin k) = n := by
-  rw! [toFin, Fin.ofNat, Nat.mod_eq_of_lt h]
+  rw! [toFin, Fin.ofNat, Nat.mod_eq_of_lt h]; rfl
 
 theorem Int.toFin_eq_self_of {k : ℕ} {z : ℤ} [hk : NeZero k]
 (h₁ : 0 ≤ z) (h₂ : z < k) : (z.toFin : Fin k) = z := by

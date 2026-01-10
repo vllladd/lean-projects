@@ -3,6 +3,37 @@ import AP.Util.List
 import AP.Util.Function
 import AP.Util.Quotient
 
+section
+
+variable {α : Type*}
+variable [ha : LinearOrder α]
+
+@[simp]
+theorem le_trans_simp {a b c : α} : (a ≤ b → b ≤ c → a ≤ c) ↔ True := by
+  simp; exact le_trans
+
+@[simp]
+theorem le_trans_simp' {a b c : α} : (b ≤ c → a ≤ b → a ≤ c) ↔ True := by
+  simp; exact le_trans'
+
+@[simp]
+theorem le_total_simp {a b : α} : (a ≤ b ∨ b ≤ a) ↔ True := by
+  simp; apply le_total
+
+@[simp]
+theorem le_antisymm_simp {a b : α} : (a ≤ b → b ≤ a → a = b) ↔ True := by
+  simp; apply le_antisymm
+
+@[simp]
+theorem lt_trans_simp {a b c : α} : (a < b → b < c → a < c) ↔ True := by
+  simp; exact lt_trans
+
+@[simp]
+theorem lt_trans_simp' {a b c : α} : (b < c → a < b → a < c) ↔ True := by
+  simp; exact lt_trans'
+
+end
+
 namespace Fintype
 
 variable {α : Type*} [ha : Fintype α]
@@ -74,8 +105,8 @@ def toSortedList {α : Type*} [h : LinearOrder α]
   dsimp
   generalize hx : xs.mergeSort (· ≤ ·) = xs'
   generalize hy : ys.mergeSort (· ≤ ·) = ys'
-  obtain ⟨h₁, h₂⟩ : xs'.Sorted (· ≤ ·) ∧ ys'.Sorted (· ≤ ·) := by
-    subst hx hy; constructor <;> apply List.sorted_mergeSort'
+  obtain ⟨h₁, h₂⟩ : xs'.Pairwise (· ≤ ·) ∧ ys'.Pairwise (· ≤ ·) := by
+    subst hx hy; constructor <;> apply List.pairwise_mergeSort'
   have h₃ : xs'.Perm ys' := by
     subst hx hy
     trans xs
@@ -83,7 +114,7 @@ def toSortedList {α : Type*} [h : LinearOrder α]
     symm; trans ys
     · apply List.mergeSort_perm
     exact hxy.symm
-  exact List.eq_of_perm_of_sorted h₃ h₁ h₂
+  apply List.eq_of_perm_of_pairwise h₃ h₁ h₂ <;> simp
 
 noncomputable
 def mkRaw {α β : Type*} (f : α → β) : Finset β := by
@@ -178,20 +209,20 @@ theorem mkRaw_card_le {α β} [ha₁ : Fintype α] {f : α → β} :
   simp
 
 theorem mkRaw_toSet_eq {α β : Type*} [ha : Fintype α] {f : α → β} :
-(mkRaw f).toSet = Set.range f := by ext x; simp
+mkRaw f = Set.range f := by ext x; simp
 
 theorem card_eq_cardinal_mk_to_nat {α : Type*} {s : Finset α} :
 s.card = (Cardinal.mk s).toNat := by simp
 
 theorem card_eq_toSet_ncard {α : Type*} {s : Finset α} :
-s.card = s.toSet.ncard := by simp
+s.card = (s : Set α).ncard := by simp
 
-theorem image_toSet_eq {α β : Type*} [DecidableEq β] {s : Finset α} {f : α → β} :
-f '' s.toSet = (s.image f).toSet := by
-  symm; exact coe_image
+theorem image_toSet_eq {α β : Type*} [DecidableEq β]
+{s : Finset α} {f : α → β} : f '' s = s.image f :=
+  coe_image.symm
 
 theorem ncard_toSet {α : Type*} {s : Finset α} :
-s.toSet.ncard = s.card := by simp
+(s : Set α).ncard = s.card := by simp
 
 theorem sum_eq_add_sum_erase_of_mem {α : Type*} [ha : DecidableEq α]
 {s : Finset α} {x} {f : α → ℕ} (h : x ∈ s) :
@@ -662,8 +693,8 @@ theorem le_max? [ha : LinearOrder α] {x m : α}
 theorem nodup_erase [ha : DecidableEq α] {x} (h : xs.Nodup) : (xs.erase x).Nodup :=
   nodup_of_nodup_and_subperm h # erase_subperm _ _
 
-theorem sorted_erase [ha : DecidableEq α] {r x} (h : xs.Sorted r) : (xs.erase x).Sorted r :=
-  sorted_of_sorted_and_sublist h erase_sublist
+theorem pairwise_erase [ha : DecidableEq α] {r x} (h : xs.Pairwise r) : (xs.erase x).Pairwise r :=
+  pairwise_of_pairwise_and_sublist h erase_sublist
 
 theorem Perm.mapWith {f : (x : α) → x ∈ xs → β} (h : xs ~ ys) :
 xs.mapWith f ~ ys.mapWith (λ x h₁ => f x # h.mem_iff.mpr h₁) := by
@@ -831,19 +862,6 @@ theorem card_filter_range_le_of_le {p : ℕ → Prop} {i j : ℕ} [hp : Decidabl
   rw [Finset.range_add]
   rw [Finset.filter_union]
   simp
-
-theorem card_filter_add_card_filter_not {p : α → Prop} [hp : DecidablePred p] :
-(s.filter p).card + (s.filter (¬p ·)).card = s.card := by
-  classical
-  induction s using Finset.induction
-  · simp
-  clear! s
-  nm x s hx ih
-  rw [card_insert_of_notMem hx, ←ih]; clear ih
-  have h₁ : ∀ p [DecidablePred p], x ∉ s.filter p; simp [hx]
-  by_cases h : p x
-  · simp [filter_insert, h, card_insert_of_notMem # h₁ p]; ring_nf
-  · simp [filter_insert, h, card_insert_of_notMem # h₁ (¬p ·)]; ring_nf
 
 theorem Ico_add_right {n m k : ℕ} (h : n ≤ m) : Ico n (m + k) = Ico n m ∪ Ico m (m + k) := by
   ext; simp; omega

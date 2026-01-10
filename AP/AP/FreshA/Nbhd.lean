@@ -31,7 +31,8 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
   have h₁ := State.aPtsSimNcard_spec_of_fresh1 ha set
   generalize hf : (λ d => s.aPtsSimNcard ⟨a, d⟩ set.toSet) = f
   replace h₁ : ∀ (d : DStrat) [d.WF], ∃ n, f d = some n ∧ n ≤ set.size; grind
-  generalize hg : (λ d => f d |>.iget) = g
+  generalize hg : (λ d => f d |>.getd) = g
+  unfold Option.getd at hg
   have h₂ : ∀ (d : DStrat) [d.WF], g d ≤ set.size; grind
   have h₃ : ∃ (d : DStrat), d.WF ∧ ∀ (d₁ : DStrat) [d₁.WF], g d₁ ≤ g d
   · generalize set.size = N at h₂
@@ -132,7 +133,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     specialize h₃ d₂
     contrapose! h₃
     simp [←hg, ←hf]
-    apply iget_aPtsSimNcard_lt_of (n * 2 + 1 + k) (State.aWins_of_aWinsDisj # ha' d hd)
+    apply getd_aPtsSimNcard_lt_of (n * 2 + 1 + k) (State.aWins_of_aWinsDisj # ha' d hd)
       (State.aWins_of_aWinsDisj # ha' d₂ hd₂) (by grind) (by grind)
     · intro r S₁ S₂ G₁ G₂ G₃
       simp at G₃ ⊢

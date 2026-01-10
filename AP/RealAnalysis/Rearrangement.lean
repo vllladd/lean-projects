@@ -164,7 +164,7 @@ theorem getElem!_mkRmentList_eq_getElem {a L n k} (h : k < n) :
 
 @[simp]
 theorem lt_length_mkRmentList_succ {a L n} : n < (mkRmentList a L (n + 1)).length := by
-  apply lt_of_lt_of_le (b := n + 1) <;> simp
+  apply lt_of_lt_of_le (b := n + 1) <;> simp [-Order.add_one_le_iff]
 
 @[simp]
 theorem lt_mkRmentLen_succ {a L n} : n < mkRmentLen a L (n + 1) :=
@@ -872,7 +872,7 @@ theorem abs_series_mkRment_sub_lt_of_between {a L n i} (H : CondConv a)
   specialize ih # by omega
   rw [Finset.sum_range_succ, ih]
   clear ih
-  rw [List.take_succ]
+  rw [List.take_add_one]
   simp
   rw [Finset.sum_union]
   rotate_left

@@ -11,7 +11,7 @@ import AP.Inference
 
 namespace AP
 
-def State.toStr (s : State) : String := String.mk # do
+def State.toStr (s : State) : String := String.ofList # do
   let d := 7
   let p ← s.aPos.nbhd d
   let ⟨x, y⟩ := p - s.aPos
@@ -27,7 +27,7 @@ instance : ToString State := ⟨State.toStr⟩
 
 def logb : IO Unit := do
   IO.println ""
-  IO.println # String.mk # List.replicate 100 '='
+  IO.println # String.ofList # List.replicate 100 '='
   IO.println ""
 
 -----
@@ -53,7 +53,7 @@ def readAMove : IO # Option # Option PointZ := do
   let stdin ← IO.getStdin
   IO.print "\n> "
   let inp ← stdin.getLine
-  let inp := ⟨inp.1.filter (· ∉ "\r\n".1)⟩
+  let inp := String.ofList # inp.toList.filter (· ∉ "\r\n".toList)
   
   if inp = "q" then
     return none

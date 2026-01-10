@@ -9,7 +9,7 @@ omit ha
 namespace Std.ExtDHashMap
 
 @[simp]
-theorem not_mem_empty' {i : α} : i ∉ (∅ : Std.ExtDHashMap α β) :=
+theorem not_mem_empty' {i : α} : i ∉ (∅ : ExtDHashMap α β) :=
   not_mem_empty
 
 @[simp]
@@ -82,7 +82,6 @@ m₁ = m₂ ↔ m₁.1.out.Equiv m₂.1.out := by
   change ⟦m₁⟧.out ≈ ⟦m₂⟧.out ↔ _
   rw [Quotient.eq_iff_equiv]
   simp
-  rfl
 
 theorem ext_iff {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by
@@ -183,7 +182,7 @@ theorem nodup_toList [LinearOrder α] : mp.toList.Nodup := by
   exact Std.DHashMap.nodup_toSortedList
 
 @[simp]
-theorem sorted_toList [LinearOrder α] : mp.toList.Sorted (·.1 ≤ ·.1) := by
+theorem pairwise_toList [LinearOrder α] : mp.toList.Pairwise (·.1 ≤ ·.1) := by
   rcases mp with ⟨mp⟩
   apply mp.ind; simp [toList, lift]
 
@@ -200,7 +199,7 @@ theorem mem_toList {x} [LinearOrder α] : x ∈ mp.toList ↔ mp.get? x.1 = x.2 
 theorem toList_eq_toList [LinearOrder α] {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   refine' ⟨λ h => _, λ h => by rw [h]⟩
-  rw [List.eq_iff_of_nodup_and_sorted (·.1 ≤ ·.1)] at h
+  rw [List.eq_iff_of_nodup_and_pairwise (·.1 ≤ ·.1)] at h
   any_goals simp
   rotate_left
   · rintro ⟨i, x⟩ ⟨j, y⟩
@@ -430,7 +429,7 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List ((i : α) × β i)}
   simp [ofList, toList, lift]
 
 @[simp]
-theorem sorted_keys [ha : LinearOrder α] : mp.keys.Sorted (· ≤ ·) := by
+theorem sortedLE_keys [ha : LinearOrder α] : mp.keys.SortedLE := by
   rcases mp with ⟨mp⟩; apply mp.ind; intro m; simp [keys, lift]
 
 theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) := by
@@ -456,7 +455,7 @@ def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : 
 theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? := by
   rw [minKey?, fold_eq_foldl_toList]
   convert @mp.keys.min?_eq_head? α _ _
-  rotate_left; simp_rw [min_eq_left_iff]; exact sorted_keys
+  rotate_left; simp_rw [min_eq_left_iff]; simp [←List.sortedLE_iff_pairwise]
   rw [keys_eq_map_fst_toList]
   generalize hx : mp.toList = xs
   cases xs; rfl
@@ -469,7 +468,7 @@ theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head?
 theorem maxKey?_eq_getLast?_keys [ha : LinearOrder α] : mp.maxKey? = mp.keys.getLast? := by
   rw [maxKey?, fold_eq_foldl_toList]
   convert @mp.keys.max?_eq_getLast? α _ _
-  rotate_left; exact sorted_keys
+  rotate_left; simp
   rw [keys_eq_map_fst_toList]
   generalize hx : mp.toList = xs
   cases xs; rfl
@@ -497,7 +496,7 @@ theorem not_mem_of_lt_minKey? [ha : LinearOrder α] {m x}
 (h₁ : mp.minKey? = some m) (h₂ : x < m) : x ∉ mp := by
   rw [minKey?_eq_head?_keys] at h₁
   rw [←mem_keys]
-  have h₃ := mp.sorted_keys
+  have h₃ := mp.sortedLE_keys
   intro h₄
   generalize mp.keys = ks at h₁ h₃ h₄
   cases ks
@@ -516,7 +515,7 @@ theorem not_mem_of_maxKey?_lt [ha : LinearOrder α] {m x}
 (h₁ : mp.maxKey? = some m) (h₂ : m < x) : x ∉ mp := by
   rw [maxKey?_eq_getLast?_keys] at h₁
   rw [←mem_keys]
-  have h₃ := mp.sorted_keys
+  have h₃ := mp.sortedLE_keys
   intro h₄
   generalize mp.keys = ks at h₁ h₃ h₄
   induction ks using List.reverseRecOn
@@ -610,9 +609,6 @@ theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} 
   apply mp.ind; clear! mp
   intro mp h₁
   simp at h₁
-  replace h₁ : i ∉ mp
-  · change mp.contains i ≠ _
-    simpa only [ne_eq, Bool.not_eq_true]
   simp [fold, lift, DHashMap.fold_eq_foldl_toList, insert]
   trans (⟨i, x⟩ :: mp.toList).foldl (λ a b => f a b.1 b.2) z
   rotate_left; rfl
@@ -688,5 +684,5 @@ theorem nodup_keys : mp.keys.Nodup := by
   simp [keys, lift]
 
 include ha in @[simp]
-theorem sorted_keys' : mp.keys.Sorted (· < ·) := by
-  apply List.sorted_lt_of_sorted_le <;> simp
+theorem sortedLT_keys : mp.keys.SortedLT :=
+  mp.sortedLE_keys.sortedLT_of_nodup nodup_keys

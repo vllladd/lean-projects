@@ -15,10 +15,6 @@ variable {mp mp₁ mp₂ : Std.DHashMap α β}
 namespace Std.DHashMap
 
 @[simp]
-theorem toList_empty : (∅ : Std.DHashMap α β).toList = [] := by
-  ext:1; simp
-
-@[simp]
 theorem nodup_keys' : mp.keys.Nodup := nodup_keys
 
 @[simp]
@@ -101,14 +97,14 @@ theorem toSortedList_eq_of [LinearOrder α] {m₁ m₂ : Std.DHashMap α β}
     λ a b c _ _ _ => Preorder.le_trans a.1 b.1 c.1
   have h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a :=
     λ a b _ _ => LinearOrder.le_total a.1 b.1
-  apply List.eq_of_perm_of_sorted_loc (r := r)
+  apply List.eq_of_perm_of_pairwise (r := r)
   · trans xs
     · apply List.mergeSort_perm
     apply h.trans; symm
     apply List.mergeSort_perm
-  · exact List.sorted_mergeSort_loc h_tra h_tot
+  · exact List.pairwise_mergeSort_loc h_tra h_tot
   · simp only [h.mem_iff] at h_tra h_tot
-    exact List.sorted_mergeSort_loc h_tra h_tot
+    exact List.pairwise_mergeSort_loc h_tra h_tot
   all_goals simp only [List.mem_mergeSort]; try assumption
   clear h_tra h_tot
   rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂ (h₃ : i ≤ j) (h₄ : j ≤ i)
@@ -133,16 +129,8 @@ theorem nodup_toSortedList [LinearOrder α] : mp.toSortedList.Nodup := by
   simp [toSortedList]
 
 @[simp]
-theorem sorted_toSortedList [LinearOrder α] : mp.toSortedList.Sorted (·.1 ≤ ·.1) := by
-  apply List.sorted_mergeSort_loc
-  · rintro ⟨i, x⟩ ⟨j, y⟩ ⟨k, z⟩
-    simp
-    intro h₁ h₂ h₃ h₄ h₅
-    exact h₄.trans h₅
-  · rintro ⟨i, x⟩ ⟨j, y⟩
-    simp
-    intro h₁ h₂
-    apply le_total
+theorem pairwise_toSortedList [LinearOrder α] : mp.toSortedList.Pairwise (·.1 ≤ ·.1) := by
+  apply List.pairwise_mergeSort_loc <;> simp
 
 @[simp]
 theorem ofList_snoc {xs} {x : Σ i, β i} :
@@ -153,6 +141,7 @@ ofList (xs ++ [x]) = (ofList xs).insert x.fst x.snd := by
 theorem toList_eq_nil_iff : mp.toList = [] ↔ mp ~m ∅ := by
   rw [←toList_empty, List.ext_get_iff]
   simp [isEmpty_eq_size_eq_zero]
+  all_goals infer_instance
 
 theorem fold_eq_fold_of_equiv {γ : Type*}
 {f : γ → (i : α) → β i → γ} {z : γ} {m₁ m₂ : Std.DHashMap α β}
@@ -321,8 +310,8 @@ theorem nodup_toSortedKeys [LinearOrder α] : mp.toSortedKeys.Nodup := by
   simp [hy]
 
 @[simp]
-theorem sorted_toSortedKeys [LinearOrder α] : mp.toSortedKeys.Sorted (· ≤ ·) := by
-  simp [toSortedKeys]
+theorem sortedLE_toSortedKeys [LinearOrder α] : mp.toSortedKeys.SortedLE := by
+  simp [toSortedKeys, List.sortedLE_iff_pairwise]
 
 @[simp]
 theorem toSortedList_perm_toList [LinearOrder α] : mp.toSortedList.Perm mp.toList := by
@@ -358,20 +347,14 @@ m₁.toSortedList.Perm m₂.toSortedList ↔ m₁ ~m m₂ := by
 theorem toSortedKeys_eq_of_equiv [LinearOrder α] {m₁ m₂ : Std.DHashMap α β}
 (h : m₁ ~m m₂) : m₁.toSortedKeys = m₂.toSortedKeys := by
   unfold toSortedKeys
-  apply List.eq_of_perm_of_sorted_loc (r := (· ≤ ·)) <;> try simp
-  · rw [List.map_perm_map_iff_loc]; try simpa
-    rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂ rfl
-    simp
-    rw [equiv_iff_get?] at h
-    simp [h] at h₁ h₂
-    simp [h₁] at h₂
-    exact h₂
-  · intro i j k x h₁ y h₂ z h₃ h₄ h₅
-    exact h₄.trans h₅
-  · intro i j k h₁ x h₂
-    apply le_total
-  · intro i j x h₁ y h₂
-    exact le_antisymm
+  apply List.eq_of_perm_of_pairwise (r := (· ≤ ·)) <;> try simp
+  rw [List.map_perm_map_iff_loc]; try simpa
+  rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂ rfl
+  simp
+  rw [equiv_iff_get?] at h
+  simp [h] at h₁ h₂
+  simp [h₁] at h₂
+  exact h₂
 
 @[simp]
 theorem toSortedKeys_eq_iff_of_subsingleton [LinearOrder α] {m₁ m₂ : Std.DHashMap α β}
@@ -393,13 +376,25 @@ theorem toSortedList_eq_nil_iff [LinearOrder α] : mp.toSortedList = [] ↔ mp ~
 theorem toSortedKeys_eq_nil_iff [LinearOrder α] : mp.toSortedKeys = [] ↔ mp ~m ∅ := by
   simp [toSortedKeys]
 
-def all (mp : DHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
-  mp.fold (λ acc i x => acc && p i x) true
-
 @[simp]
 theorem all_def {p} : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
-  simp [all, fold_eq_foldl_toList, List.foldl_bool_and_eq_all]
-  rw [Bool.eq_iff_iff]; simp
+  rw [Bool.eq_iff_iff]
+  simp [all_eq_true_iff_forall_mem_get]
+  constructor
+  · rintro h ⟨k, v⟩ h₁
+    dsimp
+    simp at h₁
+    specialize h k (mem_of_get?_eq_some h₁)
+    convert h
+    simp [get_eq_get_get?, h₁]
+  · intro h k h₁
+    rw [mem_iff_isSome_get?] at h₁
+    rw [Option.isSome_iff_exists] at h₁
+    choose v h₁ using h₁
+    specialize h ⟨k, v⟩ (mem_toList_iff_get?_eq_some.mpr h₁)
+    dsimp at h
+    rw! [get_eq_get_get?, h₁]
+    simpa
 
 @[simp]
 theorem mem_toList_iff_get?_eq_some' (x : (i : α) × β i) :
@@ -714,11 +709,6 @@ if h : mp.get? i = some x then f acc i x h else z) z := by
   rw [foldWith_eq_foldl_toList', fold_eq_foldl_toList wf]
 
 @[simp]
-theorem toList_empty : (∅ : Raw α β).toList = [] := by
-  change (DHashMap.mk ∅ # by simp).toList = _
-  exact Std.DHashMap.toList_empty
-
-@[simp]
 theorem fold_empty {f : γ → (i : α) → (x : β i) → γ} : (∅ : Raw α β).fold f z = z := by
   simp [fold_eq_foldl_toList]
 
@@ -950,9 +940,6 @@ theorem toList_insert_perm_cons_of_not_mem {i x} (h : i ∉ mp) :
 @[simp]
 theorem keys_eq_nil_iff : mp.keys = [] ↔ mp.isEmpty := by
   rw [keys_eq_map_fst_toList, List.map_eq_nil_iff]; simp
-
-theorem keys_empty : (∅ : DHashMap α β).keys = [] := by
-  simp
 
 def count (mp : DHashMap α β) (p : (i : α) → β i → Bool) : ℕ :=
   mp.fold (init := 0) # λ acc i x => if p i x then acc + 1 else acc

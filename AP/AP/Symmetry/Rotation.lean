@@ -14,10 +14,11 @@ sys.Initial (rotRight.fs s) ↔ sys.Initial s := by
   simp [rotRight, aPos₀_mkSymFsAux_eq_ite]
   split_ifs with h
   · simp [State.aPos₀, h]
-    have h₁ : initState s.pw none.iget ≠ s
+    have h₁ : initState s.pw none.getd ≠ s
     · intro h₁
       rw [←h₁] at h
       simp at h
+    rw [Option.getd] at h₁
     simp [h₁]
     apply ne_of_congr (·.hist.length)
     simp [h]

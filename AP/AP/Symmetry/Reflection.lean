@@ -21,10 +21,11 @@ sys.Initial (flipH.fs s) ↔ sys.Initial s := by
   simp [flipH, aPos₀_mkSymFsAux_eq_ite]
   split_ifs with h
   · simp [State.aPos₀, h]
-    have h₁ : initState s.pw none.iget ≠ s
+    have h₁ : initState s.pw none.getd ≠ s
     · intro h₁
       rw [←h₁] at h
       simp at h
+    rw [Option.getd] at h₁
     simp [h₁]
     apply ne_of_congr (·.hist.length)
     simp [h]
@@ -50,10 +51,11 @@ sys.Initial (flipV.fs s) ↔ sys.Initial s := by
   simp [flipV, aPos₀_mkSymFsAux_eq_ite]
   split_ifs with h
   · simp [State.aPos₀, h]
-    have h₁ : initState s.pw none.iget ≠ s
+    have h₁ : initState s.pw none.getd ≠ s
     · intro h₁
       rw [←h₁] at h
       simp at h
+    rw [Option.getd] at h₁
     simp [h₁]
     apply ne_of_congr (·.hist.length)
     simp [h]

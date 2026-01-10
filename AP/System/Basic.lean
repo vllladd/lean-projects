@@ -173,8 +173,7 @@ sys.Reachable a b ↔ ∃ ts, sys.trs a ts = (b, []) := by
   rintro ⟨ts, h⟩
   exact reachable_of_trs h
 
-theorem trs_append {s xs ys} [hi : DecidableEq T] :
-sys.trs s (xs ++ ys) =
+theorem trs_append {s xs ys} : sys.trs s (xs ++ ys) =
 let ⟨s₁, xs'⟩ := sys.trs s xs
 let (s₂, ys') := sys.trs s₁ ys
 if xs' ≠ [] then (s₁, xs' ++ ys) else (s₂, xs' ++ ys') := by
@@ -233,7 +232,7 @@ theorem simulate_add_full {f s s₂ n m} : sys.simulate f s (n + m) = (s₂, 0) 
     on_goal 3 => exact a
     · simp_all only
     · simp_all only
-    simp_all only [Prod.mk.injEq, Nat.add_eq_zero, false_and, and_false]
+    simp_all only [Prod.mk.injEq, Nat.add_eq_zero_iff, false_and, and_false]
   · intro a
     obtain ⟨w, h⟩ := a
     obtain ⟨left, right⟩ := h
@@ -453,7 +452,7 @@ theorem snd_simulate_add_eq_zero_iff {f s n m} : (sys.simulate f s (n + m)).2 = 
     }
     · simp_all only
     · simp_all only
-    simp_all only [Nat.add_eq_zero, false_and]
+    simp_all only [Nat.add_eq_zero_iff, false_and]
   · intro a
     obtain ⟨w, h⟩ := a
     obtain ⟨left, right⟩ := h
@@ -515,7 +514,7 @@ theorem snd_trs_snoc_eq_nil_iff {s t ts} : (sys.trs s (ts ++ [t])).2 = [] ↔
 theorem simulate_succ_full' {f s s₂ n} : sys.simulate f s n.succ = (s₂, 0) ↔
 ∃ s₁, sys.tr s (f s) = some s₁ ∧ sys.simulate f s₁ n = (s₂, 0) := by
   simp [simulate]; split
-  · simp_all only [Prod.mk.injEq, Nat.add_eq_zero, one_ne_zero, and_false, reduceCtorEq,
+  · simp_all only [Prod.mk.injEq, Nat.add_eq_zero_iff, one_ne_zero, and_false, reduceCtorEq,
       false_and, exists_false]
   · simp_all only [Option.some.injEq, exists_eq_left']
 
@@ -542,16 +541,16 @@ sys.simulate f s 1 = (s', r.succ) ↔ sys.tr s (f s) = none ∧ s = s' ∧ r = 0
     apply And.intro
     · split at a
       next x heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add]
-      next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero,
+      next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero_iff,
         one_ne_zero, and_false]
     · apply And.intro
       · split at a
         next x heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add]
-        next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero,
+        next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero_iff,
           one_ne_zero, and_false]
       · split at a
         next x heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add]
-        next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero,
+        next x s₁ heq => simp_all only [Prod.mk.injEq, Nat.right_eq_add, Nat.add_eq_zero_iff,
           one_ne_zero, and_false]
   · intro a
     simp_all only [zero_add]

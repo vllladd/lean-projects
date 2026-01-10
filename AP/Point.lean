@@ -330,14 +330,14 @@ instance [ha : AddRightStrictMono α] : AddRightStrictMono (Point α) := by
 
 instance [ha : MulLeftStrictMono α] : MulLeftStrictMono (Point α) := by
   constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp; rintro (h | ⟨rfl, h⟩)
-  · left; exact mul_lt_mul_left' h y₁
-  · right; use rfl; exact mul_lt_mul_left' h x₁
+  · left; exact mul_lt_mul_right h y₁
+  · right; use rfl; exact mul_lt_mul_right h x₁
 
 instance [ha : MulRightStrictMono α] : MulRightStrictMono (Point α) := by
   constructor; rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ ⟨x₃, y₃⟩; simp [Function.swap]
   rintro (h | ⟨rfl, h⟩)
-  · left; exact mul_lt_mul_right' h y₁
-  · right; use rfl; exact mul_lt_mul_right' h x₁
+  · left; exact mul_lt_mul_left h y₁
+  · right; use rfl; exact mul_lt_mul_left h x₁
 
 end StrictMono
 

@@ -1,3 +1,4 @@
+import AP.Util.Option
 import AP.Util.Algebra
 import AP.Util.Function
 
@@ -286,9 +287,9 @@ theorem mergeSort_attach_perm {r} :
   symm; rwa [count_eq_zero]
 
 @[simp]
-theorem sorted_unattach {α : Type*}
+theorem pairwise_unattach {α : Type*}
 {xs : List α} {ys : List {x // x ∈ xs}} {r : α → α → Prop} :
-ys.unattach.Sorted r ↔ ys.Sorted (r ·.1 ·.1) := by
+ys.unattach.Pairwise r ↔ ys.Pairwise (r ·.1 ·.1) := by
   induction ys <;> simp
   nm y ys ih
   intro h
@@ -298,8 +299,8 @@ theorem mergeSort_attach {r} :
 (xs.attach.mergeSort (r ·.1 ·.1)).unattach = xs.mergeSort r := by
   rw [unattach, map_mergeSort (s := (r · ·))] <;> simp
 
-theorem eq_of_perm_of_sorted_loc {α : Type*} {xs ys : List α} {r}
-(hp : xs.Perm ys) (hx : xs.Sorted r) (hy : ys.Sorted r)
+theorem eq_of_perm_of_pairwise {α : Type*} {xs ys : List α} {r}
+(hp : xs.Perm ys) (hx : xs.Pairwise r) (hy : ys.Pairwise r)
 (h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
 (h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a)
 (h_ant : ∀ a b, a ∈ xs → b ∈ xs → r a b → r b a → a = b) : xs = ys := by
@@ -311,7 +312,7 @@ theorem eq_of_perm_of_sorted_loc {α : Type*} {xs ys : List α} {r}
   · simp at hp
   nm y ys
   simp at ⊢
-  rw [sorted_cons] at hx hy
+  rw [pairwise_cons] at hx hy
   rcases hx with ⟨hx₁, hx₂⟩
   rcases hy with ⟨hy₁, hy₂⟩
   apply and_of
@@ -335,31 +336,31 @@ theorem eq_of_perm_of_sorted_loc {α : Type*} {xs ys : List α} {r}
   · intro a b ha hb h₁ h₂
     apply h_ant <;> simp [ha, hb, h₁, h₂]
 
-theorem sorted_mergeSort_loc' {r : α → α → Bool}
+theorem pairwise_mergeSort_loc' {r : α → α → Bool}
 (h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
 (h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a) :
-(xs.mergeSort r).Sorted (r · ·) := by
+(xs.mergeSort r).Pairwise (r · ·) := by
   rw [←@mergeSort_attach α xs r]
   simp
-  apply sorted_mergeSort
+  apply pairwise_mergeSort
   · rintro ⟨a, ha⟩ ⟨b, hb⟩ ⟨c, hc⟩
     apply h_tra <;> assumption
   · rintro ⟨a, ha⟩ ⟨b, hb⟩; simp
     apply h_tot <;> assumption
 
-theorem sorted_mergeSort_loc
+theorem pairwise_mergeSort_loc
 {r : α → α → Prop} [hr : DecidableRel r]
 (h_tra : ∀ a b c, a ∈ xs → b ∈ xs → c ∈ xs → r a b → r b c → r a c)
 (h_tot : ∀ a b, a ∈ xs → b ∈ xs → r a b ∨ r b a) :
-(xs.mergeSort (r · ·)).Sorted r := by
-  have h₁ := sorted_mergeSort_loc' (xs := xs) (r := (r · ·))
+(xs.mergeSort (r · ·)).Pairwise r := by
+  have h₁ := pairwise_mergeSort_loc' (xs := xs) (r := (r · ·))
     (by simpa using h_tra) (by simpa using h_tot)
   simp at h₁; exact h₁
 
-theorem eq_iff_of_nodup_and_sorted {α : Type*}
+theorem eq_iff_of_nodup_and_pairwise {α : Type*}
 (r : α → α → Prop) {xs ys : List α} (hx₁ : xs.Nodup) (hy₁ : ys.Nodup)
 (h_ant : ∀ a b, a ∈ xs → b ∈ xs → r a b → r b a → a = b)
-(hx₂ : xs.Sorted r) (hy₂ : ys.Sorted r) :
+(hx₂ : xs.Pairwise r) (hy₂ : ys.Pairwise r) :
 xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
   refine' ⟨λ h => by simp [h], λ h => _⟩
   induction xs generalizing ys
@@ -401,11 +402,11 @@ xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
   · simp [hz] at h
     exact h
 
-theorem eq_iff_of_nodup_and_sorted' {α : Type*} [ha : LinearOrder α]
+theorem eq_iff_of_nodup_and_pairwise' {α : Type*} [ha : LinearOrder α]
 {xs ys : List α} (hx₁ : xs.Nodup) (hy₁ : ys.Nodup)
-(hx₂ : xs.Sorted (· ≤ ·)) (hy₂ : ys.Sorted (· ≤ ·)) :
+(hx₂ : xs.Pairwise (· ≤ ·)) (hy₂ : ys.Pairwise (· ≤ ·)) :
 xs = ys ↔ ∀ x, x ∈ xs ↔ x ∈ ys := by
-  apply eq_iff_of_nodup_and_sorted (· ≤ ·) hx₁ hy₁ _ hx₂ hy₂
+  apply eq_iff_of_nodup_and_pairwise (· ≤ ·) hx₁ hy₁ _ hx₂ hy₂
   intro _ _ _ _; exact le_antisymm
 
 @[simp]
@@ -438,14 +439,7 @@ xs.mergeSort r = [] ↔ xs = [] := by
   apply ne_of_congr List.length
   simp
 
-@[simp]
-theorem sorted_map {f : α → β} {r : β → β → Prop} :
-(xs.map f).Sorted r ↔ xs.Sorted (λ a b => r (f a) (f b)) := by
-  induction xs; simp
-  nm x xs ih
-  simp
-  intro h
-  exact ih
+attribute [simp] pairwise_map
 
 theorem foldl_eq_foldl_of_perm {α β : Type*}
 {f : β → α → β} {z : β} {xs ys : List α}
@@ -598,17 +592,9 @@ theorem atMostOne_pair {b₁ b₂} :
 theorem nodup_snoc {x} : (xs ++ [x]).Nodup ↔ x ∉ xs ∧ xs.Nodup := by
   rw [←nodup_reverse]; simp
 
-theorem sorted_append {p} : (xs ++ ys).Sorted p ↔
-xs.Sorted p ∧ ys.Sorted p ∧ ∀ a ∈ xs, ∀ b ∈ ys, p a b :=
-  pairwise_append
-
 @[simp]
 theorem pairwise_snoc {x p} : (xs ++ [x]).Pairwise p ↔
 xs.Pairwise p ∧ (∀ y ∈ xs, p y x) := by simp [pairwise_append]
-
-@[simp]
-theorem sorted_snoc {x p} : (xs ++ [x]).Sorted p ↔
-xs.Sorted p ∧ (∀ y ∈ xs, p y x) := pairwise_snoc
 
 theorem filterMap_eq [hb : Inhabited β] {f : α → Option β} :
 xs.filterMap f = (xs.map f |>.filter Option.isSome |>.map Option.get!) := by
@@ -661,10 +647,11 @@ theorem max?_reverse [ha : LinearOrder α] : xs.reverse.max? = xs.max? := by
   induction xs; rfl; clear! xs; nm x xs ih; simp [max?_append_comm, ih]
 
 theorem max?_eq_getLast? [ha : LinearOrder α]
-(h : xs.Sorted (· ≤ ·)) : xs.max? = xs.getLast? := by
-  have h₁ := @List.min?_eq_head?;
+(h : xs.SortedLE) : xs.max? = xs.getLast? := by
+  have h₁ := @List.min?_eq_head?
   specialize @h₁ α ⟨max⟩ xs.reverse
   simp [pairwise_reverse] at h₁
+  rw [←sortedLE_iff_pairwise] at h₁
   specialize h₁ h
   convert h₁ using 1
   symm; exact max?_reverse
@@ -828,8 +815,8 @@ y ∈ xs.mapWith f ↔ ∃ (x : α) (h : x ∈ xs), f x h = y := by
     use x, hx
     simp [hx]
 
-theorem sorted_of_sorted_and_imp {r₁ r₂ : α → α → Prop}
-(h₁ : xs.Sorted r₁) (h₂ : ∀ {a b}, r₁ a b → r₂ a b) : xs.Sorted r₂ := by
+theorem pairwise_of_pairwise_and_imp {r₁ r₂ : α → α → Prop}
+(h₁ : xs.Pairwise r₁) (h₂ : ∀ {a b}, r₁ a b → r₂ a b) : xs.Pairwise r₂ := by
   induction xs; simp
   clear! xs; nm x xs ih
   simp at h₁ ⊢
@@ -838,9 +825,9 @@ theorem sorted_of_sorted_and_imp {r₁ r₂ : α → α → Prop}
   intro y ys
   exact h₂ # h₁ _ ys
 
-theorem sorted_le_of_sorted_lt [ha : LinearOrder α]
-(h : xs.Sorted (· < ·)) : xs.Sorted (· ≤ ·) :=
-  sorted_of_sorted_and_imp h le_of_lt
+theorem pairwise_le_of_pairwise_lt [ha : LinearOrder α]
+(h : xs.Pairwise (· < ·)) : xs.Pairwise (· ≤ ·) :=
+  pairwise_of_pairwise_and_imp h le_of_lt
 
 @[simp]
 theorem flatMap_fn_singleton {f : α → β} : xs.flatMap ([f ·]) = xs.map f := by
@@ -983,7 +970,8 @@ theorem drop_reverse_append_cons_succ_length_succ {x} :
 (xs.reverse ++ x :: ys).drop (xs.length + 1) = ys := by
   rw [←length_reverse, drop_add_one_eq_tail_drop, drop_append]; simp
 
-theorem sorted_of_sorted_and_sublist {r} (h₁ : xs.Sorted r) (h₂ : ys <+ xs) : ys.Sorted r := by
+theorem pairwise_of_pairwise_and_sublist {r}
+(h₁ : xs.Pairwise r) (h₂ : ys <+ xs) : ys.Pairwise r := by
   induction h₂ <;> clear! xs ys
   · exact h₁
   · nm xs ys x h₂ ih
@@ -1116,13 +1104,13 @@ if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
     all_goals intro h₃; apply le_antisymm <;> assumption
   subst hB; exact nodup_flatMap_flatMap_pair hxs hys
 
-theorem getElem_scanl {f : β → α → β} {z i} {hi : i < (xs.scanl f z).length} :
-(xs.scanl f z)[i] = (xs.take i).foldl f z := by
-  induction xs generalizing z i <;> simp; rename_i x xs ih; cases i <;> simp [ih]
+theorem getElem_scanl' {f : β → α → β} {z i} {hi : i < (xs.scanl f z).length} :
+(xs.scanl f z)[i] = (xs.take i).foldl f z :=
+  getElem_scanl hi
 
-theorem take_scanl {f : β → α → β} {z n} :
-(xs.scanl f z).take (n + 1) = (xs.take n).scanl f z := by
-  induction xs generalizing z n; simp; rename_i x xs ih; cases n <;> simp [ih]
+theorem take_scanl' {f : β → α → β} {z n} :
+(xs.scanl f z).take (n + 1) = (xs.take n).scanl f z :=
+  take_scanl _ _ _
 
 theorem drop_scanl {f : β → α → β} {z n} (hn : n ≤ xs.length) :
 (xs.scanl f z).drop n = (xs.drop n).scanl f (xs.take n |>.foldl f z) := by
@@ -1316,7 +1304,7 @@ theorem take_length_sub_one : xs.take (xs.length - 1) = xs.init := by
 theorem length_init : xs.init.length = xs.length - 1 := by
   induction xs using List.reverseRecOn <;> simp
 
-theorem nodup_of_sorted_lt [ha : LinearOrder α] (h : xs.Sorted (· < ·)) : xs.Nodup := by
+theorem nodup_of_pairwise_lt [ha : LinearOrder α] (h : xs.Pairwise (· < ·)) : xs.Nodup := by
   induction h
   · simp
   clear! xs; nm x xs h₁ h₂ ih
@@ -1366,9 +1354,11 @@ theorem perm_cons_mergeSort_iff {p y} : xs ~ y :: ys.mergeSort p ↔ xs ~ y :: y
 theorem modify_length_append {f} : (xs ++ ys).modify xs.length f = xs ++ ys.modify 0 f := by
   induction xs; simp; simpa
 
-theorem sorted_lt_of_sorted_le [ha : LinearOrder α]
-(h₁ : xs.Sorted (· ≤ ·)) (h₂ : xs.Nodup) : xs.Sorted (· < ·) :=
-  Sorted.lt_of_le h₁ h₂
+theorem pairwise_lt_of_pairwise_le [ha : LinearOrder α]
+(h₁ : xs.Pairwise (· ≤ ·)) (h₂ : xs.Nodup) : xs.Pairwise (· < ·) := by
+  rw [←sortedLT_iff_pairwise]
+  rw [←sortedLE_iff_pairwise] at h₁
+  exact h₁.sortedLT_of_nodup h₂
 
 theorem eq_and_eq_of_append_cons_eq {xs' ys' x} (h₁ : xs ++ x :: ys = xs' ++ x :: ys')
 (h₂ : x ∉ xs) (h₃ : x ∉ xs') : xs = xs' ∧ ys = ys' := by
@@ -1549,3 +1539,46 @@ theorem mem_combinations {n} : ys ∈ xs.combinations n ↔ ys.length = n ∧ ys
     simp at h₂
     choose hy h₂ using h₂
     use y, hy, ys
+
+section
+
+variable [ha : LinearOrder α]
+include ha
+
+@[simp]
+theorem sortedLe_cons {x} : (x :: xs).SortedLE ↔ (∀ y ∈ xs, x ≤ y) ∧ xs.SortedLE := by
+  simp [sortedLE_iff_pairwise]
+
+@[simp]
+theorem sortedLt_cons {x} : (x :: xs).SortedLT ↔ (∀ y ∈ xs, x < y) ∧ xs.SortedLT := by
+  simp [sortedLT_iff_pairwise]
+
+@[simp]
+theorem sortedLe_snoc {x} : (xs ++ [x]).SortedLE ↔ xs.SortedLE ∧ ∀ y ∈ xs, y ≤ x := by
+  simp [sortedLE_iff_pairwise]
+
+@[simp]
+theorem sortedLT_snoc {x} : (xs ++ [x]).SortedLT ↔ xs.SortedLT ∧ ∀ y ∈ xs, y < x := by
+  simp [sortedLT_iff_pairwise]
+
+@[grind =]
+theorem sortedLE_append : (xs ++ ys).SortedLE ↔
+xs.SortedLE ∧ ys.SortedLE ∧ ∀ x ∈ xs, ∀ y ∈ ys, x ≤ y := by
+  simp [sortedLE_iff_pairwise, pairwise_append]
+
+@[grind =]
+theorem sortedLT_append : (xs ++ ys).SortedLT ↔
+xs.SortedLT ∧ ys.SortedLT ∧ ∀ x ∈ xs, ∀ y ∈ ys, x < y := by
+  simp [sortedLT_iff_pairwise, pairwise_append]
+
+end
+
+theorem head!_eq_getd_head [ha : Inhabited α] : xs.head! = xs.head?.getd := by
+  cases xs <;> rfl
+
+@[simp]
+theorem head!_mem_iff [ha : Inhabited α] : xs.head! ∈ xs ↔ xs ≠ [] := by
+  cases xs <;> simp
+
+theorem head!_mem [ha : Inhabited α] (h : xs ≠ []) : xs.head! ∈ xs := by
+  simpa

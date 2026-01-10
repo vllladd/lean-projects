@@ -73,11 +73,11 @@ theorem add_succ_max_ne_right {x a b : ℕ} : x + (max a b + 1) ≠ b := by
 
 @[simp]
 theorem left_lt_succ_max {a b : ℕ} : a < max a b + 1 := by
-  simp [Nat.lt_add_one_iff]
+  simp
 
 @[simp]
 theorem right_lt_succ_max {a b : ℕ} : b < max a b + 1 := by
-  simp [Nat.lt_add_one_iff]
+  simp
 
 theorem add_add_sub_cancel {a b c : ℕ} : a + b + c - b = a + c := by
   rw [add_assoc, Nat.add_sub_assoc] <;> simp

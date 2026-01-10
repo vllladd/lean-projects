@@ -1,6 +1,18 @@
 import AP.Util.Finset
 
+import Mathlib.Analysis.SpecialFunctions.Log.Base
+
 namespace Real
+
+noncomputable
+def am (xs : List ℝ) : ℝ :=
+  xs.sum / xs.length
+
+noncomputable
+def gm (xs : List ℝ) : ℝ :=
+  xs.prod ^ (xs.length : ℝ)⁻¹
+
+-----
 
 theorem add_inv {a b : ℝ} (h : b ≠ 0) : a + b⁻¹ = (a * b + 1) / b := by
   field_simp
@@ -34,14 +46,6 @@ theorem list_sum_map_mul_right {xs : List ℝ} {w : ℝ} :
 (xs.map (· * w)).sum = xs.sum * w := by
   induction xs; simp; nm x xs ih; simp [ih]; ring_nf
 
-noncomputable
-def am (xs : List ℝ) : ℝ :=
-  xs.sum / xs.length
-
-noncomputable
-def gm (xs : List ℝ) : ℝ :=
-  xs.prod ^ (xs.length : ℝ)⁻¹
-
 theorem gm_le_am (xs : List ℝ) (h₁ : xs ≠ []) (h₂ : ∀ x ∈ xs, 0 ≤ x) : gm xs ≤ am xs := by
   have h_len : xs.length ≠ 0; simpa
   have h_len' : (xs.length : ℝ) ≠ 0; simpa
@@ -70,7 +74,7 @@ theorem gm_le_am_3 (a b c : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c) :
   simp [am, gm] at h; simpa [add_assoc, mul_assoc]
 
 theorem log_eq_logb {a : ℝ} : a.log = Real.logb (Real.exp 1) a := by
-  rw [logb]; simp
+  simp [logb]
 
 theorem eq_of_log_eq_log {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
 (h : a.log = b.log) : a = b := by

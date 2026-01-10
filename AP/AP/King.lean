@@ -10,6 +10,12 @@ def dKingOp₂ : DStrat := .mk # λ s => List.head? # do
   guard # p ≠ s.aPos ∧ p ∉ s.taken
   return p
 
+noncomputable
+def dKingOp₂NC : DStrat := .mk # λ s => List.head? # do
+  let p ← Box.interiorNC.toList
+  guard # p ≠ s.aPos ∧ p ∉ s.taken
+  return p
+
 def dKingOp₁ : DStrat :=
   Box.defense.st dKingOp₂
 
@@ -237,8 +243,6 @@ sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
   replace hs := s.aState_or_dState
   rcases hs with hs | hs <;> exact hs.exi_d_move_not_mem_of_aWins set h
 
--- #check 0 #exit
-
 namespace King
 
 @[simp]
@@ -277,6 +281,9 @@ instance : DState state₀ := by
 @[simp] theorem aPos_state₀ : state₀.aPos = 0 := rfl
 @[simp] theorem taken_state₀ : state₀.taken = ∅ := rfl
 
+theorem dKingOp₂_eq_dKingOp₂NC : dKingOp₂ = dKingOp₂NC := by
+  rw [dKingOp₂, Box.interior_eq_interiorNC]; rfl
+
 theorem dWins_dKingOp₁_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
 (h : Box.defense.cnd s) : s.dWins ⟨a, dKingOp₁⟩ := by
   by_contra h₁; simp at h₁
@@ -295,13 +302,14 @@ theorem dWins_dKingOp₁_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
     rw [Box.cnd_defense_iff_guardTiles] at h
     exact h.2.2
   nm x h₄; clear x
-  simp [dKingOp₂, Option.getD] at h₃
+  rw [dKingOp₂_eq_dKingOp₂NC] at h₃
+  simp [dKingOp₂NC, Option.getD] at h₃
   split at h₃
   · nm x p₁ h₅; clear x
     simp at h₅
     rcases h₅ with ⟨h₅, s₁, h₆⟩
     replace h₅ := List.mem_of_head? h₅
-    simp [h₃] at h₅
+    simp [h₃, ←Box.interior_eq_interiorNC] at h₅
   nm x h₅; clear x
   simp [List.flatMap_fn_replicate_guard] at h₅
   replace h₅ := List.forall_of_find?_eq_some_imp h₅ # by grind
@@ -322,6 +330,7 @@ theorem dWins_dKingOp₁_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
   rcases h₆ with ⟨⟨H₁, H₂, H₃⟩, h₆⟩
   subst h₆
   dsimp at *
+  rw [Box.interior_eq_interiorNC] at H₄
   specialize h₅ _ H₄
   simp [←DState.aPos_eq_of_tr h₁, H₁] at h₅
   apply H₂

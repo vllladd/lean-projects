@@ -1,24 +1,5 @@
 import AP.Util.Data.Map
 
-namespace List
-
-variable {α β γ : Type*}
-variable {xs ys zs : List α}
-
-theorem head!_eq_iget_head [ha : Inhabited α] : xs.head! = xs.head?.iget := by
-  cases xs <;> rfl
-
-@[simp]
-theorem head!_mem_iff [ha : Inhabited α] : xs.head! ∈ xs ↔ xs ≠ [] := by
-  cases xs <;> simp
-
-theorem head!_mem [ha : Inhabited α] (h : xs ≠ []) : xs.head! ∈ xs := by
-  simpa
-
--- #check 0 #exit
-
-end List
-
 universe u v w
 
 structure Set' (α : Type u)
@@ -170,7 +151,7 @@ theorem nodup_toList [LinearOrder α] : s.toList.Nodup := by
   simp
 
 @[simp]
-theorem sorted_toList' [LinearOrder α] : s.toList.Sorted (· ≤ ·) := by
+theorem sortedLE_toList [LinearOrder α] : s.toList.SortedLE := by
   rcases s with ⟨⟨s⟩⟩; unfold toList Std.ExtDHashMap.lift
   apply s.ind; simp
 
@@ -302,7 +283,7 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List α}
   simp [ofList]; rfl
 
 theorem ind_ofList' [ha : LinearOrder α] {p : Set' α → Prop}
-(h : ∀ (xs : List α), xs.Nodup → xs.Sorted (· ≤ ·) → p (ofList xs))
+(h : ∀ (xs : List α), xs.Nodup → xs.SortedLE → p (ofList xs))
 (s : Set' α) : p s := by
   rw [←ofList_toList (s := s)]; apply h <;> simp
 
@@ -797,12 +778,12 @@ y ∈ xs.foldl (λ mp x => mp.push (f x)) mp ↔ y ∈ mp ∨ ∃ x ∈ xs, f x 
   tauto
 
 theorem toList_erase [ha : LinearOrder α] {x} : (s.erase x).toList = s.toList.erase x := by
-  rw [List.eq_iff_of_nodup_and_sorted']
+  rw [List.eq_iff_of_nodup_and_pairwise']
   rotate_left
   · simp
   · apply List.nodup_erase; simp
-  · simp
-  · apply List.sorted_erase; simp
+  · simp [←List.sortedLE_iff_pairwise]
+  · apply List.pairwise_erase; simp [←List.sortedLE_iff_pairwise]
   intro y
   simp [List.mem_erase_iff_of_nodup]
   tauto
@@ -1214,12 +1195,12 @@ theorem ofList_append {xs ys : List α} : ofList (xs ++ ys) = ofList xs ∪ ofLi
   ext; simp
 
 theorem ind_ofList [ha : LinearOrder α] {p : Set' α → Prop}
-(h : ∀ (xs : List α), xs.Sorted (· < ·) → p (ofList xs)) (s : Set' α) : p s := by
-  induction s using ind_ofList'; nm xs h₁ h₂; apply h _ # h₂.lt_of_le h₁
+(h : ∀ (xs : List α), xs.SortedLT → p (ofList xs)) (s : Set' α) : p s := by
+  induction s using ind_ofList'; nm xs h₁ h₂; apply h _ # h₂.sortedLT_of_nodup h₁
 
 @[simp]
-theorem sorted_toList [ha : LinearOrder α] : s.toList.Sorted (· < ·) :=
-  sorted_toList'.lt_of_le nodup_toList
+theorem sorted_toList [ha : LinearOrder α] : s.toList.SortedLT :=
+  sortedLE_toList.sortedLT_of_nodup nodup_toList
 
 theorem toList_ofList_of_nodup [ha : LinearOrder α] {xs : List α}
 (h : xs.Nodup) : (ofList xs).toList = xs.mergeSort := by
@@ -1228,20 +1209,26 @@ theorem toList_ofList_of_nodup [ha : LinearOrder α] {xs : List α}
   simp at h ⊢
   rcases h with ⟨h₁, h₂⟩
   specialize ih h₂
-  rw [List.eq_iff_of_nodup_and_sorted (r := (· < ·))] <;> try simp [h₁, h₂]
+  rw [List.eq_iff_of_nodup_and_pairwise (r := (· < ·))] <;> try simp [h₁, h₂]
   · intro y z h₃ h₄ h₅ h₆
     replace h₅ := h₅.trans h₆
     simp at h₅
-  · have H := @(x :: xs).sorted_mergeSort α (le := (· ≤ ·))
-    simp at H
-    apply List.Sorted.lt_of_le _ # by simp [h₁, h₂]
-    apply H
+  · have H := @(x :: xs).pairwise_mergeSort α (le := (· ≤ ·))
+    simp [←List.sortedLE_iff_pairwise] at H
+    rw [←List.sortedLT_iff_pairwise]
+    apply List.SortedLE.sortedLT_of_nodup <;> simp
+  · rw [←List.sortedLT_iff_pairwise]
+    apply List.SortedLE.sortedLT_of_nodup
+    · rw [List.sortedLE_iff_pairwise]
+      apply List.pairwise_mergeSort'
+    · simp [h₁, h₂]
 
-theorem toList_ofList_of_sorted [ha : LinearOrder α] {xs : List α}
-(h : xs.Sorted (· < ·)) : (ofList xs).toList = xs := by
+theorem toList_ofList_of_sortedLT [ha : LinearOrder α] {xs : List α}
+(h : xs.SortedLT) : (ofList xs).toList = xs := by
   rw [toList_ofList_of_nodup h.nodup]
-  rw [List.mergeSort_of_sorted]
-  simp; exact h.le_of_lt
+  rw [List.mergeSort_of_pairwise]
+  simp [←List.sortedLE_iff_pairwise]
+  exact h.sortedLE
 
 omit hb₁ hb₂
 theorem fold_insert {f : β → α → β} {z x hh} (hx : x ∉ s) :
@@ -1389,7 +1376,7 @@ theorem head!_spec [ha₃ : Inhabited α] [ha₄ : LinearOrder α]
   simp_rw [head!]
   replace h : s.toList ≠ []; simpa
   simp_rw [←mem_toList]
-  have h₁ := s.sorted_toList'
+  have h₁ := s.sortedLE_toList
   generalize hx : s.toList = xs at h h₁ ⊢
   cases xs; simp at h; clear h
   nm x xs
@@ -1421,7 +1408,7 @@ theorem headMap!_spec [ha₃ : Inhabited α] [ha₄ : LinearOrder α] [hb : Line
   cases xs
   · simp [h] at hx
   nm x xs
-  have h₁ := @List.sorted_mergeSort α (f · ≤ f ·) (by simp) (by simp) s.toList
+  have h₁ := @List.pairwise_mergeSort α (f · ≤ f ·) (by simp) (by simp) s.toList
   simp [hx] at h₁
   replace h₁ := h₁.1
   simp

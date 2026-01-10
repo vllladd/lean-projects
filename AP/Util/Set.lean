@@ -40,7 +40,7 @@ theorem finite_erase_iff {x : α} : (s.erase x).Finite ↔ s.Finite := by
 
 @[simp]
 theorem infinite_erase_iff {x : α} : (s.erase x).Infinite ↔ s.Infinite := by
-  simp [Set.Infinite]
+  unfold Set.Infinite; simp_rw [finite_erase_iff]
 
 theorem diff_upair (x y : α) (s : Set α) : s \ {x, y} = (s \ {x}) \ {y} := by
   ext z; simp; tauto

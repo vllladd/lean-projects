@@ -112,7 +112,7 @@ theorem Set.injOn_of_card_image_eq' {α : Type*} {s : Set α} {f : α → α}
   simp at h₂
   rename' s => s'
   generalize hs : s'.toFinset = s
-  replace hs := congrArg (·.toSet) hs
+  replace hs := congrArg SetLike.coe hs
   simp at hs
   subst hs
   clear h₁ h₃
@@ -167,7 +167,7 @@ theorem Fintype.card_eq_finset_card {α : Type*} [ha : Fintype α] :
 Fintype.card α = (Finset.univ : Finset α).card := by simp
 
 theorem Set.univ_eq_finset_univ_of_fintype {α : Type*} [ha : Fintype α] :
-(Set.univ : Set α) = Finset.univ.toSet := by simp
+(Set.univ : Set α) = SetLike.coe Finset.univ := by simp
 
 theorem Fintype.card_range_eq_iff_injective {α β : Type*}
 [ha : Fintype α] {f : α → β} :
@@ -481,7 +481,7 @@ theorem Set.exists_infinite_preimage_of' {α β : Type*} [ha : Infinite α] [hb 
   simp at h
   replace h := finite_iUnion h
   rw [iUnion_preimage, finite_univ_iff] at h
-  exact not_finite α
+  exact _root_.not_finite α
 
 theorem Set.exists_infinite_preimage_of {α β : Type*} [ha : Infinite α] [hb : Finite β]
 {f : α → β} : ∃ b, (f ⁻¹' {b}).Infinite := by

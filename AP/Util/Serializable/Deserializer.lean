@@ -177,9 +177,6 @@ def toBits (bs : ByteArray) : List Bit :=
 theorem empty_def : (∅ : ByteArray) = ⟨⟨[]⟩⟩ := rfl
 
 @[simp]
-theorem data_empty : (∅ : ByteArray).data = ⟨[]⟩ := rfl
-
-@[simp]
 theorem ofBits_nil : ofBits [] = ∅ := by
   ext <;> simp [ofBits, ofBits']
 
