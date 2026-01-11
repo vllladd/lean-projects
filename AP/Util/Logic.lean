@@ -2,6 +2,21 @@ import AP.Util.Meta
 
 variable {α β γ : Type*}
 
+noncomputable
+def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
+  Classical.inhabited_of_nonempty h
+
+noncomputable
+def choose? {α : Type*} (p : α → Prop) [Decidable # ∃ x, p x] : Option α :=
+  if h : ∃ x, p x then some h.choose else none
+
+noncomputable
+def idNC (x : α) : α :=
+  haveI : Inhabited α := ⟨x⟩
+  Classical.epsilon (x = ·)
+
+-----
+
 theorem hv {α : Type*} (x : α) : ∃ y, y = x := exists_eq
 
 theorem ne_of_congr {α β : Type*} {x y : α} (f : α → β)
@@ -173,17 +188,9 @@ theorem ne_symm' {α : Type*} {a b : α} (h : ¬(a = b)) : ¬(b = a) := by tauto
 
 theorem ne_comm' {α : Type*} {a b : α} : ¬(a = b) ↔ ¬(b = a) := by tauto
 
-noncomputable
-def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
-  Classical.inhabited_of_nonempty h
-
 theorem dite_eq_dite_of_pos {α : Type*} {P Q : Prop} [hp : Decidable P] [hq : Decidable Q]
 {f : P → α} {g : Q → α} {x y : α} (h₁ : P) (h₂ : Q) (h₃ : f h₁ = g h₂) :
 (if h : P then f h else x) = if h : Q then g h else y := by simp [h₁, h₂, h₃]
-
-noncomputable
-def choose? {α : Type*} (p : α → Prop) [Decidable # ∃ x, p x] : Option α :=
-  if h : ∃ x, p x then some h.choose else none
 
 theorem choose?_eq_ite {α : Type*} [ha : Nonempty α]
 {p : α → Prop} [hd : Decidable # ∃ x, p x] :
@@ -324,3 +331,6 @@ theorem bif_eq_if {b : Bool} {x y : α} : (bif b then x else y) = (if b then x e
   simp
 
 instance [ha : DecidableEq α] : DecidableEq (Id α) := ha
+
+theorem idNC_def : idNC = λ (x : α) => x := by
+  ext; simp [idNC]

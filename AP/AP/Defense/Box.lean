@@ -1,21 +1,5 @@
 import AP.AP.Defense.Corner
 
-section Logic
-
-variable {α : Type*}
-
-noncomputable
-def idNC (x : α) : α :=
-  haveI : Inhabited α := ⟨x⟩
-  Classical.epsilon (x = ·)
-
-theorem idNC_def : idNC = λ (x : α) => x := by
-  ext; simp [idNC]
-
--- #check 0 #exit
-
-end Logic
-
 namespace AP.Box
 
 def offset : ℕ := 106
