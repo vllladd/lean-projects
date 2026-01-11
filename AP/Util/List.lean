@@ -6,6 +6,7 @@ import Init.Data.List.Perm
 import Init.Data.List.Sublist
 import Mathlib.Data.List.Range
 import Mathlib.Data.List.Intervals
+import Mathlib.Data.List.TakeWhile
 
 instance {α : Type*} [ha : LinearOrder α] : Std.LawfulOrderMax α where
   max_eq_or := by simp [le_total]
@@ -203,22 +204,6 @@ theorem exists_takeWhile_eq {α : Type*} (xs : List α) (P : α → Bool) :
   have h₂ := not_apply_of_takeWhile_append_cons_eq_self h₁
   rw [append_cons, takeWhile_append, takeWhile_append, takeWhile_idem]
   simp [h₂]
-
-theorem ext {α : Type*} {xs ys : List α} : xs = ys ↔ xs.length = ys.length ∧
-∀ {i} (_ : i < xs.length) (_ : i < ys.length), xs[i] = ys[i] := by
-  constructor
-  · rintro rfl; simp
-  rintro ⟨h₁, h₂⟩
-  ext i x
-  have h₄ : i < xs.length ↔ i < ys.length := by rw [h₁]
-  by_cases h₃ : i < xs.length <;> simp [h₃] at h₄
-  · rw [List.getElem?_eq_getElem h₃]
-    rw [List.getElem?_eq_getElem h₄]
-    simp
-    rw [h₂ h₃ h₄]
-  simp at h₃
-  rw [List.getElem?_eq_none h₃]
-  rw [List.getElem?_eq_none h₄]
 
 theorem suffix_cons_of_suffix {α : Type*} {xs ys : List α} {y}
 (h : xs <:+ ys) : xs <:+ y :: ys := by

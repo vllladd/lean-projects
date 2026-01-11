@@ -12,6 +12,11 @@ linter.style.longLine = true
 name = "mathlib"
 scope = "leanprover-community"
 
+[[require]]
+name = "tryAtEachStep"
+git = "https://github.com/dwrensha/tryAtEachStep"
+rev = "main"
+
 [[lean_lib]]
 name = "AP"
 

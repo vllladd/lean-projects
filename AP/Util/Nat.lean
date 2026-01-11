@@ -25,7 +25,7 @@ theorem le_sub_add_of {a b c : ℕ} (h : a ≤ b) : a ≤ b - c + c := by
   trans b; exact h; exact le_tsub_add
 
 theorem le_sub_add_add_of {a b c d : ℕ} (h : a ≤ b) : a ≤ b - c + d + c := by
-  rw [add_assoc]; nth_rewrite 2 [add_comm]
+  rw [add_assoc]; nth_rw 2 [add_comm]
   rw [←add_assoc]; trans b - c + c
   exact le_sub_add_of h; apply le_add_right
 
@@ -83,7 +83,7 @@ theorem add_add_sub_cancel {a b c : ℕ} : a + b + c - b = a + c := by
   rw [add_assoc, Nat.add_sub_assoc] <;> simp
 
 theorem add_succ_ne_right {a b : ℕ} : a + (b + 1) ≠ b := by
-  nth_rewrite 2 [add_comm]; rw [←add_assoc]; simp
+  nth_rw 2 [add_comm]; rw [←add_assoc]; simp
 
 theorem fn_set_add {a b : ℕ} {f : ℕ → ℕ} {x : ℕ} :
 fn_set a (f a + b) f x = f x + if x = a then b else 0 := by
@@ -156,7 +156,7 @@ theorem even_of_succ_div_2_eq {n : ℕ}
   obtain ⟨n, rfl⟩ := h; rw [div_eq]
   simp; induction n; simp; nm n ih; contrapose! ih; ring_nf at ih ⊢
   have h₁ : (n * 2 + 1 + 2) / 2 = (n * 2 + 1) / 2 + 1 := by simp
-  ring_nf at h₁; rw [h₁, add_comm] at ih; nth_rewrite 2 [add_comm] at ih
+  ring_nf at h₁; rw [h₁, add_comm] at ih; nth_rw 2 [add_comm] at ih
   rw [add_comm]; exact succ_inj.mp ih
 
 theorem odd_of_succ_div_2_eq {n : ℕ}

@@ -622,41 +622,6 @@ theorem count_map_eq_sum [ha : DecidableEq α] [hb : DecidableEq β] {f : α →
   rcases h₄ with ⟨h₄, h₅⟩
   simp [ne_symm' h₄]
 
-theorem filterMap_perm_filterMap_of {f : α → Option β} (hx : xs ~ ys) :
-xs.filterMap f ~ ys.filterMap f := by
-  classical
-  rw [filterMap_perm_filterMap_iff_filter_map_perm]
-  apply filter_perm_of_perm
-  rw [perm_iff_count]
-  intro y
-  by_cases h₁ : y ∉ xs.map f
-  · rw [count_eq_zero_of_not_mem h₁]
-    symm
-    rw [count_eq_zero]
-    simp at h₁ ⊢
-    rintro b hb rfl
-    have h₂ := hb; rw [←hx.mem_iff] at h₂
-    exact h₁ _ h₂ rfl
-  simp at h₁
-  obtain ⟨x, h₁, rfl⟩ := h₁
-  have h₂ := h₁; rw [hx.mem_iff] at h₂
-  have h₃ : (xs.map f).count (f x) = ∑ i ∈ xs.toFinset,
-    if f i = f x then xs.count i else 0 := by convert count_map_eq_sum
-  have h₄ : (ys.map f).count (f x) = ∑ i ∈ ys.toFinset,
-    if f i = f x then ys.count i else 0 := by convert count_map_eq_sum
-  rw [h₃, h₄]; clear h₃ h₄
-  have h₃ : xs.toFinset = ys.toFinset
-  · ext z
-    simp
-    exact hx.mem_iff
-  rw [h₃]; clear h₃
-  apply Finset.sum_eq_sum_of_fn_congr
-  intro i h₃
-  simp at h₃
-  split_ifs with h₄; rotate_left; rfl
-  rw [perm_iff_count] at hx
-  apply hx
-
 @[simp]
 theorem cons_erase_perm_iff_mem [ha : DecidableEq α] {x} :
 (x :: xs.erase x).Perm xs ↔ x ∈ xs := by
@@ -827,33 +792,6 @@ theorem sum_add_geom_eq {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
   have h₁ : 1 - b ≠ 0; grind
   field_simp at h ⊢
   linarith
-
-section
-
-variable {α : Type*} [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
-variable {β : Type*} [hb₁ : LinearOrder β] [hb₂ : Semiring β]
-  [hb₃ : AddLeftMono β] [hb₄ : AddLeftReflectLE β]
-variable {s : Finset α}
-
-omit ha₂ ha₃ in
-theorem le_sum_of_mem {f : α → β} {x : α}
-(h₁ : ∀ x ∈ s, 0 ≤ f x) (h₂ : x ∈ s) : f x ≤ ∑ i ∈ s, f i := by
-  induction s using Finset.induction
-  · simp at h₂
-  clear! s
-  nm y s h₃ ih
-  simp at h₁ h₂
-  rcases h₁ with ⟨h₁, h₄⟩
-  specialize ih h₄
-  rw [sum_insert h₃]
-  rcases h₂ with rfl | h₂
-  · rw [le_add_iff_nonneg_right]
-    exact sum_nonneg h₄
-  specialize ih h₂
-  apply ih.trans
-  rwa [le_add_iff_nonneg_left]
-
-end
 
 theorem card_filter_range_le_of_le {p : ℕ → Prop} {i j : ℕ} [hp : DecidablePred p]
 (h : i ≤ j) : (Finset.range i |>.filter p).card ≤ (Finset.range j |>.filter p).card := by

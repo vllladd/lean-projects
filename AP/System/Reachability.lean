@@ -327,7 +327,7 @@ theorem simulate_sub_eq_of {f a b n m}
   simp
   change _ = (b, m + 0) at h
   rw [add_comm] at h
-  nth_rewrite 2 [add_comm] at h
+  nth_rw 2 [add_comm] at h
   exact simulate_eq_of_simulate_add_eq_add h
 
 theorem simulate_eq_of_iter_le {f : S → T} {n k}
@@ -1370,36 +1370,6 @@ theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.Si
 
 theorem reachable_of_trs' {s ts s' r} (h₁ : sys.trs s ts = (s', r)) :
 sys.Reachable s s' := reachable_of_trs h₁
-
-@[simp]
-theorem trs_snoc_full_iff {s s₁ ts t} :
-sys.trs s (ts ++ [t]) = (s₁, []) ↔ ∃ s', sys.trs s ts = (s', []) ∧
-sys.tr s' t = some s₁ := by
-  simp_all only [trs_append, ne_eq, trs, ite_not, List.nil_append, Prod.mk.eta]
-  apply Iff.intro
-  · intro a
-    split at a
-    rename_i h
-    split at a
-    next x heq => simp_all only [Prod.mk.injEq, List.cons_ne_self, and_false]
-    rename_i x s₁_1 heq
-    simp_all only [Prod.mk.injEq, and_true]
-    subst a
-    apply Exists.intro
-    apply And.intro
-    ext : 1
-    on_goal 5 => rename_i h
-    on_goal 3 => {exact heq}
-    · simp_all only
-    · ext i a : 2
-      simp_all only [List.length_nil, not_lt_zero', not_false_eq_true,
-        getElem?_neg, reduceCtorEq]
-    simp_all only [Prod.mk.injEq, List.append_eq_nil_iff, List.cons_ne_self,
-      and_self, and_false]
-  · intro a
-    obtain ⟨w, h⟩ := a
-    obtain ⟨left, right⟩ := h
-    simp_all only [↓reduceIte]
 
 theorem false_of_acyclic_and_reachable_and_tr {a b t} [ha : sys.Acyclic a]
 (h₁ : sys.Reachable a b) (h₂ : sys.tr b t = some a) : False := by

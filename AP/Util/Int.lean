@@ -51,7 +51,7 @@ theorem succ_div_2_eq_div_iff {n : ℤ} (hp : 0 ≤ n) :
   induction n using mod_2_ind <;> nm n
   · simp at hp ⊢; cases n; nm n; simp; induction n; rfl
     nm n ih; specialize ih (by simp); simp [add_mul]
-    rw [add_assoc]; nth_rewrite 2 [add_comm]; rw [←add_assoc]
+    rw [add_assoc]; nth_rw 2 [add_comm]; rw [←add_assoc]
     have h₁ := @add_div_eq ((n : ℤ) * 2 + 1) 2 # Int.zero_le_ofNat _
     rw [h₁, ih]; simp at hp
   simp; rw [add_assoc]; simp
@@ -59,7 +59,7 @@ theorem succ_div_2_eq_div_iff {n : ℤ} (hp : 0 ≤ n) :
   rw [eq_comm]; simp; cases n <;> nm n
   simp at hp ⊢; induction n; simp; nm n ih
   specialize ih (by linarith); simp; rw [add_mul, add_assoc]
-  nth_rewrite 2 [add_comm]; rw [←add_assoc]; simp
+  nth_rw 2 [add_comm]; rw [←add_assoc]; simp
   rw [@add_div_eq ((n : ℤ) * 2 + 1) 2 # Int.zero_le_ofNat _]
   simpa; have h₁ := Int.negSucc_lt_zero n; linarith
 

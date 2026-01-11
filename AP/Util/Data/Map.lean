@@ -791,8 +791,8 @@ theorem toList_modify_eq_list_modify {i f} (h : i ∈ mp) :
     replace h₁ : (xs.map (·.1))[k₁]'(by grind) = i; grind
     replace h₂ : (ys.map (·.1))[k₂]'(by grind) = i; grind
     apply h₄
-    rewrite! [←H] at h₂
-    rewrite! [←h₂] at h₁
+    rw! [←H] at h₂
+    rw! [←h₂] at h₁
     rwa [←H₁'.getElem_inj_iff]
   apply List.perm_of_nodup_and_subset_and_length_eq
   · exact List.Nodup.of_map _ H₃

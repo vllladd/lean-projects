@@ -125,7 +125,7 @@ theorem tendsTo_rment_of {a σ L} (h₁ : Rment σ)
   apply h₂; clear h₂
   by_contra! h₃
   have h₄ : rinv σ (σ n) ≤ ∑ i ∈ Finset.range N, rinv σ i
-  · apply Finset.le_sum_of_mem <;> simp [h₃]
+  · apply Finset.single_le_sum <;> simp [h₃]
   rw [rinv_cancel_left h₁] at h₄
   omega
 

@@ -142,7 +142,7 @@ def range' [ha : Fintype α] (f : (i : α) → Option (β i)) : Std.ExtDHashMap 
   rotate_left
   · exact range'_aux hm hx
   · exact range'_aux hm hy
-  apply List.filterMap_perm_filterMap_of
+  apply List.Perm.filterMap
   trans m.toList
   · exact hx.symm
   · exact hy

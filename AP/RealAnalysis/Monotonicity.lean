@@ -217,7 +217,7 @@ theorem divergesToInf_mul_left {a b : ℕ → ℝ} {L : ℝ} (ha : DivergesToInf
   intro n hn
   specialize ha n (by linarith)
   specialize hb n (by linarith)
-  rewrite [abs_lt] at hb
+  rw [abs_lt] at hb
   replace hb : L / 2 < b n := by linarith
   have h₁ : M / L * 2 * (L / 2) < a n * b n
   · apply mul_lt_mul_of_pos <;> bound
