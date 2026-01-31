@@ -8,6 +8,7 @@ import AP.DigitalRoot
 import AP.Physics
 import AP.Knowledge
 import AP.Inference
+import AP.Fixpoint
 
 namespace AP
 

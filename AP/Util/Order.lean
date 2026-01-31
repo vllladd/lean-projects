@@ -517,3 +517,34 @@ end
 theorem le_congr {α : Type*} [ha : LinearOrder α] {a b c d : α}
 (h₁ : a = c) (h₂ : b = d) : a ≤ b ↔ c ≤ d := by
   rw [h₁, h₂]
+
+section
+
+variable {α : Type*}
+variable [ha : CompleteLattice α]
+
+theorem exists_not_le_of_sInf_not_mem {s : Set α} {x : α}
+(h : sInf s ∉ s) (hx : x ∈ s) : ∃ y ∈ s, ¬(x ≤ y) := by
+  contrapose! h; have : sInf s = x
+  apply sInf_eq_of_forall_ge_of_forall_gt_exists_lt
+  all_goals grind
+
+theorem exists_not_le_of_sSup_not_mem {s : Set α} {x : α}
+(h : sSup s ∉ s) (hx : x ∈ s) : ∃ y ∈ s, ¬(y ≤ x) := by
+  contrapose! h; have : sSup s = x
+  apply sSup_eq_of_forall_le_of_forall_lt_exists_gt
+  all_goals grind
+
+@[simp]
+theorem sInf_mem_iff {s : Set α} : sInf s ∈ s ↔ ∃ x ∈ s, ∀ y ∈ s, x ≤ y := by
+  constructor
+  · intro h; use sInf s, h; intro y hy; exact sInf_le hy
+  · rintro ⟨x, hx, h⟩; contrapose! h; exact exists_not_le_of_sInf_not_mem h hx
+
+@[simp]
+theorem sSup_mem_iff {s : Set α} : sSup s ∈ s ↔ ∃ x ∈ s, ∀ y ∈ s, y ≤ x := by
+  constructor
+  · intro h; use sSup s, h; intro y hy; exact le_sSup hy
+  · rintro ⟨x, hx, h⟩; contrapose! h; exact exists_not_le_of_sSup_not_mem h hx
+
+end
