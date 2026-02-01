@@ -16,6 +16,8 @@ def supPostfix [LE α] [SupSet α] (f : α → α) : α :=
 
 -----
 
+section
+
 variable {f : α → α} {x y z : α}
 variable [ha : CompleteLattice α]
 
@@ -104,3 +106,35 @@ theorem exi_least_and_greatest_fixpoint_of_monotone (h : Monotone f) :
 (∃ x, Fixpoint f x ∧ ∀ y, Fixpoint f y → x ≤ y) ∧
 (∃ x, Fixpoint f x ∧ ∀ y, Fixpoint f y → y ≤ x) := by
   grind
+
+end section
+
+variable {f : α → α} {x y z : α}
+variable [ha : PartialOrder α]
+
+theorem postFixpoint_least_preFixpoint (hf : Monotone f)
+(h₁ : PreFixpoint f x) (h₂ : ∀ ⦃y⦄, PreFixpoint f y → x ≤ y) : PostFixpoint f x :=
+  h₂ # hf h₁
+
+theorem preFixpoint_greatest_postFixpoint (hf : Monotone f)
+(h₁ : PostFixpoint f x) (h₂ : ∀ ⦃y⦄, PostFixpoint f y → y ≤ x) : PreFixpoint f x :=
+  h₂ # hf h₁
+
+end section
+
+variable {f : α → α} {x y z : α}
+variable [ha : CompleteLattice α]
+
+omit ha in @[simp]
+theorem infPrefix_pi_const {P : Prop} :
+infPrefix (λ (_ : α → Prop) (_ : α) => P) = λ _ => P := by
+  ext x; induction P using prop_ind <;> simp [infPrefix, PreFixpoint]
+  · intro p h; specialize h x; simp at h; exact h
+  · use ⊥; simp; rfl
+
+omit ha in @[simp]
+theorem supPostfix_pi_const {P : Prop} :
+supPostfix (λ (_ : α → Prop) (_ : α) => P) = λ _ => P := by
+  ext x; induction P using prop_ind <;> simp [supPostfix, PostFixpoint]
+  · use ⊤; simp; rfl
+  · intro p h; specialize h x; simp at h; exact h

@@ -46,13 +46,6 @@ theorem IndPred.ind' (hf : Monotone F)
 theorem monotone_indPredAndFn (hf : Monotone F) : Monotone (IndPredAndFn F) := by
   intro p₁ p₂ h₁; apply hf; intro x h₂; specialize h₁ x; tauto
 
-@[simp]
-theorem infPrefix_pi_const {P : Prop} :
-infPrefix (λ (_ : α → Prop) (_ : α) => P) = λ _ => P := by
-  ext x; induction P using prop_ind <;> simp [infPrefix, PreFixpoint]
-  · intro p h; specialize h x; simp at h; exact h
-  · use ⊥; simp; rfl
-
 @[scoped grind →]
 theorem indPredAnd_le_indPred (hf : Monotone F) : IndPredAnd F ≤ IndPred F := by
   apply sInf_le; simp [PreFixpoint, IndPredAndFn]; grind
@@ -76,6 +69,23 @@ theorem indPredAnd_eq_indPred (hf : Monotone F) : IndPredAnd F = IndPred F := by
 theorem IndPred.ind (hf : Monotone F) (h₁ : IndPred F x)
 (h₂ : ∀ ⦃y⦄, IndPredAndFn F p y → p y) : p x := by
   rw [←indPredAnd_eq_indPred hf] at h₁; exact h₁.ind' (by grind) h₂
+
+private theorem IndPred.casesAux₁ {P : Prop} (hf : Monotone F)
+(h₁ : IndPred F x) (h₂ : F (IndPred F) x → P) : P := by
+  apply h₁.ind hf; intros; apply h₂; rwa [apply_indPred_eq hf]
+
+theorem eq_of_ctor_and_ind_eq_aux₁ {p q : α → Prop} (hf : Monotone F) (h₁ : ∀ ⦃x⦄, F q x → q x)
+(h₂ : ∀ ⦃p₁ : α → Prop⦄ ⦃x⦄, p x → (∀ ⦃y⦄, F (λ x => p x ∧ p₁ x) y → p₁ y) → p₁ x)
+(h : p x) : q x := by
+  apply h₂ h; intro y hy; apply h₁; revert y hy; apply hf; tauto
+
+theorem eq_of_ctor_and_ind_eq {p q : α → Prop}
+(hf : Monotone F) (h₁ : ∀ ⦃x⦄, F p x → p x) (h₂ : ∀ ⦃x⦄, F q x → q x)
+(h₃ : ∀ ⦃p₁ : α → Prop⦄ ⦃x⦄, p x → (∀ ⦃y⦄, F (λ x => p x ∧ p₁ x) y → p₁ y) → p₁ x)
+(h₄ : ∀ ⦃p₁ : α → Prop⦄ ⦃x⦄, q x → (∀ ⦃y⦄, F (λ x => q x ∧ p₁ x) y → p₁ y) → p₁ x) : p = q := by
+  ext; constructor
+  · exact eq_of_ctor_and_ind_eq_aux₁ (p := p) (q := q) hf h₂ h₃
+  · exact eq_of_ctor_and_ind_eq_aux₁ (p := q) (q := p) hf h₁ h₄
 
 -----
 
