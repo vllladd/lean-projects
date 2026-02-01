@@ -10,11 +10,13 @@ variable {α : Type*}
 def IndPred (F : (α → Prop) → α → Prop) : α → Prop :=
   infPrefix F
 
-@[simp, scoped grind =]
-def IndPredAnd (F : (α → Prop) → α → Prop) (p : α → Prop) : α → Prop :=
-  F (λ x => IndPred F x ∧ p x)
+@[scoped grind =]
+def IndPredAndFn (F : (α → Prop) → α → Prop) (p : α → Prop) : α → Prop :=
+  F # λ x => IndPred F x ∧ p x
 
--- #check 0 #exit
+@[scoped grind =]
+def IndPredAnd (F : (α → Prop) → α → Prop) : α → Prop :=
+  IndPred # IndPredAndFn F
 
 -----
 
@@ -41,7 +43,7 @@ theorem IndPred.ind' (hf : Monotone F)
   revert x h₁; change _ ≤ p at h₂ ⊢; grind
 
 @[scoped grind →]
-theorem monotone_and (hf : Monotone F) : Monotone (IndPredAnd F) := by
+theorem monotone_indPredAndFn (hf : Monotone F) : Monotone (IndPredAndFn F) := by
   intro p₁ p₂ h₁; apply hf; intro x h₂; specialize h₁ x; tauto
 
 @[simp]
@@ -51,36 +53,29 @@ infPrefix (λ (_ : α → Prop) (_ : α) => P) = λ _ => P := by
   · intro p h; specialize h x; simp at h; exact h
   · use ⊥; simp; rfl
 
--- end Fixpoint
+@[scoped grind →]
+theorem indPredAnd_le_indPred (hf : Monotone F) : IndPredAnd F ≤ IndPred F := by
+  apply sInf_le; simp [PreFixpoint, IndPredAndFn]; grind
 
--- namespace Fixpoint
+@[scoped grind →]
+theorem indPredAnd_eq_indPred (hf : Monotone F) : IndPredAnd F = IndPred F := by
+  apply le_antisymm; grind
+  have h₁ : IndPredAnd F = IndPredAndFn F (IndPredAnd F)
+  · exact apply_indPred_eq (by grind) |>.symm
+  unfold IndPredAndFn at h₁
+  intro x h
+  apply h.ind' hf
+  change _ ≤ IndPredAnd F
+  nth_rw 2 [h₁]
+  apply hf
+  intro x
+  simp [imp_and]
+  revert x; change _ ≤ IndPred F
+  grind
 
--- variable {α : Type*}
-
--- #check 0 #exit
-
--- example : ¬∀ {α : Type} {F : (α → Prop) → α → Prop}
--- (hf : Monotone F), infPrefix (IndPredAnd F) = IndPred F := by
---   push_neg
---   use ℕ
---   use λ _ _ => False
---   simp [Monotone]
---   apply ne_of_congr (· 0)
---   simp
---   push_neg
---   right
---   split_ands
---   ·
---     unfold IndPredAnd
---     simp
---   simp [IndPred]
-
--- #check 0 #exit
-
--- theorem IndPred.ind (hf : Monotone F) (h₁ : IndPred F x)
--- (h₂ : ∀ ⦃y⦄, IndPred F y → F p y → p y) : p x := by
-
--- #check 0 #exit
+theorem IndPred.ind (hf : Monotone F) (h₁ : IndPred F x)
+(h₂ : ∀ ⦃y⦄, IndPredAndFn F p y → p y) : p x := by
+  rw [←indPredAnd_eq_indPred hf] at h₁; exact h₁.ind' (by grind) h₂
 
 -----
 
@@ -110,6 +105,12 @@ theorem even'_add_two {n} (h : Even' n) : Even' (n + 2) := by
 theorem even'_cases {n} (h : Even' n) : n = 0 ∨ ∃ k, Even' k ∧ k + 2 = n :=
   h.cases' # by simp
 
--- #check 0 #exit
+theorem even'_ind {p : ℕ → Prop} {n} (h₁ : Even' n)
+(h₂ : p 0) (h₃ : ∀ n, Even' n → p n → p (n + 2)) : p n := by
+  apply h₁.ind (by simp); simp [IndPredAndFn]; rw [←Even']; grind
+
+theorem even'_eq_even : Even' = Even := by
+  ext n; constructor <;> intro h; apply even'_ind h <;> grind
+  rw [Nat.even_iff_exi] at h; obtain ⟨n, rfl⟩ := h; induction n <;> grind
 
 end Aux₁
