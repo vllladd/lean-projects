@@ -4,7 +4,19 @@ set_option linter.dupNamespace false
 
 namespace Fixpoint
 
-variable {α : Type*} {f : α → α} {x y z : α}
+variable {α : Type*}
+
+@[scoped grind =]
+def infPrefix [LE α] [InfSet α] (f : α → α) : α :=
+  sInf # setOf # PreFixpoint f
+
+@[scoped grind =]
+def supPostfix [LE α] [SupSet α] (f : α → α) : α :=
+  sSup # setOf # PostFixpoint f
+
+-----
+
+variable {f : α → α} {x y z : α}
 variable [ha : CompleteLattice α]
 
 @[scoped grind →]

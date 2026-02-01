@@ -18,11 +18,3 @@ def PostFixpoint (f : α → α) (x : α) : Prop :=
 @[scoped grind =]
 def Fixpoint (f : α → α) (x : α) : Prop :=
   f x = x
-
-@[scoped grind =]
-def infPrefix [InfSet α] (f : α → α) : α :=
-  sInf # setOf # PreFixpoint f
-
-@[scoped grind =]
-def supPostfix [SupSet α] (f : α → α) : α :=
-  sSup # setOf # PostFixpoint f
