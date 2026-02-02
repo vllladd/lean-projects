@@ -28,8 +28,8 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
   have h : (s.aPos.nbhd s.pw).toSet = set.toSet
   · simp [←hb]
   rw [h]; clear h
-  have h₁ := State.aPtsSimNcard_spec_of_fresh1 ha set
-  generalize hf : (λ d => s.aPtsSimNcard ⟨a, d⟩ set.toSet) = f
+  have h₁ := State.aSimPtsNcard_spec_of_fresh1 ha set
+  generalize hf : (λ d => s.aSimPtsNcard ⟨a, d⟩ set.toSet) = f
   replace h₁ : ∀ (d : DStrat) [d.WF], ∃ n, f d = some n ∧ n ≤ set.size; grind
   generalize hg : (λ d => f d |>.getd) = g
   unfold Option.getd at hg
@@ -77,7 +77,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     clear h₅
     simp [←hf] at h₄
     cases N; simp at h₁; nm N
-    replace h₄ := AState.exi_dState_of_aPtsSimNcard_eq_succ h₄
+    replace h₄ := AState.exi_dState_of_aSimPtsNcard_eq_succ h₄
     choose n s₁ H₁ H₂ H₃ using h₄
     have hs₁ := DState.of_simulate_mul_two_add_one_eq_full H₁
     use n, s₁, hs₁, H₁, H₂, H₃
@@ -133,7 +133,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
     specialize h₃ d₂
     contrapose! h₃
     simp [←hg, ←hf]
-    apply getd_aPtsSimNcard_lt_of (n * 2 + 1 + k) (State.aWins_of_aWinsDisj # ha' d hd)
+    apply getd_aSimPtsNcard_lt_of (n * 2 + 1 + k) (State.aWins_of_aWinsDisj # ha' d hd)
       (State.aWins_of_aWinsDisj # ha' d₂ hd₂) (by grind) (by grind)
     · intro r S₁ S₂ G₁ G₂ G₃
       simp at G₃ ⊢

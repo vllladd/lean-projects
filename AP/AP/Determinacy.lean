@@ -712,8 +712,8 @@ theorem State.length_hist_lt_of_tr {s s' p}
 (h : sys.tr s p = some s') : s.hist.length < s'.hist.length := by
   simp [hist_eq_of_tr h]
 
-theorem length_hist_sub_eq_of_simulate {st : Strat} {s₀ s n} [hs : sys.WF s₀]
-(h : sys.simulate st.f s₀ n = (s, 0)) : s.hist.length - s₀.hist.length = n := by
+theorem length_hist_sub_eq_of_simulate {s₀ s n f} [hs : sys.WF s₀]
+(h : sys.simulate f s₀ n = (s, 0)) : s.hist.length - s₀.hist.length = n := by
   induction n generalizing s₀
   · simp at h; simp [h]
   nm n ih

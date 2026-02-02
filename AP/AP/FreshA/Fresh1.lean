@@ -1,11 +1,11 @@
-import AP.AP.FreshA.Tile
 import AP.AP.Moves
+import AP.AP.FreshA.Tile
 
 namespace AP
 
 def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
-  ∀ s₁ p, (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → p ∉ s.aVisited s₁
+  ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisited s₁
 
 def AStrat.Fresh1Aux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
@@ -100,7 +100,7 @@ theorem AState.fresh1_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
   choose ha h₀ h using h
   use ha, aForallWinsDisj_of_fresh1Aux H₀
   intro d hd s₁ p h₁
-  rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
+  rw [State.mem_aSimPairs_iff_simulate_tr] at h₁
   choose hs₁ n h₁ s₂ h₂ h₃ using h₁
   simp at h₂ h₃; subst h₃
   obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # even_of_simulate h₁
@@ -224,15 +224,15 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   rw [State.prev_eq_of_tr h₅] at h₆
   exact h₆
 
-theorem State.aPtsSimAt_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} {d : DStrat}
+theorem State.aSimPairs_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} {d : DStrat}
 {s₁ s₂ p fsp} [hs : sys.WF s] [hd : d.WF] (h : a.Fresh1 s fsp)
-(h₁ : (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩) (h₂ : (s₂, p) ∈ s.aPtsSimAt ⟨a, d⟩) : s₁ = s₂ := by
+(h₁ : (s₁, p) ∈ s.aSimPairs ⟨a, d⟩) (h₂ : (s₂, p) ∈ s.aSimPairs ⟨a, d⟩) : s₁ = s₂ := by
   choose ha h₃ h₄ using h
   specialize h₄ d hd
   have H₁ := h₄ _ _ h₁
   have H₂ := h₄ _ _ h₂
   clear h₄
-  rw [mem_aPtsSimAt_iff_simulate_tr] at h₁ h₂
+  rw [mem_aSimPairs_iff_simulate_tr] at h₁ h₂
   choose hs₁ n₁ h₁ s₁' h₅ h₆ using h₁
   choose hs₂ n₂ h₂ s₂' h₇ h₈ using h₂
   simp at h₅ h₆ h₇ h₈
@@ -252,11 +252,11 @@ theorem State.aPtsSimAt_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} 
   use n₁, H₄, s₁, hs₁, h₁
   simpa
 
-theorem State.aPtsSimNcard_spec_of_fresh1 {s fsp} {a : AStrat} [hs : sys.WF s]
+theorem State.aSimPtsNcard_spec_of_fresh1 {s fsp} {a : AStrat} [hs : sys.WF s]
 (h : a.Fresh1 s fsp) (set : Set' PointZ) : ∀ (d : DStrat) [d.WF],
-∃ n, s.aPtsSimNcard ⟨a, d⟩ set.toSet = some n ∧ n ≤ set.size := by
-  intro d hd; simp [aPtsSimNcard]
-  suffices h₁ : ∃ n, (s.aPtsSimAt ⟨a, d⟩ |>.filter (·.2 ∈ set)
+∃ n, s.aSimPtsNcard ⟨a, d⟩ set.toSet = some n ∧ n ≤ set.size := by
+  intro d hd; simp [aSimPtsNcard]
+  suffices h₁ : ∃ n, (s.aSimPairs ⟨a, d⟩ |>.filter (·.2 ∈ set)
     |>.image (·.2) |>.ncard?) = some n ∧ n ≤ set.size
   · choose n h₁ h₂ using h₁
     refine ⟨n, ?_, h₂⟩; clear h₂
@@ -266,11 +266,11 @@ theorem State.aPtsSimNcard_spec_of_fresh1 {s fsp} {a : AStrat} [hs : sys.WF s]
     rcases hx with ⟨hx, h₃⟩
     rcases hy with ⟨hy, h₄⟩
     subst h₂
-    simp [aPtsSimAt_state_eq_of_point_eq_of_fresh1 h hx hy]
-  suffices h₁ : ∃ n, (s.aPtsSim ⟨a, d⟩ |>.filter (· ∈ set) |>.ncard?) = some n ∧ n ≤ set.size
+    simp [aSimPairs_state_eq_of_point_eq_of_fresh1 h hx hy]
+  suffices h₁ : ∃ n, (s.aSimPts ⟨a, d⟩ |>.filter (· ∈ set) |>.ncard?) = some n ∧ n ≤ set.size
   · choose n h₁ h₂ using h₁
     refine ⟨n, ?_, h₂⟩; clear h₂
-    simp [Set.filter, aPtsSim] at h₁ ⊢
+    simp [Set.filter, aSimPts] at h₁ ⊢
     convert h₁; ext; simp
   simp_rw [←Set'.mem_toSet, Set.filter_fn_mem, Set.ncard?]
   rw [if_pos]

@@ -3,19 +3,19 @@ import AP.AP.FreshA.Nbhd
 namespace AP
 
 def AStrat.Fresh (a : AStrat) (s : State) (fsp : FSP) : Prop :=
-  a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p p',
-  (s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → sys.validTr s₁ p' → p' ≠ p → p' ∉ s.aVisited s₁
+  a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
+  s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p' ≠ a.f s' → p ≠ p'
 
 def AStrat.FreshAux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
   sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
   s₂.aHwsDisj (fsp.offset (n * 2 + 1)
-  |>.insertSet 0 (s.aVisited s₁ |>.bind (·.nbhd s.pw)).toSet
+  |>.insertSet 0 (s.aVisited s₁ |>.erase s₁.aPos |>.bind (·.nbhd s.pw)).toSet
   |>.insertSet 2 (s₁.aPos.nbhd s.pw).toSet)
 
 def aFreshCnd (s : State) (fsp : FSP) (s₂ : State) : Prop :=
   s₂.aHwsDisj # fsp.offset (s₂.diff s)
-  |>.insertSet 0 (s.aVisited s₂.prev |>.bind (·.nbhd s.pw)).toSet
+  |>.insertSet 0 (s.aVisited s₂.prev |>.erase s₂.prev.aPos |>.bind (·.nbhd s.pw)).toSet
   |>.insertSet 2 (s₂.prev.aPos.nbhd s.pw).toSet
 
 noncomputable
@@ -27,32 +27,43 @@ def aFresh (s : State) (fsp : FSP) : AStrat :=
 theorem AStrat.Fresh.fresh1 {a : AStrat} {s fsp} (h : a.Fresh s fsp) : a.Fresh1 s fsp := h.1
 theorem AStrat.Fresh.wf {a : AStrat} {s fsp} (h : a.Fresh s fsp) : a.WF := h.fresh1.wf
 
-theorem AStrat.fresh_iff_alt₁ {a : AStrat} {s fsp} : a.Fresh s fsp ↔
-a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p p',
-(s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → sys.validTr s₁ p' → p' ∉ s.aVisited s₁ := by
-  rw [Fresh]
-  symm; use by tauto
-  rintro ⟨h₁, h₂⟩
-  use h₁
-  intro d hd s₁ p p' h₃ h₄
-  by_cases h₅ : p' ≠ p; grind
-  push_neg at h₅; symm at h₅; subst h₅
-  clear h₂ h₄
-  rcases h₁ with ⟨ha, h₁, h₂⟩
-  grind
+theorem AStrat.fresh_iff_alt₁ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
+a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
+s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p ≠ p' := by
+  unfold Fresh
+  rw [and_congr_right_iff]
+  intro h
+  symm; constructor <;> intro h₁ d hd s₁ s' p p' h₂ h₃ h₄ <;>
+    specialize h₁ d hd s₁ s' p p' h₂ h₃ h₄; simp [h₁]
+  rw [imp_iff_or_not] at h₁
+  simp at h₁
+  rcases h₁ with h₁ | rfl; exact h₁
+  replace h := h.2.2 d hd
+  rw [State.mem_aSimPairs_iff_simulate_tr] at h₂
+  rcases h₂ with ⟨hs₁, n, h₂, s₂, h₅, h₆⟩
+  simp at h₅ h₆
+  contrapose! h
+  rw [←h] at h₄
+  rw [h₆] at h₅
+  use s₁, p
+  split_ands
+  · simp [State.mem_aSimPairs_iff_simulate_tr, hs₁, h₆]
+    exact ⟨⟨_, h₂⟩, _, h₅⟩
+  rcases h₄ with ⟨sx, h₄⟩
+  rw [State.mem_aSimStatesIco_iff h₂] at h₃
+  rcases h₃ with ⟨hs', k, hk, h₃⟩
+  rw [State.mem_aVisited_iff h₂]
+  right
+  use k, hk, s', hs', h₃
+  simp [h]
 
-theorem AStrat.fresh_iff_alt₂ {a : AStrat} {s fsp} [hs : sys.WF s] : a.Fresh s fsp ↔
-a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p p',
-(s₁, p) ∈ s.aPtsSimAt ⟨a, d⟩ → sys.validTr s₁ p' → p' ∉ s.aVisited s₁ := by
+theorem AStrat.fresh_iff_alt₂ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
+∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
+s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
   rw [fresh_iff_alt₁]
-  constructor
-  · rintro ⟨⟨ha, h₁, h₂⟩, h₃⟩; use ha, h₁
-  rintro ⟨ha, h₁, h₂⟩
-  refine ⟨⟨ha, h₁, ?_⟩, h₂⟩
-  intro d hd s₁ p h₃ h₄
-  contrapose! h₄; clear h₄
-  apply h₂ d hd s₁ p p h₃; clear h₂
-  exact State.validTr_of_mem_aPtsSimAt h₃
+  sorry
+
+#check 0 #exit
 
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by
@@ -95,34 +106,40 @@ theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
     simp [FSP.hasLe]
     exact h₃.2
 
--- theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
--- (h : a.FreshAux s fsp) : a.Fresh s fsp := by
---   have H₀ := h
---   choose ha h₀ h using h
---   rw [AStrat.fresh_iff_alt₂]
---   use ha, aForallWinsDisj_of_freshAux H₀
---   intro d hd s₁ p p' h₁ ⟨s', h₁'⟩
---   rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
---   choose hs₁ n h₁ s₂ h₂ h₃ using h₁
---   simp at h₂ h₃; subst h₃
---   obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # even_of_simulate h₁
---   specialize h d hd n
---   simp [h₁, h₂] at h
---   rw [←AState.aPos_eq_of_tr h₁']
---   choose a₁ ha₁ h using h
---   specialize h d hd 0
---   simp at h
---   replace h := h.1
---   contrapose! h
---   -- specialize h _ H₁
---   -- contrapose! h; clear h
---   -- rw [AState.tr_eq_some_iff] at h₁' h₂
---   -- rcases h₁' with ⟨⟨H₂, H₃, H₄⟩, rfl⟩
---   -- rcases h₂ with ⟨⟨H₅, H₆, H₇⟩, rfl⟩
---   -- simp
---   -- dsimp at H₁
+theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
+(h : a.FreshAux s fsp) : a.Fresh s fsp := by
+  have H₀ := h
+  choose ha h₀ h using h
+  rw [AStrat.fresh_iff_alt₁]
+  use ha, aForallWinsDisj_of_freshAux H₀
+  intro d hd s₁ p p' h₁ ⟨s', h₁'⟩
+  rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
+  choose hs₁ n h₁ s₂ h₂ h₃ using h₁
+  simp at h₂ h₃; subst h₃
+  obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # even_of_simulate h₁
+  specialize h d hd n
+  simp [h₁, h₂] at h
+  rw [←AState.aPos_eq_of_tr h₁']
+  choose a₁ ha₁ h using h
+  specialize h d hd 0
+  simp at h
+  
+  replace h := h.1
+  contrapose! h
+  
+  use s'.aPos
+  simp [h]
+  simp [ne_symm' # AState.aPos_ne_of_tr h₁']
+  
+  -- specialize h _ H₁
+  -- contrapose! h; clear h
+  -- rw [AState.tr_eq_some_iff] at h₁' h₂
+  -- rcases h₁' with ⟨⟨H₂, H₃, H₄⟩, rfl⟩
+  -- rcases h₂ with ⟨⟨H₅, H₆, H₇⟩, rfl⟩
+  -- simp
+  -- dsimp at H₁
 
--- #check 0 #exit
+#check 0 #exit
 
 -- theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
 -- (h : s.aHwsDisj fsp) : ∃ (a : AStrat), a.Fresh1 s fsp := by
