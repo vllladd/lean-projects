@@ -1,12 +1,6 @@
-import AP.AP.WF
+import AP.AP.Reachability
 
 namespace AP
-
-def State.diff (s₁ s : State) : ℕ :=
-  s₁.hist.length - s.hist.length
-
-def State.diffTrs (s₁ s : State) : List PointZ :=
-  s₁.hist.take (s₁.diff s) |>.reverse
 
 def State.moveSim (s : State) (st : Strat) (s₁ : State) :
 Option # (PointZ × State) ⊕ (PointZ × State) := do
@@ -33,7 +27,7 @@ def State.aVisited' (s : State) (ps : List PointZ) : Set' PointZ :=
     if s.aTurn then set.insert p else set
 
 def State.aVisited (s s₁ : State) : Set' PointZ :=
-  State.aVisited' s (s₁.diffTrs s) |>.insert s.aPos
+  if sys.Reachable s s₁ then State.aVisited' s (s₁.diffTrs s) |>.insert s.aPos else ∅
 
 def State.aSimPairs (s : State) (st : Strat) : Set (State × PointZ) :=
   {(s₁, p) | ∃ s₂, s.aMoveSim st s₁ = some (p, s₂)}
@@ -83,57 +77,12 @@ def State.aSimPtsNcard (s : State) (st : Strat) (set : Set PointZ) : Option ℕ 
 
 -----
 
-theorem State.diff_eq_of_simulate' {s f n s₁ r}
-(h : sys.simulate f s n = (s₁, r)) : s₁.diff s + r = n := by
-  unfold diff
-  rw [length_hist_eq_of_simulate_eq h]
-  have h₁ := sys.snd_le_of_simulate_eq h
-  omega
-
-theorem State.diff_eq_of_simulate {s f n s₁ r}
-(h : sys.simulate f s n = (s₁, r)) : s₁.diff s = n - r := by
-  have := diff_eq_of_simulate' h; omega
-
-theorem State.diff_eq_of_simulate_full {s f n s₁}
-(h : sys.simulate f s n = (s₁, 0)) : s₁.diff s = n :=
-  diff_eq_of_simulate h
-
-@[simp]
-theorem State.length_diffTrs {s s₁ : State} : (s₁.diffTrs s).length = s₁.diff s := by
-  simp [diffTrs, diff]
-
-@[simp]
-theorem State.diff_self {s : State} : s.diff s = 0 := by
-  simp [diff]
-
-@[simp]
-theorem State.diffTrs_self {s : State} : s.diffTrs s = [] := by
-  simp [diffTrs]
-
 @[simp]
 theorem State.aVisited'_nil {s : State} : s.aVisited' [] = ∅ := rfl
 
 @[simp]
 theorem State.aVisited_self {s : State} : s.aVisited s = Set'.singleton s.aPos := by
   simp [aVisited]
-
-theorem State.diff_eq_of_tr {s s₁ s₂ p} (h : sys.tr s₁ p = some s₂)
-(h₁ : sys.Reachable s s₁) : s₂.diff s = s₁.diff s + 1 := by
-  simp [diff, length_hist_eq_of_tr h]; have := length_hist_le_of_reachable h₁; omega
-
-theorem State.diffTrs_eq_of_tr {s s₁ s₂ p} (h : sys.tr s₁ p = some s₂)
-(h₁ : sys.Reachable s s₁) : s₂.diffTrs s = s₁.diffTrs s ++ [p] := by
-  simp [diffTrs, diff_eq_of_tr h h₁, hist_eq_of_tr h]
-
-theorem State.diffTrs_eq_of_trs_full {s ps s₁}
-(h : sys.trs s ps = (s₁, [])) : s₁.diffTrs s = ps := by
-  induction ps using List.reverseRecOn generalizing s₁
-  · simp at h; simp [h]
-  nm ps p ih
-  simp at h
-  choose s' h₁ h₂ using h
-  specialize ih h₁
-  simpa [diffTrs_eq_of_tr h₂ # sys.reachable_of_trs h₁]
 
 theorem State.aTurn_iff_aState {s} [hs : sys.WF s] : s.aTurn ↔ AState s := by
   constructor
@@ -195,6 +144,8 @@ s.aVisited s₂ = (s.aVisited s₁).insert p := by
   rw [State.diffTrs_eq_of_trs_full h₁]
   have h₂ : sys.trs s (ps ++ [p]) = (s₂, [])
   · simpa [h₁]
+  rw [if_pos # sys.reachable_of_trs h₁]
+  rw [if_pos # sys.reachable_of_trs h₂]
   rw [State.diffTrs_eq_of_trs_full h₂, Set'.insert_comm]
   rw [aVisited'_snoc h₁]
 
@@ -207,10 +158,12 @@ s.aVisited s₂ = s.aVisited s₁ := by
   rw [State.diffTrs_eq_of_trs_full h₁]
   have h₂ : sys.trs s (ps ++ [p]) = (s₂, [])
   · simpa [h₁]
+  rw [if_pos # sys.reachable_of_trs h₁]
+  rw [if_pos # sys.reachable_of_trs h₂]
   rw [State.diffTrs_eq_of_trs_full h₂]
   rw [aVisited'_snoc h₁]
 
-theorem State.mem_aVisited_iff {s f n s₁ p} [hs : sys.WF s]
+theorem State.mem_aVisited_iff_of {s f n s₁ p} [hs : sys.WF s]
 (h : sys.simulate f s n = (s₁, 0)) : p ∈ s.aVisited s₁ ↔ p = s.aPos ∨
 ∃ k < n, ∃ s', AState s' ∧ sys.simulate f s k = (s', 0) ∧ f s' = p := by
   induction n generalizing s₁
@@ -421,7 +374,7 @@ p ∈ s.aSimPts st ↔ ∃ n s₁, 2 ≤ n ∧ sys.simulate st.f s n = (s₁, 0)
 theorem State.aVisited_subset_of_simulate_le  (st : Strat) k n {s s₁ s₂} [hs : sys.WF s]
 (hn : k ≤ n) (h₁ : sys.simulate st.f s k = (s₁, 0)) (h₂ : sys.simulate st.f s n = (s₂, 0)) :
 s.aVisited s₁ ⊆ s.aVisited s₂ := by
-  intro p; rw [mem_aVisited_iff h₁, mem_aVisited_iff h₂]; grind
+  intro p; rw [mem_aVisited_iff_of h₁, mem_aVisited_iff_of h₂]; grind
 
 @[simp]
 instance {s : State} : sys.Initial s.init := by
@@ -896,7 +849,7 @@ theorem steps_eq_of_simulate_full_eq {s s₁ n m f} [hs : sys.WF s]
 (h₁ : sys.simulate f s n = (s₁, 0)) (h₂ : sys.simulate f s m = (s₁, 0)) : n = m := by
   rw [←length_hist_sub_eq_of_simulate h₁, length_hist_sub_eq_of_simulate h₂]
 
-theorem State.mem_simStatesIcc_iff {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
+theorem State.mem_simStatesIcc_iff_of {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
 (h : sys.simulate st.f s n = (s₁, 0)) : s₂ ∈ s.simStatesIcc s₁ st ↔
 ∃ k, k ≤ n ∧ sys.simulate st.f s k = (s₂, 0) := by
   simp [simStatesIcc, simStatesRangeAux]; constructor
@@ -905,7 +858,7 @@ theorem State.mem_simStatesIcc_iff {s s₁ s₂ : State} {st : Strat} {n} [hs : 
   · rintro ⟨k, hk, h₁⟩; use ⟨_, h⟩, ⟨_, h₁⟩
     rw [length_hist_eq_of_simulate_eq h, length_hist_eq_of_simulate_eq h₁]; omega
 
-theorem State.mem_simStatesIco_iff {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
+theorem State.mem_simStatesIco_iff_of {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
 (h : sys.simulate st.f s n = (s₁, 0)) : s₂ ∈ s.simStatesIco s₁ st ↔
 ∃ k, k < n ∧ sys.simulate st.f s k = (s₂, 0) := by
   simp [simStatesIco, simStatesRangeAux]; constructor
@@ -914,22 +867,77 @@ theorem State.mem_simStatesIco_iff {s s₁ s₂ : State} {st : Strat} {n} [hs : 
   · rintro ⟨k, hk, h₁⟩; use ⟨_, h⟩, ⟨_, h₁⟩
     rw [length_hist_eq_of_simulate_eq h, length_hist_eq_of_simulate_eq h₁]; omega
 
-theorem State.mem_aSimStatesIcc_iff {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
+theorem State.mem_aSimStatesIcc_iff_of {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
 (h : sys.simulate st.f s n = (s₁, 0)) : s₂ ∈ s.aSimStatesIcc s₁ st ↔ AState s₂ ∧
 ∃ k, k ≤ n ∧ sys.simulate st.f s k = (s₂, 0) := by
-  simp [aSimStatesIcc, mem_simStatesIcc_iff h]
+  simp [aSimStatesIcc, mem_simStatesIcc_iff_of h]
   rw [and_comm]; constructor
   · rintro ⟨h₁, k, hk, h₂⟩
     have hs₂ := sys.wf_of_simulate_eq h₂
     rw [aTurn_iff_aState] at h₁; tauto
   · rintro ⟨h₁, k, hk, h₂⟩; simp; tauto
 
-theorem State.mem_aSimStatesIco_iff {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
+theorem State.mem_aSimStatesIco_iff_of {s s₁ s₂ : State} {st : Strat} {n} [hs : sys.WF s]
 (h : sys.simulate st.f s n = (s₁, 0)) : s₂ ∈ s.aSimStatesIco s₁ st ↔ AState s₂ ∧
 ∃ k, k < n ∧ sys.simulate st.f s k = (s₂, 0) := by
-  simp [aSimStatesIco, mem_simStatesIco_iff h]
+  simp [aSimStatesIco, mem_simStatesIco_iff_of h]
   rw [and_comm]; constructor
   · rintro ⟨h₁, k, hk, h₂⟩
     have hs₂ := sys.wf_of_simulate_eq h₂
     rw [aTurn_iff_aState] at h₁; tauto
   · rintro ⟨h₁, k, hk, h₂⟩; simp; tauto
+
+theorem State.mem_simStatesIcc_iff {s s₁ s₂ : State} {st : Strat} :
+s₁ ∈ s.simStatesIcc s₂ st ↔ ∃ k n, k ≤ n ∧ sys.simulate st.f s k = (s₁, 0) ∧
+sys.simulate st.f s n = (s₂, 0) := by
+  simp [simStatesIcc, simStatesRangeAux]; constructor
+  · rintro ⟨⟨n, h₂⟩, ⟨k, h₁⟩, h₃⟩; refine ⟨k, n, ?_, h₁, h₂⟩
+    rw [length_hist_eq_of_simulate_eq h₁, length_hist_eq_of_simulate_eq h₂] at h₃; omega
+  · rintro ⟨k, n, hk, h₁, h₂⟩; use (by use n), (by use k)
+    rw [length_hist_eq_of_simulate_eq h₁, length_hist_eq_of_simulate_eq h₂]; omega
+
+theorem State.mem_simStatesIco_iff {s s₁ s₂ : State} {st : Strat} :
+s₁ ∈ s.simStatesIco s₂ st ↔ ∃ k n, k < n ∧ sys.simulate st.f s k = (s₁, 0) ∧
+sys.simulate st.f s n = (s₂, 0) := by
+  simp [simStatesIco, simStatesRangeAux]; constructor
+  · rintro ⟨⟨n, h₂⟩, ⟨k, h₁⟩, h₃⟩; refine ⟨k, n, ?_, h₁, h₂⟩
+    rw [length_hist_eq_of_simulate_eq h₁, length_hist_eq_of_simulate_eq h₂] at h₃; omega
+  · rintro ⟨k, n, hk, h₁, h₂⟩; use (by use n), (by use k)
+    rw [length_hist_eq_of_simulate_eq h₁, length_hist_eq_of_simulate_eq h₂]; omega
+
+theorem State.mem_aSimStatesIcc_iff {s s₁ s₂ : State} {st : Strat} [hs : sys.WF s] :
+s₁ ∈ s.aSimStatesIcc s₂ st ↔ AState s₁ ∧ ∃ k n, k ≤ n ∧ sys.simulate st.f s k = (s₁, 0) ∧
+sys.simulate st.f s n = (s₂, 0) := by
+  simp [aSimStatesIcc, mem_simStatesIcc_iff]; rw [and_comm]; constructor
+  · rintro ⟨ht, k, n, hk, h₁, h₂⟩; have hs₁ := sys.wf_of_simulate_eq h₁
+    rw [aTurn_iff_aState] at ht; use ht, k, n
+  · rintro ⟨hs₁, h⟩; simpa
+
+theorem State.mem_aSimStatesIco_iff {s s₁ s₂ : State} {st : Strat} [hs : sys.WF s] :
+s₁ ∈ s.aSimStatesIco s₂ st ↔ AState s₁ ∧ ∃ k n, k < n ∧ sys.simulate st.f s k = (s₁, 0) ∧
+sys.simulate st.f s n = (s₂, 0) := by
+  simp [aSimStatesIco, mem_simStatesIco_iff]; rw [and_comm]; constructor
+  · rintro ⟨ht, k, n, hk, h₁, h₂⟩; have hs₁ := sys.wf_of_simulate_eq h₁
+    rw [aTurn_iff_aState] at ht; use ht, k, n
+  · rintro ⟨hs₁, h⟩; simpa
+
+-- theorem State.mem_aVisited_iff_aSimStatesIcc {s s₁ : State} {st : Strat} {n p}
+-- [hs : AState s] (h : sys.simulate st.f s n = (s₁, 0)) :
+-- p ∈ s.aVisited s₁ ↔ ∃ s' ∈ s.aSimStatesIcc s₁ st, s'.aPos = p := by
+--   rw [mem_aVisited_iff_of h]
+--   constructor
+--   ·
+--     intro h₁
+--     simp [mem_aSimStatesIcc_iff]
+--     rcases h₁ with (rfl | ⟨k, hk, s', hs', h₁, rfl⟩)
+--     ·
+--       use s
+--       simp
+--       use hs
+--       use 0, n, by simp, rfl
+--     replace hk : ∃ r, k + 1 + r = n; use n - k - 1; omega
+--     obtain ⟨n, rfl⟩ := hk
+--     simp [h₁] at h
+--     choose s' h h₂ using h
+--     nm s₀
+--     use s'

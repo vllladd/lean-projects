@@ -1,4 +1,5 @@
 import AP.AP.FreshA.Nbhd
+import AP.Temp
 
 namespace AP
 
@@ -50,18 +51,171 @@ s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p ≠ p' := by
   · simp [State.mem_aSimPairs_iff_simulate_tr, hs₁, h₆]
     exact ⟨⟨_, h₂⟩, _, h₅⟩
   rcases h₄ with ⟨sx, h₄⟩
-  rw [State.mem_aSimStatesIco_iff h₂] at h₃
+  rw [State.mem_aSimStatesIco_iff_of h₂] at h₃
   rcases h₃ with ⟨hs', k, hk, h₃⟩
-  rw [State.mem_aVisited_iff h₂]
+  rw [State.mem_aVisited_iff_of h₂]
   right
   use k, hk, s', hs', h₃
   simp [h]
 
 theorem AStrat.fresh_iff_alt₂ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
-∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
-s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
+a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p',
+(s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ →
+p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
   rw [fresh_iff_alt₁]
-  sorry
+  constructor
+  · rintro ⟨⟨ha, hw, h₁⟩, h₂⟩
+    use ha, hw
+    intro d hd s₁ s' p p' h₃ h₄ h₅
+    specialize h₁ d hd
+    specialize h₂ d hd
+    rintro rfl
+    by_cases h₆ : s'.aPos = p
+    · clear h₂
+      subst h₆
+      specialize h₁ _ _ h₃
+      apply h₁; clear h₁ h₅
+      rw [State.mem_aSimStatesIco_iff] at h₄
+      rcases h₄ with ⟨hs', k, n, hk, h₄, h₁⟩
+      rw [State.mem_aSimPairs_iff_simulate_tr] at h₃
+      rcases h₃ with ⟨hs₁, n', H₁, s₂, H₂, H₃⟩
+      dsimp at H₂ H₃
+      cases steps_eq_of_simulate_full_eq h₁ H₁
+      clear H₁
+      rw [State.mem_aVisited_iff_of h₁]
+      have H₄ := AState.even_of_simulate h₄
+      rw [Nat.even_iff_exi] at H₄
+      rcases H₄ with ⟨k, rfl⟩
+      cases k
+      · left
+        simp at h₄
+        rw [h₄]
+      nm k
+      right
+      simp [add_mul] at h₄
+      obtain ⟨s₄, ⟨s₃, h₄, H₁⟩, H₅⟩ := h₄
+      have hs₃ := AState.of_simulate_mul_two_eq_full h₄
+      have hs₄ := DState.of_tr H₁
+      use k * 2, by omega, s₃, hs₃, h₄
+      simp at H₁ ⊢
+      rw [DState.aPos_eq_of_tr H₅, AState.aPos_eq_of_tr H₁]
+    · clear h₁
+      specialize h₂ s₁ s' p p h₃ h₄
+      simp at h₂
+      rw [State.mem_aSimPairs_iff_simulate_tr] at h₃
+      rcases h₃ with ⟨hs₁, n, h₃, s₂, H₁, H₂⟩
+      dsimp at H₁ H₂
+      subst H₂
+      rw [State.mem_aSimStatesIco_iff] at h₄
+      rcases h₄ with ⟨hs', k, n', hk, H₃, H₄⟩
+      cases steps_eq_of_simulate_full_eq h₃ H₄
+      clear H₄
+      rw [Option.eq_none_iff_forall_ne_some] at h₂
+      simp [AState.tr_eq_some_iff] at H₁ h₂
+      simp [h₆] at h₂
+      rcases H₁ with ⟨⟨H₁, H₅, H₆⟩, rfl⟩
+      contrapose! h₂; clear h₂
+      replace hk := Nat.exists_eq_add_of_le # le_of_lt hk
+      obtain ⟨n, rfl⟩ := hk
+      simp [H₃] at h₃
+      have H₇ := sys.reachable_of_simulate_eq h₃
+      split_ands
+      · apply Set'.not_mem_of_subset _ H₅
+        exact taken_subset_of_reachable H₇
+      rw [←pw_eq_of_reachable H₇, State.pw_eq_of_simulate_eq h₃]
+      rwa [State.pw_eq_of_simulate_eq H₃]
+  · rintro ⟨ha, hw, h⟩
+    symm; constructor
+    · intro d hd s₁ s' p p' h₁ h₂ h₃
+      apply h d hd s₁ s' p p' h₁ h₂; clear h
+      rw [State.mem_aSimStatesIco_iff] at h₂
+      rcases h₂ with ⟨hs', k, n, hk, h₂, h₄⟩
+      choose s₂ h₃ using h₃
+      have h₅ := sys.reachable_of_simulate_eq h₂
+      rw [←pw_eq_of_reachable h₅]
+      rw [←AState.aPos_eq_of_tr h₃]
+      exact AState.aPos_dist_le_of_tr h₃
+    use ha, hw
+    intro d hd s₁ p h₁
+    specialize h d hd
+    rw [State.mem_aSimPairs_iff_simulate_tr] at h₁
+    rcases h₁ with ⟨hs₁, n, h₁, s₂, h₂, h₃⟩
+    dsimp at h₂ h₃; subst h₃
+    rw [State.mem_aVisited_iff_of h₁]
+    push_neg
+    split_ands
+    · intro h₃
+      specialize h s₁ s s.aPos s.aPos
+      simp [State.mem_aSimPairs_iff_simulate_tr] at h
+      specialize h hs₁ n h₁ s₂ h₂ h₃
+      apply h; clear h
+      simp [State.mem_aSimStatesIco_iff]
+      use hs
+      have h₄ : n ≠ 0
+      · rintro rfl
+        simp at h₁
+        subst h₁
+        contrapose! h₃; clear h₃
+        rw [←AState.aPos_eq_of_tr h₂]
+        exact AState.aPos_ne_of_tr h₂
+      use 0, n, by omega
+      simpa
+    intro k hk s' hs' h₃ h₄
+    simp at h₄
+    specialize h s₁ s' s₂.aPos s₂.aPos
+    simp [State.mem_aSimPairs_iff_simulate_tr] at h
+    specialize h hs₁ n h₁ s₂ h₂ _ _
+    · rw [AState.aPos_eq_of_tr h₂]
+    · simp [State.mem_aSimStatesIco_iff]
+      use hs', k, n
+    contrapose! h; clear h
+    rw [AState.aPos_eq_of_tr h₂, ←h₄]
+    suffices h₅ : sys.validTr s' (a.f s')
+    · choose s₃ h₅ using h₅
+      rw [←AState.aPos_eq_of_tr h₅]
+      rw [←State.pw_eq_of_simulate_eq h₃]
+      exact AState.aPos_dist_le_of_tr h₅
+    have h₅ : ∃ s₃, sys.simulate (Strat.f ⟨a, d⟩) s (k + 1) = (s₃, 0)
+    · simp only [Prod.ext_iff, exists_and_right, exists_eq', true_and]
+      apply sys.simulate_snd_eq_zero_of_le_and_eq_zero (n := n)
+      simp [h₁]; omega
+    choose s₃ h₅ using h₅
+    simp [h₃] at h₅
+    use s₃
+
+theorem AStrat.fresh_iff_alt₃ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
+a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p,
+(s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → p ∉ s'.aPos.nbhd s.pw := by
+  rw [fresh_iff_alt₂]
+  congr!
+  nm d hd s₁ s' p
+  simp
+  constructor
+  · intro h h₁ h₂
+    specialize h p h₁ h₂
+    simp at h
+    rwa [Point.dist_comm]
+  · intro h p' h₁ h₂ h₃ rfl
+    specialize h h₁ h₂
+    contrapose! h; clear h
+    rwa [Point.dist_comm]
+
+#check 0 #exit
+
+theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
+a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
+p ∉ (s.aVisited s₁ |>.erase s₁.aPos |>.bind (·.nbhd s.pw)) := by
+  rw [fresh_iff_alt₃]
+  congr!
+  nm d hd s₁
+  simp
+  constructor
+  ·
+    intro h p h₁ p' h₂ h₃
+    rw [forall_comm] at h
+    simp_rw [←imp_forall_iff] at h
+    specialize h _ h₁
+    simp [State.mem_aSimStatesIco_iff] at h
 
 #check 0 #exit
 
@@ -276,7 +430,7 @@ theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
 --     grind
 --   clear H₃
 --   apply H₂; clear H₂
---   rw [mem_aVisited_iff h₂]
+--   rw [mem_aVisited_iff_of h₂]
 --   right
 --   use n₁, H₄, s₁, hs₁, h₁
 --   simpa

@@ -247,7 +247,7 @@ theorem State.aSimPairs_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} 
     grind
   clear H₃
   apply H₂; clear H₂
-  rw [mem_aVisited_iff h₂]
+  rw [mem_aVisited_iff_of h₂]
   right
   use n₁, H₄, s₁, hs₁, h₁
   simpa
