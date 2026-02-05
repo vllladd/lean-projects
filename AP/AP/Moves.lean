@@ -921,23 +921,81 @@ sys.simulate st.f s n = (s₂, 0) := by
     rw [aTurn_iff_aState] at ht; use ht, k, n
   · rintro ⟨hs₁, h⟩; simpa
 
--- theorem State.mem_aVisited_iff_aSimStatesIcc {s s₁ : State} {st : Strat} {n p}
--- [hs : AState s] (h : sys.simulate st.f s n = (s₁, 0)) :
--- p ∈ s.aVisited s₁ ↔ ∃ s' ∈ s.aSimStatesIcc s₁ st, s'.aPos = p := by
---   rw [mem_aVisited_iff_of h]
---   constructor
---   ·
---     intro h₁
---     simp [mem_aSimStatesIcc_iff]
---     rcases h₁ with (rfl | ⟨k, hk, s', hs', h₁, rfl⟩)
---     ·
---       use s
---       simp
---       use hs
---       use 0, n, by simp, rfl
---     replace hk : ∃ r, k + 1 + r = n; use n - k - 1; omega
---     obtain ⟨n, rfl⟩ := hk
---     simp [h₁] at h
---     choose s' h h₂ using h
---     nm s₀
---     use s'
+@[simp]
+theorem State.simulate_full_eq_self_iff {s : State} {f n} :
+sys.simulate f s n = (s, 0) ↔ n = 0 := by
+  symm; constructor; rintro ⟨rfl, rfl⟩; simp
+  intro h; have := length_hist_eq_of_simulate_eq h; omega
+
+@[simp]
+theorem State.mem_simStatesIcc_self_iff {s s' : State} {st} :
+s' ∈ s.simStatesIcc s st ↔ s' = s := by
+  simp [mem_simStatesIcc_iff]; constructor
+  · rintro ⟨k, n, hk, h₁, h₂⟩; rfl
+  · rintro rfl; rfl
+
+#check 0 #exit
+
+theorem State.mem_aVisited_iff_simStatesIcc {s s₁ : State} {st : Strat} {n p}
+[hs : AState s] (h : sys.simulate st.f s n = (s₁, 0)) :
+p ∈ s.aVisited s₁ ↔ ∃ s' ∈ s.simStatesIcc s₁ st, s'.aPos = p := by
+  rw [mem_aVisited_iff_of h]
+  constructor
+  ·
+    intro h₁
+    simp [mem_simStatesIcc_iff]
+    rcases h₁ with (rfl | ⟨k, hk, s', hs', h₁, rfl⟩)
+    ·
+      use s
+      simp
+      use n
+    replace hk : ∃ r, k + 1 + r = n; use n - k - 1; omega
+    obtain ⟨n, rfl⟩ := hk
+    simp [h₁] at h
+    choose s' h h₂ using h
+    nm s₀
+    
+    simp [←AState.aPos_eq_of_tr h]
+    
+    use s'
+    simp
+    use k + 1, k + 1 + n, by omega
+    simpa [h₁, h]
+  ·
+    rintro ⟨s', h₁, rfl⟩
+    cases n
+    ·
+      simp at h
+      subst h
+      simp at h₁
+      left
+      rw [h₁]
+    nm n
+    right
+    simp at h
+    rcases h with ⟨s₀, h, h₂⟩
+    simp [mem_simStatesIcc_iff] at h₁
+    choose k n₁ hk h₁ h₃ using h₁
+    simp
+    
+    have h₄ : n₁ = n + 1
+    ·
+      have h₄ := length_hist_eq_of_simulate_eq h
+      have h₅ := length_hist_eq_of_simulate_eq h₃
+      rw [length_hist_eq_of_tr h₂] at h₅
+      omega
+    cases h₄
+    clear h₃
+    
+    by_cases hk₁ : k = n + 1
+    ·
+      subst hk₁; clear hk
+      simp [h] at h₁
+      simp [h₂] at h₁
+      subst h₁
+      use n, by rfl, s₀
+      split_ands
+      ·
+        sorry
+      ·
+        exact h

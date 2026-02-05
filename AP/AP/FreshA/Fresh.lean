@@ -158,8 +158,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
         contrapose! h₃; clear h₃
         rw [←AState.aPos_eq_of_tr h₂]
         exact AState.aPos_ne_of_tr h₂
-      use 0, n, by omega
-      simpa
+      use n, by omega
     intro k hk s' hs' h₃ h₄
     simp at h₄
     specialize h s₁ s' s₂.aPos s₂.aPos
