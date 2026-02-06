@@ -948,8 +948,6 @@ sys.tr s₀ (f s₀) = some s' ∧ s'.aPos = s₁.aPos := by
     specialize ih h₂; choose k hk s₀ s' hs₀ hs' h₄ h₅ h₆ using ih
     use k, by omega, s₀, s'
 
-#check 0 #exit
-
 theorem State.mem_aVisited_of_mem_simStatesIcc {s s' s₁ : State} {st : Strat} {n}
 [hs : sys.WF s] (h₁ : sys.simulate st.f s n = (s₁, 0))
 (h₂ : s' ∈ s.simStatesIcc s₁ st) : s'.aPos ∈ s.aVisited s₁ := by
@@ -1045,31 +1043,46 @@ theorem wf_of_mem_simStatesIco {s s₁ s' : State} {st} [hs : sys.WF s]
 (h : s' ∈ s.simStatesIco s₁ st) : sys.WF s' :=
   wf_of_mem_simStatesRangeAux h
 
--- #check 0 #exit
+#check 0 #exit
 
 theorem State.mem_aVisited_iff_mem_aSimStatesIcc_of_aPos_ne {s s₁ : State} {st : Strat} {n p}
-[hs : sys.WF s] (h : sys.simulate st.f s n = (s₁, 0)) (h₁ : s₁.aPos ≠ s.aPos) :
+[hs : sys.WF s] (h : sys.simulate st.f s n = (s₁, 0)) (hp : s₁.aPos ≠ s.aPos) :
 p ∈ s.aVisited s₁ ↔ ∃ s' ∈ s.aSimStatesIcc s₁ st, s'.aPos = p := by
   symm; constructor; rintro ⟨s', h₂, rfl⟩; exact mem_aVisited_of_mem_aSimStatesIcc h h₂
-  intro h₂
-  rw [mem_aVisited_iff_mem_simStatesIcc h] at h₂
-  -- simp [mem_aSimStatesIcc_iff]
-  obtain ⟨s', h₂, rfl⟩ := h₂
+  -- intro h₂
+  -- rw [mem_aVisited_iff_mem_simStatesIcc h] at h₂
+  -- 
+  -- 
+  -- 
+  -- -- simp [mem_aSimStatesIcc_iff]
+  -- obtain ⟨s', h₂, rfl⟩ := h₂
+  -- 
+  -- have hs' := wf_of_mem_simStatesIcc h₂
+  -- 
+  -- rw [mem_simStatesIcc_iff_of h] at h₂
+  -- simp [mem_aSimStatesIcc_iff_of h]
+  -- 
+  -- choose k hk h₂ using h₂
+  -- obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk; clear hk
+  -- simp [h₂] at h
+  -- 
+  -- by_cases h₃ : s'.aPos = s.aPos
+  -- ·
+  --   rw [h₃]
+  --   sorry
+  -- 
+  -- have h₄ := exi_aPos_simulate_eq_of_aPos_simulate_ne h₂ h₃
+  -- choose r hr s₀ s₂ hs₀ hs₂ h₄ h₅ h₆ using h₄
+  -- 
+  -- sorry
   
-  have hs' := wf_of_mem_simStatesIcc h₂
-  
-  rw [mem_simStatesIcc_iff_of h] at h₂
-  simp [mem_aSimStatesIcc_iff_of h]
-  
-  choose k hk h₂ using h₂
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk; clear hk
-  simp [h₂] at h
-  
-  by_cases h₃ : s'.aPos = s.aPos
+  rw [mem_aVisited_iff_of h]; intro h₁; simp [mem_aSimStatesIcc_iff]
+  rcases h₁ with (rfl | ⟨k, hk, s', hs', h₁, rfl⟩)
   ·
-    rw [h₃]
-    sorry
+    -- use s; simp
+    -- sorry
   
-  have h₄ := exi_aPos_simulate_eq_of_aPos_simulate_ne h₂ h₃
-  choose r hr s₀ s₂ hs₀ hs₂ h₄ h₅ h₆ using h₄
-  
+  -- replace hk : ∃ r, k + 1 + r = n; use n - k - 1; omega
+  -- obtain ⟨n, rfl⟩ := hk; simp [h₁] at h; choose s' h h₂ using h
+  -- nm s₀; simp [←AState.aPos_eq_of_tr h]; use s'
+  -- simp; use k + 1, k + 1 + n, by omega;; simpa [h₁, h]
