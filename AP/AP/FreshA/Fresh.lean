@@ -210,11 +210,22 @@ p ∉ (s.aVisited s₁ |>.erase s₁.aPos |>.bind (·.nbhd s.pw)) := by
   simp
   constructor
   ·
-    intro h p h₁ p' h₂ h₃
-    rw [forall_comm] at h
-    simp_rw [←imp_forall_iff] at h
-    specialize h _ h₁
-    simp [State.mem_aSimStatesIco_iff] at h
+    rintro h p h₁ p' h₂ h₃
+    
+    choose hs₁ n h₅ s₂ h₆ h₇ using State.mem_aSimPairs_iff_simulate_tr.mp h₁
+    dsimp at h₆ h₇
+    subst h₇
+    
+    rw [State.mem_aVisited_iff_mem_simStatesIcc h₅] at h₃
+    obtain ⟨s', h₃, rfl⟩ := h₃
+    rw [←AState.aPos_eq_of_tr h₆] at *
+    
+    specialize h s' _ h₁ _
+    ·
+      apply State.mem_aSimStatesIco_mem_aSimStatesIcc_and_ne
+      ·
+        use h₃
+        simp
 
 #check 0 #exit
 
