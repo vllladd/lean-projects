@@ -10,18 +10,16 @@ def AStrat.Fresh (a : AStrat) (s : State) (fsp : FSP) : Prop :=
 def AStrat.FreshAux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
   sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
-  s₂.aHwsDisj (fsp.offset (n * 2 + 1)
-  |>.insertSet 0 (s.aVisited s₁ |>.erase s₁.aPos |>.bind (·.nbhd s.pw)).toSet
-  |>.insertSet 2 (s₁.aPos.nbhd s.pw).toSet)
+  s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisitedIcc s₁).toSet)
 
 def aFreshCnd (s : State) (fsp : FSP) (s₂ : State) : Prop :=
-  s₂.aHwsDisj # fsp.offset (s₂.diff s)
-  |>.insertSet 0 (s.aVisited s₂.prev |>.erase s₂.prev.aPos |>.bind (·.nbhd s.pw)).toSet
-  |>.insertSet 2 (s₂.prev.aPos.nbhd s.pw).toSet
+  s₂.aHwsDisj # fsp.offset (s₂.diff s) |>.insertSet 0 # s.aVisitedIcc s₂.prev |>.toSet
 
 noncomputable
 def aFresh (s : State) (fsp : FSP) : AStrat :=
-  aSeek # aFresh1Cnd s fsp
+  aSeek # aFreshCnd s fsp
+
+-- #check 0 #exit
 
 -----
 
@@ -53,7 +51,7 @@ s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p ≠ p' := by
   rcases h₄ with ⟨sx, h₄⟩
   rw [State.mem_aSimStatesIco_iff_of h₂] at h₃
   rcases h₃ with ⟨hs', k, hk, h₃⟩
-  rw [State.mem_aVisited_iff_of h₂]
+  rw [State.mem_aVisitedIcc_iff_of h₂]
   right
   use k, hk, s', hs', h₃
   simp [h]
@@ -82,7 +80,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
       dsimp at H₂ H₃
       cases steps_eq_of_simulate_full_eq h₁ H₁
       clear H₁
-      rw [State.mem_aVisited_iff_of h₁]
+      rw [State.mem_aVisitedIcc_iff_of h₁]
       have H₄ := AState.even_of_simulate h₄
       rw [Nat.even_iff_exi] at H₄
       rcases H₄ with ⟨k, rfl⟩
@@ -141,7 +139,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
     rw [State.mem_aSimPairs_iff_simulate_tr] at h₁
     rcases h₁ with ⟨hs₁, n, h₁, s₂, h₂, h₃⟩
     dsimp at h₂ h₃; subst h₃
-    rw [State.mem_aVisited_iff_of h₁]
+    rw [State.mem_aVisitedIcc_iff_of h₁]
     push_neg
     split_ands
     · intro h₃
@@ -199,55 +197,11 @@ a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p,
     contrapose! h; clear h
     rwa [Point.dist_comm]
 
--- #check 0 #exit
-
 theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
 a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
-p ∉ (s.aVisited s₁ |>.erase s₁.aPos |>.bind (·.nbhd s.pw)) := by
-  rw [fresh_iff_alt₃]
-  congr!
-  nm d hd s₁
-  simp
-  
-  rw [forall_comm]
-  
-  
-  -- ·
-  --   rintro h s' p h₁ h₂
-  --   
-  --   choose hs₁ n h₅ s₂ h₆ h₇ using State.mem_aSimPairs_iff_simulate_tr.mp h₁
-  --   dsimp at h₆ h₇
-  --   subst h₇
-  --   
-  --   apply h _ h₁
-  --   ·
-  --     apply ne_symm'
-  
-  apply forall_congr'; intro p
-  simp_rw [←imp_forall_iff]
-  
-  apply forall_congr'; intro h
-  choose hs₁ n h₅ s₂ h₆ h₇ using State.mem_aSimPairs_iff_simulate_tr.mp h
-  dsimp at h₆ h₇
-  subst h₇
-  
-  constructor
-  ·
-    rintro h₄ p' s₀ h₃
-    
-    rw [State.mem_aVisited_iff_mem_aSimStatesIcc h₅] at h₃
-    obtain ⟨s', h₃, rfl⟩ := h₃
-    rw [←AState.aPos_eq_of_tr h₆] at *
-    
-    apply h₄ s' _
-    apply State.mem_aSimStatesIco_of_mem_aSimStatesIcc_and_ne h₃
-    rintro rfl
-    grind
-  ·
-    intro h₁ s' h₂
-    sorry
-
--- #check 0 #exit
+p ∉ (Set'.ofFinset (s.aSimStatesIco s₁ ⟨a, d⟩ |>.image (·.aPos)) |>.bind (·.nbhd s.pw)) := by
+  rw [fresh_iff_alt₃]; congr!; simp; rw [forall_comm]
+  apply forall_congr'; intro p; simp_rw [←imp_forall_iff]
 
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by
@@ -382,9 +336,9 @@ theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
 --     simp [h₄] at H₁
 --     choose s₄ H₁ H₂ using H₁
 --     use a₁.f s₃, s₄, H₁, a₁, ha₁
---     rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁]
---     rw [State.diff_eq_of_simulate_full h₁]
---     rw [State.prev_eq_of_tr H₁, DState.aVisited_eq_of_tr h₄ G₂, AState.aVisited_eq_of_tr h₂ G₁]
+--     rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁,
+--       State.diff_eq_of_simulate_full h₁, State.prev_eq_of_tr H₁,
+--       DState.aVisitedIcc_eq_of_tr h₄ G₂, AState.aVisitedIcc_eq_of_tr h₂ G₁]
 --     intro d₁ hd₁ n₁
 --     specialize h₃ (d₁.set s₂ # d.f s₂) (DStrat.wf_set_of_tr h₄) (n₁ + 2)
 --     simp_rw [sys.simulate_succ_full'] at h₃
@@ -463,7 +417,7 @@ theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
 --     grind
 --   clear H₃
 --   apply H₂; clear H₂
---   rw [mem_aVisited_iff_of h₂]
+--   rw [mem_aVisitedIcc_iff_of h₂]
 --   right
 --   use n₁, H₄, s₁, hs₁, h₁
 --   simpa

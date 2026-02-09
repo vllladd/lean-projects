@@ -5,15 +5,15 @@ namespace AP
 
 def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
-  ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisited s₁
+  ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisitedIcc s₁
 
 def AStrat.Fresh1Aux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
   sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
-  s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisited s₁).toSet)
+  s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisitedIcc s₁).toSet)
 
 def aFresh1Cnd (s : State) (fsp : FSP) (s₂ : State) : Prop :=
-  s₂.aHwsDisj # fsp.offset (s₂.diff s) |>.insertSet 0 # s.aVisited s₂.prev |>.toSet
+  s₂.aHwsDisj # fsp.offset (s₂.diff s) |>.insertSet 0 # s.aVisitedIcc s₂.prev |>.toSet
 
 noncomputable
 def aFresh1 (s : State) (fsp : FSP) : AStrat :=
@@ -166,9 +166,9 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
     simp [h₄] at H₁
     choose s₄ H₁ H₂ using H₁
     use a₁.f s₃, s₄, H₁, a₁, ha₁
-    rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁]
-    rw [State.diff_eq_of_simulate_full h₁]
-    rw [State.prev_eq_of_tr H₁, DState.aVisited_eq_of_tr h₄ G₂, AState.aVisited_eq_of_tr h₂ G₁]
+    rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁,
+      State.diff_eq_of_simulate_full h₁, State.prev_eq_of_tr H₁,
+      DState.aVisitedIcc_eq_of_tr h₄ G₂, AState.aVisitedIcc_eq_of_tr h₂ G₁]
     intro d₁ hd₁ n₁
     specialize h₃ (d₁.set s₂ # d.f s₂) (DStrat.wf_set_of_tr h₄) (n₁ + 2)
     simp_rw [sys.simulate_succ_full'] at h₃
@@ -247,7 +247,7 @@ theorem State.aSimPairs_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} 
     grind
   clear H₃
   apply H₂; clear H₂
-  rw [mem_aVisited_iff_of h₂]
+  rw [mem_aVisitedIcc_iff_of h₂]
   right
   use n₁, H₄, s₁, hs₁, h₁
   simpa

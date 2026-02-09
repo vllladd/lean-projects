@@ -11,6 +11,11 @@ def State.diffTrs (s₁ s : State) : List PointZ :=
 def State.isReachable (s₁ s₂ : State) : Bool :=
   sys.trs s₁ (s₂.diffTrs s₁) == (s₂, [])
 
+def State.exiSimulate (s : State) (f : State → PointZ) (s₁ : State) : Bool :=
+  sys.simulate f s (s₁.diff s) = (s₁, 0)
+
+-- #check 0 #exit
+
 -----
 
 theorem State.diff_eq_of_simulate' {s f n s₁ r}
@@ -78,3 +83,27 @@ instance {s₁ s₂} : Decidable # sys.Reachable s₁ s₂ :=
 theorem State.isReachable_eq {s₁ s₂ : State} :
 s₁.isReachable s₂ = decide (sys.Reachable s₁ s₂) := by
   simp [reachable_iff_isReachable]
+
+theorem State.exiSimulate_of_simulate {s s₁ : State} {f n}
+(h : sys.simulate f s n = (s₁, 0)) : s.exiSimulate f s₁ := by
+  simpa [exiSimulate, diff_eq_of_simulate_full h]
+
+theorem State.exiSimulate_of_exi_simulate {s s₁ : State} {f}
+(h : ∃ n, sys.simulate f s n = (s₁, 0)) : s.exiSimulate f s₁ := by
+  choose n h using h; exact exiSimulate_of_simulate h
+
+theorem State.exi_simulate_of_exiSimulate {s s₁ : State} {f}
+(h : s.exiSimulate f s₁) : ∃ n, sys.simulate f s n = (s₁, 0) := by
+  simp [exiSimulate] at h; exact ⟨_, h⟩
+
+theorem State.exi_simulate_iff_exiSimulate {s s₁ : State} {f} :
+(∃ n, sys.simulate f s n = (s₁, 0)) ↔ s.exiSimulate f s₁ :=
+  ⟨exiSimulate_of_exi_simulate, exi_simulate_of_exiSimulate⟩
+
+instance {s s₁ : State} {f} : Decidable # ∃ n, sys.simulate f s n = (s₁, 0) :=
+  decidable_of_iff' _ State.exi_simulate_iff_exiSimulate
+
+@[simp]
+theorem State.exiSImulate_eq {s s₁ : State} {f} :
+s.exiSimulate f s₁ = decide (∃ n, sys.simulate f s n = (s₁, 0)) := by
+  simp [exi_simulate_iff_exiSimulate]
