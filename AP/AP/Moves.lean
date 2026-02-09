@@ -80,6 +80,9 @@ def State.aVisitedIcc (s s₁ : State) : Set' PointZ :=
 def State.aVisitedIco (s s₁ : State) : Set' PointZ :=
   if s = s₁ then ∅ else s.aVisitedIcc s₁.prev
 
+def State.aNbhdsIco (s : State) (st : Strat) (s₁ : State) : Set' PointZ :=
+  Set'.ofFinset (s.aSimStatesIco s₁ st |>.image (·.aPos)) |>.bind (·.nbhd s.pw)
+
 -- #check 0 #exit
 
 -----

@@ -197,9 +197,10 @@ a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p,
 
 theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
 a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
-p ∉ (Set'.ofFinset (s.aSimStatesIco s₁ ⟨a, d⟩ |>.image (·.aPos)) |>.bind (·.nbhd s.pw)) := by
+p ∉ s.aNbhdsIco ⟨a, d⟩ s₁ := by
   rw [fresh_iff_alt₃]; congr!; simp; rw [forall_comm]
   apply forall_congr'; intro p; simp_rw [←imp_forall_iff]
+  simp [State.aNbhdsIco]
 
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by
