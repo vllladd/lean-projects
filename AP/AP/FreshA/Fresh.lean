@@ -7,17 +7,15 @@ def AStrat.Fresh (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
   s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p' ≠ a.f s' → p ≠ p'
 
-def AStrat.FreshAux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
-  a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF → ∀ n, ∃ s₁ s₂,
-  sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧ sys.tr s₁ (a.f s₁) = some s₂ ∧
-  s₂.aHwsDisj (fsp.offset (n * 2 + 1) |>.insertSet 0 (s.aVisitedIcc s₁).toSet)
+def aFreshFSP (s s₂ : State) (fsp : FSP) : FSP :=
+  fsp.insertSet 0 (s.aVisitedIcc s₂.prev).toSet
 
-def aFreshCnd (s : State) (fsp : FSP) (s₂ : State) : Prop :=
-  s₂.aHwsDisj # fsp.offset (s₂.diff s) |>.insertSet 0 # s.aVisitedIcc s₂.prev |>.toSet
+def AStrat.FreshAux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
+  a.RespectsFSP aFreshFSP s fsp
 
 noncomputable
 def aFresh (s : State) (fsp : FSP) : AStrat :=
-  aSeek # aFreshCnd s fsp
+  aSeek (AhwsFspCnd aFreshFSP s · fsp)
 
 -- #check 0 #exit
 
@@ -225,6 +223,7 @@ theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
     simp at h₃
     choose s₃ h₃ h₄ using h₃
     use s₃, h₃
+    simp [aFreshFSP] at h₄
     simp [FSP.hasLe, FSP.insertSet] at h₄ ⊢
     intro k hk
     have h₅ := h₄ 0
@@ -232,6 +231,9 @@ theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
     simp at h₄ h₅
     choose h₅ h₆ using h₅
     rw [Nat.le_add_one_iff] at hk
+    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate_eq h₁] at *
+    rw [State.diff_eq_of_simulate h₁] at *
+    simp at *
     rcases hk with hk | rfl
     · exact h₆ k hk
     · exact h₄
@@ -242,6 +244,9 @@ theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
     replace h₃ := State.aPos_notMem_of_aHwsDisj h₃
     simp at h₃
     simp [FSP.hasLe]
+    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate_eq h₁] at *
+    rw [State.diff_eq_of_simulate h₁] at *
+    simp [aFreshFSP] at *
     exact h₃.2
 
 theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
