@@ -57,26 +57,24 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
     simp [setHistAt'] at H₆
     apply H₆; clear H₆
     have H₆ := @wf_setHist_take_append_of_reachable s' s₁' s.hist hs'
-      (by simpa [h₄']) (by exact System.reachable_of_simulate_eq H₁)
+      (by simpa [h₄']) (by exact System.reachable_of_simulate H₁)
     simp [←h₄] at H₆
     exact H₆
-  have H₇ := sys.wf_of_simulate_eq H₁; dsimp at H₇
+  have hs₁' : sys.WF s₁'; grind
   have G₃ : hist = s'.hist; simp [←h₄]
   subst G₃
-  have H₈' := hist_suffix_of_reachable # System.reachable_of_simulate_eq H₁
-  have H₈ := hist_suffix_of_reachable # System.reachable_of_simulate_eq H₂
+  have H₈' := hist_suffix_of_reachable # System.reachable_of_simulate H₁
+  have H₈ := hist_suffix_of_reachable # System.reachable_of_simulate H₂
   have H₉ := H₈'.trans # hist_suffix_of_tr H₅
   have H₄' : s₁.setHistAt s.hist s'.hist = s₁'
   · rw [←H₄]; exact setHistAt_cancel_of_suffix H₈'
-  have hs₁' := sys.wf_of_simulate_eq H₁
-  have hs₁ := sys.wf_of_simulate_eq H₂
-  dsimp at hs₁' hs₁
+  have hs₁ : sys.WF s₁; grind
   have G₃ : sys.WF # s'.setHist s.hist; simpa [h₄']
   have G₂ : sys.WF # s₂'.setHistAt' s'.hist s.hist
   · rw [setHistAt']
     apply wf_setHist_take_append_of_reachable
     trans s₁'
-    · exact System.reachable_of_simulate_eq H₁
+    · exact System.reachable_of_simulate H₁
     · exact System.reachable_of_tr H₅
   replace hs₁' := s₁'.aState_or_dState
   rcases hs₁' with hs₁' | hs₁'
@@ -111,7 +109,7 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
     have H₆' : sys.WF # s₁.setHistAt' s.hist s'.hist
     · unfold setHistAt'
       apply wf_setHist_take_append_of_reachable
-      exact System.reachable_of_simulate_eq H₂
+      exact System.reachable_of_simulate H₂
     simp [setHistAt, H₆, H₆', H₈, H₈'] at H₄ H₄'
     have G₁ : sys.tr s₁' (d.f s₁) = some s₂'
     · simp [←hd', H₄, setHistAt, H₈', hs₁.wf] at H₅
@@ -126,7 +124,7 @@ theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist his
     · unfold setHistAt'
       apply wf_setHist_take_append_of_reachable
       trans s₁'
-      · exact System.reachable_of_simulate_eq H₁
+      · exact System.reachable_of_simulate H₁
       · exact System.reachable_of_tr H₅
     nth_rw 1 [←H₄]
     simp [setHistAt']

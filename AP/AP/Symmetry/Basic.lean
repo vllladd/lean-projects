@@ -108,7 +108,7 @@ theorem Strat.simulate_sym_eq {st : Strat} {s n} {sym : sys.Symmetry}
 sys.simulate (sym.simFn st.f) s n := by
   apply sys.simulate_congr
   intro k hk b h₁ h₂ h
-  have hb := sys.wf_of_simulate_eq h₁
+  have hb := sys.wf_of_simulate h₁
   rw [f_sym_eq]
 
 @[simp]

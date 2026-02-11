@@ -125,8 +125,8 @@ s.aForallWinsDisj (fsp.insert 0 p) a := by
   obtain ⟨k, hk, h₁⟩ := h₁
   use n, k, hk
   generalize h₃ : (sys.simulate (Strat.f ⟨a, d⟩) s n).1 = s₁ at h₁ ⊢
-  replace h₃ : sys.Reachable s s₁; subst h₃; exact sys.reachable_simulate
-  have hs₁ := sys.wf_of_reachable h₃
+  replace h₃ : sys.Reachable s s₁; grind
+  have hs₁ : sys.WF s₁; grind
   have h₄ := mem_taken_of_reachable h₃ h₂
   clear h₃
   cases k; simp at h₁; aesop; nm k
@@ -263,10 +263,10 @@ s.aWinsDisj (fsp.insertSet 0 s.taken.toSet) st := by
   split_ifs with h₃ <;> simp [h₂]
   generalize hr : sys.simulate st.f s n = r at h₂ ⊢
   rcases r with ⟨s₁, r⟩; dsimp at h₂ ⊢
-  have hs₁ := sys.wf_of_simulate_eq hr
+  have hs₁ : sys.WF s₁; grind
   have h : s₁.aPos ∉ s₁.taken; simp
   contrapose! h
-  apply mem_taken_of_reachable # sys.reachable_of_simulate_eq hr
+  apply mem_taken_of_reachable # sys.reachable_of_simulate hr
   exact h
 
 theorem State.aForallWinsDisj_insert_taken_of_aForallWinsDisj {fsp s} {a : AStrat}
@@ -341,7 +341,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
     dsimp [aDisjEraseTaken_fa]
     rw [H₈] at H₆ ⊢
     have hzs : AState w.s
-    · use sys.wf_of_simulate_eq H₃; rw [H₅']; simp
+    · use sys.wf_of_simulate H₃; rw [H₅']; simp
     obtain ⟨sd, h₂⟩ := hzs.validTr_of_aForallWinsDisj H₆
     generalize h₃ :
       { sd with
@@ -383,7 +383,7 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
     have G' := length_hist_le_of_reachable h₂
     have G := Nat.succ_sub G'; dsimp at G
     have hws : DState w.s
-    · use sys.wf_of_simulate_eq H₃; rw [H₅']; simp
+    · use sys.wf_of_simulate H₃; rw [H₅']; simp
     generalize h_move : (if p₁ = w.p then w.s.chooseDMove else p₁) = p_move
     generalize h_next : (if p₁ = w.p then w.s.chooseDMove else w.p) = p_next
     obtain ⟨s₂, G₂⟩ : ∃ s₂, sys.tr w.s p_move = some s₂
@@ -489,10 +489,10 @@ theorem State.aHwsDisj_erase_taken {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s'
   specialize h k hk
   simp [FSP.insert, FSP.insertSet]
   split_ifs with h₂ <;> simp [h]
-  have hs₁' := sys.wf_of_simulate_eq H₃
+  have hs₁' : sys.WF s₁'; grind
   apply ne_of_congr (· ∈ s₁'.taken)
   simp
-  apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₃
+  apply mem_taken_of_reachable # sys.reachable_of_simulate H₃
   exact h₁
 
 theorem State.aHwsDisj_erase_taken' {fsp s s' p} [hs : sys.WF s] [hs' : sys.WF s']
@@ -636,7 +636,7 @@ ps ⊆ s'.taken := by
     specialize ih n (by linarith) s₂
     simp only [System.simulate_succ_full'] at h₆
     simp [h₁'] at h₆
-    have G := sys.reachable_of_simulate_eq h₆
+    have G := sys.reachable_of_simulate h₆
     have H₀ : p ∈ s₁.taken
     · exact DState.mem_taken_of_tr h₁
     suffices H : ps.erase p ⊆ s₂.taken
@@ -657,14 +657,14 @@ ps ⊆ s'.taken := by
     simp
     rintro H₄ H₅ H₆ rfl
     apply H₄
-    apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₁
+    apply mem_taken_of_reachable # sys.reachable_of_simulate H₁
     exact H₀
   simp at h₁
   push_neg at h₂
   by_cases h₃ : s.aPos ∉ ps
   · use 0
     intro n hn s₂ h₄ p₁ hp₁
-    have H₁ := sys.reachable_of_simulate_eq h₄
+    have H₁ := sys.reachable_of_simulate h₄
     specialize h₂ _ hp₁
     contrapose! h₂
     constructor
@@ -681,7 +681,7 @@ ps ⊆ s'.taken := by
   · obtain ⟨N, h⟩ := h
     use N
     intro n hn s₁ H₁
-    have H₂ := sys.reachable_of_simulate_eq H₁
+    have H₂ := sys.reachable_of_simulate H₁
     specialize h n hn s₁ H₁
     intro p₁ hp₁
     specialize h₂ _ hp₁
@@ -729,7 +729,7 @@ ps ⊆ s'.taken := by
   rw [add_comm] at H₂
   simp only [System.simulate_succ_full'] at H₂
   simp [h₁', h₄, h₅'] at H₂
-  apply mem_taken_of_reachable # sys.reachable_of_simulate_eq H₂
+  apply mem_taken_of_reachable # sys.reachable_of_simulate H₂
   simp [DState.taken_eq_of_tr h₅, AState.taken_eq_of_tr h₄]
   rw [or_iff_not_imp_right, eq_comm]
   intro H₃
@@ -749,7 +749,7 @@ s'.aPos ∉ ps := by
   use N
   intro n hn s' h₁
   specialize h n hn s' h₁
-  have hs' := sys.wf_of_simulate_eq h₁
+  have hs' : sys.WF s'; grind
   intro h₂
   specialize h _ h₂
   simp at h
@@ -783,7 +783,7 @@ s'.aForallWinsDisj (fsp.offset n) a := by
   simp [sys.simulate_add, G₃] at h₁
   use s₂
   split_ands
-  · have hs₁ := sys.wf_of_simulate_eq G₃
+  · have hs₁ : sys.WF s₁; grind
     convert h₁ using 1
     apply simulate_congr <;> simp
     intro m hm sd hsd H₁ H₂ H₃

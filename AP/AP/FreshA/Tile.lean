@@ -34,7 +34,7 @@ theorem AState.hasDReenter_of_not_aHwsDisj_insert_aPos {s fsp} [hs : AState s]
   rotate_left; contradiction
   subst h₄
   simp [h₃] at h₁
-  have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq hr
+  have hs₁ : sys.WF s₁; grind
   replace hs₁ := s₁.aState_or_dState
   rcases hs₁ with hs₁ | hs₁
   rotate_left; use n, s₁
@@ -54,7 +54,7 @@ theorem AState.hasDReenter_of_not_aHwsDisj_insert_aPos {s fsp} [hs : AState s]
     simp
   simp at hr₁
   have hs' : DState s'
-  · use sys.wf_of_simulate_eq hr
+  · use sys.wf_of_simulate hr
     simp [State.aTurn_eq_of_tr' hr₁]
   use n, s', hs', hr
   rw [←DState.aPos_eq_of_tr hr₁, h₁]
@@ -152,7 +152,7 @@ theorem AState.aHwsDisj_insert_one_aPos {s fsp} [hs : AState s]
   replace h₆ := State.aForallWinsDisj_of_aForallWinsDisj_next h₆
   have h₇ : s.taken ⊆ sa.taken
   · apply Set'.subset_trans _ # taken_subset_of_tr h₅
-    exact taken_subset_of_reachable # sys.reachable_of_simulate_eq h₂
+    apply taken_subset_of_reachable; grind
   have h₈ : sa.HasDReenter fsp
   · apply AState.hasDReenter_of_taken_subset h₀
     · rw [pw_eq_of_tr h₅, State.pw_eq_of_simulate_eq h₂]
@@ -162,8 +162,7 @@ theorem AState.aHwsDisj_insert_one_aPos {s fsp} [hs : AState s]
   choose d₁ hd₁ n₁ sd₁ hsd₁ H₁ H₂ using h₈ a ha h₆
   generalize hN₁ : (M \ sd₁.taken).size = N₁
   have H₄ : sys.Reachable sd sd₁
-  · apply sys.reachable_of_tr h₅ |>.trans
-    exact sys.reachable_of_simulate_eq H₁
+  · apply sys.reachable_of_tr h₅ |>.trans; grind
   have H₃ := taken_subset_of_reachable H₄
   have H₅ : N₁ < N
   · rw [←hN, ←hN₁]
@@ -173,7 +172,7 @@ theorem AState.aHwsDisj_insert_one_aPos {s fsp} [hs : AState s]
     simp [←hM, hp₁, ←h₃, hp₃, ←State.pw_eq_of_simulate_eq h₂]
     rw [Point.dist_comm]
     use hp₂
-    apply State.mem_taken_of_reachable # sys.reachable_of_simulate_eq H₁
+    apply State.mem_taken_of_reachable # sys.reachable_of_simulate H₁
     exact DState.mem_taken_of_tr h₅
   apply @ih N₁ H₅ sa hsa h₆ h₈ d₁ hd₁ n₁ sd₁ hsd₁ H₁ H₂ _ hN₁
   rw [DState.aPos_eq_of_tr h₅, h₃]
@@ -230,8 +229,7 @@ s.aHwsDisj fsp ↔ ∀ p, ∃ (a : AStrat), a.WF ∧
   intro k hk sa hsa H₁ H₂ H₃
   simp
   have H₄ : sa.getMoveAt s = some (d.f s)
-  · apply getMoveAt_eq_some_of_tr_and_reachable h₁
-    exact sys.reachable_of_simulate_eq H₂
+  · apply getMoveAt_eq_some_of_tr_and_reachable h₁; grind
   simp [H₄, Option.getd, AStrat.validTr H₃]
 
 theorem DState.aHwsDisj_iff_forall_tr {s fsp} [hs : DState s] :

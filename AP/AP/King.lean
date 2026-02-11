@@ -80,7 +80,7 @@ theorem State.aPos_dist_le_of_simulate_mul_two {s r f n} [hs : sys.WF s]
   rotate_left; grind
   subst h₁
   simp
-  have h₁ := sys.reachable_of_simulate_eq hr
+  have h₁ := sys.reachable_of_simulate hr
   have hs₁ := sys.wf_of_reachable h₁
   suffices h : s'.aPos.dist s₁.aPos ≤ s.pw
   · suffices : s'.aPos.dist s.aPos ≤ s'.aPos.dist s₁.aPos + s₁.aPos.dist s.aPos; grind
@@ -124,14 +124,14 @@ theorem DState.of_simulate_mul_two_add_one_eq_full {s s₁ f n} [hs : AState s]
 
 theorem State.aTurn_eq_of_simulate_mul_two_eq_full {s s' f n} [hs : sys.WF s]
 (h : sys.simulate f s (n * 2) = (s', 0)) : s'.aTurn = s.aTurn := by
-  have hs' : sys.WF s' := sys.wf_of_simulate_eq h
+  have hs' : sys.WF s'; grind
   replace hs := s.aState_or_dState; rcases hs with hs | hs
   · replace hs' := AState.of_simulate_mul_two_eq_full h; simp
   · replace hs' := DState.of_simulate_mul_two_eq_full h; simp
 
 theorem State.size_taken_eq_of_simulate_mul_two_eq_full {s s' f n} [hs : sys.WF s]
 (h : sys.simulate f s (n * 2) = (s', 0)) : s'.taken.size = s.taken.size + n := by
-  have hs' : sys.WF s' := sys.wf_of_simulate_eq h
+  have hs' : sys.WF s'; grind
   have h₁ := s.length_hist_eq_size_taken_mul_two_add_ite
   have h₂ := s'.length_hist_eq_size_taken_mul_two_add_ite
   have h₃ := aTurn_eq_of_simulate_mul_two_eq_full h
@@ -150,7 +150,7 @@ theorem DState.size_taken_eq_of_tr {s s' p} [hs : DState s]
 
 theorem State.pw_eq_of_simulate_eq {s f n r} [hs : sys.WF s]
 (h : sys.simulate f s n = r) : r.1.pw = s.pw :=
-  pw_eq_of_reachable # sys.reachable_of_simulate_eq h
+  pw_eq_of_reachable # sys.reachable_of_simulate h
 
 theorem DState.size_taken_diff_eq_of_simulate_full_mul_two {s s' n} {st : Strat}
 [hs : DState s] (h : sys.simulate st.f s (n * 2) = (s', 0)) :
@@ -159,7 +159,7 @@ theorem DState.size_taken_diff_eq_of_simulate_full_mul_two {s s' n} {st : Strat}
   have h₁ := s.length_hist_eq_size_taken_mul_two_add_ite
   have h₂ := s'.length_hist_eq_size_taken_mul_two_add_ite
   rw [Set'.size_diff_eq_of_subset]
-  rotate_left; exact taken_subset_of_reachable # sys.reachable_of_simulate_eq h
+  rotate_left; exact taken_subset_of_reachable # sys.reachable_of_simulate h
   simp at h₁ h₂
   rw [State.length_hist_eq_of_simulate_eq h] at h₂
   grind
@@ -206,7 +206,7 @@ sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
       rw [DState.taken_eq_of_tr h₂]
       simp at ih ⊢
       grind
-    have h₃ := taken_subset_of_reachable # sys.reachable_of_simulate_eq hr
+    have h₃ := taken_subset_of_reachable # sys.reachable_of_simulate hr
     have h₄ := h₁ _ _ _ hr |>.2
     simp at h₄; exact h₄
   specialize h₂ # set.size + 1
@@ -298,7 +298,7 @@ theorem dWins_dKingOp₁_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
     apply Set'.subset_trans (s₂ := s.taken)
     rotate_left
     · apply taken_subset_of_reachable
-      exact sys.reachable_of_simulate_eq h₂
+      exact sys.reachable_of_simulate h₂
     rw [Box.cnd_defense_iff_guardTiles] at h
     exact h.2.2
   nm x h₄; clear x
@@ -357,7 +357,7 @@ theorem dWins_dKingOp_of_cnd {s} {a : AStrat} [hs : DState s] [ha : a.WF]
   simp [h₄] at h
   apply h₅; clear h₅
   apply State.mem_taken_of_reachable _ h
-  apply sys.reachable_of_simulate_eq h₁
+  apply sys.reachable_of_simulate h₁
 
 theorem dWins_dKingOp {a : AStrat} [ha : a.WF] : state₀.dWins ⟨a, dKingOp⟩ := by
   let f d n := sys.simulate (Strat.f ⟨a, d⟩) state₀ n

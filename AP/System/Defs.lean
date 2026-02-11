@@ -30,6 +30,8 @@ inductive Reachable {S T : Type u} (sys : System S T) : S → S → Prop where
 class WF (s' : S) : Prop where
   h : ∃ s, sys.Initial s ∧ sys.Reachable s s'
 
+-----
+
 class SimFn (f : S → T) : Prop where
   h : ∀ {s} [sys.WF s], sys.hasTr s → sys.validTr s (f s)
 

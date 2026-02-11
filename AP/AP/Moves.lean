@@ -1,5 +1,4 @@
 import AP.AP.Reachability
-import AP.Temp
 
 namespace AP
 
@@ -80,8 +79,11 @@ def State.aVisitedIcc (s s₁ : State) : Set' PointZ :=
 def State.aVisitedIco (s s₁ : State) : Set' PointZ :=
   if s = s₁ then ∅ else s.aVisitedIcc s₁.prev
 
-def State.aNbhdsIco (s : State) (st : Strat) (s₁ : State) : Set' PointZ :=
-  Set'.ofFinset (s.aSimStatesIco s₁ st |>.image (·.aPos)) |>.bind (·.nbhd s.pw)
+def State.aVisitedIcoPrev (s s₁ : State) : Set' PointZ :=
+  if s₁.diff s ≤ 1 then ∅ else s.aVisitedIco s₁.prev
+
+def State.aNbhdsIco (s s₁ : State) : Set' PointZ :=
+  s.aVisitedIcoPrev s₁ |>.bind (·.nbhd s.pw)
 
 -- #check 0 #exit
 
@@ -182,9 +184,9 @@ theorem State.mem_aVisitedIcc_iff_of {s f n s₁ p} [hs : sys.WF s]
   simp at h
   choose s' h₁ h₂ using h
   specialize ih h₁
-  have hs' : sys.WF s' := sys.wf_of_simulate_eq h₁
-  have hs₁ := sys.wf_of_tr h₂
-  have h₃ := sys.reachable_of_simulate_eq h₁
+  have hs' : sys.WF s'; grind
+  have hs₁ : sys.WF s₁; grind
+  have h₃ := sys.reachable_of_simulate h₁
   replace hs' := s'.aState_or_dState
   rcases hs' with hs' | hs'
   all_goals simp [hs'.aVisitedIcc_eq_of_tr h₂ h₃, ih]; clear ih
@@ -245,7 +247,7 @@ theorem State.simulate_diff {s s₁ f n r} [hs : sys.WF s]
     nm x s₂ h₁; clear x
     simp at h
     rcases h with ⟨rfl, rfl⟩
-    rw [diff_eq_of_tr h₁ # sys.reachable_of_simulate_eq hr]
+    rw [diff_eq_of_tr h₁ # by grind]
     rw [sys.simulate_add]
     simpa [ih]
   simp at h
@@ -286,8 +288,8 @@ theorem DState.even_of_simulate {s s₁ f n} [hs : DState s] [hs₁ : DState s�
   obtain ⟨n, rfl⟩ := Nat.odd_iff_exi.mp h₁; clear h₁
   simp at h
   choose s' h₁ h₂ using h
-  have hs' : sys.WF s' := sys.wf_of_simulate_eq h₁
-  replace hs' := AState.of_tr' h₂
+  have : sys.WF s'; grind
+  have : AState s'; grind
   have h₃ := DState.of_simulate_mul_two_eq_full h₁
   simp at h₃
 
@@ -304,10 +306,8 @@ s₁ ∈ s.aSimStates st ↔ AState s₁ ∧ ∃ n, sys.simulate st.f s n = (s�
   simp [aSimStates]
   constructor
   · rintro ⟨⟨n, h⟩, hs₁'⟩
-    have hs₁ := sys.wf_of_simulate_eq h
-    dsimp at hs₁
-    replace hs₁ : AState s₁
-    · use hs₁
+    have hs₁ : sys.WF s₁; grind
+    replace hs₁ : AState s₁; grind
     use hs₁, n
   · rintro ⟨hs₁1, n, h⟩; simp; use n
 
@@ -364,7 +364,7 @@ p ∈ s.aSimPts st ↔ ∃ n s₁, 2 ≤ n ∧ sys.simulate st.f s n = (s₁, 0)
     rw [add_comm] at h₁
     simp at h₁
     obtain ⟨s₂, ⟨s₁, h₁, h₂⟩, h₃⟩ := h₁
-    have hs₁ : sys.WF s₁ := sys.wf_of_simulate_eq h₁
+    have hs₁ : sys.WF s₁; grind
     replace hs₁ := s₁.aState_or_dState
     rcases hs₁ with hs₁ | hs₁
     · simp at h₂
@@ -669,14 +669,14 @@ sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
   intro k s' hk h₆
   iterate 2 cases k; simp at hk; nm k
   clear hk
-  have hs' : sys.WF s' := sys.wf_of_simulate_eq h₆
+  have hs' : sys.WF s'; grind
   simp at h₆
   obtain ⟨sd, ⟨sa, H₁, H₂⟩, H₃⟩ := h₆
-  have hsa : sys.WF sa := sys.wf_of_simulate_eq H₁
-  have hsd := sys.wf_of_tr H₂
+  have hsa : sys.WF sa; grind
+  have hsd : sys.WF sd; grind
   replace hs' := s'.aState_or_dState; rcases hs' with hs' | hs'
-  · replace hsd := DState.of_tr' H₃
-    replace hsa := AState.of_tr' H₂
+  · replace hsd : DState sd; grind
+    replace hsa : AState sa; grind
     simp at H₂ H₃
     specialize h₃ sa.hist.length sa (st.a.f sa) _
     · rw [State.mem_aSimPairs_iff_simulate_tr]
@@ -690,8 +690,8 @@ sys.simulate st.f s₁ k = (s₂, 0) → s₂.aPos ∉ set := by
     rw [State.length_hist_eq_of_simulate_eq H₁, length_hist_eq_of_tr h₄]
     omega
   · rename' sa => sd, sd => sa, hsa => hsd, hsd => hsa
-    replace hsa := AState.of_tr' H₃
-    replace hsd := DState.of_tr' H₂
+    replace hsa : AState sa; grind
+    replace hsd : DState sd; grind
     simp at H₂ H₃
     specialize h₃ sa.hist.length sa (st.a.f sa) _
     · rw [State.mem_aSimPairs_iff_simulate_tr]
@@ -877,7 +877,7 @@ s₃.hist.length ≤ s₁.hist.length ∧ r s₃.hist.length s₁.hist.length)) 
     · use k
       simp [hc]
     · apply length_hist_le_of_reachable
-      exact sys.reachable_of_simulate_eq h
+      exact sys.reachable_of_simulate h
     · exact h₃
   · rintro ⟨⟨k, h₁⟩, h₂, h₃⟩
     simp [h₃]
@@ -911,7 +911,7 @@ theorem State.mem_aSimStatesIcc_iff_of {s s₁ s₂ : State} {st : Strat} {n} [h
   simp [aSimStatesIcc, mem_simStatesIcc_iff_of h]
   rw [and_comm]; constructor
   · rintro ⟨h₁, k, hk, h₂⟩
-    have hs₂ := sys.wf_of_simulate_eq h₂
+    have hs₂ : sys.WF s₂; grind
     rw [aTurn_iff_aState] at h₁; tauto
   · rintro ⟨h₁, k, hk, h₂⟩; simp; tauto
 
@@ -921,7 +921,7 @@ theorem State.mem_aSimStatesIco_iff_of {s s₁ s₂ : State} {st : Strat} {n} [h
   simp [aSimStatesIco, mem_simStatesIco_iff_of h]
   rw [and_comm]; constructor
   · rintro ⟨h₁, k, hk, h₂⟩
-    have hs₂ := sys.wf_of_simulate_eq h₂
+    have hs₂ : sys.WF s₂; grind
     rw [aTurn_iff_aState] at h₁; tauto
   · rintro ⟨h₁, k, hk, h₂⟩; simp; tauto
 
@@ -963,7 +963,7 @@ theorem State.mem_aSimStatesIcc_iff {s s₁ s₂ : State} {st : Strat} [hs : sys
 s₁ ∈ s.aSimStatesIcc s₂ st ↔ AState s₁ ∧ ∃ k n, k ≤ n ∧ sys.simulate st.f s k = (s₁, 0) ∧
 sys.simulate st.f s n = (s₂, 0) := by
   simp [aSimStatesIcc, mem_simStatesIcc_iff]; rw [and_comm]; constructor
-  · rintro ⟨ht, k, n, hk, h₁, h₂⟩; have hs₁ := sys.wf_of_simulate_eq h₁
+  · rintro ⟨ht, k, n, hk, h₁, h₂⟩; have hs₁ : sys.WF s₁; grind
     rw [aTurn_iff_aState] at ht; use ht, k, n
   · rintro ⟨hs₁, h⟩; simpa
 
@@ -971,7 +971,7 @@ theorem State.mem_aSimStatesIco_iff {s s₁ s₂ : State} {st : Strat} [hs : sys
 s₁ ∈ s.aSimStatesIco s₂ st ↔ AState s₁ ∧ ∃ k n, k < n ∧ sys.simulate st.f s k = (s₁, 0) ∧
 sys.simulate st.f s n = (s₂, 0) := by
   simp [aSimStatesIco, mem_simStatesIco_iff]; rw [and_comm]; constructor
-  · rintro ⟨ht, k, n, hk, h₁, h₂⟩; have hs₁ := sys.wf_of_simulate_eq h₁
+  · rintro ⟨ht, k, n, hk, h₁, h₂⟩; have hs₁ : sys.WF s₁; grind
     rw [aTurn_iff_aState] at ht; use ht, k, n
   · rintro ⟨hs₁, h⟩; simpa
 
@@ -995,7 +995,7 @@ sys.tr s₀ (f s₀) = some s' ∧ s'.aPos = s₁.aPos := by
   induction n generalizing s₁
   · simp at h₁; simp [h₁] at h₂
   nm n ih; rename' s₁ => s₂; simp at h₁; rcases h₁ with ⟨s₁, h₁, h₃⟩
-  have hs₁ := sys.wf_of_simulate_eq h₁; replace hs₁ := s₁.aState_or_dState
+  have hs₁ : sys.WF s₁; grind; replace hs₁ := s₁.aState_or_dState
   rcases hs₁ with hs₁ | hs₁
   · have hs₂ := DState.of_tr h₃; use n, by simp, s₁, s₂
   · specialize ih h₁; rw [DState.aPos_eq_of_tr h₃] at h₂ ⊢
@@ -1088,7 +1088,7 @@ theorem State.mem_aVisitedIcc_of_mem_aSimStatesIco {s s' s₁ : State} {st : Str
 
 theorem wf_of_mem_simStates {s s' : State} {st} [hs : sys.WF s]
 (h : s' ∈ s.simStates st) : sys.WF s' := by
-  rw [State.mem_simStates_iff] at h; choose n h using h; exact sys.wf_of_simulate_eq h
+  rw [State.mem_simStates_iff] at h; choose n h using h; grind
 
 theorem wf_of_mem_simStatesRangeAux {s s₁ s' : State} {st r} [hr : DecidableRel r] [hs : sys.WF s]
 (h : s' ∈ s.simStatesRangeAux r s₁ st) : sys.WF s' := by
@@ -1245,7 +1245,7 @@ theorem State.mem_aVisitedIco_iff_of {s f n s₁ p} [hs : sys.WF s]
   rw [if_neg]; rotate_left
   · rintro rfl
     apply s.false_of_simulate_eq_simulate f s s 0 (n + 1) <;> simp_all
-  have hs₁ := sys.wf_of_simulate_eq h₁; dsimp at hs₁
+  have hs' : sys.WF s'; grind
   rw [prev_eq_of_tr h₂, mem_aVisitedIcc_iff_of h₁]; grind
 
 theorem State.mem_aVisitedIco_of_mem_simStatesIco {s s' s₁ : State} {st : Strat} {n}
@@ -1322,7 +1322,7 @@ s.simStatesIco s₁ st = s.simStatesIcc s₁.prev st := by
   have h₁' := h₁
   simp at h₁
   choose sx h₁ h₃ using h₁
-  have hsx := sys.wf_of_simulate_eq h₁; dsimp at hsx
+  have hsx : sys.WF sx; grind
   rw [prev_eq_of_tr h₃]
   simp [simStatesIco_eq_erase_simStatesIcc, simStatesIcc]
   simp [mem_simStatesRangeAux_iff h₁, mem_simStatesRangeAux_iff h₁']
@@ -1347,17 +1347,39 @@ s.simStatesIco s₁ st = s.simStatesIcc s₁.prev st := by
     clear h₅
     clear h₁'
     simp [h₄] at h₁
-    have hs' := sys.wf_of_simulate_eq h₄
-    dsimp at hs'
+    have hs' : sys.WF s'; grind
     split_ands
     · rintro rfl
       apply s'.false_of_simulate_eq_simulate st.f s' s' 0 (n + 1) <;> simp_all
     · use k
     · apply length_hist_le_of_reachable
-      apply sys.reachable_of_simulate_eq h₁ |>.trans
+      apply sys.reachable_of_simulate h₁ |>.trans
       exact sys.reachable_of_tr h₃
 
 theorem State.aSimStatesIco_eq_aSimStatesIcc_prev_of {s s₁ : State} {st : Strat} {n}
 [hs : sys.WF s] (h₁ : sys.simulate st.f s n = (s₁, 0)) (h₂ : n ≠ 0) :
 s.aSimStatesIco s₁ st = s.aSimStatesIcc s₁.prev st := by
   rw [aSimStatesIco, aSimStatesIcc, simStatesIco_eq_simStatesIcc_prev_of h₁ h₂]
+
+-- theorem State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIco
+-- {s s₁ : State} {st : Strat} {n p} [hs : AState s] [hs₁ : AState s₁]
+-- (h₁ : s ≠ s₁) (h₂ : sys.simulate st.f s n = (s₁, 0)) :
+-- p ∈ s.aVisitedIcoPrev s₁ ↔ ∃ s' ∈ s.aSimStatesIco s₁ st, s'.aPos = p := by
+--   obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # AState.even_of_simulate h₂
+--   cases n
+--   ·
+--     simp [h₁] at h₂
+--   nm n
+--   rw [add_mul] at h₂
+--   have h' := h₂
+--   simp at h₂
+--   obtain ⟨s₃, ⟨s₂, h₂, h₃⟩, h₄⟩ := h₂
+--   
+--   unfold aVisitedIcoPrev
+--   simp [diff_eq_of_simulate_full h']
+--   sorry
+
+-- #check 0 #exit
+
+-- theorem State.aNbhds_eq_image_aSimStatesIco
+-- Set'.ofFinset (s.aSimStatesIco s₁ st |>.image (·.aPos)) |>.bind (·.nbhd s.pw)

@@ -36,10 +36,6 @@ namespace Set
 variable {α β γ : Type*}
 variable {s s₁ s₂ : Set α}
 
-@[simp]
-theorem filter_empty {p} : (∅ : Set α).filter p = ∅ := by
-  simp [filter]
-
 -- #check 0 #exit
 
 end Set

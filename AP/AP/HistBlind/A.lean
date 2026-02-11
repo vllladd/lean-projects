@@ -353,8 +353,8 @@ p (sys.simulate (Strat.f ⟨a, d⟩) (s.setHist hist) · |>.1) ∧
   rintro k hk s₁ s₁' h₁ h₃ rfl
   use by simp
   intro s₂ s₂' h₄ h₅
-  have H₁ := sys.reachable_of_simulate_eq h₁
-  have H₂ := sys.reachable_of_simulate_eq h₃
+  have H₁ := sys.reachable_of_simulate h₁
+  have H₂ := sys.reachable_of_simulate h₃
   have H₃ := length_hist_le_of_reachable H₁
   have H₄ := length_hist_le_of_reachable H₂
   have H₅ := sys.reachable_right H₁ h₄

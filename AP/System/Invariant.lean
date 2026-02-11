@@ -12,7 +12,7 @@ theorem invariant {p : S → Prop} {a b} [ha : sys.WF a]
   clear! a b
   nm a b c t h₂ h₄ ih
   intro ha
-  have hb := wf_of_tr h₂
+  have : sys.WF b; grind
   apply ih
   exact h₃ h₁ h₂
 

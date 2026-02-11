@@ -145,3 +145,7 @@ theorem exi_min [ha : LinearOrder α]
 theorem exi_max [ha : LinearOrder α]
 (h₁ : s.Finite) (h₂ : s.Nonempty) : ∃ x ∈ s, ∀ y ∈ s, y ≤ x :=
   exists_max_image _ id h₁ h₂
+
+@[simp]
+theorem filter_empty {p} : (∅ : Set α).filter p = ∅ := by
+  simp [filter]

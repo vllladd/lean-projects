@@ -292,12 +292,11 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
   · clear hc
     dsimp
     rintro k hk s₁ s₂ s₁' hs₁ hs₂ ⟨ih₁, ih₂, ih₃⟩ H₁
-    have Hs₁ := sys.wf_of_simulate_eq hs₁
-    have Hs₂ := sys.wf_of_simulate_eq hs₂
-    dsimp at Hs₁ Hs₂
+    have Hs₁ : sys.WF s₁; grind
+    have Hs₂ : sys.WF s₂; grind
     replace Hs₁ := s₁.aState_or_dState
-    have hr₁ := System.reachable_of_simulate_eq hs₁
-    have hr₂ := System.reachable_of_simulate_eq hs₂
+    have hr₁ := System.reachable_of_simulate hs₁
+    have hr₂ := System.reachable_of_simulate hs₂
     rcases Hs₁ with Hs₁ | Hs₁ <;> simp only [Hs₁.strat_f_eq] at H₁
     · generalize hp : a.f s₁ = p at H₁
       replace Hs₂ : AState s₂; use Hs₂; simp [←ih₁]
@@ -381,7 +380,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
   obtain ⟨s₁, H₁, H₂, H₃, H₄⟩ := hc
   use s₁
   simp [H₂, H₃]
-  use System.reachable_of_simulate_eq H₁
+  use System.reachable_of_simulate H₁
   intro p hp H₅
   specialize H₄ p
   simp [H₅, ←hp', Set'.mem_ofSet h₁, hp] at H₄
@@ -648,7 +647,7 @@ theorem State.exi_dWins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
   by_cases hr' : r = 0; rotate_left
   · use d, Hd, n; simpa [hr]
   subst hr'
-  have hs₁ : sys.WF s₁ := System.wf_of_simulate_eq hr
+  have hs₁ : sys.WF s₁ := System.wf_of_simulate hr
   obtain ⟨d₁, Hd₁, h₁⟩ : ∃ d, d.WF ∧ s₁.dWins ⟨a, d⟩
   · exact exi_dWins_of_aTrapped h
   generalize hD : DStrat.mk
@@ -675,7 +674,7 @@ theorem State.exi_dWins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
   intro k hk sd hd h₁ h₂ h₃
   simp
   have h₄ : sys.Reachable s₁ sd
-  · exact System.reachable_of_simulate_eq h₁
+  · exact System.reachable_of_simulate h₁
   rw [←hD]
   simp [mk_strat_fn, h₄, Hd₁.1 h₃]
 

@@ -170,7 +170,7 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   choose s₃ h₄ using hd.validTr s₂
   have hs₃ := AState.of_tr h₄
   simp [Nat.add_mul, h₁, h₂, h₄]
-  have G₁ := sys.reachable_of_simulate_eq h₁
+  have G₁ := sys.reachable_of_simulate h₁
   have G₂ := sys.reachable_right G₁ h₂
   have G₃ := sys.reachable_right G₂ h₄
   have h₅ := @hs₃.aSeek_exi_tr_of (P := (AhwsFspCnd aFresh1FSP s · fsp))
@@ -204,7 +204,7 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
     simp [FSP.hasLe] at H₄ ⊢
     simp [Nat.add_assoc]
     intro k hk
-    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate_eq h₁] at H₄
+    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at H₄
     rw [State.diff_eq_of_simulate_full h₁] at H₄
     rw [State.prev_eq_of_tr h₂] at *
     cases k

@@ -41,7 +41,7 @@ theorem aux₆ {a b c}
 
 theorem aux₇ {f s n s'}
 (h₁ : sys.simulate f s n = (s', 0)) : sys.Reachable s s' := by
-  exact reachable_of_simulate_eq h₁
+  grind
 
 theorem cntrex₂ : ¬∀ (S T : Type) (sys : System S T),
 DecidableHasTr sys → ∃ f, sys.SimFn f := by

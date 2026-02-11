@@ -45,7 +45,7 @@ sys.simulate (Strat.f ⟨a, dse₂.st (dse₁.st d)⟩) s₀ n := by
   simp [st]
   cases H₃ : dse₁.f s <;> cases H₄ : dse₂.f s <;> simp
   nm s₁ s₂
-  have H₅ := sys.reachable_of_simulate_eq h₁
+  have H₅ := sys.reachable_of_simulate h₁
   exact h H₅ H₃ H₄
 
 @[simp]
@@ -126,9 +126,8 @@ theorem wf_sym_of_basicSym {sym} [H₁ : dse.WF] [H₂ : BasicSym sym] : dse.sym
       simp
       intro c₁ c₂ hc₁ hc₂
       
-      have Hb₁ := sys.wf_of_simulate_eq hb₁
-      have Hb₂ := sys.wf_of_simulate_eq hb₂
-      dsimp at Hb₁ Hb₂
+      have Hb₁ : sys.WF b₁; grind
+      have Hb₂ : sys.WF # sym.fs b₁; grind
       
       replace Hb₁ := b₁.aState_or_dState
       rcases Hb₁ with Hb₁ | Hb₁
@@ -457,7 +456,7 @@ sys.simulate (Strat.f ⟨a, dse₂.st (dse₁.st d)⟩) s₀ n := by
   simp [st]
   cases H₃ : dse₁.f s <;> cases H₄ : dse₂.f s <;> simp
   nm p₁ p₂
-  have H₅ := sys.reachable_of_simulate_eq h₁
+  have H₅ := sys.reachable_of_simulate h₁
   exact @h s H₅ p₁ p₂ H₃ H₄
 
 theorem wf_ofList {ds : List Defense} (H : ∀ d ∈ ds, d.WF)
@@ -478,7 +477,7 @@ theorem wf_ofList {ds : List Defense} (H : ∀ d ∈ ds, d.WF)
   intro s₀ hs₀ G h a Ha d Hd n
   generalize hr : sys.simulate (Strat.f ⟨a, (ofList ds).st d⟩) s₀ n = r
   rcases r with ⟨s, r⟩
-  have hx := sys.reachable_of_simulate_eq hr
+  have hx := sys.reachable_of_simulate hr
   simp
   intro e he
   replace he := List.eq_append_cons_of_mem he

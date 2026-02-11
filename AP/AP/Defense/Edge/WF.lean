@@ -308,7 +308,7 @@ theorem cnd₀_simulate_mul_two_full_of_aState {s₁} {a : AStrat} {d : DStrat} 
   have hs₁ := AState.of_tr h₄
   have hpw₁ : sa.pw = 1
   · convert hpw.1 using 1
-    exact pw_eq_of_reachable # sys.reachable_of_simulate_eq h₂
+    exact pw_eq_of_reachable # sys.reachable_of_simulate h₂
   specialize ih h₂
   simp at h₃ h₄
   exact cnd₀_of_tr_tr_st_aState (hpw := ⟨hpw₁⟩) ih h₃ h₄
@@ -327,7 +327,7 @@ theorem edge₀_simulate_full_neg_aPos_y_of_aState {s₁} {a : AStrat} {d : DStr
   have hs' := AState.of_simulate_mul_two_eq_full h₂
   have h₅ : s'.pw = s.pw
   · apply pw_eq_of_reachable
-    exact sys.reachable_of_simulate_eq h₂
+    exact sys.reachable_of_simulate h₂
   rw [←h₅] at hpw
   exact neg_aPos_y_of_tr_aState_cnd₀ h₄ h₃
 

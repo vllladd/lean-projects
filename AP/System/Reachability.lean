@@ -32,12 +32,12 @@ theorem sim_full_inj_of_acyclic {s} [ha : sys.Acyclic s]
   split at h₃
   · simp [←h₃] at h₂
   nm x b h₄
-  apply @h₁.2 a b (f a) (reachable_of_simulate ha.symm) h₄
+  apply @h₁.2 a b (f a) (reachable_of_simulate' ha.symm) h₄
   apply @reachable_of_simulate S T sys f b a m
   rw [h₃, ha]
 
 @[simp]
-theorem reachable_simulate {f} {s n} : sys.Reachable s (sys.simulate f s n).1 := by
+theorem reachable_fst_simulate {f} {s n} : sys.Reachable s (sys.simulate f s n).1 := by
   induction n generalizing s
   · rfl
   nm n ih
@@ -58,11 +58,12 @@ theorem simFn_fn_set_of [DecidableEq S] {f} [hf : sys.SimFn f] {s t}
   · rwa [h₂]
   exact hf h₁
 
+@[grind →, grind <=]
 theorem acyclic_of_reachable {a} [ha : sys.Acyclic a] {b}
 (h : sys.Reachable a b) : sys.Acyclic b := by
   rw [acyclic_def] at ha ⊢
   rcases ha with ⟨hs, ha⟩
-  use wf_of_reachable h
+  use by grind
   intro c d t h₁ h₂
   exact @ha c d t (h.trans h₁) h₂
 
@@ -410,8 +411,8 @@ theorem exi_simulate_of_simp_path [ht : Inhabited # S → T] {a b ts} [hs : sys.
 (h : sys.simp_path a ts b) : ∃ f, sys.SimFn f ∧ ∀ k ≤ ts.length,
 sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   classical
-  obtain ⟨f, hf⟩ := hv # sys.mk_simFn # λ s =>
-    ts[Nat.find! # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dflt_simFn s
+  obtain ⟨f, hf⟩ := hv # sys.mkSimFn # λ s =>
+    ts[Nat.find! # λ n => sys.trs a (ts.take n) = (s, [])]?.getD # sys.dfltSimFn s
   use f
   constructor
   · rw [hf]; infer_instance
@@ -426,7 +427,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
     apply ne_of_congr (·.length)
     simpa [hn]
   subst hf
-  unfold mk_simFn
+  unfold mkSimFn
   dsimp
   rw [Nat.find!_eq_of (n := k)]
   rotate_left
@@ -845,13 +846,13 @@ theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited # S → T]
   symm at h₁
   classical
   induction ts generalizing a r
-  · use sys.dflt_simFn, inferInstance, 0
+  · use sys.dfltSimFn, inferInstance, 0
     simp [h₁]
   nm t ts ih
   simp [trs] at h₁
   split at h₁
   · nm x h₂; clear x
-    use sys.dflt_simFn, inferInstance, 0
+    use sys.dfltSimFn, inferInstance, 0
     simp [h₁]
   nm x b h₂; clear x
   have hb := acyclic_of_reachable # reachable_of_tr h₂
@@ -866,7 +867,7 @@ theorem exi_simulate_of_acyclic_and_trs_eq [ht : Inhabited # S → T]
   clear h₅
   intro k hk h₆
   apply @ha.2 a b t (by rfl) h₂
-  exact reachable_of_simulate h₆
+  exact reachable_of_simulate' h₆
 
 theorem exi_simp_path_of_trs_eq {a ts r} (h : sys.trs a ts = r) :
 ∃ ts', sys.simp_path a ts' r.1 :=
@@ -893,7 +894,7 @@ sys.Reachable a b ↔ ∃ (f : S → T), sys.SimFn f ∧
 ∃ n, sys.simulate f a n = (b, 0) := by
   use exi_simulate_of_reachable
   rintro ⟨f, hf, h₁, h₂⟩
-  exact reachable_of_simulate # congrArg (·.1) h₂
+  exact reachable_of_simulate' # congrArg (·.1) h₂
 
 theorem simulate_fst_eq_fst_of_snd_ne_zero {f a n m}
 (h₁ : (sys.simulate f a n).2 ≠ 0) (h₂ : (sys.simulate f a m).2 ≠ 0) :
@@ -955,19 +956,14 @@ theorem full_trs_inj_of_acyclic {a} [h : sys.Acyclic a] {xs ys}
   nm y ys
   exfalso
   rw [List.append_cons] at h₂
-
-  obtain ⟨c, hc⟩ : ∃ c, sys.trs a (xs ++ [y]) = (c, []) :=
-    by
-      rw [trs_append_full] at h₂
-      simp at h₂ ⊢
-      obtain ⟨s₁, ⟨s₂, h₂, h₃⟩, h₄⟩ := h₂
-      use s₁, s₂, h₂
-
+  obtain ⟨c, hc⟩ : ∃ c, sys.trs a (xs ++ [y]) = (c, [])
+  · rw [trs_append_full] at h₂
+    simp at h₂ ⊢
+    obtain ⟨s₁, ⟨s₂, h₂, h₃⟩, h₄⟩ := h₂
+    use s₁, s₂, h₂
   rw [trs_append] at h₂
   simp [hc] at h₂
-
   simp [h₁] at hc
-
   apply @h.2 b c y _ hc _
   · exact reachable_of_fst_trs # congrArg (·.1) h₁
   · exact reachable_of_fst_trs # congrArg (·.1) h₂
@@ -1149,15 +1145,20 @@ theorem simulate_exi_snd_pos_of_finite
   rw [←h₆, h₄]
 
 @[simp]
-theorem wf_of_simulate {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
-  wf_of_reachable reachable_simulate
+theorem wf_fst_simulate {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
+  wf_of_reachable reachable_fst_simulate
 
 instance {s f n} [hs : sys.WF s] : sys.WF (sys.simulate f s n).1 :=
-  wf_of_simulate
+  wf_fst_simulate
 
-theorem wf_of_simulate_eq {s f n r} [hs : sys.WF s]
+theorem wf_of_simulate' {s f n r} [hs : sys.WF s]
 (h : sys.simulate f s n = r) : sys.WF r.1 := by
   subst r; simp
+
+@[grind →, grind <=]
+theorem wf_of_simulate {s s₁ f n r} [hs : sys.WF s]
+(h : sys.simulate f s n = (s₁, r)) : sys.WF s₁ :=
+  wf_of_simulate' h
 
 theorem simulate_add_eq_left_iff {f} [hf : sys.SimFn f] {a b n m} [ha : sys.WF a] :
 sys.simulate f a (n + m) = (b, n) ↔ sys.simulate f a m = (b, 0) ∧
@@ -1173,7 +1174,7 @@ sys.simulate f a (n + m) = (b, n) ↔ sys.simulate f a m = (b, 0) ∧
     exact simulate_snd_eq_zero_of_hasTr ⟨_, h₁⟩
   rw [add_comm]
   choose h₁ h₂ using h
-  have hb := wf_of_simulate_eq h₁
+  have hb := wf_of_simulate h₁
   simp [simulate_add, h₁] at h₂ ⊢
   tauto
 
@@ -1338,16 +1339,7 @@ theorem not_reachable_of_acyclic_and_simulate_and_lt {a b f k n}
   rw [add_assoc, add_comm n, simulate_add] at h₁
   simp at h₁
   split_ifs at h₁ with h₂ <;> simp [h₂] at h₁
-  generalize hr : sys.simulate f a k = r at h₁ h₂ ⊢
-  rcases r with ⟨c, r⟩
-  simp at h₁ h₂ ⊢
-  subst h₂
-  choose s₁ h₁ h₂ using h₁
-  have h₄ := reachable_of_simulate_eq hr
-  have h₅ := reachable_of_simulate_eq h₂
-  specialize h₃ h₄ h₁
-  contrapose! h₃
-  exact h₅.trans h₃
+  grind
 
 theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.SimFn f]
 (h₁ : sys.simulate f a n = r) (h₂ : r.2 ≠ 0) : ¬sys.hasTr r.1 := by
@@ -1367,9 +1359,6 @@ theorem not_hasTr_of_snd_simulate_ne_zero {a n f r} [ha : sys.WF a] [hf : sys.Si
   nm x c h₃; clear x
   have hc := sys.wf_of_tr h₃
   exact ih h₁
-
-theorem reachable_of_trs' {s ts s' r} (h₁ : sys.trs s ts = (s', r)) :
-sys.Reachable s s' := reachable_of_trs h₁
 
 theorem false_of_acyclic_and_reachable_and_tr {a b t} [ha : sys.Acyclic a]
 (h₁ : sys.Reachable a b) (h₂ : sys.tr b t = some a) : False := by

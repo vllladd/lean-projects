@@ -1,5 +1,4 @@
 import AP.AP.FreshA.Nbhd
-import AP.Temp
 
 namespace AP
 
@@ -114,7 +113,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
       replace hk := Nat.exists_eq_add_of_le # le_of_lt hk
       obtain ⟨n, rfl⟩ := hk
       simp [H₃] at h₃
-      have H₇ := sys.reachable_of_simulate_eq h₃
+      have H₇ := sys.reachable_of_simulate h₃
       split_ands
       · apply Set'.not_mem_of_subset _ H₅
         exact taken_subset_of_reachable H₇
@@ -127,7 +126,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
       rw [State.mem_aSimStatesIco_iff] at h₂
       rcases h₂ with ⟨hs', k, n, hk, h₂, h₄⟩
       choose s₂ h₃ using h₃
-      have h₅ := sys.reachable_of_simulate_eq h₂
+      have h₅ := sys.reachable_of_simulate h₂
       rw [←pw_eq_of_reachable h₅]
       rw [←AState.aPos_eq_of_tr h₃]
       exact AState.aPos_dist_le_of_tr h₃
@@ -195,12 +194,13 @@ a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p,
     contrapose! h; clear h
     rwa [Point.dist_comm]
 
-theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
-a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
-p ∉ s.aNbhdsIco ⟨a, d⟩ s₁ := by
-  rw [fresh_iff_alt₃]; congr!; simp; rw [forall_comm]
-  apply forall_congr'; intro p; simp_rw [←imp_forall_iff]
-  simp [State.aNbhdsIco]
+-- theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
+-- a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
+-- p ∉ s.aNbhdsIco s₁ := by
+--   rw [fresh_iff_alt₃]; congr!; simp; rw [forall_comm]
+--   apply forall_congr'; intro p; simp_rw [←imp_forall_iff]
+--   -- simp [State.aNbhdsIco]
+--   sorry
 
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by
@@ -232,7 +232,7 @@ theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
     simp at h₄ h₅
     choose h₅ h₆ using h₅
     rw [Nat.le_add_one_iff] at hk
-    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate_eq h₁] at *
+    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at *
     rw [State.diff_eq_of_simulate h₁] at *
     simp at *
     rcases hk with hk | rfl
@@ -245,46 +245,46 @@ theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
     replace h₃ := State.aPos_notMem_of_aHwsDisj h₃
     simp at h₃
     simp [FSP.hasLe]
-    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate_eq h₁] at *
+    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at *
     rw [State.diff_eq_of_simulate h₁] at *
     simp [aFreshFSP] at *
     exact h₃.2
 
-theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
-(h : a.FreshAux s fsp) : a.Fresh s fsp := by
-  have H₀ := h
-  choose ha h₀ h using h
-  rw [AStrat.fresh_iff_alt₁]
-  
-  -- use ha, aForallWinsDisj_of_freshAux H₀
-  -- intro d hd s₁ p p' h₁ ⟨s', h₁'⟩
-  -- rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
-  -- choose hs₁ n h₁ s₂ h₂ h₃ using h₁
-  -- simp at h₂ h₃; subst h₃
-  -- obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # even_of_simulate h₁
-  -- specialize h d hd n
-  -- simp [h₁, h₂] at h
-  -- rw [←AState.aPos_eq_of_tr h₁']
-  -- choose a₁ ha₁ h using h
-  -- specialize h d hd 0
-  -- simp at h
-  -- 
-  -- replace h := h.1
-  -- contrapose! h
-  -- 
-  -- use s'.aPos
-  -- simp [h]
-  -- simp [ne_symm' # AState.aPos_ne_of_tr h₁']
-  -- 
-  -- -- specialize h _ H₁
-  -- -- contrapose! h; clear h
-  -- -- rw [AState.tr_eq_some_iff] at h₁' h₂
-  -- -- rcases h₁' with ⟨⟨H₂, H₃, H₄⟩, rfl⟩
-  -- -- rcases h₂ with ⟨⟨H₅, H₆, H₇⟩, rfl⟩
-  -- -- simp
-  -- -- dsimp at H₁
-  
-  sorry
+-- theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
+-- (h : a.FreshAux s fsp) : a.Fresh s fsp := by
+--   have H₀ := h
+--   choose ha h₀ h using h
+--   rw [AStrat.fresh_iff_alt₁]
+--   
+--   -- use ha, aForallWinsDisj_of_freshAux H₀
+--   -- intro d hd s₁ p p' h₁ ⟨s', h₁'⟩
+--   -- rw [State.mem_aPtsSimAt_iff_simulate_tr] at h₁
+--   -- choose hs₁ n h₁ s₂ h₂ h₃ using h₁
+--   -- simp at h₂ h₃; subst h₃
+--   -- obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # even_of_simulate h₁
+--   -- specialize h d hd n
+--   -- simp [h₁, h₂] at h
+--   -- rw [←AState.aPos_eq_of_tr h₁']
+--   -- choose a₁ ha₁ h using h
+--   -- specialize h d hd 0
+--   -- simp at h
+--   -- 
+--   -- replace h := h.1
+--   -- contrapose! h
+--   -- 
+--   -- use s'.aPos
+--   -- simp [h]
+--   -- simp [ne_symm' # AState.aPos_ne_of_tr h₁']
+--   -- 
+--   -- -- specialize h _ H₁
+--   -- -- contrapose! h; clear h
+--   -- -- rw [AState.tr_eq_some_iff] at h₁' h₂
+--   -- -- rcases h₁' with ⟨⟨H₂, H₃, H₄⟩, rfl⟩
+--   -- -- rcases h₂ with ⟨⟨H₅, H₆, H₇⟩, rfl⟩
+--   -- -- simp
+--   -- -- dsimp at H₁
+--   
+--   sorry
 
 -- #check 0 #exit
 

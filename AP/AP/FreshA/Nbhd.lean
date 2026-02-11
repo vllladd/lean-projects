@@ -109,9 +109,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
       simp [←H₁]
       rw [if_neg]
       rotate_left
-      · push_neg
-        apply length_hist_le_of_reachable
-        exact sys.reachable_of_simulate_eq H₃
+      · push_neg; apply length_hist_le_of_reachable; grind
       simp
     have ha₁ := ha' d₂ hd₂ (n * 2 + 1 + k)
     simp [H₂', H₃] at ha₁
@@ -171,7 +169,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
       grind
     · simpa [H₂, h₄, H₃, H₄]
   generalize hk : n * 2 + 1 = k at h₄
-  have H₂ := sys.reachable_of_simulate_eq h₄
+  have H₂ := sys.reachable_of_simulate h₄
   have H₃ := taken_subset_of_reachable H₂
   replace h₆ : ∀ k, 2 ≤ k → ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) sd k = (s₁, 0) ∧ s₁.aPos ∉ set
   · have h₆' : ∀ k, ∃ s₁, sys.simulate (Strat.f ⟨a, d⟩) sd k = (s₁, 0)
