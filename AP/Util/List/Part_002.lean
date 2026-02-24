@@ -8,7 +8,7 @@ variable {xs ys zs : List α}
 variable {L : List (List α)}
 
 @[simp]
-theorem sequence_singleton : sequence [xs] = xs.map ({·}) := by
+theorem sequence_singleton : sequence [xs] = xs.map ([·]) := by
   simp [sequence_cons]
 
 @[simp]

@@ -40,7 +40,7 @@ Int.negSucc (n + 1) = Int.negSucc n - 1 := by rfl
 
 @[simp]
 theorem even_succ_iff {n : ℤ} : Even (n + 1) ↔ Odd n := by
-  simp
+  grind
 
 @[simp]
 theorem odd_succ_iff {n : ℤ} : Odd (n + 1) ↔ Even n := by
@@ -50,10 +50,10 @@ theorem succ_div_2_eq_div_iff {n : ℤ} (hp : 0 ≤ n) :
 (n + 1) / 2 = n / 2 ↔ Even n := by
   induction n using mod_2_ind <;> nm n
   · simp at hp ⊢; cases n; nm n; simp; induction n; rfl
-    nm n ih; specialize ih (by simp); simp [add_mul]
+    nm n ih; specialize ih (by grind); simp [add_mul]
     rw [add_assoc]; nth_rw 2 [add_comm]; rw [←add_assoc]
     have h₁ := @add_div_eq ((n : ℤ) * 2 + 1) 2 # Int.zero_le_ofNat _
-    rw [h₁, ih]; simp at hp
+    rw [h₁, ih]; grind
   simp; rw [add_assoc]; simp
   rw [@add_div_eq ((n : ℤ) * 2) 2 # Int.zero_le_ofNat _]
   rw [eq_comm]; simp; cases n <;> nm n
@@ -68,7 +68,7 @@ theorem succ_div_2_eq_div_succ_iff {n : ℤ} (hp : 0 ≤ n) :
   by_cases hn : n = 0; simp [hn]; obtain ⟨k, hk⟩ := hv # n - 1
   replace hk := congrArg (· + 1) hk; simp at hk; subst hk
   replace hp : 0 ≤ k := by
-    cases k <;> nm k; simp only [Int.ofNat_eq_natCast, Nat.cast_nonneg]
+    cases k <;> nm k; grind
     cases k; simp only [Int.reduceNegSucc, neg_add_cancel,
       not_true_eq_false] at hn
     nm k; rw [negSucc_succ] at hp
@@ -99,7 +99,7 @@ theorem mul_2_succ_div_2_eq {n : ℤ}
 
 @[simp]
 theorem max_abs_eq_zero_iff {n m : ℤ} : max |n| |m| = 0 ↔ n = 0 ∧ m = 0 := by
-  rw [max_def']; aesop
+  rw [max_def']; grind
 
 @[simp]
 theorem eq_self_sub_iff {a b : ℤ} : a = a - b ↔ b = 0 := by

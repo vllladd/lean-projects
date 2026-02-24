@@ -1,3 +1,4 @@
+import AP.Util.Nat
 import AP.Util.Option
 import AP.Util.Algebra
 import AP.Util.Function
@@ -23,6 +24,35 @@ def init {α : Type*} : List α → List α
 | [] => []
 | [_] => []
 | (x :: ys) => x :: ys.init
+
+def combinations (xs : List α) (n : ℕ) : List (List α) :=
+  sequence # replicate n xs
+
+def atMostOne : List Bool → Bool
+| [] => true
+| b :: bs => if b then !bs.or else bs.atMostOne
+
+@[simp]
+def mapWith (xs : List α) (f : (x : α) → x ∈ xs → β) : List β :=
+  match h : xs with
+  | [] => []
+  | x :: ys => f x (by simp) :: ys.mapWith (λ y h₁ => f y # by simp [h₁])
+
+open Classical in noncomputable
+def dfltMapWith (f : (x : α) → x ∈ xs → β) (h : xs ≠ []) : β :=
+  match h₁ : xs with
+  | [] => by simp at h
+  | x :: _ => Nonempty.some ⟨f x # by simp⟩
+
+@[simp]
+def foldlWith {β : Sort*} (xs : List α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
+  match h : xs with
+  | [] => z
+  | x :: ys => ys.foldlWith (λ acc y h₁ => f acc y (by simp [h₁])) # f z x (by simp)
+
+def toSet (xs : List α) : Set α := {x | x ∈ xs}
+
+-----
 
 theorem init_cons_of_ne_nil {α : Type*} {x : α} {xs : List α}
 (h : xs ≠ []) : (x :: xs).init = x :: xs.init := by
@@ -535,10 +565,6 @@ instance {α : Type*} : IsEquiv (List α) List.Perm where
   symm := λ _ _ => Perm.symm
   trans := λ _ _ _ => Perm.trans
 
-def atMostOne : List Bool → Bool
-| [] => true
-| b :: bs => if b then !bs.or else bs.atMostOne
-
 @[simp]
 theorem mergeSort_perm_mergeSort {α : Type*}
 {r₁ r₂ : α → α → Bool} {xs ys : List α} :
@@ -642,12 +668,6 @@ theorem max?_eq_getLast? [ha : LinearOrder α]
   symm; exact max?_reverse
 
 @[simp]
-def foldlWith {β : Sort*} (xs : List α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
-  match h : xs with
-  | [] => z
-  | x :: ys => ys.foldlWith (λ acc y h₁ => f acc y (by simp [h₁])) # f z x (by simp)
-
-@[simp]
 theorem foldlWith_snoc {β : Sort*} {x : α} {f : β → (y : α) → y ∈ xs ++ [x] → β} {z : β} :
 (xs ++ [x]).foldlWith f z = f (xs.foldlWith (λ acc y h => f acc y (by simp [h])) z)
 x (by simp) := by induction xs generalizing z; rfl; nm y xs ih; simp [ih]
@@ -706,18 +726,6 @@ theorem apply_of_pairwise_and_lt {p : α → α → Prop} {i j}
   rw [List.pairwise_iff_get] at h₁
   specialize h₁ ⟨i, hh₁⟩ ⟨j, hh₂⟩ h₂
   simp at h₁; exact h₁
-
-@[simp]
-def mapWith (xs : List α) (f : (x : α) → x ∈ xs → β) : List β :=
-  match h : xs with
-  | [] => []
-  | x :: ys => f x (by simp) :: ys.mapWith (λ y h₁ => f y # by simp [h₁])
-
-open Classical in noncomputable
-def dfltMapWith (f : (x : α) → x ∈ xs → β) (h : xs ≠ []) : β :=
-  match h₁ : xs with
-  | [] => by simp at h
-  | x :: _ => Nonempty.some ⟨f x # by simp⟩
 
 theorem dfltMapWith_eq_dfltMapWith {f₁ f₂ : (x : α) → x ∈ xs → β}
 {h : xs ≠ []} : dfltMapWith f₁ h = dfltMapWith f₂ h := by
@@ -847,8 +855,6 @@ theorem mem_of_count_pos [ha : DecidableEq α] {x} (h : 0 < xs.count x) : x ∈ 
 
 theorem mem_of_lt_count [ha : DecidableEq α] {x n} (h : n < xs.count x) : x ∈ xs :=
   mem_of_count_pos # by linarith
-
-def toSet (xs : List α) : Set α := {x | x ∈ xs}
 
 @[simp]
 theorem mem_toSet {x} : x ∈ xs.toSet ↔ x ∈ xs := by
@@ -1402,10 +1408,7 @@ theorem take_take_append {k} (h : k ≤ xs.length) :
 
 theorem sum_nonpos [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
 (h : ∀ x ∈ xs, x ≤ 0) : xs.sum ≤ 0 := by
-  induction xs
-  · simp
-  clear! xs; nm x xs ih
-  simp
+  induction xs <;> simp; nm x xs ih
   specialize ih # by grind
   specialize h x (by simp)
   exact add_nonpos h ih
@@ -1434,16 +1437,19 @@ theorem sum_take_le_of_nonneg [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ 
 theorem le_sum_take_of_nonpos [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
 {k} (h₁ : ∀ x ∈ xs, x ≤ 0) : xs.sum ≤ (xs.take k).sum := by
   generalize hy : xs.map (-·) = ys
-  replace h₁ : ∀ y ∈ ys, 0 ≤ y; grind
+  replace h₁ : ∀ y ∈ ys, 0 ≤ y
+  · subst hy
+    simp
+    intro y hy
+    specialize h₁ _ hy
+    simp at h₁
+    exact h₁
   replace h₁ := sum_take_le_of_nonneg h₁ (k := k)
   simp [←hy] at h₁
   rw [le_neg] at h₁
   apply h₁.trans
   rw [←map_take, sum_map_neg]
   simp
-
-def combinations (xs : List α) (n : ℕ) : List (List α) :=
-  sequence # replicate n xs
 
 @[simp]
 theorem combinations_zero : xs.combinations 0 = [[]] := rfl

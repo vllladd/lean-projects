@@ -321,7 +321,7 @@ theorem add_one_sub {a b : ℕ} (h : b ≤ a) : a + 1 - b = a - b + 1 := by
 theorem le_exp_left {a b : ℕ} (h : 2 ≤ b) : a ≤ b ^ a := by
   induction a; simp; rename_i a ha; simp [pow_succ]
   replace ha := Nat.add_le_add_right ha 1; apply ha.trans
-  obtain ⟨b, rfl⟩ := Nat.exists_eq_add_of_le h; simp [mul_add, mul_two]
+  obtain ⟨b, rfl⟩ := Nat.exists_eq_add_of_le h; simp [mul_add]
   suffices 1 ≤ (2 + b) ^ a + (2 + b) ^ a * b by linarith
   by_contra h; simp at h
 
@@ -405,3 +405,5 @@ theorem find!_pos_of {p} (h₁ : ¬p 0) (h₂ : ∃ n, p n) : 0 < find! p := by
   cases h₅ : find! p
   · simp [h₁, h₅] at h₃
   · simp
+
+attribute [simp] Nat.sub_pos_iff_lt

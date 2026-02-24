@@ -10,7 +10,7 @@ def liftLe [ha : LinearOrder α] (p : Sym2 α) (f : α → α → β) : β :=
   p.lift ⟨λ a b => f (min a b) (max a b), by simp [min_comm, max_comm]⟩
 
 def univ [ha₁ : DecidableEq α] [ha₂ : Fintype α] : Finset (Sym2 α) :=
-  (Finset.univ : Finset (α × α)).image Sym2.mk
+  (Finset.univ : Finset (α × α)).image # λ ⟨a, b⟩ => Sym2.mk a b
 
 -----
 

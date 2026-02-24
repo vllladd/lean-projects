@@ -61,7 +61,8 @@ p q.out ↔ q.lift p h := by
 @[simp]
 theorem Quotient.mk_out_eq {α : Type*} {s : Setoid α} {q : Quotient s} :
 Quot.mk s q.out = q := by
-  rw [←Quotient.out_equiv_out, ←Quotient.eq_mk_iff_out]; rfl
+  have h := @Quotient.out_equiv_out α s (Quot.mk s q.out) q
+  unfold Quotient at h; rw [←h, ←Quotient.eq_mk_iff_out]; rfl
 
 theorem Quotient.eq_mk_out {α : Type*} {s : Setoid α} {q : Quotient s} :
 q = Quot.mk s q.out := by simp
@@ -192,7 +193,7 @@ liftWith_aux₂ q f h = f q.out := by
   generalize_proofs h₆
   symm
   apply congrFun
-  rw [cast_eq_iff_heq]
+  apply cast_eq_iff_heq.mpr
   apply @heq_fn α β α f # λ z =>
     ∀ (x y : α), s x z → s y z → f x = f y
   simp [Quotient.mk]
