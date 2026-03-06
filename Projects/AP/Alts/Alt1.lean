@@ -140,7 +140,7 @@ def Point.toPointZ (p : Point) : PointZ :=
   | ⟨x, y⟩ => ⟨x, y⟩
 
 open Classical in @[simp] noncomputable
-def State.toState (s : State) (pw : ℕ) : Projects.State where
+def State.toState (s : State) (pw : ℕ) : AP.State where
   pw := pw
   taken := Set'.ofSet # Set.univ \ s.board.squares |>.image (·.toPointZ)
   aPos := s.board.A.toPointZ
@@ -156,5 +156,5 @@ theorem point_dist_eq {p₁ p₂ : Point} : dist p₁ p₂ = (p₁.toPointZ.dist
   rcases p₁, p₂ with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩; simp [dist]
 
 @[simp]
-theorem toState_state₀ {pw} : state₀.toState pw = Projects.initState pw 0 := by
+theorem toState_state₀ {pw} : state₀.toState pw = AP.initState pw 0 := by
   simp [state₀, board₀, initState, center]; ext :1 <;> simp
