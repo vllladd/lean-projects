@@ -82,7 +82,7 @@ def State.aVisitedIco (s s₁ : State) : Set' PointZ :=
 def State.aVisitedIcoPrev (s s₁ : State) : Set' PointZ :=
   if s₁.diff s ≤ 1 then ∅ else s.aVisitedIco s₁.prev
 
-def State.aNbhdsIco (s s₁ : State) : Set' PointZ :=
+def State.aNbhdsIcoPrev (s s₁ : State) : Set' PointZ :=
   s.aVisitedIcoPrev s₁ |>.bind (·.nbhd s.pw)
 
 -- #check 0 #exit
@@ -1361,25 +1361,71 @@ theorem State.aSimStatesIco_eq_aSimStatesIcc_prev_of {s s₁ : State} {st : Stra
 s.aSimStatesIco s₁ st = s.aSimStatesIcc s₁.prev st := by
   rw [aSimStatesIco, aSimStatesIcc, simStatesIco_eq_simStatesIcc_prev_of h₁ h₂]
 
--- theorem State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIco
--- {s s₁ : State} {st : Strat} {n p} [hs : AState s] [hs₁ : AState s₁]
--- (h₁ : s ≠ s₁) (h₂ : sys.simulate st.f s n = (s₁, 0)) :
--- p ∈ s.aVisitedIcoPrev s₁ ↔ ∃ s' ∈ s.aSimStatesIco s₁ st, s'.aPos = p := by
---   obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # AState.even_of_simulate h₂
---   cases n
---   ·
---     simp [h₁] at h₂
---   nm n
---   rw [add_mul] at h₂
---   have h' := h₂
---   simp at h₂
---   obtain ⟨s₃, ⟨s₂, h₂, h₃⟩, h₄⟩ := h₂
---   
---   unfold aVisitedIcoPrev
---   simp [diff_eq_of_simulate_full h']
---   sorry
+theorem State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIco
+{s s₁ : State} {st : Strat} {n p} [hs : AState s] [hs₁ : AState s₁] [hst : st.WF]
+(h₁ : s ≠ s₁) (h₂ : sys.simulate st.f s n = (s₁, 0)) :
+p ∈ s.aVisitedIcoPrev s₁ ↔ ∃ s' ∈ s.aSimStatesIco s₁ st, s'.aPos = p := by
+  obtain ⟨n, rfl⟩ := Nat.even_iff_exi.mp # AState.even_of_simulate h₂
+  cases n
+  · simp [h₁] at h₂
+  nm n
+  rw [show (n + 1) * 2 = n * 2 + 2 by omega] at h₂
+  have h₆ := h₂
+  simp at h₂
+  obtain ⟨sd, ⟨sa, h₂, h₃⟩, h₄⟩ := h₂
+  have hsa := AState.of_simulate_mul_two_eq' h₂
+  have hsd := DState.of_tr h₃
+  unfold aVisitedIcoPrev
+  rw [diff_eq_of_simulate h₆, if_neg # by omega, prev_eq_of_tr h₄]
+  have h₅ : sys.simulate st.f s (n * 2 + 1) = (sd, 0); simp_all
+  rw [mem_aVisitedIco_iff_of h₅]
+  simp [mem_aSimStatesIco_iff_of h₆, and_assoc]
+  constructor
+  · rintro (rfl | ⟨k, hk, s', hs', H₁, H₂⟩)
+    · use s; simpa
+    have H₂' := H₂
+    simp at H₂
+    obtain ⟨sx, hsx, H₃⟩ : ∃ sx, DState sx ∧ sys.simulate st.f s (k + 1) = (sx, 0)
+    · simp [H₁, H₂]
+      suffices h : sys.validTr s' p
+      · choose sx h using h
+        use sx, by grind
+      rw [←H₂']
+      apply hst.validTr
+      apply sys.hasTr_of_reachable_and_ne (s₂ := sd)
+      on_goal 2 => grind
+      obtain ⟨c, H₃⟩ := Nat.exists_eq_add_of_lt hk
+      simp [H₃, H₁] at h₂; grind
+    simp [H₁] at H₃
+    obtain ⟨sy, hsy, H₄⟩ : ∃ sy, AState sy ∧ sys.simulate st.f s (k + 2) = (sy, 0)
+    · simp [H₁, H₃]
+      have h : sys.validTr sx (st.d.f sx); simp
+      choose sy h using h
+      use sy, by grind
+    simp [H₁, H₃] at H₄
+    rw [H₂] at H₃
+    use sy, hsy
+    symm; split_ands
+    · rw [DState.aPos_eq_of_tr H₄, AState.aPos_eq_of_tr H₃]
+    use k + 2, by omega
+    simp_all
+  · rintro ⟨s', hs', ⟨k, hk, H₂⟩, H₁⟩
+    obtain ⟨k, rfl⟩ := Nat.even_iff_exi.mp # AState.even_of_simulate H₂
+    cases k
+    · left; symm
+      simp at H₂
+      rwa [H₂]
+    nm k
+    right
+    replace hk : k < n; omega
+    simp [add_mul] at H₂
+    obtain ⟨sy, ⟨sx, H₂, H₃⟩, H₄⟩ := H₂
+    have hsx := AState.of_simulate_mul_two_eq' H₂
+    have hsy := DState.of_tr H₃
+    use k * 2, by omega, sx, hsx, H₂
+    rw [DState.aPos_eq_of_tr H₄, AState.aPos_eq_of_tr H₃] at H₁
+    exact H₁
 
--- #check 0 #exit
-
--- theorem State.aNbhds_eq_image_aSimStatesIco
--- Set'.ofFinset (s.aSimStatesIco s₁ st |>.image (·.aPos)) |>.bind (·.nbhd s.pw)
+@[simp]
+theorem State.aVisitedIcoPrev_self {s : State} : s.aVisitedIcoPrev s = ∅ := by
+  simp [aVisitedIcoPrev]

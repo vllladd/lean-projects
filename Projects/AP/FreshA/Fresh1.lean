@@ -3,28 +3,28 @@ import Projects.AP.FreshA.Tile
 
 namespace AP
 
-def AhwsFspCnd (f : State → State → FSP → FSP) (s s₂ : State) (fsp : FSP) : Prop :=
+def AHwsFspCnd (f : State → State → FSP → FSP) (s s₂ : State) (fsp : FSP) : Prop :=
   s₂.aHwsDisj # f s s₂ # fsp.offset # s₂.diff s
 
 def AStrat.RespectsFSP (f : State → State → FSP → FSP)
 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF →
   ∀ n, ∃ s₁ s₂, sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧
-  sys.tr s₁ (a.f s₁) = some s₂ ∧ AhwsFspCnd f s s₂ fsp
+  sys.tr s₁ (a.f s₁) = some s₂ ∧ AHwsFspCnd f s s₂ fsp
 
 def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
   ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisitedIcc s₁
 
 def aFresh1FSP (s s₂ : State) (fsp : FSP) : FSP :=
-  fsp.insertSet 0 (s.aVisitedIcc s₂.prev).toSet
+  fsp.insertSet 0 # s.aVisitedIcc s₂.prev |>.toSet
 
 def AStrat.Fresh1Aux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.RespectsFSP aFresh1FSP s fsp
 
 noncomputable
 def aFresh1 (s : State) (fsp : FSP) : AStrat :=
-  aSeek (AhwsFspCnd aFresh1FSP s · fsp)
+  aSeek (AHwsFspCnd aFresh1FSP s · fsp)
 
 -- #check 0 #exit
 
@@ -139,11 +139,11 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   intro d hd n
   induction n
   · simp
-    simp [aFresh1FSP, AhwsFspCnd]
-    have h₁ := @hs.aSeek_exi_tr_of (P := (AhwsFspCnd aFresh1FSP s · fsp))
+    simp [aFresh1FSP, AHwsFspCnd]
+    have h₁ := @hs.aSeek_exi_tr_of (P := (AHwsFspCnd aFresh1FSP s · fsp))
     specialize h₁ _
     · clear h₁
-      simp [AhwsFspCnd, aFresh1FSP]
+      simp [AHwsFspCnd, aFresh1FSP]
       replace h := aHwsDisj_insert_one_aPos h
       choose a₁ ha₁ h using h
       have h₁ := h d hd 1
@@ -161,7 +161,7 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
       grind
     unfold aFresh1
     choose s₂ h₁ h₂ using h₁
-    simp [AhwsFspCnd, aFresh1FSP] at h₁ h₂ ⊢
+    simp [AHwsFspCnd, aFresh1FSP] at h₁ h₂ ⊢
     use s₂, h₁
   nm n ih
   choose s₁ s₂ h₁ h₂ h₃ using ih
@@ -173,10 +173,10 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   have G₁ := sys.reachable_of_simulate h₁
   have G₂ := sys.reachable_right G₁ h₂
   have G₃ := sys.reachable_right G₂ h₄
-  have h₅ := @hs₃.aSeek_exi_tr_of (P := (AhwsFspCnd aFresh1FSP s · fsp))
+  have h₅ := @hs₃.aSeek_exi_tr_of (P := (AHwsFspCnd aFresh1FSP s · fsp))
   specialize h₅ _
   · clear h₅
-    simp [AhwsFspCnd, aFresh1FSP] at h₃ ⊢
+    simp [AHwsFspCnd, aFresh1FSP] at h₃ ⊢
     replace h₃ := DState.aHwsDisj_insert_two_aPos h₃
     choose a₁ ha₁ h₃ using h₃
     have H₁ := h₃ d hd 2

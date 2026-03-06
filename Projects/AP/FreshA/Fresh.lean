@@ -6,15 +6,20 @@ def AStrat.Fresh (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
   s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p' ≠ a.f s' → p ≠ p'
 
+-- def aFreshFSP' (s s₂ : State) (fsp : FSP) : FSP :=
+--   if s.diff s₂ < 2 then
+
 def aFreshFSP (s s₂ : State) (fsp : FSP) : FSP :=
-  fsp.insertSet 0 (s.aVisitedIcc s₂.prev).toSet
+  fsp.insertSet 3 # s₂.aPos.nbhd s.pw |>.toSet
+
+-- #check 0 #exit
 
 def AStrat.FreshAux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.RespectsFSP aFreshFSP s fsp
 
 noncomputable
 def aFresh (s : State) (fsp : FSP) : AStrat :=
-  aSeek (AhwsFspCnd aFreshFSP s · fsp)
+  aSeek (AHwsFspCnd aFreshFSP s · fsp)
 
 -- #check 0 #exit
 
@@ -194,61 +199,67 @@ a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p,
     contrapose! h; clear h
     rwa [Point.dist_comm]
 
--- theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
--- a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
--- p ∉ s.aNbhdsIco s₁ := by
---   rw [fresh_iff_alt₃]; congr!; simp; rw [forall_comm]
---   apply forall_congr'; intro p; simp_rw [←imp_forall_iff]
---   -- simp [State.aNbhdsIco]
---   sorry
+theorem AStrat.fresh_iff_alt₄ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
+a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
+p ∉ s.aNbhdsIcoPrev s₁ := by
+  rw [fresh_iff_alt₃]; simp; intro ha h₀; congr!; nm d hd s₁; rw [forall_comm]
+  apply forall_congr'; intro p; simp_rw [←imp_forall_iff]
+  congr!; nm h₁
+  simp [State.aNbhdsIcoPrev]
+  obtain ⟨hs₁, n, h₂, s₂, h₃, h₄⟩ := State.mem_aSimPairs_iff_simulate_tr.mp h₁
+  dsimp at h₃ h₄
+  rw [h₄] at h₃
+  by_cases h₅ : s = s₁
+  · simp [h₅]
+  · simp [State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIco h₅ h₂]
 
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by
   unfold aFresh; infer_instance
 
-theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
-(h : a.FreshAux s fsp) : s.aForallWinsDisj fsp a := by
-  choose ha h₀ h using h
-  intro d hd n
-  specialize h d hd
-  induction n using Nat.mod_2_ind <;> nm n
-  · cases n; simpa; nm n
-    specialize h n
-    simp at h
-    choose s₁ h₁ s₂ h₂ h₃ using h
-    have hs₁ := AState.of_simulate_mul_two_eq_full h₁
-    have hs₂ := DState.of_tr h₂
-    simp [Nat.add_mul, h₁, h₂]
-    choose a₁ ha₁ h₃ using h₃
-    specialize h₃ d hd 1
-    simp at h₃
-    choose s₃ h₃ h₄ using h₃
-    use s₃, h₃
-    simp [aFreshFSP] at h₄
-    simp [FSP.hasLe, FSP.insertSet] at h₄ ⊢
-    intro k hk
-    have h₅ := h₄ 0
-    specialize h₄ 1
-    simp at h₄ h₅
-    choose h₅ h₆ using h₅
-    rw [Nat.le_add_one_iff] at hk
-    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at *
-    rw [State.diff_eq_of_simulate h₁] at *
-    simp at *
-    rcases hk with hk | rfl
-    · exact h₆ k hk
-    · exact h₄
-  · specialize h n
-    choose s₁ s₂ h₁ h₂ h₃ using h
-    have hs₁ := AState.of_simulate_mul_two_eq_full h₁
-    simp [h₁, h₂]
-    replace h₃ := State.aPos_notMem_of_aHwsDisj h₃
-    simp at h₃
-    simp [FSP.hasLe]
-    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at *
-    rw [State.diff_eq_of_simulate h₁] at *
-    simp [aFreshFSP] at *
-    exact h₃.2
+-- theorem AState.aForallWinsDisj_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
+-- (h : a.FreshAux s fsp) : s.aForallWinsDisj fsp a := by
+--   choose ha h₀ h using h
+--   intro d hd n
+--   specialize h d hd
+--   induction n using Nat.mod_2_ind <;> nm n
+--   · cases n; simpa; nm n
+--     specialize h n
+--     simp at h
+--     choose s₁ h₁ s₂ h₂ h₃ using h
+--     have hs₁ := AState.of_simulate_mul_two_eq_full h₁
+--     have hs₂ := DState.of_tr h₂
+--     simp [Nat.add_mul, h₁, h₂]
+--     choose a₁ ha₁ h₃ using h₃
+--     specialize h₃ d hd 1
+--     simp at h₃
+--     choose s₃ h₃ h₄ using h₃
+--     use s₃, h₃
+--     simp [aFreshFSP] at h₄
+--     simp [FSP.hasLe, FSP.insertSet] at h₄ ⊢
+--     intro k hk
+--     have h₅ := h₄ 0
+--     specialize h₄ 1
+--     simp at h₄ h₅
+--     choose h₅ h₆ using h₅
+--     rw [Nat.le_add_one_iff] at hk
+--     rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at *
+--     rw [State.diff_eq_of_simulate h₁] at *
+--     simp at *
+--     rcases hk with hk | rfl
+--     · exact h₆ k hk
+--     · exact h₄
+--   · specialize h n
+--     choose s₁ s₂ h₁ h₂ h₃ using h
+--     have hs₁ := AState.of_simulate_mul_two_eq_full h₁
+--     simp [h₁, h₂]
+--     replace h₃ := State.aPos_notMem_of_aHwsDisj h₃
+--     simp at h₃
+--     simp [FSP.hasLe]
+--     rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at *
+--     rw [State.diff_eq_of_simulate h₁] at *
+--     simp [aFreshFSP] at *
+--     exact h₃.2
 
 -- theorem AState.fresh_of_freshAux {s fsp} {a : AStrat} [hs : AState s]
 -- (h : a.FreshAux s fsp) : a.Fresh s fsp := by

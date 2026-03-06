@@ -33,6 +33,17 @@ def offset (fsp : FSP) (n : ℕ) : FSP :=
 def hasLe (a : FSP) (n : ℕ) (p : PointZ) : Prop :=
   ∃ k ≤ n, p ∈ a.get k
 
+def insertSet (fsp : FSP) (n : ℕ) (ps : Set PointZ) : FSP where
+  get i := if i = n then ps ∪ fsp.get i else fsp.get i
+
+protected def insert (fsp : FSP) (n : ℕ) (p : PointZ) : FSP :=
+  fsp.insertSet n {p}
+
+def subset (a b : FSP) : Prop :=
+  ∀ ⦃i⦄, a.get i ⊆ b.get i
+
+-- #check 0 #exit
+
 -----
   
 @[simp]
@@ -45,12 +56,6 @@ theorem hasLe_next {n p} : a.next.hasLe n p ↔ a.hasLe (n + 1) p := by
   · have h₁ := h k (by linarith)
     have h₂ := h (k + 1) (by simpa)
     cases k <;> simp_all
-
-def insertSet (fsp : FSP) (n : ℕ) (ps : Set PointZ) : FSP where
-  get i := if i = n then ps ∪ fsp.get i else fsp.get i
-
-protected def insert (fsp : FSP) (n : ℕ) (p : PointZ) : FSP :=
-  fsp.insertSet n {p}
 
 theorem hasLe_insertSet_eq_of_lt {n k ps} (h : k < n) :
 (fsp.insertSet n ps).hasLe k = fsp.hasLe k := by
@@ -224,3 +229,6 @@ theorem get_empty : (∅ : FSP).get = λ _ => ∅ := by
 @[simp]
 theorem hasLe_empty : (∅ : FSP).hasLe = λ _ _ => False := by
   unfold hasLe; simp
+
+instance : HasSubset FSP := ⟨subset⟩
+theorem subset_def : a ⊆ b ↔ ∀ ⦃i⦄, a.get i ⊆ b.get i := by rfl
