@@ -142,7 +142,7 @@ s.aPos.dist 0 ≤ 100 ∧ guardTiles ⊆ s.taken := by
     Int.reduceNeg, List.range_map_iterate, List.iterate, Corner.rotRight, Dir.rotRight_up,
     rotRight_ft_mk, neg_neg, Dir.rotRight_right, Dir.rotRight_down, List.map_cons, List.map_nil,
     Defense.ofList_cons, Defense.ofList_nil, Defense.merge_empty_right, Defense.cnd_merge,
-    Corner.cnd, Corner.dist, Edge.dist, Corner.edge₁, Corner.edge, Point.coord'_up, instFactTrue_aP,
+    Corner.cnd, Corner.dist, Edge.dist, Corner.edge₁, Corner.edge, Point.coord'_up, fact_true,
     Edge.dir_eq_of_up, sub_neg_eq_add, Corner.edge₂, Point.coord'_right, le_inf_iff, Corner.cnd',
     tsub_le_iff_right, Point.coord'_down, Edge.dir_eq_of_down, Point.coord'_left, Dir.rotRight_left,
     Int.min_add_right, Point.dist, Point.x_ofNat, CharP.cast_eq_zero, sub_zero, Point.y_ofNat,

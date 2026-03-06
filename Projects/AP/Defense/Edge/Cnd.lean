@@ -177,7 +177,7 @@ theorem f₄_lt_7 {d f} : f₄ d f < 7 := by
 theorem ptsArr_eq_of_taken_eq {s s' : State} {z n} (h : s'.taken = s.taken) :
 edge₀.ptsArr s' z n = edge₀.ptsArr s (z + s'.aPos.x - s.aPos.x) n := by
   unfold ptsArr
-  simp only [h, getBorderPoint, dir_edge₀, instFactTrue_aP, dir_eq_of_down, offset_edge₀,
+  simp only [h, getBorderPoint, dir_edge₀, fact_true, dir_eq_of_down, offset_edge₀,
     List.pure_def, List.bind_eq_flatMap, List.flatMap_fn_singleton, List.map_map,
     Function.comp_def, Array.mk.injEq, List.map_inj_left, List.mem_range, decide_eq_decide]
   ring_nf; simp

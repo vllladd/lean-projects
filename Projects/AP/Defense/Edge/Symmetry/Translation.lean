@@ -65,7 +65,7 @@ theorem defense_translate_of_down {dy} [H : Fact # e.dir = .down] :
     ↓existsAndEq, and_true, aPos_sym_of_basicSym', taken_sym_of_basicSym', Set'.mem_map, ft'_eq_iff,
     exists_eq_right, Option.map_bind, Function.comp_apply, Option.map_some,
     exists_exists_and_eq_and]
-  simp_all only [dir_eq_of_down, instFactTrue_aP, Int.reduceNeg]
+  simp_all only [dir_eq_of_down, fact_true, Int.reduceNeg]
   apply Iff.intro
   · intro a
     obtain ⟨left, right⟩ := a
