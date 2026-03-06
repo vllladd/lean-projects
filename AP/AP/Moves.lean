@@ -806,7 +806,7 @@ s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f 
       use hsa₂, n * 2, G₃
       simp [G₆]
     · rwa [←AState.aPos_eq_of_tr G₆]
-    · rw [State.length_hist_eq_of_simulate_eq G₃]; rfl
+    · rw [State.length_hist_eq_of_simulate_eq G₃]
 
 theorem AState.getd_aSimPtsNcard_lt_of {s st₁ st₂ set} (n : ℕ)
 [hs : AState s] (h₁ : s.aWins st₁) (h₂ : s.aWins st₂)

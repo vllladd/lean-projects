@@ -1,4 +1,4 @@
-import AP.Util.Finset
+import AP.Util
 
 namespace Paramodulator
 

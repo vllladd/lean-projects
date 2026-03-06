@@ -83,14 +83,13 @@ theorem flush_flush' : flush.run (flush'.run s).2 = flush'.run s := rfl
 @[simp]
 theorem flush_flush : flush.run (flush.run s).2 = flush.run s := by
   nth_rw 2 [flush]; simp
-  split_ifs with h
-  · simp; simp [flush, h]
-  · simp
+  split_ifs with h <;> simp
+  simp [flush, h]
 
 @[simp]
 theorem flush_ofBits {bs} : flush.run (ofBits bs) = ((), ofBits bs) := by
   induction bs using List.reverseRecOn; simp
-  unfold ofBits; simp [writeBit, writeBit', Id.instMonad]; rfl
+  unfold ofBits; simp [writeBit, writeBit']; rfl
 
 @[simp]
 theorem getOutput_ofBits {bs} : getOutput.run (ofBits bs) = (ofBits bs |>.bytes, ofBits bs) := by

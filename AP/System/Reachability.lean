@@ -429,7 +429,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
   subst hf
   unfold mkSimFn
   dsimp
-  rw [Nat.find!_eq_of (n := k)]
+  rw! (castMode := .all) [Nat.find!_eq_of (n := k)]
   rotate_left
   · ext1
     rfl
@@ -443,7 +443,7 @@ sys.simulate f a k = ((sys.trs a # ts.take k).1, 0) := by
     specialize h₂ (ts.take r) (ts.take k) (by simp) (by simp) h₃
     simp [hn] at h₂
     omega
-  rw [List.getElem?_eq_getElem # by linarith]
+  rw! (castMode := .all) [List.getElem?_eq_getElem # by linarith]
   simp
   rw [List.take_add_one, List.getElem?_eq_getElem # by linarith, Option.toList_some,
     trs_append]

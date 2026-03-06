@@ -1,14 +1,14 @@
--- import AP.Util
--- import AP.Misc
--- import AP.AP
--- import AP.Sokoban
--- import AP.RatRect
--- import AP.RealAnalysis
--- import AP.DigitalRoot
--- import AP.Physics
--- import AP.Knowledge
--- import AP.Inference
--- import AP.Fixpoint
+import AP.Util
+import AP.Misc
+import AP.AP
+import AP.Sokoban
+import AP.RatRect
+import AP.RealAnalysis
+import AP.DigitalRoot
+import AP.Physics
+import AP.Knowledge
+import AP.Inference
+import AP.Fixpoint
 import AP.Paramodulator
 
 -- namespace AP

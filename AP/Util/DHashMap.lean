@@ -547,15 +547,15 @@ mp.toList = mp.buckets.toList.flatMap (·.toList) := by
   unfold Raw.toList Raw.Internal.foldRev Raw.Internal.foldRevM
   rw [Array.foldrM_eq_reverse_foldlM_toList]
   generalize mp.buckets.toList = bs
-  simp only [List.foldlM_reverse, List.foldrM_eq_foldr, Id.run, Id.instMonad,
-    Function.comp_def, Function.const_apply]
+  simp only [List.foldlM_reverse, List.foldrM_eq_foldr, Id.run]
+  unfold pure Id.instMonad Applicative.toPure; dsimp
   induction bs; rfl
   nm b bs ih
   simp only [List.foldr_cons, List.flatMap_cons, ←ih]
   clear ih
   induction b; rfl
   nm j y b ih
-  simp only [AssocList.foldrM, ih, AssocList.toList_cons, List.cons_append]
+  simp only [AssocList.foldrM, AssocList.toList_cons, List.cons_append]; grind
 
 theorem bucket_nodup_keys {mp : Raw α β} (wf : mp.WF) {b}
 (h : b ∈ mp.buckets) : b.toList.map (·.1) |>.Nodup := by

@@ -1229,7 +1229,7 @@ s.aPos ≠ p ∧ p ∉ s.taken ∧ p.dist s.aPos ≤ s.pw := by
   simp only [aMove, ne_eq, Option.pure_def, Option.bind_eq_bind, Option.isSome_bind,
     Option.isSome_some, Option.any_true, Option.any_eq_true, Option.guard_eq_some',
     exists_const, and_congr_right_iff]
-  simp only [guard, instAlternativeOption, Option.pure_def, apply_ite, Option.isSome_some,
+  simp only [guard, Option.pure_def, Option.failure_eq_none, apply_ite, Option.isSome_some,
     Option.isSome_none, Bool.if_false_right, Bool.and_true, decide_eq_true_eq, implies_true]
 
 theorem DState.exi_aMove_of_taken_ne_empty {s} [hs : DState s]

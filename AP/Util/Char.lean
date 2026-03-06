@@ -8,7 +8,7 @@ theorem min_max_def {a b : Char} : (min a b = if a ≤ b then a else b) ∧
     change ite _ _ _ = _
     congr
     simp
-    dsimp [instOrdChar, compareOfLessAndEq]
+    unfold instOrdChar compareOfLessAndEq; simp
     split_ifs with h₁ h₂ <;> simp
     · exact Std.le_of_lt h₁
     · subst h₂; simp

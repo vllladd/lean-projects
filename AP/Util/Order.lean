@@ -96,66 +96,114 @@ LinearOrder α := by
   generalize compare a b = o
   cases o <;> rfl
 
-def equiv_toLinearOrder_aux {α β : Type*}
+theorem isLe_compare_iff_le {α : Type*} [ha : LinearOrder α] {x y : α} :
+(compare x y).isLE = true ↔ x ≤ y := by
+  rw [←Ord.le_def]
+  cases ha
+  nm hpo min' max' ord' h_tot dec_le dec_eq dec_lt h_min h_max h₁
+  cases hpo
+  nm hp h₂
+  cases hp
+  nm le lt h_refl h_trans h₃
+  rcases le with ⟨le⟩
+  rcases lt with ⟨lt⟩
+  change ∀ a b, le a b → le b a → a = b at h₂
+  change ∀ a b, lt a b ↔ le a b ∧ ¬le b a at h₃
+  congr!
+  clear x y
+  unfold leOfOrd' instDistribLatticeOfLinearOrder Lattice.toSemilatticeInf Preorder.toLE
+    PartialOrder.toPreorder SemilatticeInf.toPartialOrder SemilatticeSup.toPartialOrder
+    Lattice.toSemilatticeSup LinearOrder.toLattice
+  dsimp
+  congr!; nm x y
+  rw [h₁]
+  unfold compareOfLessAndEq
+  split_ifs with H₁ H₂
+  · simp
+    change lt x y at H₁
+    rw [h₃] at H₁
+    exact H₁.1
+  · subst H₂
+    simp
+    apply h_refl
+  · change ¬lt x y at H₁
+    simp
+    contrapose! H₁
+    rw [h₃]
+    use H₁
+    contrapose! H₂
+    exact h₂ x y H₁ H₂
+
+theorem isLt_compare_iff_lt {α : Type*} [ha : LinearOrder α] {x y : α} :
+(compare x y).isLT = true ↔ x < y := by
+  rw [←Ord.lt_def]
+  cases ha
+  nm hpo min' max' ord' h_tot dec_le dec_eq dec_lt h_min h_max h₁
+  cases hpo
+  nm hp h₂
+  cases hp
+  nm le lt h_refl h_trans h₃
+  rcases le with ⟨le⟩
+  rcases lt with ⟨lt⟩
+  change ∀ a b, le a b → le b a → a = b at h₂
+  change ∀ a b, lt a b ↔ le a b ∧ ¬le b a at h₃
+  congr!
+  clear x y
+  unfold ltOfOrd' instDistribLatticeOfLinearOrder Lattice.toSemilatticeInf Preorder.toLT
+    PartialOrder.toPreorder SemilatticeInf.toPartialOrder SemilatticeSup.toPartialOrder
+    Lattice.toSemilatticeSup LinearOrder.toLattice
+  dsimp
+  congr!; nm x y
+  rw [h₁]
+  unfold compareOfLessAndEq
+  split_ifs with H₁ H₂
+  · simp
+    exact H₁
+  · subst H₂
+    simp
+    exact H₁
+  · change ¬lt x y at H₁
+    simp
+    exact H₁
+
+theorem instDistribLatticeOfLinearOrder_toSemilatticeInf_toLE_eq {α : Type*} [ha : LinearOrder α] :
+(@instDistribLatticeOfLinearOrder α ha).toSemilatticeInf.toLE = ha.toLE := rfl
+
+def equivToLinearOrderAux {α β : Type*}
 [ha : LinearOrder α] (e : α ≃ β) : LinearOrder β := by
   let f := e.1
   let g := e.2
   have inj := e.bijective_invFun.1
   have gf : ∀ x, g (f x) = x := e.left_inv
-  have eq_iff : ∀ x y, x = y ↔ g x = g y :=
-    by
-      intro x y
-      constructor
-      · rintro rfl; rfl
-      · apply inj
+  have eq_iff : ∀ x y, x = y ↔ g x = g y
+  · intro x y; constructor
+    · rintro rfl; rfl
+    · apply inj
   let h_ord : Ord β := ⟨λ x y => compare (g x) (g y)⟩
   apply LinearOrder.ofOrd
   · intro a
     rw [Ord.le_def]
-    simp [h_ord, compare_eq]
+    subst h_ord
+    simp
   · intro a b c h₁ h₂
     rw [Ord.le_def] at h₁ h₂ ⊢
-    simp [h_ord, compare_eq] at h₁ h₂ ⊢
-    split_ifs at h₁ <;> simp at h₁ <;>
-      split_ifs at h₂ <;> simp at h₂ <;>
-      split_ifs <;> simp <;> nm h₃ h₄ h₅ h₆
-    · apply h₅; exact gt_trans h₄ h₃
-    · nm h₇
-      simp [h₄] at h₃ h₇
-      contradiction
-    · nm h₇
-      apply h₅
-      simpa [h₃]
-    · nm h₇ h₈
-      simp [h₄, h₈] at h₆
+    subst h_ord
+    simp at h₁ h₂ ⊢
+    simp only [isLe_compare_iff_le] at h₁ h₂ ⊢
+    exact h₁.trans h₂
   · intro a b
     simp_rw [Ord.le_def, Ord.lt_def]
-    simp [h_ord, compare_eq]
-    split_ifs <;> simp_all
-    nm h₁ h₂ h₃;
-    contrapose! h₂
-    exact le_of_lt h₃
+    subst h_ord
+    simp [-Ordering.isLT_iff_eq_lt, isLe_compare_iff_le, isLt_compare_iff_lt]
+    exact le_of_lt
   · intro a b
     simp_rw [Ord.le_def]
-    simp [h_ord, compare_eq]
-    split_ifs <;> simp
-    · nm h₁ h₂
-      contrapose! h₁
-      exact le_of_lt h₂
-    · nm h₁ h₂ h₃
-      exact inj h₃.symm
-    · nm h₁ h₂ h₃
-      exact inj h₂
-    · nm h₁ h₂ h₃ h₄
-      exact inj h₂
+    subst h_ord
+    simp [isLe_compare_iff_le, eq_iff]
   · intro a b
     simp_rw [Ord.le_def]
-    simp [h_ord, compare_eq]
-    split_ifs <;> simp
-    nm h₁ h₂ h₃ h₄
-    apply h₁
-    simp at h₃
-    exact lt_of_le_of_ne h₃ h₂
+    subst h_ord
+    simp [isLe_compare_iff_le]
 
 def Equiv.toLinearOrder {α β : Type*}
 [ha : LinearOrder α] (e : α ≃ β) : LinearOrder β := by
@@ -210,20 +258,9 @@ def Equiv.toLinearOrder {α β : Type*}
     change Decidable # g a < g b
     infer_instance
 
-example : @equiv_toLinearOrder_aux = @Equiv.toLinearOrder := by
-  unfold equiv_toLinearOrder_aux Equiv.toLinearOrder
-  ext α β ha e x y
-  let g := e.invFun
-  let h_ord : Ord β := ⟨λ x y => compare (g x) (g y)⟩
-  rw [Ord.le_def]
-  dsimp
-  rw [compare_eq]
-  split_ifs with h₁ h₂ <;> simp
-  · exact le_of_lt h₁
-  · simp [h₂]
-  · contrapose! h₂
-    simp at h₁
-    exact le_antisymm h₂ h₁
+theorem equivToLinearOrderAux_eq : @equivToLinearOrderAux = @Equiv.toLinearOrder := by
+  unfold equivToLinearOrderAux Equiv.toLinearOrder; ext
+  change _ = _ ↔ _; simp; rw [isLe_compare_iff_le]; rfl
 
 theorem false_of_lt_and_lt {α : Type*} [ha : LinearOrder α] {a b : α}
 (h₁ : a < b) (h₂ : b < a) : False := by
@@ -348,7 +385,7 @@ theorem nodup_icc {x y : α} : (icc x y).Nodup :=
 @[simp]
 theorem length_icc_int_nat {z : ℤ} {a b : ℕ} :
 (icc (z - a) (z + b)).length = a + b + 1 := by
-  simp [icc, instLocallyFiniteOrderListInt]; omega
+  unfold instLocallyFiniteOrderListInt; simp [icc]; omega
 
 end List
 

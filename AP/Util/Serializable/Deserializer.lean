@@ -81,9 +81,6 @@ theorem ofNatLT_eq_ofNatLT_iff {n m hn hm} : ofNatLT n hn = ofNatLT m hm ↔ n =
   simp_rw [ofNatLT, mk_eq_mk_iff]
   simp
 
-theorem ext_iff : x = y ↔ x.toNat = y.toNat := by
-  rcases x, y with ⟨⟨⟨n, hn⟩⟩, ⟨⟨m, hm⟩⟩⟩; simp
-
 @[simp]
 theorem ofBits_toBits : ofBits x.toBits = x := by
   native_decide +revert

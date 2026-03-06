@@ -30,7 +30,7 @@ theorem abs_le_bounds_of_tendsTo {a L n} (h : tendsTo a L) : |a n| ≤ bounds a 
     apply converges_of_tendsTo (L := |L|)
     apply tendsTo_abs
     exact tendsTo_drop_of h
-  simp; use 0; rfl
+  simp; use 0
 
 theorem abs_le_bounds_of_converges {a n} (h : converges a) : |a n| ≤ bounds a n := by
   choose L h using h; exact abs_le_bounds_of_tendsTo h
