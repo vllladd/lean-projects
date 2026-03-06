@@ -1,7 +1,7 @@
-name = "ap"
+name = "projects"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["AP", "main"]
+defaultTargets = ["Projects", "main"]
 
 [leanOptions]
 pp.unicode.fun = true
@@ -19,9 +19,9 @@ git = "https://github.com/dwrensha/tryAtEachStep"
 rev = "main"
 
 [[lean_lib]]
-name = "AP"
+name = "Projects"
 
 [[lean_exe]]
 name = "main"
-root = "AP"
-needs = ["AP"]
+root = "Projects"
+needs = ["Projects"]

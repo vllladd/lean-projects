@@ -1,0 +1,408 @@
+import Projects.RealAnalysis.Rational
+
+namespace RealAnalysis
+
+def unBddCnd' (p : ℕ → Prop) : Prop :=
+  ∀ N, ∃ n, N ≤ n ∧ p n
+
+def unBddCnd (p : ℝ → Prop) (a : ℕ → ℝ) : Prop :=
+  unBddCnd' (p # a ·)
+
+@[simp] noncomputable
+def filter (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℝ :=
+  let n₀ := Nat.find! (p # a ·)
+  match n with
+  | 0 => a n₀
+  | n + 1 => filter p (a # n₀ + 1 + ·) n
+
+@[simp] noncomputable
+def filterSubseq (p : ℝ → Prop) (a : ℕ → ℝ) (n : ℕ) : ℕ :=
+  let n₀ := Nat.find! (p # a ·)
+  match n with
+  | 0 => n₀
+  | n + 1 => n₀ + 1 + filterSubseq p (a # n₀ + 1 + ·) n
+
+@[simp] noncomputable
+def monoLtSubseq (a : ℕ → ℝ) (n : ℕ) : ℕ :=
+  match n with
+  | 0 => 0
+  | n + 1 =>
+    let n₀ := monoLtSubseq a n
+    n₀ + Nat.find! (λ k => a n₀ < a (n₀ + k))
+
+def isPeak (a : ℕ → ℝ) (k : ℕ) : Prop :=
+  ∀ n, k ≤ n → a n ≤ a k
+
+def unBddPeaks (a : ℕ → ℝ) : Prop :=
+  unBddCnd' # isPeak a
+
+def convAndNotMono (a : ℕ → ℝ) : Prop :=
+  converges a ∧ ¬monoLe a ∧ ¬monoGe a
+
+-----
+
+theorem unBddCnd'_iff_alt₁ {p} : unBddCnd' p ↔ ∀ N, ∃ n, N < n ∧ p n := by
+  constructor; all_goals
+    intro h N
+    specialize h # N + 1
+    choose n h₁ h₂ using h
+    use n, by linarith, h₂
+
+theorem unBddCnd_iff_alt₁ {a p} : unBddCnd p a ↔ ∀ N, ∃ n, N < n ∧ p (a n) := by
+  constructor; all_goals
+    intro h N
+    specialize h # N + 1
+    choose n h₁ h₂ using h
+    use n, by linarith, h₂
+
+theorem unBddCnd'_iff_alt₂ {p} : unBddCnd' p ↔ {n | p n}.Infinite := by
+  rw [Set.infinite_iff_exists_gt]
+  simp
+  rw [unBddCnd'_iff_alt₁]
+  apply forall_congr'; intro N
+  tauto
+
+theorem unBddCnd_iff_alt₂ {a p} : unBddCnd p a ↔ {n | p # a n}.Infinite := by
+  rw [Set.infinite_iff_exists_gt]
+  simp
+  rw [unBddCnd_iff_alt₁]
+  apply forall_congr'; intro N
+  tauto
+
+theorem unBddCnd_drop_of {a p k} (h : unBddCnd p a) : unBddCnd p (a # k + ·) := by
+  intro N
+  specialize h # N + k
+  choose n h₁ h₂ using h
+  use n - k, by omega
+  simp
+  rw [←Nat.add_sub_assoc # by linarith]
+  simpa
+
+theorem unBddCnd_drop_iff {a p k} : unBddCnd p (a # k + ·) ↔ unBddCnd p a := by
+  symm; use unBddCnd_drop_of
+  intro h N
+  specialize h # N + k
+  choose n h₁ h₂ using h
+  use n + k, by linarith
+  rwa [add_comm]
+
+theorem subseq_filterSubseq {a p} (h : unBddCnd p a) : Subseq (filterSubseq p a) := by
+  rw [subseq_iff_lt_add_one]
+  intro n
+  simp
+  induction n generalizing a
+  · simp; linarith
+  nm n ih
+  simp
+  generalize hk₁ : Nat.find! (p # a ·) = k₁
+  exact @ih (a # k₁ + 1 + ·) # unBddCnd_drop_of h
+
+theorem filter_eq_filterSubseq {a p} (h : unBddCnd p a) : filter p a = a ∘ filterSubseq p a := by
+  ext n
+  simp
+  induction n generalizing a
+  · simp
+  nm n ih
+  simp
+  generalize hk : Nat.find! (p # a ·) = k
+  exact @ih (a # k + 1 + ·) # unBddCnd_drop_of h
+
+theorem tendsTo_filter {a L p} (h₁ : tendsTo a L) (h₂ : unBddCnd p a) : tendsTo (filter p a) L := by
+  rw [filter_eq_filterSubseq h₂]
+  exact tendsTo_subseq h₁ # subseq_filterSubseq h₂
+
+theorem unBddCnd_or_of_or {a : ℕ → ℝ} {p₁ p₂ : ℝ → Prop} (h : ∀ n, p₁ (a n) ∨ p₂ (a n)) :
+unBddCnd p₁ a ∨ unBddCnd p₂ a := by
+  rw [or_iff_not_imp_left]
+  intro h₁
+  simp [unBddCnd, unBddCnd'] at h₁
+  choose N h₁ using h₁
+  intro N₁
+  use N + N₁, by linarith
+  specialize h # N + N₁
+  specialize h₁ (N + N₁) # by linarith
+  simp [h₁] at h
+  exact h
+
+theorem unBddCnd_le_or_ge {a M} : unBddCnd (· ≤ M) a ∨ unBddCnd (M ≤ ·) a := by
+  apply unBddCnd_or_of_or; intro N; apply le_total
+
+theorem apply_nat_find!_of_unBddCnd {a p} (h : unBddCnd p a) : p # a # Nat.find! (p # a ·) := by
+  apply Nat.find!_spec (p := (p # a ·))
+  specialize h 0
+  choose n h₁ h₂ using h
+  use n
+
+theorem apply_filterSubseq {a p n} (h : unBddCnd p a) : p (a # filterSubseq p a n) := by
+  induction n generalizing a
+  · simp; exact apply_nat_find!_of_unBddCnd h
+  nm n ih
+  simp
+  have h₁ := apply_nat_find!_of_unBddCnd h
+  generalize hk : Nat.find! (p # a ·) = k at h₁ ⊢
+  exact @ih (a # k + 1 + ·) # unBddCnd_drop_of h
+
+theorem apply_filter {a p n} (h : unBddCnd p a) : p (filter p a n) := by
+  rw [filter_eq_filterSubseq h]; simp; exact apply_filterSubseq h
+
+theorem unBddCnd_filter {a p} (h : unBddCnd p a) : unBddCnd p (filter p a) :=
+  λ N => ⟨N, by rfl, apply_filter h⟩
+
+theorem exi_cnd_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+∃ k, a n < a (m + k) := by
+  specialize h₁ (L - a n) # by linarith [h₂ n]
+  choose N h₁ using h₁
+  dsimp at h₁
+  specialize h₁ (m + N) # by linarith
+  rw [abs_of_neg # by linarith [h₂ # m + N]] at h₁
+  simp at h₁
+  use N
+
+theorem exi_cnd_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+∃ k, a n < a k := by
+  have h₃ := exi_cnd_add_of_lt_limit (n := n) (m := 0) h₁ h₂
+  simp at h₃; exact h₃
+
+theorem apply_natfind!_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+a n < a (Nat.find! (a n < a ·)) :=
+  Nat.find!_spec (p := (a n < a ·)) # exi_cnd_of_lt_limit h₁ h₂
+
+theorem apply_natfind!_add_of_lt_limit {a L n m} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+a n < a (m + Nat.find! (λ k => a n < a (m + k))) :=
+  Nat.find!_spec (p := λ k => a n < a (m + k)) # exi_cnd_add_of_lt_limit h₁ h₂
+
+theorem pos_natfind!_add_of_lt_limit {a L n} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+0 < Nat.find! (λ k => a n < a (n + k)) := by
+  apply Nat.find!_pos_of; simp; exact exi_cnd_add_of_lt_limit h₁ h₂
+
+theorem subseq_monoLtSubseq {a L} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+Subseq # monoLtSubseq a := by
+  rw [subseq_iff_lt_add_one]
+  intro n
+  simp
+  exact pos_natfind!_add_of_lt_limit h₁ h₂
+
+theorem monoLt_monoLtSubseq {a L} (h₁ : tendsTo a L) (h₂ : ∀ n, a n < L) :
+monoLt (a ∘ monoLtSubseq a) := by
+  rw [monoLt_iff_lt_succ]
+  intro n
+  simp
+  generalize monoLtSubseq a n = n; nm x; clear x
+  exact apply_natfind!_add_of_lt_limit h₁ h₂
+  
+theorem exi_monoLt_subseq_of_forall_lt_limit {a L} (h₁ : tendsTo a L)
+(h₂ : ∀ n, a n < L) : ∃ σ, Subseq σ ∧ monoLt (a ∘ σ) := by
+  use monoLtSubseq a
+  use subseq_monoLtSubseq h₁ h₂
+  use monoLt_monoLtSubseq h₁ h₂
+
+theorem exi_monoLe_subseq_of_forall_le_limit {a L} (h₁ : tendsTo a L)
+(h₂ : ∀ n, a n ≤ L) : ∃ σ, Subseq σ ∧ monoLe (a ∘ σ) := by
+  by_cases h₃ : unBddCnd (· < L) a
+  rotate_left
+  · simp [unBddCnd, unBddCnd'] at h₃
+    choose N h₃ using h₃
+    replace h₃ : unBddCnd (· = L) a
+    · intro N₁
+      specialize h₃ (N + N₁) # by linarith
+      use N + N₁, by linarith
+      apply le_antisymm _ h₃; apply h₂
+    use filterSubseq (· = L) a, subseq_filterSubseq h₃
+    simp [apply_filterSubseq h₃]
+  clear h₂
+  rename' h₃ => h₂
+  have h₃ := tendsTo_filter h₁ h₂
+  have h₄ : ∀ n, filter (· < L) a n < L
+  · intro n; apply apply_filter h₂
+  choose σ h₅ h₆ using exi_monoLt_subseq_of_forall_lt_limit h₃ h₄
+  rw [filter_eq_filterSubseq h₂] at h₆
+  use filterSubseq (· < L) a ∘ σ
+  use subseq_comp (subseq_filterSubseq h₂) h₅
+  exact monoLe_of_monoLt h₆
+
+theorem exi_monoLe_subseq_of_unBddCnd_le_limit {a L} (h₁ : tendsTo a L)
+(h₂ : unBddCnd (· ≤ L) a) : ∃ σ, Subseq σ ∧ monoLe (a ∘ σ) := by
+  have h₃ := tendsTo_filter h₁ h₂
+  have h₄ : ∀ n, filter (· ≤ L) a n ≤ L
+  · intro n; apply apply_filter h₂
+  choose σ h₅ h₆ using exi_monoLe_subseq_of_forall_le_limit h₃ h₄
+  rw [filter_eq_filterSubseq h₂] at h₆
+  use filterSubseq (· ≤ L) a ∘ σ, subseq_comp (subseq_filterSubseq h₂) h₅, h₆
+
+theorem exi_monoLt_subseq_of_unBddCnd_lt_limit {a L} (h₁ : tendsTo a L)
+(h₂ : unBddCnd (· < L) a) : ∃ σ, Subseq σ ∧ monoLt (a ∘ σ) := by
+  have h₃ := tendsTo_filter h₁ h₂
+  have h₄ : ∀ n, filter (· < L) a n < L
+  · intro n; apply apply_filter h₂
+  choose σ h₅ h₆ using exi_monoLt_subseq_of_forall_lt_limit h₃ h₄
+  rw [filter_eq_filterSubseq h₂] at h₆
+  use filterSubseq (· < L) a ∘ σ, subseq_comp (subseq_filterSubseq h₂) h₅, h₆
+
+theorem exi_monoGe_subseq_of_unBddCnd_limit_le {a L} (h₁ : tendsTo a L)
+(h₂ : unBddCnd (L ≤ ·) a) : ∃ σ, Subseq σ ∧ monoGe (a ∘ σ) := by
+  replace h₁ : tendsTo (-a) (-L); exact tendsTo_neg h₁
+  replace h₂ : unBddCnd (· ≤ -L) (-a)
+  · intro n
+    specialize h₂ n
+    simpa
+  choose σ h₃ h₄ using exi_monoLe_subseq_of_unBddCnd_le_limit h₁ h₂
+  use σ, h₃
+  convert_to monoGe (-(-a) ∘ σ); ext; simp
+  simp at h₄ ⊢
+  exact h₄
+
+theorem exi_monoGt_subseq_of_unBddCnd_limit_lt {a L} (h₁ : tendsTo a L)
+(h₂ : unBddCnd (L < ·) a) : ∃ σ, Subseq σ ∧ monoGt (a ∘ σ) := by
+  replace h₁ : tendsTo (-a) (-L); exact tendsTo_neg h₁
+  replace h₂ : unBddCnd (· < -L) (-a)
+  · intro n
+    specialize h₂ n
+    simpa
+  choose σ h₃ h₄ using exi_monoLt_subseq_of_unBddCnd_lt_limit h₁ h₂
+  use σ, h₃
+  convert_to monoGt (-(-a) ∘ σ); ext; simp
+  simp at h₄ ⊢
+  exact h₄
+
+theorem isPeak_iff_alt₁ {a k} : isPeak a k ↔ ∀ n, k < n → a n ≤ a k := by
+  constructor
+  · intro h N h₁
+    apply h
+    linarith
+  · intro h N h₁
+    rw [le_iff_eq_or_lt] at h₁
+    rcases h₁ with rfl | h₁
+    · rfl
+    apply h
+    exact h₁
+
+theorem exi_drop_eq_subseq {a : ℕ → ℝ} {k} : ∃ σ, Subseq σ ∧ (a # k + ·) = (a ∘ σ) := by
+  use (k + ·)
+  simp
+  intro i j h
+  simpa
+
+theorem exi_monoLe_subseq_of_not_unBddPeaks {a} (h : ¬unBddPeaks a) :
+∃ σ, Subseq σ ∧ monoLe (a ∘ σ) := by
+  simp [unBddPeaks, unBddCnd', isPeak] at h
+  choose N h using h
+  change ∀ n, N ≤ n → ∃ k, n ≤ k ∧ a n < a k at h
+  replace h : ∀ n, ∃ k, n ≤ k ∧ (a # N + ·) n < (a # N + ·) k
+  · intro n
+    simp
+    specialize h (N + n) # by linarith
+    choose k h₁ h₂ using h
+    use k - N, by omega
+    rw [←Nat.add_sub_assoc # by linarith]
+    simpa
+  suffices h₁ : ∃ σ, Subseq σ ∧ monoLe ((a # N + ·) ∘ σ)
+  · choose σ h₁ h₂ using h₁
+    use (N + ·) ∘ σ
+    refine ⟨?_, h₂⟩
+    apply subseq_comp _ h₁
+    intro i j h; simpa
+  generalize (a # N + ·) = a at h ⊢; nm x; clear x
+  replace h : ∀ n, ∃ k, n < k ∧ a n < a k
+  · intro n
+    specialize h n
+    choose k h₁ h₂ using h
+    refine ⟨k, ?_, h₂⟩
+    rw [lt_iff_le_and_ne]; use h₁
+    rintro rfl
+    simp at h₂
+  choose σ h₁ h₂ using h
+  use (σ^[·] 0), subseq_iterate_of_id_lt h₁
+  apply monoLe_of_monoLt; rw [monoLt_iff_lt_succ]
+  intro n
+  simp
+  change _ < a (σ^[n + 1] 0)
+  rw [Function.iterate_succ']
+  apply h₂
+
+theorem exi_monoGe_subseq_of_unBddPeaks {a} (h : unBddPeaks a) :
+∃ σ, Subseq σ ∧ monoGe (a ∘ σ) := by
+  simp [unBddPeaks, unBddCnd'_iff_alt₁, isPeak] at h
+  replace h : ∀ N, ∃ n, N < n ∧ ∀ k, a (n + k) ≤ a n
+  · intro N
+    specialize h N
+    choose n h₁ h₂ using h
+    use n, h₁
+    intro k
+    exact h₂ (n + k) # by linarith
+  choose σ h₁ h₂ using h
+  use (σ^[· + 1] 0), subseq_iterate_of_id_lt h₁
+  rw [monoGe_iff_succ_le]
+  intro n
+  simp
+  change a (σ^[n + 2] 0) ≤ a (σ^[n + 1] 0)
+  simp_rw [Function.iterate_succ']
+  simp
+  generalize σ^[n] 0 = N
+  specialize h₁ # σ N
+  obtain ⟨k, h₃⟩ := Nat.exists_eq_add_of_le # le_of_lt h₁
+  rw [h₃]
+  apply h₂
+
+theorem exi_monoLe_or_monoGe_subseq {a} : ∃ σ, Subseq σ ∧ (monoLe (a ∘ σ) ∨ monoGe (a ∘ σ)) := by
+  by_cases h : unBddPeaks a
+  · choose σ h₁ h₂ using exi_monoGe_subseq_of_unBddPeaks h; use σ, h₁; right; exact h₂
+  · choose σ h₁ h₂ using exi_monoLe_subseq_of_not_unBddPeaks h; use σ, h₁; left; exact h₂
+
+theorem convAndNotMono_neg_one_pow_div_add_one : convAndNotMono # λ n => (-1) ^ n / (n + 1) := by
+  split_ands
+  · use 0
+    rw [tendsTo_iff_eps_lt_one]
+    intro e he h₁
+    simp
+    choose N h₂ using exists_nat_ge e⁻¹
+    use N
+    intro n hn
+    rw [abs_div]
+    simp
+    rw [abs_of_nonneg # by linarith]
+    field_simp
+    suffices h : e⁻¹ < (n + 1)
+    · field_simp at h; rwa [mul_comm]
+    replace hn : (N : ℝ) ≤ n; exact_mod_cast hn
+    linarith
+  · simp [monoLe]; use 0, 1; split_ands <;> norm_num
+  · simp [monoGe]; use 1, 2; split_ands <;> norm_num
+
+theorem convAndNotMono_ite_div : convAndNotMono # λ n => if n = 0 then 0 else 1 / (n : ℝ) := by
+  split_ands
+  · use 0
+    rw [tendsTo_iff_eps_lt_one]
+    intro e he h₁
+    simp
+    choose N h₂ using exists_nat_ge e⁻¹
+    use N + 1
+    intro n hn
+    split_ifs with h₃; simpa
+    simp
+    field_simp
+    suffices h : e⁻¹ < n
+    · field_simp at h; rwa [mul_comm]
+    replace hn : (N + 1 : ℝ) ≤ n; exact_mod_cast hn
+    linarith
+  · simp [monoLe]; use 1, 2; split_ands <;> norm_num
+  · simp [monoGe]; use 0, 1; split_ands <;> norm_num
+
+theorem tendsTo_zero_iff_of_int {a : ℕ → ℤ} :
+tendsTo (a ·) 0 ↔ ∀ (ε : ℤ), 0 < ε → ∃ (N : ℕ), ∀ (n : ℕ), N ≤ n → |a n| < ε := by
+  constructor
+  · intro h ε hε
+    specialize h ε # by exact_mod_cast hε
+    choose N h using h
+    use N
+    intro n hn
+    specialize h n hn
+    simp at h
+    exact_mod_cast h
+  · intro h ε hε
+    specialize h 1 # by norm_num
+    choose N h using h
+    simp at h
+    use N
+    intro n hn
+    specialize h n hn
+    simpa [h]

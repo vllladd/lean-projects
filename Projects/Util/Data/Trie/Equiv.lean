@@ -1,0 +1,325 @@
+import Projects.Util.Data.Trie.Raw
+
+namespace Trie.Raw
+
+open Std
+
+variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
+variable {t t' t₁ t₂ t₃ : Raw α β}
+
+def Equiv (t₁ t₂ : Raw α β) : Prop :=
+  t₁.val = t₂.val ∧
+  (∀ k a, t₁.get1? k = some a → ∃ (b : Raw α β) (_ : t₂.get1? k = some b), a.Equiv b) ∧
+  (∀ k b, t₂.get1? k = some b → ∃ (a : Raw α β) (_ : t₁.get1? k = some a), a.Equiv b)
+termination_by max (depth t₁) (depth t₂)
+decreasing_by all_goals nm h₁ h₂; have h₁ := depth_lt h₁; have h₂ := depth_lt h₂; omega
+
+@[refl, simp]
+theorem Equiv.refl : t.Equiv t := by
+  apply t.ind
+  intro val mp wf ih
+  unfold Equiv
+  simp only [val_mk, Raw₀.val_mk, get1?_eq_some_iff, mp_mk, Raw₀.mp_mk, exists_prop, true_and]
+  split_ands; all_goals
+    intro k a h
+    use a, h, ih k a h
+
+@[symm]
+theorem Equiv.symm (h : t₁.Equiv t₂) : t₂.Equiv t₁ := by
+  revert t₂
+  apply t₁.ind
+  intro val mp wf ih t₂ h
+  unfold Equiv at h ⊢
+  simp only [val_mk, Raw₀.val_mk, get1?_eq_some_iff, mp_mk, Raw₀.mp_mk, exists_prop] at h ⊢
+  rcases h with ⟨h₀, h₁, h₂⟩
+  simp [h₀]
+  split_ands <;> intro k a h
+  · specialize h₂ _ _ h
+    choose b h₂ h₃ using h₂
+    use b, h₂
+    apply ih _ _ h₂ h₃
+  · specialize h₁ _ _ h
+    choose b h₁ h₃ using h₁
+    use b, h₁
+    apply ih _ _ h h₃
+
+theorem Equiv.comm : t₁.Equiv t₂ ↔ t₂.Equiv t₁ :=
+  ⟨Equiv.symm, Equiv.symm⟩
+
+@[trans]
+theorem Equiv.trans (h₁ : t₁.Equiv t₂) (h₂ : t₂.Equiv t₃) : t₁.Equiv t₃ := by
+  revert t₂ t₃
+  apply t₁.ind
+  intro val mp wf ih t₂ t₃ h₁ h₂
+  unfold Equiv at h₁ h₂ ⊢
+  simp only [get1?_eq_some_iff, exists_prop] at h₁ h₂ ⊢
+  rcases h₁ with ⟨ha, h₁, h₃⟩
+  rcases h₂ with ⟨hb, h₂, h₄⟩
+  simp [ha, hb]
+  split_ands <;> intro k a h
+  · clear h₃ h₄
+    specialize h₁ _ _ h
+    choose b h₁ h₃ using h₁
+    specialize h₂ _ _ h₁
+    choose c h₂ h₄ using h₂
+    use c, h₂
+    exact ih k a h h₃ h₄
+  · clear h₁ h₂
+    specialize h₄ _ _ h
+    choose b h₄ h₂ using h₄
+    specialize h₃ _ _ h₄
+    choose c h₃ h₁ using h₃
+    use c, h₃
+    exact ih k c h₃ h₁ h₂
+
+def Equiv.iseqv : Equivalence # Equiv (α := α) (β := β) where
+  refl _ := Equiv.refl
+  symm := Equiv.symm
+  trans := Equiv.trans
+
+instance Setoid : Setoid # Raw α β where
+  r := Equiv
+  iseqv := Equiv.iseqv
+
+namespace Equiv
+
+variable (H : t₁.Equiv t₂)
+include H
+
+theorem depth_eq : t₁.depth = t₂.depth := by
+  classical
+  revert t₂
+  apply t₁.ind
+  intro val mp wf ih t₂ h
+  unfold Equiv at h
+  simp only [get1?_eq_some_iff, exists_prop] at h
+  rcases h with ⟨h₀, h₁, h₂⟩
+  rcases t₂ with ⟨⟨val', mp'⟩, wf'⟩
+  have wfmp := wf.mp
+  have wfmp' := wf'.mp
+  dsimp at *
+  simp
+  simp_rw [DHashMap.Raw.foldWith_eq_foldlWith_toList]
+  simp_rw [List.foldlWith_max_eq_max?_mapWith]
+  congr 1
+  apply List.max?_eq_max?_of_mem_iff
+  intro d
+  simp
+  constructor
+  · rintro ⟨k, t₂, h₃, rfl⟩
+    simp
+    use k
+    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp] at h₃
+    specialize h₁ k ⟨t₂, wf.get1? h₃⟩ h₃
+    obtain ⟨t₃, h₁, h₄⟩ := h₁
+    use t₃.1
+    use by rwa [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp']
+    specialize @ih k ⟨t₂, wf.get1? h₃⟩ h₃ t₃ h₄
+    simp at ih
+    simp [ih, ←depth_eq_depth_inner]
+  · rintro ⟨k, t₂, h₃, rfl⟩
+    simp
+    use k
+    rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp'] at h₃
+    specialize h₂ k ⟨t₂, wf'.get1? h₃⟩ h₃
+    obtain ⟨t₃, h₂, h₄⟩ := h₂
+    use t₃.1
+    use by rwa [DHashMap.Raw.mem_toList_iff_get?_eq_some wfmp]
+    rw [←depth_eq_depth_inner]
+    specialize @ih k t₃ h₂ ⟨t₂, wf'.get1? h₃⟩ h₄
+    simp [ih]
+
+theorem get1? {k t} (h : t₁.get1? k = some t) : ∃ t', t₂.get1? k = some t' ∧ t'.Equiv t := by
+  unfold Equiv at H
+  replace H := H.2.1
+  specialize H k t h
+  choose t' h₁ h₂ using H
+  use t', h₁, h₂.symm
+
+theorem get1?' {k t} (h : t₂.get1? k = some t) : ∃ t', t₁.get1? k = some t' ∧ t'.Equiv t := by
+  unfold Equiv at H
+  replace H := H.2.2
+  specialize H k t h
+  choose t' h₁ h₂ using H
+  use t'
+
+theorem mem {k} : k ∈ t₁.mp ↔ k ∈ t₂.mp := by
+  iterate 2 rw [DHashMap.Raw.mem_iff_isSome_get? # by simp]
+  simp [Option.isSome_iff_exists, get?_mp]
+  constructor <;> rintro ⟨x, h⟩
+  · choose y h₁ h₂ using H.get1? h; use y
+  · choose y h₁ h₂ using H.get1?' h; use y
+
+theorem size_mp : t₁.mp.size = t₂.mp.size := by
+  apply DHashMap.Raw.size_eq_size_of_mem_iff_mem (by simp) (by simp)
+  simp [H.mem]
+
+omit H in
+theorem iff_alt' : t₁.Equiv t₂ ↔ t₁.val = t₂.val ∧ t₁.mp.size = t₂.mp.size ∧
+∀ k x, t₁.get1? k = some x → ∃ y, t₂.get1? k = some y ∧ x.Equiv y := by
+  nth_rw 1 [Equiv]
+  simp
+  intro h₀
+  constructor <;> rintro ⟨h₁, h₂⟩
+  · have H : t₁.Equiv t₂
+    · unfold Equiv
+      simp
+      exact ⟨h₀, h₁, h₂⟩
+    use H.size_mp
+  use h₂
+  intro k y h₃
+  suffices h₄ : k ∈ t₁.mp
+  · rw [t₁.mp.mem_iff_isSome_get? # by simp] at h₄
+    rw [Option.isSome_iff_exists] at h₄
+    simp [get?_mp] at h₄
+    choose x h₄ using h₄
+    specialize h₂ _ _ h₄
+    choose y' h₂ h₆ using h₂
+    simp [h₃] at h₂
+    subst h₂
+    use x
+  replace h₃ := mem_of_get?_eq_some h₃
+  apply t₁.mp.subset_of_size_eq_and_subset (by simp) (by simp) h₁ _ h₃
+  clear! k
+  simp [mem_mp_iff_get?_eq_some]
+  intro k x h
+  specialize h₂ _ _ h
+  choose y h₂ h₃ using h₂
+  use y
+
+omit H in
+def Alt (t₁ t₂ : Raw α β) : Prop :=
+  t₁.val = t₂.val ∧ t₁.mp.size = t₂.mp.size ∧
+  (∀ k a, t₁.get1? k = some a → ∃ (b : Raw α β) (_ : t₂.get1? k = some b), Alt a b)
+termination_by max (depth t₁) (depth t₂)
+decreasing_by all_goals nm h₁ h₂; have h₁ := depth_lt h₁; have h₂ := depth_lt h₂; omega
+
+omit H in
+theorem iff_alt : t₁.Equiv t₂ ↔ Alt t₁ t₂ := by
+  fun_induction Equiv
+  clear! t₁ t₂
+  nm t₁ t₂ ih₁ ih₂
+  unfold Alt
+  rw [←Equiv, iff_alt']
+  constructor <;> rintro ⟨h₀, h₁, h₂⟩
+  all_goals
+    use h₀, h₁
+    intro k x h₃
+    specialize h₂ _ _ h₃
+    specialize ih₁ _ _ h₃
+    choose y h₂ h₄ using h₂
+    specialize ih₁ _ h₂
+    use y, h₂
+    tauto
+
+end Equiv
+
+section Decidability
+
+variable [hb : DecidableEq β]
+
+def equivComp (t₁ t₂ : Raw α β) : Bool :=
+  t₁.val == t₂.val && t₁.mp.size == t₂.mp.size &&
+  t₁.mp.foldWith (by simp) (λ (acc : Bool) k t₀' h => acc &&
+    let t₁' : Raw α β := ⟨_, t₁.wf.get1? h⟩
+    match _ : t₂.get1? k with
+    | none => false
+    | some t₂' => t₁'.equivComp t₂'
+  ) true
+termination_by max (depth t₁) (depth t₂)
+decreasing_by
+  nm h₁; simp
+  by_cases h₂ : t₁.depth ≤ t₂.depth
+  · right
+    split_ands
+    · apply _root_.lt_of_lt_of_le _ h₂
+      rw [depth_eq_depth_inner]
+      exact Raw₀.depth_lt h
+    · exact depth_lt h₁
+  · push_neg at h₂
+    left
+    split_ands
+    · rw [depth_eq_depth_inner]
+      exact Raw₀.depth_lt h
+    · apply h₂.trans'
+      exact depth_lt h₁
+
+theorem equivComp_eq : t₁.equivComp t₂ =
+(t₁.val == t₂.val && t₁.mp.size == t₂.mp.size &&
+t₁.mp.foldWith (by simp) (λ (acc : Bool) k t₀' h => acc &&
+((t₂.get1? k).elim false # equivComp ⟨_, t₁.wf.get1? h⟩)) true) := by
+  nth_rw 1 [equivComp]
+  simp
+  simp_rw [Option.elim]
+  congr
+  ext acc k x h
+  congr
+  split
+  next heq => simp_all only
+  next t₂' heq => simp_all only
+
+theorem equiv_iff_equivComp : t₁.Equiv t₂ ↔ t₁.equivComp t₂ := by
+  revert t₂; apply t₁.ind; clear t₁
+  intro val mp wf ih t₂
+  rw [Equiv.iff_alt', equivComp_eq]
+  simp [and_assoc]
+  intro h₀ h₁
+  rw [mp.foldWith_bool_and_iff_forall]
+  simp
+  apply forall_congr'; intro k
+  simp [get1?_eq_some_iff]
+  constructor
+  · intro h₂ x h₃
+    specialize h₂ ⟨x, wf.get1? h₃⟩ h₃
+    choose t' h₂ h₄ using h₂
+    use t', h₂
+    rwa [←@ih k ⟨_, wf.get1? h₃⟩ h₃]
+  · intro h₂ x h₃
+    specialize h₂ x.1 h₃
+    choose t' h₂ h₄ using h₂
+    use t', h₂
+    rwa [@ih k ⟨_, wf.get1? h₃⟩ h₃]
+
+instance : Decidable # t₁.Equiv t₂ :=
+  decidable_of_bool _ equiv_iff_equivComp.symm
+
+@[simp]
+theorem equivComp_eq_decide_equiv :
+t₁.equivComp t₂ = decide (t₁.Equiv t₂) := by
+  simp [equiv_iff_equivComp]
+
+theorem equivComp_eq_of_equiv2 {a₁ b₁ a₂ b₂ : Raw α β}
+(h₁ : a₁.Equiv a₂) (h₂ : b₁.Equiv b₂) : a₁.equivComp b₁ = a₂.equivComp b₂ := by
+  simp; exact ⟨λ h => h₁.symm.trans # h.trans h₂, λ h => h₁.trans # h.trans h₂.symm⟩
+
+theorem equivComp_eq_of_equiv2_expl (a₁ b₁ a₂ b₂ : Raw α β)
+(h₁ : a₁.Equiv a₂) (h₂ : b₁.Equiv b₂) : a₁.equivComp b₁ = a₂.equivComp b₂ :=
+  equivComp_eq_of_equiv2 h₁ h₂
+
+end Decidability
+
+namespace Equiv
+
+variable (H : t₁.Equiv t₂)
+include H
+
+theorem val_eq : t₁.val = t₂.val := by
+  rw [Equiv] at H; exact H.1
+
+theorem setVal {val} : (t₁.setVal val).Equiv (t₂.setVal val) := by
+  rw [iff_alt'] at H ⊢; cases H; simpa
+
+-- #check 0 #exit
+-- 
+-- theorem erase1 {i} : (t₁.erase1 i).Equiv (t₂.erase1 i) := by
+--   rw [iff_alt'] at H ⊢
+--   rcases H with ⟨h₁, h₂, h₃⟩
+--   simp
+--   intro k t' h₄ h₅
+--   specialize h₃ _ _ h₅
+--   obtain ⟨⟩
+-- 
+-- #check 0 #exit
+-- 
+-- theorem insert1 {i t'} : (t₁.insert1 i t').Equiv (t₁.insert1 i t') := by
+--   sorry

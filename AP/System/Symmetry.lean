@@ -1,1 +1,0 @@
-import AP.System.Symmetry.Basic
