@@ -206,7 +206,8 @@ p ∉ s.aNbhdsIcoPrev s₁ := by
   dsimp at h₃ h₄
   rw [h₄] at h₃
   by_cases h₅ : s = s₁
-  · simp [h₅]
+  ·
+    simp [h₅]
   · simp [State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIco h₅ h₂]
 
 @[simp]

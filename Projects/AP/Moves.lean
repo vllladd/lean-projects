@@ -1431,37 +1431,84 @@ theorem State.aVisitedIcoPrev_self {s : State} : s.aVisitedIcoPrev s = ∅ := by
   simp [aVisitedIcoPrev]
 
 -- theorem DState.aNbhdsIcoPrev_eq_of_tr {s s₁ s₂ p} [hs : sys.WF s] [hs₁ : DState s₁]
--- (h : sys.tr s₁ p = some s₂) (h₁ : sys.Reachable s s₁) :
--- s.aNbhdsIcoPrev s₂ = s.aNbhdsIcoPrev s₁ := by
---   rename' p => p₁
---   ext p
---   simp [State.aNbhdsIcoPrev, State.aVisitedIcoPrev]
---   
+-- (h : sys.tr s₁ p = some s₂) (h₁ : sys.Reachable s s₁) : s.aNbhdsIcoPrev s₂ =
+-- s.aNbhdsIcoPrev s₁ ∪ if s = s₁ then ∅ else s₁.prev.aPos.nbhd (s.pw) := by
 --   have h₁' := h₁
 --   rw [sys.reachable_iff_exi_trs] at h₁
 --   choose ps h₁ using h₁
---   simp [State.diff_eq_of_trs_full h₁, State.diff_eq_of_tr h h₁']
+--   simp [State.aNbhdsIcoPrev, State.aVisitedIcoPrev, State.diff_eq_of_trs_full h₁,
+--     State.diff_eq_of_tr h]
 --   
---   induction ps using List.reverseRecOn; grind
---   nm ps p₀ ih; clear ih
+--   induction ps using List.reverseRecOn
+--   ·
+--     simp at h₁
+--     simp [h₁]
+--   nm ps p' ih; clear ih
+--   
 --   simp at h₁ ⊢
---   choose s₀ h₀ h₁ using h₁
+--   choose s' h₁ h₂ using h₁
+--   have hs' : sys.WF s'; grind
+--   simp [State.prev_eq_of_tr h, State.prev_eq_of_tr h₂]
 --   
+--   simp [State.aVisitedIco]
+--   
+--   induction ps using List.reverseRecOn
+--   ·
+--     simp
+--     simp at h₁
+--     subst h₁
+--     split_ifs with h₃; simp
+--     ext p₂
+--     simp [State.prev_eq_of_tr h₂]
+--   nm ps p₂ ih; clear ih
+--   
+--   simp at h₁ ⊢
+--   choose s₀ h₁ h₃ using h₁
 --   have hs₀ : sys.WF s₀; grind
 --   
---   rw [State.prev_eq_of_tr h]
---   rw [State.prev_eq_of_tr h₁]
+--   have H₁ : sys.trs s (ps ++ [p₂, p']) = (s₁, [])
+--   · simp_all
+--   have H₂ : sys.trs s (ps ++ [p₂]) = (s', [])
+--   · simp_all
 --   
---   cases ps
+--   have H₃ : s ≠ s₁
 --   ·
---     simp at h₀ ⊢
---     subst h₀
---     intro p' h₂
---     simp [State.aVisitedIco, State.prev_eq_of_tr h₁] at h₂
---     rw [if_neg # by grind] at h₂
---     simp at h₂
---     subst h₂
+--     rintro rfl
+--     have H₃ := State.length_hist_eq_of_trs_eq H₁
+--     simp at H₃
+--   have H₄ : s ≠ s'
+--   ·
+--     rintro rfl
+--     have H₃ := State.length_hist_eq_of_trs_eq H₂
+--     simp at H₃
+--   simp [H₃, H₄]
 --   
---   constructor
+--   ext q
+--   simp [State.prev_eq_of_tr h₂, State.prev_eq_of_tr h₃]
+--   
+--   replace hs' : AState s'; grind
+--   replace hs₀ : DState s₀; grind
+--   
+--   have H₅ : sys.Reachable s s₀; grind
+--   
+--   obtain ⟨f, hf, n, H₆⟩ := sys.exi_simulate_of_reachable H₅
+--   
+--   rw [@aVisitedIcc_eq_of_tr s s₀ s' p₂ _ _ h₃ H₅]
+--   simp
+--   intro H₇
+--   use s'.aPos
+--   simp [H₇]
+--   
+--   rw [State.mem_aVisitedIcc_iff_of H₆]
+--   cases n
 --   ·
---     rintro ⟨p₃, h₂, h₃⟩
+--     left
+--     simp at H₆
+--     subst H₆
+--     rw [DState.aPos_eq_of_tr h₃]
+--   nm n
+--   right
+--   simp at H₆
+--   choose s₃ H₆ H₈ using H₆
+--   use n, by omega
+--   sorry
