@@ -39,8 +39,10 @@ def insertSet (fsp : FSP) (n : ℕ) (ps : Set PointZ) : FSP where
 protected def insert (fsp : FSP) (n : ℕ) (p : PointZ) : FSP :=
   fsp.insertSet n {p}
 
-def subset (a b : FSP) : Prop :=
+def Subset (a b : FSP) : Prop :=
   ∀ ⦃i⦄, a.get i ⊆ b.get i
+
+instance : HasSubset FSP := ⟨Subset⟩
 
 -- #check 0 #exit
 
@@ -230,5 +232,43 @@ theorem get_empty : (∅ : FSP).get = λ _ => ∅ := by
 theorem hasLe_empty : (∅ : FSP).hasLe = λ _ _ => False := by
   unfold hasLe; simp
 
-instance : HasSubset FSP := ⟨subset⟩
 theorem subset_def : a ⊆ b ↔ ∀ ⦃i⦄, a.get i ⊆ b.get i := by rfl
+
+@[simp]
+theorem get_union {i} : (a ∪ b).get i = a.get i ∪ b.get i := rfl
+
+@[simp]
+theorem hasLe_union {i p} : (a ∪ b).hasLe i p ↔ a.hasLe i p ∨ b.hasLe i p := by
+  simp [hasLe]; grind
+
+theorem insert_union {i p} : (a ∪ b).insert i p = a.insert i p ∪ b.insert i p := by
+  ext; simp [FSP.insert, insertSet]; grind
+
+@[simp]
+theorem union_empty : a ∪ ∅ = a := by
+  simp [union_def]
+
+@[simp]
+theorem union_insertSet {i ps} : a ∪ b.insertSet i ps = (a ∪ b).insertSet i ps := by
+  ext; simp [insertSet]; grind
+
+theorem hasLe_succ {i p} : a.hasLe (i + 1) p ↔ a.hasLe i p ∨ p ∈ a.get (i + 1) := by
+  simp [hasLe]; grind
+
+theorem get_offset {n i} :
+(a.offset n).get i = if i = 0 then {p | a.hasLe n p} else a.get (n + i) := by
+  induction n generalizing i
+  · simp; rintro rfl; rfl
+  nm n ih
+  simp [offset_succ', next]
+  split
+  · nm i
+    simp at ih ⊢
+    simp [ih]
+    ext p
+    simp [hasLe]
+    grind
+  nm x i; clear x
+  simp at ih ⊢
+  simp [ih]; clear ih
+  ring_nf

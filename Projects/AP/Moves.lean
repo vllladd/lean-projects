@@ -1429,3 +1429,39 @@ p ∈ s.aVisitedIcoPrev s₁ ↔ ∃ s' ∈ s.aSimStatesIco s₁ st, s'.aPos = p
 @[simp]
 theorem State.aVisitedIcoPrev_self {s : State} : s.aVisitedIcoPrev s = ∅ := by
   simp [aVisitedIcoPrev]
+
+-- theorem DState.aNbhdsIcoPrev_eq_of_tr {s s₁ s₂ p} [hs : sys.WF s] [hs₁ : DState s₁]
+-- (h : sys.tr s₁ p = some s₂) (h₁ : sys.Reachable s s₁) :
+-- s.aNbhdsIcoPrev s₂ = s.aNbhdsIcoPrev s₁ := by
+--   rename' p => p₁
+--   ext p
+--   simp [State.aNbhdsIcoPrev, State.aVisitedIcoPrev]
+--   
+--   have h₁' := h₁
+--   rw [sys.reachable_iff_exi_trs] at h₁
+--   choose ps h₁ using h₁
+--   simp [State.diff_eq_of_trs_full h₁, State.diff_eq_of_tr h h₁']
+--   
+--   induction ps using List.reverseRecOn; grind
+--   nm ps p₀ ih; clear ih
+--   simp at h₁ ⊢
+--   choose s₀ h₀ h₁ using h₁
+--   
+--   have hs₀ : sys.WF s₀; grind
+--   
+--   rw [State.prev_eq_of_tr h]
+--   rw [State.prev_eq_of_tr h₁]
+--   
+--   cases ps
+--   ·
+--     simp at h₀ ⊢
+--     subst h₀
+--     intro p' h₂
+--     simp [State.aVisitedIco, State.prev_eq_of_tr h₁] at h₂
+--     rw [if_neg # by grind] at h₂
+--     simp at h₂
+--     subst h₂
+--   
+--   constructor
+--   ·
+--     rintro ⟨p₃, h₂, h₃⟩

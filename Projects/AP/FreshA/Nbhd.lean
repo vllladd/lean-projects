@@ -214,3 +214,14 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
   apply aHwsDisj_of_tr _ H₁
   · simp; exact State.aPos_not_mem_fsp_get_zero_of_aForallWinsDisj ha'
   rwa [FSP.next_insertSet_succ]
+
+theorem DState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : DState s]
+(h : s.aHwsDisj fsp) : s.aHwsDisj # fsp.insertSet 4 # s.aPos.nbhd s.pw |>.toSet := by
+  rw [DState.aHwsDisj_iff_forall_tr] at h ⊢
+  intro p s' h₁
+  have hs₁ := AState.of_tr h₁
+  specialize h p s' h₁
+  simp [FSP.next_insertSet_succ]
+  convert AState.aHwsDisj_nbhd_pw h using 4
+  · rw [aPos_eq_of_tr h₁]
+  · rw [pw_eq_of_tr h₁]

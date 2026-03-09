@@ -107,3 +107,7 @@ instance {s s₁ : State} {f} : Decidable # ∃ n, sys.simulate f s n = (s₁, 0
 theorem State.exiSImulate_eq {s s₁ : State} {f} :
 s.exiSimulate f s₁ = decide (∃ n, sys.simulate f s n = (s₁, 0)) := by
   simp [exi_simulate_iff_exiSimulate]
+
+theorem State.diff_eq_of_trs_full {s ps s₁}
+(h : sys.trs s ps = (s₁, [])) : s₁.diff s = ps.length := by
+  rw [←length_diffTrs, diffTrs_eq_of_trs_full h]

@@ -3,21 +3,21 @@ import Projects.AP.FreshA.Tile
 
 namespace AP
 
-def AHwsFspCnd (f : State → State → FSP → FSP) (s s₂ : State) (fsp : FSP) : Prop :=
-  s₂.aHwsDisj # f s s₂ # fsp.offset # s₂.diff s
+def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
+  a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
+  ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisitedIcc s₁
 
-def AStrat.RespectsFSP (f : State → State → FSP → FSP)
+def AHwsFspCnd (f : State → State → FSP) (s s₂ : State) (fsp : FSP) : Prop :=
+  s₂.aHwsDisj # fsp.offset (s₂.diff s) ∪ f s s₂
+
+def AStrat.RespectsFSP (f : State → State → FSP)
 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.WF ∧ s.aPos ∉ fsp.get 0 ∧ ∀ (d : DStrat), d.WF →
   ∀ n, ∃ s₁ s₂, sys.simulate (Strat.f ⟨a, d⟩) s (n * 2) = (s₁, 0) ∧
   sys.tr s₁ (a.f s₁) = some s₂ ∧ AHwsFspCnd f s s₂ fsp
 
-def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
-  a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF →
-  ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisitedIcc s₁
-
-def aFresh1FSP (s s₂ : State) (fsp : FSP) : FSP :=
-  fsp.insertSet 0 # s.aVisitedIcc s₂.prev |>.toSet
+def aFresh1FSP (s s₂ : State) : FSP :=
+  (∅ : FSP).insertSet 0 # s.aVisitedIcc s₂.prev |>.toSet
 
 def AStrat.Fresh1Aux (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.RespectsFSP aFresh1FSP s fsp
@@ -66,8 +66,8 @@ theorem State.hasTr_of_aHwsDisj {s fsp} [hs : sys.WF s]
 instance {s fsp} : aFresh1 s fsp |>.WF := by
   unfold aFresh1; infer_instance
 
-theorem AState.aForallWinsDisj_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
-(h : a.Fresh1Aux s fsp) : s.aForallWinsDisj fsp a := by
+theorem AState.aForallWinsDisj_of_respectsFSP {s fsp f} {a : AStrat} [hs : AState s]
+(h : a.RespectsFSP f s fsp) : s.aForallWinsDisj fsp a := by
   choose ha h₀ h using h
   intro d hd n
   specialize h d hd
@@ -82,21 +82,12 @@ theorem AState.aForallWinsDisj_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
     choose a₁ ha₁ h₃ using h₃
     specialize h₃ d hd 1
     simp at h₃
-    choose s₃ h₃ h₄ using h₃
+    obtain ⟨s₃, h₃, h₄, -⟩ := h₃
     use s₃, h₃
-    simp [aFresh1FSP] at h₄
-    simp [FSP.hasLe, FSP.insertSet] at h₄ ⊢
-    intro k hk
-    have h₅ := h₄ 0
-    specialize h₄ 1
-    simp at h₄ h₅
-    choose h₅ h₆ using h₅
-    rw [Nat.le_add_one_iff] at hk
     have H₁ : sys.simulate (Strat.f ⟨a, d⟩) s (n * 2 + 1) = (s₂, 0); simp_all
-    rw [State.diff_eq_of_simulate H₁] at *
-    rcases hk with hk | rfl
-    · exact h₆ k hk
-    · exact h₄
+    rw [State.diff_eq_of_simulate H₁] at h₄
+    convert h₄ using 2
+    omega
   · specialize h n
     choose s₁ s₂ h₁ h₂ h₃ using h
     have hs₁ := AState.of_simulate_mul_two_eq_full h₁
@@ -106,8 +97,11 @@ theorem AState.aForallWinsDisj_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
     simp [FSP.hasLe]
     have H₁ : sys.simulate (Strat.f ⟨a, d⟩) s (n * 2 + 1) = (s₂, 0); simp_all
     rw [State.diff_eq_of_simulate H₁] at *
-    simp [aFresh1FSP] at h₃
-    exact h₃.2
+    exact h₃.1
+
+theorem AState.aForallWinsDisj_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
+(h : a.Fresh1Aux s fsp) : s.aForallWinsDisj fsp a :=
+  aForallWinsDisj_of_respectsFSP h
 
 theorem AState.fresh1_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
 (h : a.Fresh1Aux s fsp) : a.Fresh1 s fsp := by
@@ -128,7 +122,7 @@ theorem AState.fresh1_of_fresh1Aux {s fsp} {a : AStrat} [hs : AState s]
   have H₁ : sys.simulate (Strat.f ⟨a, d⟩) s (n * 2 + 1) = (s₂, 0); simp_all
   simp [aFresh1FSP] at h
   rw [State.diff_eq_of_simulate H₁, State.prev_eq_of_tr h₂] at h
-  exact h.1
+  exact h.2
 
 theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
 (h : s.aHwsDisj fsp) : ∃ (a : AStrat), a.Fresh1 s fsp := by
