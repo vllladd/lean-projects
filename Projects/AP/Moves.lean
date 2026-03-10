@@ -386,7 +386,7 @@ theorem State.aVisitedIcc_subset_of_simulate_le  (st : Strat) k n {s s₁ s₂} 
 s.aVisitedIcc s₁ ⊆ s.aVisitedIcc s₂ := by
   intro p; rw [mem_aVisitedIcc_iff_of h₁, mem_aVisitedIcc_iff_of h₂]; grind
 
-@[simp]
+@[simp, grind ·]
 instance {s : State} : sys.Initial s.init := by
   unfold State.init; infer_instance
 
@@ -434,7 +434,7 @@ theorem AState.not_isInit {s} [ha : AState s] : ¬s.IsInit := by
 
 theorem State.wf_prev_and_tr {s} [hs : sys.WF s]
 (h : ¬s.IsInit) : sys.WF s.prev ∧ sys.tr s.prev s.lastMove = some s := by
-  choose ps h₁ using wf_iff.mp hs
+  choose ps h₁ using wf_iff'.mp hs
   induction ps using List.reverseRecOn
   · simp at h₁
     rw [←h₁] at h
@@ -466,8 +466,8 @@ theorem State.eq_iff_pw_and_hist {s₁ s₂} [hs₁ : sys.WF s₁] [hs₂ : sys.
 s₁ = s₂ ↔ s₁.pw = s₂.pw ∧ s₁.hist = s₂.hist := by
   use by rintro rfl; simp;
   rintro ⟨h₁, h₂⟩
-  choose ps₁ h₃ using wf_iff.mp hs₁
-  choose ps₂ h₄ using wf_iff.mp hs₂
+  choose ps₁ h₃ using wf_iff'.mp hs₁
+  choose ps₂ h₄ using wf_iff'.mp hs₂
   rw [←h₁, aPos₀, ←h₂, ←aPos₀] at h₄
   simp [hist_eq_of_trs h₃, hist_eq_of_trs h₄] at h₂
   grind
@@ -1541,3 +1541,87 @@ s.aNbhdsIcoPrev s₂ = s.aNbhdsIcoPrev s₁ ∪ if s = s₁ then ∅ else s₁.p
 @[simp]
 theorem State.aNbhdsIcoPrev_self {s : State} : s.aNbhdsIcoPrev s = ∅ := by
   simp [aNbhdsIcoPrev]
+
+@[simp]
+instance init_reachable {s} [hs : sys.WF s] : sys.Reachable s.init s := by
+  rw [State.wf_iff'] at hs; rw [State.init]; grind
+
+theorem State.wf_iff {s} : sys.WF s ↔ ∃ ps, sys.trs s.init ps = (s, []) := by
+  rw [sys.wf_def]; constructor
+  · rintro ⟨s₀, h₁, h₂⟩
+    have h₃ := h₁
+    have h₄ := h₂
+    rw [sys.reachable_iff_exi_trs] at h₂
+    choose ps h₂ using h₂
+    use ps
+    rw [init]
+    rw [initial_iff] at h₁
+    rwa [pw_eq_of_reachable h₄, aPos₀_eq_of_reachable h₄, h₁]
+  · rintro ⟨ps, h⟩
+    have hs : sys.WF s; grind
+    use s.init
+    simp; simp [init]
+
+theorem init_eq_of_tr {s s₁ p} [hs : sys.WF s]
+(h : sys.tr s p = some s₁) : s₁.init = s.init := by
+  simp [State.init, pw_eq_of_tr h, State.aPos₀_eq_of_tr h]
+
+theorem init_eq_of_trs {s s₁ ps ps'} [hs : sys.WF s]
+(h : sys.trs s ps = (s₁, ps')) : s₁.init = s.init := by
+  replace h := sys.exi_trs_full_of_trs h
+  choose ps₁ h₁ h₂ using h
+  clear! ps
+  rename' ps₁ => ps
+  induction ps using List.reverseRecOn generalizing s₁
+  · simp at h₂; rw [h₂]
+  nm ps₁ p ih
+  simp at h₂
+  choose s' h₂ h₃ using h₂
+  specialize ih h₂
+  have hs' : sys.WF s'; grind
+  grind [init_eq_of_tr h₃]
+
+theorem init_eq_of_reachable {s s₁} [hs : sys.WF s]
+(h : sys.Reachable s s₁) : s₁.init = s.init := by
+  rw [sys.reachable_iff_exi_trs] at h; choose ps h using h; exact init_eq_of_trs h
+
+@[simp]
+theorem State.odd_length_hist {s} [hs : sys.WF s] : Odd s.hist.length ↔ s.aTurn = false := by
+  rw [wf_iff] at hs
+  choose ps h using hs
+  induction ps using List.reverseRecOn generalizing s
+  · simp at h; rw [←h]; simp
+  nm ps p ih
+  simp at h
+  choose s₁ h₁ h₂ using h
+  have hs₁ : sys.WF s₁; grind
+  rw [init_eq_of_tr h₂] at h₁
+  specialize ih h₁
+  rw [length_hist_eq_of_tr h₂, aTurn_eq_of_tr h₂]
+  contrapose!; simpa
+
+@[simp]
+theorem State.even_length_hist {s} [hs : sys.WF s] : Even s.hist.length ↔ s.aTurn = true := by
+  contrapose!; simp
+
+@[simp]
+theorem State.odd_length_hist_sub_one {s} [hs : sys.WF s] :
+Odd (s.hist.length - 1) ↔ s.aTurn = true := by
+  rw [←Nat.odd_add_two, length_hist_sub_one_add]; simp
+
+@[simp]
+theorem State.even_length_hist_sub_one {s} [hs : sys.WF s] :
+Even (s.hist.length - 1) ↔ s.aTurn = false := by
+  rw [←Nat.even_add_two, length_hist_sub_one_add]; simp
+
+@[simp]
+theorem taken_init {s : State} : s.init.taken = ∅ := rfl
+
+@[simp]
+theorem aPos_init {s : State} : s.init.aPos = s.aPos₀ := rfl
+
+@[simp]
+theorem hist_init {s : State} : s.init.hist = [s.aPos₀] := rfl
+
+@[simp]
+theorem init_init {s : State} : s.init.init = s.init := rfl

@@ -1,4 +1,4 @@
-import Projects.AP.DisjA
+import Projects.AP.FreshA
 
 namespace AP.Alt₁
 
@@ -6,6 +6,7 @@ namespace AP.Alt₁
 structure Point : Type where
   x : ℤ
   y : ℤ
+deriving Nonempty
 
 def center : Point := ⟨0, 0⟩
 
@@ -135,26 +136,156 @@ def AHws (pw : ℕ) : Prop :=
 -----
 
 @[simp]
-def Point.toPointZ (p : Point) : PointZ :=
-  match p with
-  | ⟨x, y⟩ => ⟨x, y⟩
+def Point.toAlt : Point → PointZ
+| ⟨x, y⟩ => ⟨x, y⟩
 
-open Classical in @[simp] noncomputable
-def State.toState (s : State) (pw : ℕ) : AP.State where
+@[simp]
+def Point.ofAlt : PointZ → Point
+| ⟨x, y⟩ => ⟨x, y⟩
+
+def Board.ofAlt (s : AP.State) : Board where
+  squares := Set.univ \ s.taken.toSet.image .ofAlt
+  A := .ofAlt s.aPos
+
+open Classical in noncomputable
+def Board.diff (b₁ b₂ : Board) : Point :=
+  if b₁.A ≠ b₂.A then b₁.A else
+  Classical.epsilon λ p => p ∈ b₂.squares ∧ p ∉ b₁.squares
+
+@[simp] noncomputable
+def histToAlt' (bs : List Board) : List PointZ :=
+  match bs with
+  | [] => []
+  | [b] => [b.A.toAlt]
+  | b₁ :: b₂ :: bs => (b₁.diff b₂).toAlt :: histToAlt' (b₂ :: bs)
+
+noncomputable
+def State.histToAlt (s : State) : List PointZ :=
+  histToAlt' # s.board :: s.history.reverse
+
+def histOfAltFn (s : AP.State) (ps : List PointZ) : Board :=
+  .ofAlt # sys.trs s.init ps.tail |>.1
+
+def histOfAlt (s : AP.State) : List Board :=
+  s.hist.reverse.inits.init.tail.map # histOfAltFn s.init
+
+noncomputable
+def State.toAlt (s : State) (pw : ℕ) : AP.State where
   pw := pw
-  taken := Set'.ofSet # Set.univ \ s.board.squares |>.image (·.toPointZ)
-  aPos := s.board.A.toPointZ
+  taken := Set'.ofSet # Set.univ \ s.board.squares |>.image (·.toAlt)
+  aPos := s.board.A.toAlt
   aTurn := Odd s.history.length
-  hist := s.board.A.toPointZ :: s.history.reverse.map (λ b => b.A.toPointZ)
+  hist := s.histToAlt
+
+def State.ofAlt (s : AP.State) (act : Prop) : State where
+  board := Board.ofAlt s
+  history := histOfAlt s
+  act := act
+
+-- def A.alt {pw} (a : A pw) : AStrat where
+--   f s := Π (s : State), s.act → AHasValidMove pw s.board → ValidAMove pw s.board
 
 -- #check 0 #exit
 
 -----
 
 @[simp]
-theorem point_dist_eq {p₁ p₂ : Point} : dist p₁ p₂ = (p₁.toPointZ.dist p₂.toPointZ).toNat := by
+theorem ofAlt_dist {p₁ p₂ : PointZ} :
+dist (.ofAlt p₁) (.ofAlt p₂) = (p₁.dist p₂).toNat := by
   rcases p₁, p₂ with ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩; simp [dist]
 
 @[simp]
-theorem toState_state₀ {pw} : state₀.toState pw = AP.initState pw 0 := by
+theorem State.pw_toAlt {s : State} {pw} : (s.toAlt pw).pw = pw := rfl
+
+@[simp]
+theorem State.taken_toAlt {s : State} {pw} : (s.toAlt pw).taken =
+Set'.ofSet (Set.univ \ s.board.squares |>.image (·.toAlt)) := rfl
+
+@[simp]
+theorem State.aPos_toAlt {s : State} {pw} : (s.toAlt pw).aPos = s.board.A.toAlt := rfl
+
+@[simp]
+theorem State.aTurn_toAlt {s : State} {pw} : (s.toAlt pw).aTurn =
+decide (Odd s.history.length) := rfl
+
+@[simp]
+theorem State.hist_toAlt {s : State} {pw} : (s.toAlt pw).hist = s.histToAlt := rfl
+
+@[simp]
+theorem State.board_ofAlt {s act} : (State.ofAlt s act).board = Board.ofAlt s := rfl
+
+@[simp]
+theorem State.history_ofAlt {s act} : (State.ofAlt s act).history = histOfAlt s := rfl
+
+@[simp]
+theorem State.act_ofAlt {s act} : (State.ofAlt s act).act ↔ act := by rfl
+
+@[simp]
+theorem histToAlt_mk {b hist act} :
+State.histToAlt ⟨b, hist, act⟩ = histToAlt' (b :: hist.reverse) := rfl
+
+@[simp]
+theorem toAlt_state₀ {pw} : state₀.toAlt pw = AP.initState pw 0 := by
   simp [state₀, board₀, initState, center]; ext :1 <;> simp
+
+@[simp]
+theorem Point.toAlt_ofAlt {p} : (Point.ofAlt p).toAlt = p := rfl
+
+@[simp]
+theorem Point.ofAlt_toAlt {p} : Point.ofAlt p.toAlt = p := rfl
+
+@[simp]
+theorem Board.squares_ofAlt {s} : (Board.ofAlt s).squares =
+Set.univ \ s.taken.toSet.image .ofAlt := rfl
+
+@[simp]
+theorem Board.a_ofAlt {s} : (Board.ofAlt s).A = .ofAlt s.aPos := rfl
+
+@[simp]
+theorem length_histOfAlt {s} : (histOfAlt s).length = s.hist.length - 1 := by
+  simp [histOfAlt]
+
+@[simp]
+theorem Board.ofAlt_init {s : AP.State} : Board.ofAlt s.init = ⟨Set.univ, .ofAlt s.aPos₀⟩ := by
+  ext:1 <;> simp
+
+@[simp]
+theorem histOfAlt_init {s : AP.State} : histOfAlt s.init = [] := rfl
+
+-- #check 0 #exit
+
+-- @[simp]
+-- theorem histToAlt_cons_histOfAlt {s} [hs : sys.WF s] :
+-- histToAlt' (.ofAlt s :: (histOfAlt s).reverse) = s.hist := by
+--   choose ps h using State.wf_iff.mp hs
+--   
+--   simp [histOfAlt]
+--   rw [hist_eq_of_trs h]
+--   
+--   simp
+--   
+--   rw [List.tail_map, List.tail_init]
+--   simp
+--   
+--   rw [List.init_map]
+--   simp
+--   
+--   simp [histOfAltFn]
+--   
+--   sorry
+
+-- #check 0 #exit
+
+-- @[simp]
+-- theorem State,histToAlt_ofAlt {s act} [hs : sys.WF s] :
+-- (State.ofAlt s act).histToAlt = s.hist := by
+--   simp [ofAlt]
+-- 
+-- @[simp]
+-- theorem State.toAlt_ofAlt {s : AP.State} {act pw} [hs : sys.WF s] :
+-- (State.ofAlt s act).toAlt pw = s.setPw pw := by
+--   ext:1 <;> simp [Set.image_image]
+--   ·
+--     simp [ofAlt]
+--   ·
+--     sorry

@@ -1450,3 +1450,11 @@ theorem ofFinset_empty : ofFinset (∅ : Finset α) = ∅ := by
 @[simp]
 theorem ofSet_empty : ofSet (∅ : Set α) = ∅ := by
   simp [ofSet]
+
+@[simp]
+theorem ofFinset_toFinset : .ofFinset s.toFinset = s := by
+  ext; simp [ofFinset]
+
+@[simp]
+theorem ofSet_toSet : .ofSet s.toSet = s := by
+  ext; simp [ofSet]

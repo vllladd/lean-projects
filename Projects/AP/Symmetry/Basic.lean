@@ -29,7 +29,7 @@ if s.hist = [] then s.aPos₀ else ft s.aPos₀ := by
 @[simp]
 theorem aTurn_sym_fs {s} {sym : sys.Symmetry} [hs : sys.WF s] [H : sym.WF] :
 (sym.fs s).aTurn = s.aTurn := by
-  rw [State.wf_iff] at hs
+  rw [State.wf_iff'] at hs
   obtain ⟨ps, h⟩ := hs
   generalize h₀ : initState s.pw s.aPos₀ = s₀ at h
   replace h₀ : (sym.fs s₀).aTurn = s₀.aTurn

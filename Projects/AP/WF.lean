@@ -25,7 +25,7 @@ theorem WFCnd.pw_ne_zero_of_not_aTurn_and_taken_ne_empty {s} (h : WFCnd s)
 theorem State.exi_hist_wf_of_not_aTurn_and_taken_eq_empty {s : State}
 (ht : s.aTurn = false) (h₁ : s.taken = ∅) : ∃ hist, sys.WF # s.setHist hist := by
   use [s.aPos]
-  rw [wf_iff]
+  rw [wf_iff']
   use []
   simp
   ext:1 <;> simp [ht, h₁]
@@ -55,7 +55,7 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
   replace hn := Set'.eq_insert_empty_of_size_eq_one hn hp
   by_cases ht : s.aTurn <;> simp at ht <;> simp [ht] at h₆ <;> subst h₆
   · use [p, s.aPos]
-    rw [wf_iff]
+    rw [wf_iff']
     use [p]
     simp [sys, move, dMove]
     simp [H₂]
@@ -63,7 +63,7 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
   · have H₄ : p₁ ≠ p
     · rintro rfl; exact h₃ # h₅ p₁ hp
     use [s.aPos, p, p₁]
-    rw [wf_iff]
+    rw [wf_iff']
     use [p, s.aPos]
     simp [sys, move, aMove, dMove]
     rw [Point.dist_comm] at h₂
@@ -201,7 +201,7 @@ theorem State.exi_hist_wf_of_wfCnd {s} (h : WFCnd s) : ∃ hist, sys.WF # s.setH
     rw [Set'.size_eq_one_iff] at h₁
     obtain ⟨p, hp, h₁⟩ := h₁
     use [p, s.aPos]
-    rw [wf_iff]
+    rw [wf_iff']
     use [p]
     simp [sys, move, dMove, guard]
     split_ands

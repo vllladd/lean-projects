@@ -115,3 +115,11 @@ theorem State.diff_eq_of_trs_full {s ps s₁}
 @[simp]
 theorem not_tr_eq_self {s p} : sys.tr s p ≠ some s := by
   intro h; grind [length_hist_eq_of_tr h]
+
+@[simp]
+theorem one_le_length_hist {s} [hs : sys.WF s] : 1 ≤ s.hist.length := by
+  simp [Nat.one_le_iff_ne_zero]
+
+theorem length_hist_sub_one_add {s n} [hs : sys.WF s] :
+s.hist.length - 1 + n = s.hist.length + n - 1 := by
+  simp [Nat.sub_add_comm]

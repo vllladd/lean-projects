@@ -579,7 +579,7 @@ theorem aPos_initState {pw p} : (initState pw p).aPos = p := rfl
 @[simp, grind ·]
 theorem taken_initState {pw p} : (initState pw p).taken = ∅ := rfl
 
-theorem State.wf_iff {s} : sys.WF s ↔ ∃ ps,
+theorem State.wf_iff' {s} : sys.WF s ↔ ∃ ps,
 sys.trs (initState s.pw s.aPos₀) ps = (s, []) := by
   simp [System.wf_def, System.reachable_iff_exi_trs]
   constructor
@@ -633,7 +633,7 @@ sys.trs (s.setPw pw) ps = (s'.setPw pw, []) := by
 theorem State.wf_setPw_of_le {s pw} [hs : sys.WF s]
 (h : s.pw ≤ pw) : sys.WF (s.setPw pw) := by
   have H := hs
-  rw [wf_iff] at hs ⊢; dsimp
+  rw [wf_iff'] at hs ⊢; dsimp
   obtain ⟨ps, h₁⟩ := hs; use ps
   have h₂ : (initState s.pw s.aPos₀).pw ≤ pw; simpa
   have h₃ := trs_setPw_eq_of h₂ h₁
@@ -664,7 +664,7 @@ theorem hist_trs {s ps} [hs : sys.WF s] : (sys.trs s ps).1.hist =
 theorem length_hist_eq_one_iff {s} [hs : sys.WF s] :
 s.hist.length = 1 ↔ initState s.pw s.aPos₀ = s := by
   refine' ⟨λ h => _, λ h => by rw [←h]; rfl⟩
-  obtain ⟨ps, h₁⟩ := s.wf_iff.mp hs
+  obtain ⟨ps, h₁⟩ := s.wf_iff'.mp hs
   have h₂ := congrArg (·.1.hist) h₁
   simp at h₂
   simp [h₁] at h₂
@@ -682,7 +682,7 @@ s.hist.length = 1 ↔ initState s.pw s.aPos₀ = s := by
 theorem exi_prev_of_hist_eq_cons {s p ps} [hs : sys.WF s]
 (h₁ : ps ≠ []) (h₂ : s.hist = p :: ps) : ∃ s₀, sys.WF s₀ ∧ sys.tr s₀ p = s := by
   rename' h₁ => H, h₂ => h
-  obtain ⟨ps', h₁⟩ := State.wf_iff.mp hs
+  obtain ⟨ps', h₁⟩ := State.wf_iff'.mp hs
   induction ps' using List.reverseRecOn
   · simp at h₁
     rw [←h₁] at h
@@ -754,7 +754,7 @@ s = (sys.trs (initState s.pw s.aPos₀) s.hist.reverse.tail).1 := by
 
 theorem State.wf_iff_decideWF {s} : sys.WF s ↔ s.decideWF := by
   unfold decideWF; constructor <;> intro h <;> simp [-List.tail_reverse] at h ⊢
-  rw [State.wf_iff]; use s.hist.reverse.tail
+  rw [State.wf_iff']; use s.hist.reverse.tail
 
 instance {s} : Decidable # sys.WF s :=
   match h : s.decideWF with
@@ -880,7 +880,7 @@ theorem State.aTurn_eq_of_tr' {s s' p} (h : sys.tr s p = some s') : s.aTurn = !s
 theorem AState.exi_prev {sa} [ha : AState sa] :
 ∃ sd p, DState sd ∧ sys.tr sd p = sa := by
   rcases ha with ⟨h₁, h₂⟩
-  rw [State.wf_iff] at h₁
+  rw [State.wf_iff'] at h₁
   obtain ⟨ps, h₁⟩ := h₁
   induction ps using List.reverseRecOn generalizing sa
   · simp at h₁
@@ -925,7 +925,7 @@ s'.taken.size = s.taken.size + if s.aTurn then 0 else 1 := by
 
 theorem State.length_hist_eq_size_taken_mul_two_add_ite {s} [hs : sys.WF s] :
 s.hist.length = s.taken.size * 2 + if s.aTurn then 0 else 1 := by
-  obtain ⟨ps, h₁⟩ := wf_iff.mp hs
+  obtain ⟨ps, h₁⟩ := wf_iff'.mp hs
   induction ps using List.reverseRecOn generalizing s
   · simp at h₁; rw [←h₁]; simp
   nm ps p ih
@@ -950,7 +950,7 @@ s.taken.size * 2 ≤ s.hist.length := by
 
 theorem State.length_hist_le_two_of_pw_eq_zero {s} [hs : sys.WF s]
 (h : s.pw = 0) : s.hist.length ≤ 2 := by
-  obtain ⟨ps, h₁⟩ := wf_iff.mp hs
+  obtain ⟨ps, h₁⟩ := wf_iff'.mp hs
   cases ps; simp at h₁; rw [←h₁]; simp
   nm p₁ ps; simp at h₁; choose s₁ h₂ h₁ using h₁
   cases ps; simp at h₁; subst h₁; simp [hist_eq_of_tr h₂]
@@ -1116,7 +1116,7 @@ theorem State.exi_tr_reachable_of_mem_dropLast_hist {s p} [hs : sys.WF s]
   choose s₂ h₃ h₂ using h₂
   simp [System.trs, h₃] at h₁
   refine ⟨s₁, ?_, ⟨_, h₃⟩, ?_⟩
-  · rw [wf_iff]
+  · rw [wf_iff']
     use xs
     convert hr using 3
     · change _ = (initState s.pw s.aPos₀).pw

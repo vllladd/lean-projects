@@ -407,3 +407,9 @@ theorem find!_pos_of {p} (h₁ : ¬p 0) (h₂ : ∃ n, p n) : 0 < find! p := by
   · simp
 
 attribute [simp] Nat.sub_pos_iff_lt
+
+theorem odd_add_two {n} : Odd (n + 2) ↔ Odd n := by
+  simp
+
+theorem even_add_two {n} : Even (n + 2) ↔ Even n := by
+  simp

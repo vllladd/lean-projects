@@ -16,8 +16,6 @@ end Nat
 
 namespace Int
 
-attribute [simp] not_ofNat_neg
-
 -- #check 0 #exit
 
 end Int

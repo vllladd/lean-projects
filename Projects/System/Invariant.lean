@@ -80,3 +80,32 @@ sys.simulate f s n = (s₁, 0) ∧ sys.tr s₁ (f s₁) = some s₂ := by
   simp [simulate_add, h₁] at hr
   simp [simulate, h₂] at hr
   simp [hr]
+
+@[simp]
+theorem exi_trs_full_of_trs {a b ts ts'} (h : sys.trs a ts = (b, ts')) :
+∃ ts₁, ts₁ <+: ts ∧ sys.trs a ts₁ = (b, []) := by
+  induction ts generalizing a b ts'
+  · use []; simp_all
+  nm t ts ih
+  simp [trs] at h
+  split at h
+  · use []; simp_all
+  nm x c h₁; clear x
+  specialize ih h
+  choose ts₁ h₂ h₃ using ih
+  use t :: ts₁
+  simp_all
+
+@[simp]
+theorem exi_simulate_full_of_simulate {a b f n r}
+(h : sys.simulate f a n = (b, r)) : ∃ k, sys.simulate f a k = (b, 0) := by
+  induction n generalizing a b r
+  · use 0; simp_all
+  nm n ih
+  simp [simulate] at h
+  split at h
+  · use 0; simp_all
+  nm x c h₁; clear x
+  specialize ih h
+  choose k ih using ih; use k + 1
+  rw [simulate, h₁]; simpa

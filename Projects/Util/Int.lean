@@ -107,3 +107,5 @@ theorem eq_self_sub_iff {a b : ℤ} : a = a - b ↔ b = 0 := by
 
 theorem toNat_eq_self_of {z : ℤ} (h₁ : 0 ≤ z) : z.toNat = z :=
   toNat_of_nonneg h₁
+
+attribute [simp] not_ofNat_neg

@@ -86,3 +86,18 @@ theorem head!_mem_iff [ha : Inhabited α] : xs.head! ∈ xs ↔ xs ≠ [] := by
 
 theorem head!_mem [ha : Inhabited α] (h : xs ≠ []) : xs.head! ∈ xs := by
   simpa
+
+theorem map_init {f : α → β} : xs.init.map f = (xs.map f).init := by
+  induction xs using List.reverseRecOn <;> simp_all
+
+theorem init_map {f : α → β} : (xs.map f).init = xs.init.map f :=
+  map_init.symm
+
+theorem tail_map {f : α → β} : (xs.map f).tail = xs.tail.map f :=
+  map_tail.symm
+
+theorem tail_init : xs.init.tail = xs.tail.init := by
+  rcases xs with _ | ⟨x, _ | _⟩ <;> simp
+
+theorem init_tail : xs.tail.init = xs.init.tail :=
+  tail_init.symm
