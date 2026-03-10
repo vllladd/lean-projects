@@ -111,3 +111,7 @@ s.exiSimulate f s₁ = decide (∃ n, sys.simulate f s n = (s₁, 0)) := by
 theorem State.diff_eq_of_trs_full {s ps s₁}
 (h : sys.trs s ps = (s₁, [])) : s₁.diff s = ps.length := by
   rw [←length_diffTrs, diffTrs_eq_of_trs_full h]
+
+@[simp]
+theorem not_tr_eq_self {s p} : sys.tr s p ≠ some s := by
+  intro h; grind [length_hist_eq_of_tr h]
