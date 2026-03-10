@@ -286,10 +286,8 @@ theorem AState.exi_fresh_of_aHwsDisj {s fsp} [hs : AState s]
   have G₂ := sys.reachable_right G₁ h₂
   have G₃ := sys.reachable_right G₂ h₄
   have h₅ := @hs₃.aSeek_exi_tr_of (P := (AHwsFspCnd aFreshFSP s · fsp))
-  specialize h₅ _
-  on_goal 2 =>
-    choose s₄ h₅ h₆ using h₅
-    use s₄, h₅
+  specialize h₅ _; rotate_left
+  · choose s₄ h₅ h₆ using h₅; use s₄, h₅
   clear h₅
   simp [AHwsFspCnd, aFreshFSP] at h₃ ⊢
   replace h₃ := DState.aHwsDisj_nbhd_pw h₃
@@ -418,3 +416,13 @@ theorem AState.exi_fresh_of_aHwsDisj {s fsp} [hs : AState s]
   simp [add_assoc] at h
   use r + 3, by omega
   simp; split_ifs <;> simp [h]
+
+theorem State.aSimPairs_state_eq_of_point_eq_of_fresh {s : State} {a : AStrat} {d : DStrat}
+{s₁ s₂ p fsp} [hs : sys.WF s] [hd : d.WF] (h : a.Fresh s fsp)
+(h₁ : (s₁, p) ∈ s.aSimPairs ⟨a, d⟩) (h₂ : (s₂, p) ∈ s.aSimPairs ⟨a, d⟩) : s₁ = s₂ :=
+  aSimPairs_state_eq_of_point_eq_of_fresh1 h.fresh1 h₁ h₂
+
+theorem State.aSimPtsNcard_spec_of_fresh {s fsp} {a : AStrat} [hs : sys.WF s]
+(h : a.Fresh s fsp) (set : Set' PointZ) : ∀ (d : DStrat) [d.WF],
+∃ n, s.aSimPtsNcard ⟨a, d⟩ set.toSet = some n ∧ n ≤ set.size :=
+  aSimPtsNcard_spec_of_fresh1 h.fresh1 set

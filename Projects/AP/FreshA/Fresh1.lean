@@ -168,68 +168,67 @@ theorem AState.exi_fresh1_of_aHwsDisj {s fsp} [hs : AState s]
   have G₂ := sys.reachable_right G₁ h₂
   have G₃ := sys.reachable_right G₂ h₄
   have h₅ := @hs₃.aSeek_exi_tr_of (P := (AHwsFspCnd aFresh1FSP s · fsp))
-  specialize h₅ _
-  · clear h₅
-    simp [AHwsFspCnd, aFresh1FSP] at h₃ ⊢
-    replace h₃ := DState.aHwsDisj_insert_two_aPos h₃
-    choose a₁ ha₁ h₃ using h₃
-    have H₁ := h₃ d hd 2
-    simp [h₄] at H₁
-    choose s₄ H₁ H₂ using H₁
-    use a₁.f s₃, s₄, H₁, a₁, ha₁
-    rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁,
-      State.diff_eq_of_simulate_full h₁, State.prev_eq_of_tr H₁,
-      DState.aVisitedIcc_eq_of_tr h₄ G₂, AState.aVisitedIcc_eq_of_tr h₂ G₁]
-    intro d₁ hd₁ n₁
-    specialize h₃ (d₁.set s₂ # d.f s₂) (DStrat.wf_set_of_tr h₄) (n₁ + 2)
-    simp_rw [sys.simulate_succ_full'] at h₃
-    simp [h₄, H₁] at h₃
-    choose s₅ H₃ H₄ using h₃
-    use s₅
-    have hs₄ := sys.wf_of_tr H₁
-    split_ands
-    · convert H₃ using 1
-      symm
-      apply State.simulate_set_d_eq_of_length_hist_lt ⟨_, h₄⟩
-      rw [length_hist_eq_of_tr H₁, length_hist_eq_of_tr h₄]
-      omega
-    simp
-    rw [←AState.aPos_eq_of_tr h₂]
-    simp [FSP.hasLe] at H₄ ⊢
-    simp [Nat.add_assoc]
-    intro k hk
-    rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at H₄
-    rw [State.diff_eq_of_simulate_full h₁] at H₄
-    rw [State.prev_eq_of_tr h₂] at *
-    cases k
-    rotate_left
-    · nm k
-      specialize H₄ (k + 3) (by omega)
-      simp at H₄ ⊢
-      ring_nf at H₄ ⊢
-      exact H₄
-    simp
-    split_ands
-    · specialize H₄ 2 (by omega)
-      simp at H₄
-      exact H₄.1
+  specialize h₅ _; rotate_left
+  · choose s₄ h₅ h₆ using h₅; use s₄, h₅
+  clear h₅
+  simp [AHwsFspCnd, aFresh1FSP] at h₃ ⊢
+  replace h₃ := DState.aHwsDisj_insert_two_aPos h₃
+  choose a₁ ha₁ h₃ using h₃
+  have H₁ := h₃ d hd 2
+  simp [h₄] at H₁
+  choose s₄ H₁ H₂ using H₁
+  use a₁.f s₃, s₄, H₁, a₁, ha₁
+  rw [State.diff_eq_of_tr H₁ G₃, State.diff_eq_of_tr h₄ G₂, State.diff_eq_of_tr h₂ G₁,
+    State.diff_eq_of_simulate_full h₁, State.prev_eq_of_tr H₁,
+    DState.aVisitedIcc_eq_of_tr h₄ G₂, AState.aVisitedIcc_eq_of_tr h₂ G₁]
+  intro d₁ hd₁ n₁
+  specialize h₃ (d₁.set s₂ # d.f s₂) (DStrat.wf_set_of_tr h₄) (n₁ + 2)
+  simp_rw [sys.simulate_succ_full'] at h₃
+  simp [h₄, H₁] at h₃
+  choose s₅ H₃ H₄ using h₃
+  use s₅
+  have hs₄ := sys.wf_of_tr H₁
+  split_ands
+  · convert H₃ using 1
+    symm
+    apply State.simulate_set_d_eq_of_length_hist_lt ⟨_, h₄⟩
+    rw [length_hist_eq_of_tr H₁, length_hist_eq_of_tr h₄]
+    omega
+  simp
+  rw [←AState.aPos_eq_of_tr h₂]
+  simp [FSP.hasLe] at H₄ ⊢
+  simp [Nat.add_assoc]
+  intro k hk
+  rw [State.diff_eq_of_tr h₂ # sys.reachable_of_simulate h₁] at H₄
+  rw [State.diff_eq_of_simulate_full h₁] at H₄
+  rw [State.prev_eq_of_tr h₂] at *
+  cases k
+  rotate_left
+  · nm k
+    specialize H₄ (k + 3) (by omega)
+    simp at H₄ ⊢
+    ring_nf at H₄ ⊢
+    exact H₄
+  simp
+  split_ands
+  · specialize H₄ 2 (by omega)
+    simp at H₄
+    exact H₄.1
+  · specialize H₄ 0 (by omega)
+    simp at H₄
+    exact H₄.1
+  · intro k hk
+    iterate 2 rw [Nat.le_add_one_iff] at hk
+    rcases hk with ((hr | rfl) | rfl)
     · specialize H₄ 0 (by omega)
       simp at H₄
-      exact H₄.1
-    · intro k hk
-      iterate 2 rw [Nat.le_add_one_iff] at hk
-      rcases hk with ((hr | rfl) | rfl)
-      · specialize H₄ 0 (by omega)
-        simp at H₄
-        exact H₄.2 k hr
-      · specialize H₄ 1 (by omega)
-        simp at H₄
-        exact H₄
-      · specialize H₄ 2 (by omega)
-        simp at H₄
-        exact H₄.2
-  choose s₄ h₅ h₆ using h₅
-  use s₄, h₅
+      exact H₄.2 k hr
+    · specialize H₄ 1 (by omega)
+      simp at H₄
+      exact H₄
+    · specialize H₄ 2 (by omega)
+      simp at H₄
+      exact H₄.2
 
 theorem State.aSimPairs_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} {d : DStrat}
 {s₁ s₂ p fsp} [hs : sys.WF s] [hd : d.WF] (h : a.Fresh1 s fsp)
