@@ -20,6 +20,18 @@ namespace Int
 
 end Int
 
+namespace Bit
+
+-- #check 0 #exit
+
+end Bit
+
+namespace Real
+
+-- #check 0 #exit
+
+end Real
+
 namespace List
 
 variable {α β γ : Type*}

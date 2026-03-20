@@ -12,6 +12,10 @@ noncomputable
 def gm (xs : List ℝ) : ℝ :=
   xs.prod ^ (xs.length : ℝ)⁻¹
 
+open Classical in noncomputable
+def mk! (f : ℕ → ℚ) : ℝ :=
+  if h : IsCauSeq abs f then .mk ⟨f, h⟩ else 0
+
 -----
 
 theorem add_inv {a b : ℝ} (h : b ≠ 0) : a + b⁻¹ = (a * b + 1) / b := by

@@ -21,7 +21,6 @@ instance : {a b : Bit} → Decidable (a = b)
 | 1, 0 => Decidable.isFalse (by simp)
 | 1, 1 => Decidable.isTrue (by rfl)
 
-@[simp]
 def not : Bit → Bit
 | 0 => 1
 | 1 => 0
@@ -59,6 +58,18 @@ def ofBool (b : Bool) : Bit :=
 
 instance : Coe Bool Bit := ⟨ofBool⟩
 
+instance [∀ p, Decidable p] : Coe Prop Bit := ⟨(ofBool ·)⟩
+
+def ite {α : Type*} (b : Bit) (x y : α) : α :=
+  match b with
+  | B₁ => x
+  | B₀ => y
+
+def toBool (b : Bit) : Bool :=
+  b.ite true false
+
+instance : Coe Bit Bool := ⟨toBool⟩
+
 -----
 
 variable {b b₁ b₂ b₃ : Bit}
@@ -80,3 +91,14 @@ instance : Fintype Bit where
 
 @[simp]
 theorem default_def : (default : Bit) = 0 := rfl
+
+@[simp] theorem not_0 : (0 : Bit).not = 1 := rfl
+@[simp] theorem not_1 : (1 : Bit).not = 0 := rfl
+
+@[simp]
+theorem ne_iff_eq_not {a b : Bit} : a ≠ b ↔ a = b.not := by
+  cases a <;> cases b <;> simp
+
+@[simp]
+theorem not_not {b : Bit} : b.not.not = b := by
+  cases b <;> rfl

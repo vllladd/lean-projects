@@ -334,3 +334,8 @@ instance [ha : DecidableEq α] : DecidableEq (Id α) := ha
 
 theorem idNC_def : idNC = λ (x : α) => x := by
   ext; simp [idNC]
+
+@[simp]
+theorem choose?_eq_none_iff {p : α → Prop} [Decidable # ∃ x, p x] :
+choose? p = none ↔ ∀ x, ¬p x := by
+  simp [choose?]

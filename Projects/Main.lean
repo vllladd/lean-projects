@@ -4,6 +4,7 @@ import Projects.AP
 import Projects.Sokoban
 import Projects.RatRect
 import Projects.RealAnalysis
+import Projects.RealEquiv
 import Projects.DigitalRoot
 import Projects.Physics
 import Projects.Knowledge
