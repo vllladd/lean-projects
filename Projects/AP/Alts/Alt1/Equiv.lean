@@ -1,4 +1,4 @@
-import Projects.AP.Alts.Alt1.Aux
+import Projects.AP.Alts.Alt1.Thms
 
 namespace AP.Alt₁
 
