@@ -4,6 +4,7 @@ import Projects.Util.Algebra
 import Projects.Util.Function
 
 import Init.Data.List.Perm
+import Mathlib.Data.List.Lex
 import Init.Data.List.Sublist
 import Mathlib.Data.List.Range
 import Mathlib.Data.List.Intervals

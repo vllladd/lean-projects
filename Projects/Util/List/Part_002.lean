@@ -101,3 +101,16 @@ theorem tail_init : xs.init.tail = xs.tail.init := by
 
 theorem init_tail : xs.tail.init = xs.init.tail :=
   tail_init.symm
+
+attribute [instance high] instLE
+attribute [simp] cons_lt_cons_iff cons_le_cons_iff
+
+@[simp]
+theorem append_lt_append_iff_right [ha : LinearOrder α] :
+xs ++ ys < xs ++ zs ↔ ys < zs := by
+  induction xs; simp; simpa
+
+@[simp]
+theorem append_le_append_iff_right [ha : LinearOrder α] :
+xs ++ ys ≤ xs ++ zs ↔ ys ≤ zs := by
+  induction xs; simp; simpa
