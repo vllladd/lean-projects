@@ -28,7 +28,7 @@ def AMoveValid (pw : ℕ) (b : Board) (p : AMove) : Prop :=
   p ≠ b.A ∧ dist p b.A ≤ pw ∧ p ∈ b.squares
 
 def DMoveValid (b : Board) : DMove → Prop
-  | .none => true
+  | .none => True
   | .some p => p ≠ b.A ∧ p ∈ b.squares
 
 structure ValidAMove (pw : ℕ) (b : Board) : Type where
@@ -87,7 +87,7 @@ structure Game (pw : ℕ) : Type where
   d : D
   s : State
 
-def init_game {pw : ℕ} (a : A pw) (d : D) (s : State) : Game pw where
+def initGame {pw : ℕ} (a : A pw) (d : D) (s : State) : Game pw where
   a := a
   d := d
   s := s
@@ -127,8 +127,17 @@ def Game.play {pw : ℕ} (g : Game pw) (n : ℕ) : Game pw :=
 def Game.AWins {pw : ℕ} (g : Game pw) : Prop :=
   ∀ (n : ℕ), (g.play n).act
 
+def Game.DWins {pw : ℕ} (g : Game pw) : Prop :=
+  ∃ (n : ℕ), ¬(g.play n).act
+
 def AHwsAt (pw : ℕ) (s : State) : Prop :=
-  ∃ (a : A pw), ∀ (d : D), init_game a d s |>.AWins
+  ∃ (a : A pw), ∀ (d : D), initGame a d s |>.AWins
+
+def DHwsAt (pw : ℕ) (s : State) : Prop :=
+  ∃ (d : D), ∀ (a : A pw), initGame a d s |>.DWins
 
 def AHws (pw : ℕ) : Prop :=
   AHwsAt pw state₀
+
+def DHws (pw : ℕ) : Prop :=
+  DHwsAt pw state₀

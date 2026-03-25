@@ -112,3 +112,9 @@ theorem aHwsPw_of_le {pw pw'} (h₁ : pw ≤ pw') (h₂ : aHwsPw pw) : aHwsPw pw
 
 theorem dHwsPw_of_le {pw pw'} (h₁ : pw' ≤ pw) (h₂ : dHwsPw pw) : dHwsPw pw' := by
   contrapose h₂; simp at h₂ ⊢; exact aHwsPw_of_le h₁ h₂
+
+theorem aHwsPw_iff_p {pw} (p : PointZ) : aHwsPw pw ↔ (initState pw p).aHws := by
+  simp [aHwsPw, aHws_initState_iff_aHws_origin]
+
+theorem dHwsPw_iff_p {pw} (p : PointZ) : dHwsPw pw ↔ (initState pw p).dHws := by
+  simp [dHwsPw, dHws_initState_iff_dHws_origin]

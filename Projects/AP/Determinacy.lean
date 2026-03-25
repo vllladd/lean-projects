@@ -2,6 +2,52 @@ import Projects.AP.Basic
 
 namespace AP
 
+open Classical in noncomputable
+def aSeek (p : State → Prop) : AStrat := .mk # λ sa =>
+  choose? # λ pa => ∃ sd, sys.tr sa pa = some sd ∧ p sd
+
+def aStratChooseCnd (p : State → Prop) (sa : State) (pa : PointZ) : Prop :=
+  ∃ sd, sys.tr sa pa = some sd ∧ ∀ pd sa', sys.tr sd pd = some sa' → p sa'
+
+open Classical in noncomputable
+def aStratChoose (p : State → Prop) : AStrat :=
+  .mk # λ sa => choose? # aStratChooseCnd p sa
+
+@[simp]
+def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
+| [] => none
+| p :: ps => if s = s_target then some p else do
+  let s' ← sys.tr s p
+  getMoveFromHist s_target s' ps
+
+def State.getMoveAt (s s_target : State) : Option PointZ :=
+  getMoveFromHist s_target (initState s.pw s.aPos₀) s.hist.reverse.tail
+
+open Classical in noncomputable
+def dStratOfDWins (sa : State) : DStrat := .mk # λ sd => do
+  let pa ← sd.getMoveAt sa
+  let sd' ← sys.tr sa pa
+  let pd ← choose? # λ pd => ∃ sa', sys.tr sd' pd = some sa' ∧
+    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩
+  if sd' = sd then some pd else do
+    let sa' ← sys.tr sd' pd
+    let d ← choose? # λ (d : DStrat) => d.WF ∧
+      ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩
+    return d.f sd
+
+def AStrat.set (a : AStrat) (s : State) (p : PointZ) : AStrat := ⟨fn_set s p a.f⟩
+def DStrat.set (d : DStrat) (s : State) (p : PointZ) : DStrat := ⟨fn_set s p d.f⟩
+
+open Classical in noncomputable
+def aStratOfAHws (sd : State) : AStrat := .mk # λ sa => do
+  let pd ← sa.getMoveAt sd
+  let sa' ← sys.tr sd pd
+  let a ← choose? # λ (a : AStrat) => a.WF ∧
+    ∀ (d : DStrat), d.WF → sa'.aWins ⟨a, d⟩
+  return a.f sa
+
+-----
+
 theorem State.not_aHws_of_dHws {s : State} (h : s.dHws) : ¬s.aHws := by
   obtain ⟨d, hd, h⟩ := h
   simp [aHws]
@@ -109,13 +155,6 @@ sys.tr sa pa = some sd → sys.tr sd pd = some sa' → p sa')
   exact @ih ts.length (by simp) sa₁ _
     (h₂ sa pa sd pd sa₁ h₄ h₅) ts h₃ rfl
 
-def aStratChooseCnd (p : State → Prop) (sa : State) (pa : PointZ) : Prop :=
-  ∃ sd, sys.tr sa pa = some sd ∧ ∀ pd sa', sys.tr sd pd = some sa' → p sa'
-
-open Classical in noncomputable
-def aStratChoose (p : State → Prop) : AStrat :=
-  .mk # λ sa => choose? # aStratChooseCnd p sa
-
 theorem wf_aStratChoose {p} : (aStratChoose p).WF := by
   unfold aStratChoose; infer_instance
 
@@ -158,16 +197,6 @@ instance {s} [hs : sys.WF s] : sys.Tree s := by
   simp [h₂] at h₄
   simp [h₁, ←h₄] at h₃
   exact h₃
-
-@[simp]
-def getMoveFromHist (s_target s : State) : List PointZ → Option PointZ
-| [] => none
-| p :: ps => if s = s_target then some p else do
-  let s' ← sys.tr s p
-  getMoveFromHist s_target s' ps
-
-def State.getMoveAt (s s_target : State) : Option PointZ :=
-  getMoveFromHist s_target (initState s.pw s.aPos₀) s.hist.reverse.tail
 
 theorem getMoveFromHist_append_eq_some_of {s acc ps ps₁ p}
 (h : getMoveFromHist s acc ps = some p) :
@@ -264,23 +293,8 @@ sys.trs (initState s.pw s.aPos₀) ps' = (s₀, []) := by
   refine' ⟨_, _, h₁, h₂⟩
   apply System.wf_of_trs h₂
 
-open Classical in noncomputable
-def dStratOfDWins (sa : State) : DStrat := .mk # λ sd => do
-  let pa ← sd.getMoveAt sa
-  let sd' ← sys.tr sa pa
-  let pd ← choose? # λ pd => ∃ sa', sys.tr sd' pd = some sa' ∧
-    ∃ (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩
-  if sd' = sd then some pd else do
-    let sa' ← sys.tr sd' pd
-    let d ← choose? # λ (d : DStrat) => d.WF ∧
-      ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩
-    return d.f sd
-
 instance {sa} : (dStratOfDWins sa).WF := by
   unfold dStratOfDWins; infer_instance
-
-def AStrat.set (a : AStrat) (s : State) (p : PointZ) : AStrat := ⟨fn_set s p a.f⟩
-def DStrat.set (d : DStrat) (s : State) (p : PointZ) : DStrat := ⟨fn_set s p d.f⟩
 
 @[simp]
 theorem AStrat.f_set {a : AStrat} {s p} : (a.set s p).f = fn_set s p a.f := rfl
@@ -391,14 +405,6 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   rotate_left; exact h₃
   subst hd₁; simp; symm
   exact fn_set_eq_of_ne # ne_symm' H₃
-
-open Classical in noncomputable
-def aStratOfAHws (sd : State) : AStrat := .mk # λ sa => do
-  let pd ← sa.getMoveAt sd
-  let sa' ← sys.tr sd pd
-  let a ← choose? # λ (a : AStrat) => a.WF ∧
-    ∀ (d : DStrat), d.WF → sa'.aWins ⟨a, d⟩
-  return a.f sa
 
 instance {s} : (aStratOfAHws s).WF := by
   unfold aStratOfAHws; infer_instance
@@ -660,10 +666,6 @@ theorem State.aHws_of_ind {s} [hs : sys.WF s] {p : State → Prop} (h₁ : p s)
 (h₃ : ∀ sd [DState sd] pd sa, sys.Reachable s sd → p sd →
 sys.tr sd pd = some sa → p sa) : s.aHws :=
   s.aHws_of_ind' h₁ h₂ h₃ |>.1
-
-open Classical in noncomputable
-def aSeek (p : State → Prop) : AStrat := .mk # λ sa =>
-  choose? # λ pa => ∃ sd, sys.tr sa pa = some sd ∧ p sd
 
 instance {p} : (aSeek p).WF := by unfold aSeek; infer_instance
 

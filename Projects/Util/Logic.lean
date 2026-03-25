@@ -7,13 +7,22 @@ def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
   Classical.inhabited_of_nonempty h
 
 noncomputable
-def choose? {α : Type*} (p : α → Prop) [Decidable # ∃ x, p x] : Option α :=
+def choose? {α : Type*} (p : α → Prop) : Option α :=
+  haveI := Classical.propDecidable
   if h : ∃ x, p x then some h.choose else none
 
 noncomputable
 def idNC (x : α) : α :=
   haveI : Inhabited α := ⟨x⟩
   Classical.epsilon (x = ·)
+
+open Classical in noncomputable
+def ite' (p : Prop) (x y : α) : α :=
+  if p then x else y
+
+open Classical in noncomputable
+def dite' (p : Prop) (f : p → α) (g : ¬p → α) : α :=
+  if h : p then f h else g h
 
 -----
 
@@ -192,15 +201,14 @@ theorem dite_eq_dite_of_pos {α : Type*} {P Q : Prop} [hp : Decidable P] [hq : D
 {f : P → α} {g : Q → α} {x y : α} (h₁ : P) (h₂ : Q) (h₃ : f h₁ = g h₂) :
 (if h : P then f h else x) = if h : Q then g h else y := by simp [h₁, h₂, h₃]
 
-theorem choose?_eq_ite {α : Type*} [ha : Nonempty α]
-{p : α → Prop} [hd : Decidable # ∃ x, p x] :
-choose? p = if ∃ x, p x then some # Classical.epsilon p else none := by
+theorem choose?_eq_ite {α : Type*} [ha : Nonempty α] {p : α → Prop} :
+haveI := Classical.propDecidable; choose? p =
+if ∃ x, p x then some # Classical.epsilon p else none := by
   unfold choose?; split_ifs with h₁
   simp; exact choose_eq_epsilon h₁; rfl
 
-theorem choose?_eq_of_exi {α : Type*} (p : α → Prop)
-[hh : Decidable # ∃ x, p x] (h : ∃ x, p x) : haveI : Nonempty α := ⟨h.choose⟩
-choose? p = some (Classical.epsilon p) := by
+theorem choose?_eq_of_exi {α : Type*} {p : α → Prop} (h : ∃ x, p x) :
+haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (Classical.epsilon p) := by
   simp [choose?, h]; generalize_proofs h₁; exact choose_eq_epsilon h
 
 theorem forall_eq_left_iff_eq_iff {α : Type*} {x y : α} :
@@ -230,9 +238,8 @@ theorem match_decide_eq_ite {α : Type*} {P} [H : Decidable P] {x y : α} :
   split <;> nm h₁ <;> simp at h₁ <;> simp [h₁]
 
 @[simp]
-theorem choose?_eq_some_iff {α : Type*} {p : α → Prop} {x}
-[hp : Decidable # ∃ x, p x] : choose? p = some x ↔ p x ∧
-haveI : Nonempty α := ⟨x⟩; Classical.epsilon p = x := by
+theorem choose?_eq_some_iff {α : Type*} {p : α → Prop} {x} :
+haveI : Nonempty α := ⟨x⟩; choose? p = some x ↔ p x ∧ Classical.epsilon p = x := by
   have h₁ : Nonempty α := ⟨x⟩; simp [choose?]; constructor
   · rintro ⟨h₂, rfl⟩; use h₂.choose_spec, choose_eq_epsilon h₂ |>.symm
   · rintro ⟨h₂, h₃⟩; use ⟨_, h₂⟩; rwa [choose_eq_epsilon ⟨_, h₂⟩]
@@ -336,6 +343,50 @@ theorem idNC_def : idNC = λ (x : α) => x := by
   ext; simp [idNC]
 
 @[simp]
-theorem choose?_eq_none_iff {p : α → Prop} [Decidable # ∃ x, p x] :
-choose? p = none ↔ ∀ x, ¬p x := by
+theorem choose?_eq_none_iff {p : α → Prop} : choose? p = none ↔ ∀ x, ¬p x := by
   simp [choose?]
+
+noncomputable
+instance (priority := low) {α : Type*} [ha : Nonempty α] : Inhabited α :=
+  Classical.inhabited_of_nonempty ha
+
+theorem choose?_of {P : Option α → Prop} {p : α → Prop}
+(h₁ : ∃ x, p x) (h₂ : ∀ x, haveI : Nonempty α := ⟨h₁.choose⟩
+Classical.epsilon p = x → p x → P (some x)) : P (choose? p) := by
+  rw [choose?_eq_of_exi h₁]; exact h₂ _ rfl # Classical.epsilon_spec h₁
+
+theorem ite_eq_ite' {p : Prop} {x y : α} [Decidable p] :
+(if p then x else y) = ite' p x y := by
+  simp [ite']
+
+theorem ite'_eq_ite {p : Prop} {x y : α} [Decidable p] :
+ite' p x y = (if p then x else y) :=
+  ite_eq_ite'.symm
+
+@[simp]
+theorem ite'_true {x y : α} : ite' True x y = x := by
+  simp [ite'_eq_ite]
+
+@[simp]
+theorem ite'_false {x y : α} : ite' False x y = y := by
+  simp [ite'_eq_ite]
+
+@[simp]
+theorem ite'_same {p : Prop} {x : α} : ite' p x x = x := by
+  classical simp [ite'_eq_ite]
+
+theorem dite_eq_dite' {p : Prop} {f : p → α} {g : ¬p → α} [Decidable p] :
+(if h : p then f h else g h) = dite' p f g := by
+  simp [dite']; congr
+
+theorem dite'_eq_dite {p : Prop} {f : p → α} {g : ¬p → α} [Decidable p] :
+dite' p f g = (if h : p then f h else g h) :=
+  dite_eq_dite'.symm
+
+@[simp]
+theorem dite'_true {f g} : @dite' α True f g = f trivial := by
+  simp [dite'_eq_dite]
+
+@[simp]
+theorem dite'_false {f g} : @dite' α False f g = g not_false := by
+  simp [dite'_eq_dite]

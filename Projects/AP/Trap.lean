@@ -92,7 +92,7 @@ theorem State.dHws_bounded_of_dHws {s} [hs : sys.WF s]
   obtain ⟨n, h₁⟩ := h
   use n, d
 
-theorem State.dHws_iff_dHws_bounded {s} [hs : sys.WF s] :
+theorem State.dHws_iff_dHws_bounded' {s} [hs : sys.WF s] :
 s.dHws ↔ ∃ (n : ℕ) (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF →
 (sys.simulate (Strat.mk a d).f s n).2 ≠ 0 := by
   use dHws_bounded_of_dHws
@@ -101,6 +101,19 @@ s.dHws ↔ ∃ (n : ℕ) (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF →
   intro a Ha
   specialize h a Ha
   use n
+
+theorem State.dHws_iff_dHws_bounded {s} [hs : sys.WF s] :
+s.dHws ↔ ∃ (n : ℕ) (d : DStrat), d.WF ∧ ∀ (a : AStrat), a.WF → ∃ s' r,
+sys.simulate (Strat.mk a d).f s n = (s', r) ∧ r ≠ 0 := by
+  rw [dHws_iff_dHws_bounded']
+  constructor
+  all_goals
+    rintro ⟨n, d, hd, h⟩
+    use n, d, hd
+    intro a ha
+    specialize h a ha
+    simp [Prod.ext_iff] at h ⊢
+    omega
 
 def State.aTrap (s : State) : Set PointZ :=
   {p | ∃ s', sys.Reachable s s' ∧ s'.aPos = p}
@@ -707,7 +720,7 @@ s.dEntrapsAIn ⟨a, d⟩ {p | p ∈ (0 : PointZ).nbhd N} := by
     specialize h _
     · apply Set.finite_of_subset_finset # (0 : PointZ).nbhd N |>.toFinset; simp
     exact exi_dWins_of_simulate_aTrapped h
-  rw [dHws_iff_dHws_bounded]
+  rw [dHws_iff_dHws_bounded']
   rintro ⟨n, d, Hd, h⟩
   have h₁ := @dEntrapsAIn_of_forall_dWins s hs d Hd
   specialize h₁ _
