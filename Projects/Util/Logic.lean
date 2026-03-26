@@ -201,15 +201,32 @@ theorem dite_eq_dite_of_pos {α : Type*} {P Q : Prop} [hp : Decidable P] [hq : D
 {f : P → α} {g : Q → α} {x y : α} (h₁ : P) (h₂ : Q) (h₃ : f h₁ = g h₂) :
 (if h : P then f h else x) = if h : Q then g h else y := by simp [h₁, h₂, h₃]
 
-theorem choose?_eq_ite {α : Type*} [ha : Nonempty α] {p : α → Prop} :
+theorem choose?_eq_dite {α : Type*} {p : α → Prop} :
+haveI := Classical.propDecidable; choose? p =
+if h : ∃ x, p x then haveI : Nonempty α := ⟨h.choose⟩
+some # Classical.epsilon p else none := by
+  unfold choose?; split_ifs with h₁; on_goal 2 => rfl
+  have ha : Nonempty α; use h₁.choose; rw [choose_eq_epsilon]
+
+theorem choose?_eq_ite {α : Type*} {p : α → Prop} [ha : Nonempty α] :
 haveI := Classical.propDecidable; choose? p =
 if ∃ x, p x then some # Classical.epsilon p else none := by
-  unfold choose?; split_ifs with h₁
-  simp; exact choose_eq_epsilon h₁; rfl
+  rw [choose?_eq_dite]; split_ifs <;> simp
 
 theorem choose?_eq_of_exi {α : Type*} {p : α → Prop} (h : ∃ x, p x) :
 haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (Classical.epsilon p) := by
   simp [choose?, h]; generalize_proofs h₁; exact choose_eq_epsilon h
+
+theorem choose?_eq_of_pos {α : Type*} {p : α → Prop} (h : ∃ x, p x) :
+haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (Classical.epsilon p) :=
+  choose?_eq_of_exi h
+
+@[simp]
+theorem choose?_eq_none_iff {α : Type*} {p : α → Prop} : choose? p = none ↔ ∀ x, ¬p x := by
+  simp [choose?]
+
+theorem choose?_eq_of_neg {α : Type*} {p : α → Prop} (h : ∀ x, ¬p x) : choose? p = none :=
+  choose?_eq_none_iff.mpr h
 
 theorem forall_eq_left_iff_eq_iff {α : Type*} {x y : α} :
 (∀ z, z = x ↔ z = y) ↔ x = y := by aesop
@@ -342,18 +359,9 @@ instance [ha : DecidableEq α] : DecidableEq (Id α) := ha
 theorem idNC_def : idNC = λ (x : α) => x := by
   ext; simp [idNC]
 
-@[simp]
-theorem choose?_eq_none_iff {p : α → Prop} : choose? p = none ↔ ∀ x, ¬p x := by
-  simp [choose?]
-
 noncomputable
 instance (priority := low) {α : Type*} [ha : Nonempty α] : Inhabited α :=
   Classical.inhabited_of_nonempty ha
-
-theorem choose?_of {P : Option α → Prop} {p : α → Prop}
-(h₁ : ∃ x, p x) (h₂ : ∀ x, haveI : Nonempty α := ⟨h₁.choose⟩
-Classical.epsilon p = x → p x → P (some x)) : P (choose? p) := by
-  rw [choose?_eq_of_exi h₁]; exact h₂ _ rfl # Classical.epsilon_spec h₁
 
 theorem ite_eq_ite' {p : Prop} {x y : α} [Decidable p] :
 (if p then x else y) = ite' p x y := by
@@ -390,3 +398,22 @@ theorem dite'_true {f g} : @dite' α True f g = f trivial := by
 @[simp]
 theorem dite'_false {f g} : @dite' α False f g = g not_false := by
   simp [dite'_eq_dite]
+
+@[simp]
+theorem decide_eq_not_decide {p q : Prop} [hp : Decidable p] [hq : Decidable q] :
+decide p = (!decide q) ↔ (p ↔ ¬q) := by
+  by_cases h : p <;> simp [h]
+
+@[simp]
+theorem not_decide_eq_decide {p q : Prop} [hp : Decidable p] [hq : Decidable q] :
+(!decide p) = decide q ↔ (p ↔ ¬q) := by
+  by_cases h : p <;> simp [h]
+
+theorem choose?_of_pos {P : Option α → Prop} {p : α → Prop}
+(h₁ : ∃ x, p x) (h₂ : ∀ x, haveI : Nonempty α := ⟨h₁.choose⟩
+Classical.epsilon p = x → p x → P (some x)) : P (choose? p) := by
+  rw [choose?_eq_of_pos h₁]; exact h₂ _ rfl # Classical.epsilon_spec h₁
+
+theorem choose?_of_neg {P : Option α → Prop} {p : α → Prop}
+(h₁ : ∀ x, ¬p x) (h₂ : P none) : P (choose? p) := by
+  rwa [choose?_eq_of_neg h₁]

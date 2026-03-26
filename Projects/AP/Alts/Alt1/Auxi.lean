@@ -98,3 +98,15 @@ def aOptimal (pw : ℕ) : Option (A pw) :=
 open Classical in noncomputable
 def dOptimal (pw : ℕ) : Option D :=
   dSeek λ s s' => s'.dHws pw ∧ s'.dwn pw < s.dwn pw
+
+class State.WF (s : State) (pw : ℕ) : Prop where
+  h : ∃ a d n g, (initGame a d state₀ : Game pw).play n = g ∧
+    (g.s = s ∨ ∃ h, (playDMoveAt g h).s = s)
+
+open Classical in noncomputable
+def A.set {pw} (a : A pw) (s : State) (ref : A pw) : A pw where
+  f s₁ h₁ h₂ := if s₁ = s then ref.f s₁ h₁ h₂ else a.f s₁ h₁ h₂
+
+open Classical in noncomputable
+def D.set (d : D) (s : State) (ref : D) : D where
+  f s₁ h := if s₁ = s then ref.f s₁ h else d.f s₁ h
