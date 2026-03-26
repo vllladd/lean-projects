@@ -108,16 +108,3 @@ Acc r x ↔ ¬∃ (a : ℕ → α), r (a 0) x ∧ ∀ n, r (a # n + 1) (a n) := 
 theorem acc_iff_not_seq {r : α → α → Prop} {x} :
 Acc r x ↔ ∀ (a : ℕ → α), r (a 0) x → ∃ n, ¬r (a # n + 1) (a n) := by
   simp [acc_iff_not_seq']
-
--- theorem wellFounded_pi_lt [ha : LinearOrder α] [hb : LinearOrder β]
--- [ha₁ : Finite α] : WellFounded λ (a b : (α → β)) => a < b := by
---   constructor
---   intro a
---   rw [acc_iff_not_seq]
---   intro F h₁
---   sorry
-
--- instance (priority := high) [ha : LinearOrder α] [hb : LinearOrder β]
--- [ha₁ : Finite α] : WellFoundedRelation # α → β where
---   rel := (· < ·)
---   wf := wellFounded_pi_lt

@@ -413,3 +413,25 @@ theorem odd_add_two {n} : Odd (n + 2) ↔ Odd n := by
 
 theorem even_add_two {n} : Even (n + 2) ↔ Even n := by
   simp
+
+@[simp]
+theorem odd_sub_one_iff {n} : Odd (n - 1) ↔ n ≠ 0 ∧ Even n := by
+  grind
+
+@[simp]
+theorem even_sub_one_iff {n} : Even (n - 1) ↔ n = 0 ∨ Odd n := by
+  grind
+
+theorem mul_div_mul {a b c : ℕ} (hb : b ≠ 0) : a * b / (b * c) = a / c := by
+  by_cases hc : c = 0; simp [hc]
+  have h : a * b * c = a * (b * c); rw [mul_assoc]
+  replace h := congrArg (· / c / (b * c)) h; simp at h
+  rw [Nat.mul_div_cancel _ # by omega] at h
+  rw [h, Nat.div_right_comm, Nat.mul_div_cancel _ # by positivity]
+
+@[simp]
+theorem mul_div_mul_succ {a b c : ℕ} : a * (b + 1) / ((b + 1) * c) = a / c :=
+  mul_div_mul # by simp
+
+theorem one_le_of_odd {n : ℕ} (h : Odd n) : 1 ≤ n := by
+  by_contra h₁; simp at h₁; simp [h₁] at h

@@ -11,6 +11,7 @@ import Projects.Knowledge
 import Projects.Inference
 import Projects.Fixpoint
 import Projects.Paramodulator
+import Projects.NatPair
 
 -- namespace AP
 -- 
