@@ -64,3 +64,35 @@ s.trBox.y ≤ p.y ∧ (s.trBox.y = p.y → p.x ≤ s.trBox.x) :=
 theorem trBox_spec {p} [hs : sys.WF s] (h : s.boxes ≠ ∅) (hp : p ∈ s.boxesReachable) :
 s.trBox.y ≤ p.y ∧ (s.trBox.y = p.y → p.x ≤ s.trBox.x) :=
   trBox_spec' h p hp
+
+theorem points_eq_of_reachable {s s'} (h : sys.Reachable s s') : s'.points = s.points := by
+  induction h; rfl
+  clear s'
+  nm a b c m h₁ h₂ ih
+  simp [tr_eq_some_iff] at h₁
+  simp_all only
+  obtain ⟨w, h⟩ := h₁
+  obtain ⟨left, right⟩ := h
+  obtain ⟨left_1, right⟩ := right
+  split at right
+  next h =>
+    obtain ⟨w_1, h_1⟩ := right
+    obtain ⟨left_2, right⟩ := h_1
+    obtain ⟨left_3, right⟩ := right
+    obtain ⟨left_4, right⟩ := right
+    subst right
+    simp_all only [points_moveBox, points_movePlayer]
+  next h =>
+    subst right
+    simp_all only [Bool.not_eq_true, points_movePlayer]
+
+theorem mem_points_of_mem_boxesReachable {s : State} {p}
+(h : p ∈ s.boxesReachable) : p ∈ s.points := by
+  simp [boxesReachable] at h; exact h.1
+
+theorem boxesReachable_subseq_of_reachable {s s' : State}
+(h : sys.Reachable s s') : s'.boxesReachable ⊆ s.boxesReachable := by
+  intro p; simp [boxesReachable]
+  intro h₁ s₁ h₂ h₃
+  split_ands; rwa [←points_eq_of_reachable h]
+  use s₁, h.trans h₂

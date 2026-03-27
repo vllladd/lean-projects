@@ -1,3 +1,4 @@
 import Projects.Sokoban.MovableBoxConjecture.Defs
+import Projects.Sokoban.MovableBoxConjecture.Alts
 import Projects.Sokoban.MovableBoxConjecture.Basic
 import Projects.Sokoban.MovableBoxConjecture.OneBox

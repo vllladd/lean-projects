@@ -111,3 +111,29 @@ theorem boxes_state₂_ne : state₂.boxes ≠ .singleton trBox₁ :=
 @[simp]
 theorem reachable_state₀_state₂ : sys.Reachable state₀ state₂ :=
   reachable_state₀_state₁.trans reachable_state₁_state₂
+
+@[simp]
+theorem points_state₁ : state₁.points = state₀.points :=
+  points_eq_of_reachable reachable_state₀_state₁
+
+@[simp]
+theorem points_state₂ : state₂.points = state₀.points :=
+  points_eq_of_reachable reachable_state₀_state₂
+
+@[simp]
+theorem trBox₁_mem_points_state₀ : trBox₁ ∈ state₀.points :=
+  mem_points_of_mem_boxesReachable # by simp
+
+@[simp]
+theorem boxesReachable_state₂_subset_boxesReachable_state₀ :
+state₂.boxesReachable ⊆ state₀.boxesReachable :=
+  boxesReachable_subseq_of_reachable # by simp
+
+-- @[simp]
+-- theorem trBox₁_mem_boxesReachable_state₂ : trBox₁ ∈ state₂.boxesReachable := by
+--   by_contra h₁
+--   -- simp [boxesReachable] at h₁
+--   have h₂ : state₂.boxesReachable ⊂ state₀.boxesReachable
+--   · exact Set'.ssubset_of trBox₁ (by simp) h₁ (by simp)
+--   replace h₂ := Set'.size_lt_of_ssubset h₂
+--   sorry

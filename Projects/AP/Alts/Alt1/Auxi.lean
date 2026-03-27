@@ -99,9 +99,15 @@ open Classical in noncomputable
 def dOptimal (pw : ℕ) : Option D :=
   dSeek λ s s' => s'.dHws pw ∧ s'.dwn pw < s.dwn pw
 
-class State.WF (s : State) (pw : ℕ) : Prop where
-  h : ∃ a d n g, (initGame a d state₀ : Game pw).play n = g ∧
+class State.WF (pw : ℕ) (s : State) : Prop where
+  wf : ∃ a d n g, (initGame a d state₀ : Game pw).play n = g ∧
     (g.s = s ∨ ∃ h, (playDMoveAt g h).s = s)
+
+class AState (pw : ℕ) (s : State) extends State.WF pw s where
+  ht : s.aTurn = true
+
+class DState (pw : ℕ) (s : State) extends State.WF pw s where
+  ht : s.aTurn = false
 
 open Classical in noncomputable
 def A.set {pw} (a : A pw) (s : State) (ref : A pw) : A pw where

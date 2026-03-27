@@ -38,7 +38,6 @@ theorem State.Get.mem {s : State} {p d} [hd : s.Get p d] : p ∈ s.grid := by
 theorem sys_initial_iff {s} : sys.Initial s ↔ s.WF := by
   rw [System.initial_def]; rfl
 
-@[simp]
 theorem sys_tr_eq {s} : sys.tr s = s.move := rfl
 
 @[simp]
@@ -147,8 +146,7 @@ theorem movePlayer_moveBox {s : State} {p₁ p₂ p₃} :
 (s.moveBox p₁ p₂).movePlayer p₃ = (s.movePlayer p₃).moveBox p₁ p₂ :=
   moveBox_movePlayer.symm
 
-@[simp]
-theorem move_eq_some_iff {s s' : State} (t : Move) : s.move t = some s' ↔
+theorem tr_eq_some_iff {s s' : State} (t : Move) : sys.tr s t = some s' ↔
 let p_dif := t.point
 let p₁ := s.player + p_dif
 let p₂ := p₁ + p_dif
@@ -156,6 +154,7 @@ let s₁ := s.movePlayer p₁
 ∃ d₁, s.Get p₁ d₁ ∧ !d₁.wall ∧ if !d₁.box then s₁ = s'
 else ∃ d₂, s.Get p₂ d₂ ∧ d₂.box = false ∧
 d₂.wall = false ∧ s₁.moveBox p₁ p₂ = s' := by
+  change s.move t = _ ↔ _
   simp [State.move, Map.get?_eq_ite, get_iff]
   simp only [eq_comm (b := s')]
   intro h₁ h₂
@@ -286,7 +285,7 @@ theorem sys_wf_iff {s} : sys.WF s ↔ s.WF := by
   apply sys.invariant_wf h; simp
   clear! s
   intro s s' t hs hs' h₁ h₂
-  simp at h₂
+  simp [tr_eq_some_iff] at h₂
   obtain ⟨d₁, h₂, h₃, h₄⟩ := h₂
   split_ifs at h₄ with h₅
   · obtain ⟨d₂, h₄, h₆, h₇, rfl⟩ := h₄
@@ -395,7 +394,7 @@ theorem width_and_height_eq_of_reachable {s₀ s : State} [hs₀ : s₀.WF]
   have hs₀ : sys.WF s₀; rwa [sys_wf_iff]
   apply sys.invariant_val h
   intro x y t hx hy h₁
-  simp at h₁
+  simp [tr_eq_some_iff] at h₁
   obtain ⟨d₁, h₁, h₂, h₃⟩ := h₁
   split_ifs at h₃ with h₄
   · obtain ⟨d₂, h₃, h₅, h₆, h₇⟩ := h₃; simp [←h₇]
@@ -417,7 +416,7 @@ theorem mem_grid_iff_of_reachable {s₀ s : State} [hs₀ : s₀.WF] {p}
 
 theorem targets_eq_of_tr {s s' p}
 (h : sys.tr s p = some s') : s'.targets = s.targets := by
-  simp [sys] at h
+  simp [tr_eq_some_iff] at h
   choose d₁ h₁ h₂ h₃ using h
   split_ifs at h₃ with h₄
   · choose d₂ h₃ h₅ h₆ h₇ using h₃
@@ -432,7 +431,7 @@ theorem targets_eq_of_reachable {s s'} [hs : sys.WF s]
 
 theorem size_boxes_eq_of_tr {s s' p}
 (h : sys.tr s p = some s') : s'.boxes.size = s.boxes.size := by
-  simp [sys] at h
+  simp [tr_eq_some_iff] at h
   choose d₁ h₁ h₂ h₃ using h
   split_ifs at h₃ with h₄
   · choose d₂ h₃ h₅ h₆ h₇ using h₃
