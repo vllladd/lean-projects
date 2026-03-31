@@ -1458,3 +1458,9 @@ theorem ofFinset_toFinset : .ofFinset s.toFinset = s := by
 @[simp]
 theorem ofSet_toSet : .ofSet s.toSet = s := by
   ext; simp [ofSet]
+
+theorem eq_singleton_iff_size {x} : s = singleton x ↔ s.size = 1 ∧ x ∈ s := by
+  simp [ext_iff, size_eq_one_iff]; grind
+
+theorem singleton_eq_iff_size {x} : singleton x = s ↔ s.size = 1 ∧ x ∈ s := by
+  simp [ext_iff, size_eq_one_iff]; grind

@@ -28,8 +28,8 @@ theorem size₀_le {n s} (h : stateCnd₀ n s) : size₀ ≤ n :=
 theorem state₀_spec : stateCnd₀ size₀ state₀ :=
   Classical.epsilon_spec size₀_spec
 
-@[simp]
-instance alwaysMovable1_state₀ : AlwaysMovable1 state₀ :=
+@[simp, instance]
+theorem alwaysMovable1_state₀ : AlwaysMovable1 state₀ :=
   state₀_spec.1
 
 omit H in @[simp]
@@ -86,8 +86,8 @@ theorem alwaysMovable1_of_reachable [hs : AlwaysMovable1 s]
   cases hs; nm hs h₁; have hs₁ := alwaysMovable_of_reachable h
   constructor; rwa [size_boxes_eq_of_reachable h]
 
-@[simp]
-instance alwaysMovable1_state₁ : AlwaysMovable1 state₁ :=
+@[simp, instance]
+theorem alwaysMovable1_state₁ : AlwaysMovable1 state₁ :=
   alwaysMovable1_of_reachable (s := state₀) # by simp
 
 theorem state₂_spec : sys.Reachable state₁ state₂ ∧ state₂.boxes ≠ .singleton trBox₁ := by
@@ -129,11 +129,122 @@ theorem boxesReachable_state₂_subset_boxesReachable_state₀ :
 state₂.boxesReachable ⊆ state₀.boxesReachable :=
   boxesReachable_subseq_of_reachable # by simp
 
--- @[simp]
--- theorem trBox₁_mem_boxesReachable_state₂ : trBox₁ ∈ state₂.boxesReachable := by
---   by_contra h₁
---   -- simp [boxesReachable] at h₁
---   have h₂ : state₂.boxesReachable ⊂ state₀.boxesReachable
---   · exact Set'.ssubset_of trBox₁ (by simp) h₁ (by simp)
---   replace h₂ := Set'.size_lt_of_ssubset h₂
---   sorry
+@[simp, instance]
+theorem alwaysMovable1_state₂ : AlwaysMovable1 state₂ :=
+  alwaysMovable1_of_reachable (s := state₀) # by simp
+
+@[simp]
+theorem size_boxesReachable_state₀ : state₀.boxesReachable.size = size₀ :=
+  state₀_spec.2
+
+theorem size₀_eq : size₀ = state₀.boxesReachable.size :=
+  size_boxesReachable_state₀.symm
+
+@[simp]
+theorem size₀_le_of_alwaysMovable1 {s} [hs : AlwaysMovable1 s] :
+size₀ ≤ s.boxesReachable.size := by
+  apply size₀_le (s := s); use hs
+
+@[simp]
+theorem size_boxesReachable_state₁ : state₁.boxesReachable.size = size₀ := by
+  apply le_antisymm _ # by simp;; rw [size₀_eq]
+  apply size_boxesReachable_le_of_reachable; simp
+
+@[simp]
+theorem size_boxesReachable_state₂ : state₂.boxesReachable.size = size₀ := by
+  apply le_antisymm _ # by simp;; rw [size₀_eq]
+  apply size_boxesReachable_le_of_reachable; simp
+
+@[simp]
+theorem trBox₁_mem_boxesReachable_state₂ : trBox₁ ∈ state₂.boxesReachable := by
+  by_contra h₁; have h₂ : state₂.boxesReachable ⊂ state₀.boxesReachable
+  · exact Set'.ssubset_of trBox₁ (by simp) h₁ (by simp)
+  replace h₂ := Set'.size_lt_of_ssubset h₂; simp at h₂
+
+@[simp]
+theorem not_trBox₁_mem_boxes_state₀ : trBox₁ ∉ state₂.boxes := by
+  have h := boxes_state₂_ne; contrapose! h; simpa [Set'.eq_singleton_iff_size]
+
+omit H in
+theorem box_mem_boxes_of {s : State} (h : s.boxes.size ≠ 0) : s.box ∈ s.boxes := by
+  simp [Set'.eq_empty_iff] at h; apply Classical.epsilon_spec h
+
+omit H in @[simp high]
+theorem box_mem_boxes_of_alwaysMovable1 {s : State}
+[hs : AlwaysMovable1 s] : s.box ∈ s.boxes := by
+  apply box_mem_boxes_of; simp
+
+omit H in @[simp]
+theorem singleton_box {s : State} [hs : AlwaysMovable1 s] :
+Set'.singleton s.box = s.boxes := by
+  simp [Set'.singleton_eq_iff_size]
+
+omit H in
+theorem boxes_eq_singleton_box {s : State} [hs : AlwaysMovable1 s] :
+s.boxes = Set'.singleton s.box := singleton_box.symm
+
+@[simp]
+theorem box_state₁ : state₁.box = trBox₁ := by
+  have h := box_mem_boxes_of_alwaysMovable1 (s := state₁); simp at h; exact h
+
+@[simp]
+theorem box_state₂_ne_trBox₁ : state₂.box ≠ trBox₁ := by
+  have h := box_mem_boxes_of_alwaysMovable1 (s := state₂)
+  intro h₁; rw [h₁] at h; simp at h
+
+omit H in
+theorem box_eq_of_mem_boxes {s p} [hs : AlwaysMovable1 s]
+(h : p ∈ s.boxes) : s.box = p := by
+  rw [boxes_eq_singleton_box, Set'.mem_singleton] at h; exact h.symm
+
+theorem state₃_spec : state₃.box = trBox₁ ∧
+∃ s', sys.Reachable state₂ s' ∧ s'.BoxPushed state₃ := by
+  apply Classical.epsilon_spec (p := λ s => s.box = trBox₁ ∧
+    ∃ s', sys.Reachable state₂ s' ∧ s'.BoxPushed s)
+  have h := trBox₁_mem_boxesReachable_state₂
+  rw [mem_boxesReachable_iff] at h
+  choose sx h₁ h₂ using h
+  have h₃ : sx.boxes ≠ state₂.boxes
+  · intro h₃; simp [h₃] at h₂
+  have hsx := alwaysMovable1_of_reachable h₁
+  choose s₁ s₂ t H₁ H₂ H₃ H₄ H₅ using sys.exi_tr_of_pred_diff
+    (p := (·.box = trBox₁)) h₁ (by simp) (box_eq_of_mem_boxes h₂)
+  refine' ⟨s₂, H₅, s₁, H₁, ⟨_, H₂⟩, _⟩
+  have hs₁ := alwaysMovable1_of_reachable H₁
+  have hs₂ := alwaysMovable1_of_reachable # sys.reachable_of_tr H₂
+  simp only [ne_def, boxes_eq_singleton_box, Set'.singleton_eq_iff]; grind
+
+theorem state₃'_spec : sys.Reachable state₂ state₃' ∧ state₃'.BoxPushed state₃ :=
+  Classical.epsilon_spec state₃_spec.2
+
+@[simp]
+theorem box_state₃ : state₃.box = trBox₁ :=
+  state₃_spec.1
+
+@[simp]
+theorem reachable_state₂_state₃' : sys.Reachable state₂ state₃' :=
+  state₃'_spec.1
+
+@[simp]
+theorem boxPushed_state₃'_state₃ : state₃'.BoxPushed state₃ :=
+  state₃'_spec.2
+
+@[simp, instance]
+theorem alwaysMovable1_state₃' : AlwaysMovable1 state₃' :=
+  alwaysMovable1_of_reachable reachable_state₂_state₃'
+
+@[simp]
+theorem reachable_state₃'_state₃ : sys.Reachable state₃' state₃ :=
+  reachable_of_boxPushed # by simp
+
+@[simp, instance]
+theorem alwaysMovable1_state₃ : AlwaysMovable1 state₃ :=
+  alwaysMovable1_of_reachable reachable_state₃'_state₃
+
+omit H in
+theorem player'_eq_box_of_boxPushed {s s'} [hs : AlwaysMovable1 s]
+(h : s.BoxPushed s') : s'.player = s.box := by
+  rw [box_eq_of_mem_boxes # player'_mem_boxes_of_boxPushed h]
+
+theorem player_state₃_eq_box_state₃' : state₃.player = state₃'.box :=
+  player'_eq_box_of_boxPushed # by simp

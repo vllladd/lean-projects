@@ -558,3 +558,28 @@ example {a b c : ℤ} (ha : -1 < a) (hb : -1 < b) (hc : -1 < c) :
   rw [Real.pow_rpow_inv] at h₁ <;> try positivity
   field_simp at h₁ ⊢
   exact h₁
+
+end P12 namespace P13
+
+theorem aux₁ {i j : ℕ} : i < j ↔ 2 ^ i + i < 2 ^ j + j := by
+  constructor
+  · intro h; apply add_lt_add _ h
+    rwa [Nat.pow_lt_pow_iff_right # by norm_num]
+  · contrapose!; intro h; apply add_le_add _ h
+    rwa [Nat.pow_le_pow_iff_right # by norm_num]
+
+theorem aux₂ {i j : ℕ} : i ≤ j ↔ 2 ^ i + i ≤ 2 ^ j + j := by
+  contrapose!; exact aux₁
+
+example {x : ℤ} : (2 : ℝ) ^ x + x = 37 ↔ x = 5 := by
+  symm; constructor; rintro rfl; norm_num
+  intro h; have h₁ : 0 ≤ x
+  · contrapose! h; apply ne_of_lt
+    trans 1; on_goal 2 => norm_num
+    have h₁ : (x : ℝ) < 0; exact_mod_cast h
+    suffices : (2 : ℝ) ^ x < 1; linarith
+    suffices h : (2 : ℝ) ^ (x : ℝ) < 1; exact_mod_cast h
+    rw [Real.rpow_lt_one_iff # by norm_num]; simpa
+  rcases x with n | n; on_goal 2 => omega
+  clear h₁; simp at h ⊢; norm_cast at h ⊢
+  apply le_antisymm <;> rw [aux₂] <;> norm_num <;> grind
