@@ -12,6 +12,7 @@ import Projects.Inference
 import Projects.Fixpoint
 import Projects.Paramodulator
 import Projects.NatPair
+import Projects.NatSuccSub
 
 -- namespace AP
 -- 
