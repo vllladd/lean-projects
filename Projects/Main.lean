@@ -11,8 +11,7 @@ import Projects.Knowledge
 import Projects.Inference
 import Projects.Fixpoint
 import Projects.Paramodulator
-import Projects.NatPair
-import Projects.NatSuccSub
+import Projects.Esolangs
 
 -- namespace AP
 -- 

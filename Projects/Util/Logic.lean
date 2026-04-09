@@ -417,3 +417,14 @@ Classical.epsilon p = x → p x → P (some x)) : P (choose? p) := by
 theorem choose?_of_neg {P : Option α → Prop} {p : α → Prop}
 (h₁ : ∀ x, ¬p x) (h₂ : P none) : P (choose? p) := by
   rwa [choose?_eq_of_neg h₁]
+
+theorem exiu_iff {p : α → Prop} : (∃! x, p x) ↔ ∃ x, p x ∧ ∀ y, p y → y = x :=
+  Eq.to_iff rfl
+
+theorem not_exiu_iff {p : α → Prop} :
+¬(∃! x, p x) ↔ ∀ x, p x → ∃ y, p y ∧ y ≠ x := by
+  simp [exiu_iff]
+
+theorem not_exiu_iff_or {p : α → Prop} :
+¬(∃! x, p x) ↔ (∀ x, ¬p x) ∨ (∃ x y, p x ∧ p y ∧ x ≠ y) := by
+  grind [exiu_iff]

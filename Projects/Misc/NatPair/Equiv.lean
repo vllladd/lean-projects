@@ -1,4 +1,4 @@
-import Projects.NatPair.Basic
+import Projects.Misc.NatPair.Basic
 
 namespace NatPair
 
