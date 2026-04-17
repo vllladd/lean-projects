@@ -114,3 +114,48 @@ xs ++ ys < xs ++ zs ↔ ys < zs := by
 theorem append_le_append_iff_right [ha : LinearOrder α] :
 xs ++ ys ≤ xs ++ zs ↔ ys ≤ zs := by
   induction xs; simp; simpa
+
+attribute [-simp] getElem!_eq_getElem?_getD
+
+theorem ext_getd [ha : Inhabited α] : xs = ys ↔ xs.length = ys.length ∧
+∀ ⦃i⦄, i < xs.length → i < ys.length → xs[i]?.getd = ys[i]?.getd := by
+  constructor; rintro rfl; simp; rintro ⟨h₁, h₂⟩
+  rw [List.ext_getElem?_iff]; intro i
+  by_cases h₃ : xs.length ≤ i; grind
+  specialize @h₂ i (by omega) (by omega)
+  iterate 2 rw [List.getElem?_eq_getElem # by grind] at h₂ ⊢
+  simp at h₂ ⊢; exact h₂
+
+theorem ext_getElem!_iff [ha : Inhabited α] : xs = ys ↔ xs.length = ys.length ∧
+∀ ⦃i⦄, i < xs.length → i < ys.length → xs[i]! = ys[i]! := by
+  constructor; rintro rfl; simp; rintro ⟨h₁, h₂⟩
+  rw [List.ext_getElem?_iff]; intro i
+  by_cases h₃ : xs.length ≤ i; grind
+  specialize @h₂ i (by omega) (by omega)
+  iterate 2 rw [List.getElem!_eq_getElem # by grind] at h₂
+  iterate 2 rw [List.getElem?_eq_getElem # by grind]
+  simp at h₂ ⊢; exact h₂
+
+@[simp]
+theorem getElem!_eq_getElem_simp [ha : Inhabited α] {i}
+{h : i < xs.length} : xs[i]! = xs[i] ↔ True := by
+  simp [getElem!_eq_getElem h]
+
+@[simp]
+theorem getElem_eq_getElem!_simp [ha : Inhabited α] {i}
+{h : i < xs.length} : xs[i] = xs[i]! ↔ True := by
+  simp [getElem!_eq_getElem h]
+
+@[simp]
+theorem mapWith_append {f : (x : α) → x ∈ xs ++ ys → β} : (xs ++ ys).mapWith f =
+xs.mapWith (λ x h => f x # by grind) ++ ys.mapWith (λ x h => f x # by grind) := by
+  induction xs generalizing ys; simp; rfl; nm x xs ih; simp [ih]
+
+theorem eq_mapWith_getElem_range' :
+xs = (range xs.length).mapWith λ i h => xs[i]'(by grind) := by
+  induction xs using List.reverseRecOn; rfl; nm xs x ih; rw! [length_append]
+  simp; rw! [range_succ]; simp; convert ih using 2; grind
+
+theorem eq_mapWith_getElem_range {n} (h : xs.length = n) :
+xs = (range n).mapWith λ i h => xs[i]'(by grind) := by
+  convert xs.eq_mapWith_getElem_range'; exact h.symm

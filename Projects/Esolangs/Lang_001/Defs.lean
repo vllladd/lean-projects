@@ -62,10 +62,11 @@ def Prog.HasTarget (prog : Prog) (t : Target) : Prop :=
 
 def Expr.WF (prog : Prog) (arity : ℕ) (e : Expr) : Prop :=
   match e with
-  | .arg i => i ≤ arity
+  | .arg i => i < arity
   | .call' t args => prog.HasTarget t ∧ ∀ ⦃j⦄, if t.arity prog ≤ j
     then args j = default else args j |>.WF prog arity
 
+@[simp]
 def Def.WF (prog : Prog) (d : Def) : Prop :=
   d.expr.WF prog d.arity
 
@@ -105,12 +106,12 @@ def Prog.fs (prog : Prog) : List (List ℕ → ℕ) :=
   Classical.epsilon prog.Compatible
 
 open Classical in noncomputable
-def Prog.eval' (prog : Prog) (i : ℕ) (xs : List ℕ) : ℕ :=
+def Prog.eval (prog : Prog) (i : ℕ) (xs : List ℕ) : ℕ :=
   prog.fs[i]! xs
 
 open Classical in noncomputable
-def Prog.eval (prog : Prog) (n : ℕ) : ℕ :=
-  prog.eval' 0 [n]
+def Prog.run (prog : Prog) (n : ℕ) : ℕ :=
+  prog.eval 0 [n]
 
 def fn (arity : ℕ) (f : List ℕ → ℕ) (xs : List ℕ) : ℕ :=
   if xs.length ≠ arity then default else f xs
