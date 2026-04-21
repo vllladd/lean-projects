@@ -428,3 +428,10 @@ theorem not_exiu_iff {p : α → Prop} :
 theorem not_exiu_iff_or {p : α → Prop} :
 ¬(∃! x, p x) ↔ (∀ x, ¬p x) ∨ (∃ x y, p x ∧ p y ∧ x ≠ y) := by
   grind [exiu_iff]
+
+@[simp]
+theorem eq_symm_iff_simp {α : Type*} {x y : α} : (x = y ↔ y = x) ↔ True := by
+  tauto
+
+theorem comm_of_symm {α : Type*} {r : α → α → Prop} {x y}
+(h : ∀ {x y}, r x y → r y x) : r x y ↔ r y x := ⟨h, h⟩

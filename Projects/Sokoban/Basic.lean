@@ -160,7 +160,6 @@ d₂.wall = false ∧ s₁.moveBox p₁ p₂ = s' := by
   intro h₁ h₂
   simp [ite_eq_iff, Option.bind_ite]
   split_ifs with h₃ <;> simp [h₃]
-  rotate_left; exact eq_comm
   intro h₄
   simp [and_assoc]
   intro h₅ h₆

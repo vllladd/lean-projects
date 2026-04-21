@@ -984,9 +984,7 @@ sys.simulate f s n = (s, 0) ↔ n = 0 := by
 @[simp]
 theorem State.mem_simStatesIcc_self_iff {s s' : State} {st} [hs : sys.WF s] :
 s' ∈ s.simStatesIcc s st ↔ s' = s := by
-  simp [mem_simStatesIcc_iff]; constructor
-  · rintro ⟨k, n, hk, h₁, h₂⟩; rfl
-  · rintro rfl; rfl
+  simp [mem_simStatesIcc_iff]
 
 theorem State.exi_aPos_simulate_eq_of_aPos_simulate_ne {s s₁ : State} {f n}
 [hs : sys.WF s] (h₁ : sys.simulate f s n = (s₁, 0)) (h₂ : s₁.aPos ≠ s.aPos) :

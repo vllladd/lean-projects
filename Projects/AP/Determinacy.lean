@@ -231,7 +231,7 @@ getMoveFromHist s acc ps = some p ↔ sys.WF s ∧
   simp
   generalize hb : sys.tr acc p₁ = r
   split_ifs with h₁
-  · subst h₁; simp [hs]; rw [eq_comm]
+  · subst h₁; simp [hs]
   rcases r with _ | b <;> simp
   · intro h₂ ps' h₃
     cases ps'; simpa

@@ -441,7 +441,7 @@ theorem get?_ofList_eq_some_iff {xs : List ((i : α) × β i)} {i x}
   rcases h with ⟨h₁, h₂⟩
   specialize ih h₂
   split_ifs with h₃
-  · subst h₃; simp [h₁]; exact eq_comm
+  · subst h₃; simp [h₁]
   · simp [ih, ne_symm' h₃]
 
 @[simp]
