@@ -149,3 +149,39 @@ theorem exi_max [ha : LinearOrder α]
 @[simp]
 theorem filter_empty {p} : (∅ : Set α).filter p = ∅ := by
   simp [filter]
+
+theorem finite_iff_exi_finset : s.Finite ↔ ∃ (s' : Finset α), s' = s := by
+  classical
+  constructor
+  · intro h
+    cases h
+    nm n e
+    use (.univ : Finset (Fin n)).image (β := α) (e.invFun · |>.1)
+    simp
+    have h₁ := e.injective
+    ext x
+    simp
+    constructor
+    · rintro ⟨y, rfl⟩
+      simp
+    intro h
+    use e ⟨x, h⟩
+    simp
+  · rintro ⟨s, rfl⟩
+    simp
+
+@[simp]
+theorem finite_univ_diff_diff_singleton_iff {x} :
+(Set.univ \ (s \ {x})).Finite ↔ (Set.univ \ s).Finite := by
+  classical
+  simp [finite_iff_exi_finset]
+  by_cases h : x ∉ s
+  · rw [Set.diff_singleton_eq_self h]
+  push_neg at h
+  constructor <;> rintro ⟨s₁, h₁⟩
+  · use s₁.erase x
+    simp [h₁]
+    grind
+  · use insert x s₁
+    simp [h₁]
+    grind

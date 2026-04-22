@@ -630,7 +630,7 @@ theorem State.finish_eq_of_not_act {s : State} (h : ¬s.act) : s.finish = s := b
 theorem Game.finish_eq_of_not_act {pw} {g : Game pw} (h : ¬g.act) : g.finish = g := by
   ext:1 <;> simp; exact State.finish_eq_of_not_act h
 
-@[simp, instance]
+@[simp]
 theorem dState_state₀ {pw} : DState pw state₀ := by
   simp [dState_iff, State.wf_iff]; use default, default, 0; simp
 
@@ -712,7 +712,7 @@ theorem Game.aTurn_playAMoveAt_of_act {pw} {g : Game pw}
 
 theorem dState_playAMoveAt_of_act {pw} {g : Game pw} [hs : AState pw g.s]
 (h : (playAMoveAt g).s.act) : DState pw (playAMoveAt g).s := by
-  constructor; rw [Game.aTurn_playAMoveAt_of_act h]; simp [hs.ht]
+  constructor; simp [Game.aTurn_playAMoveAt_of_act h]
 
 theorem Game.dState_playMove_of_act {pw} {g : Game pw}
 [hs : DState pw g.s] (h : g.playMove.act) : DState pw g.playMove.s := by
@@ -745,10 +745,42 @@ theorem State.wf_toAltH_state₀ {pw} : sys.WF # state₀.toAltH pw := by
 theorem State.wf_getd_toAltH?_state₀ {pw} : sys.WF # state₀.toAltH? pw |>.getd :=
   wf_toAltH_state₀
 
+@[simp]
+theorem State.even_length_hist_of_dState {pw s} [hs : DState pw s] :
+Even s.history.length := by
+  have h := hs.ht; simp [aTurn] at h; exact h
+
+@[simp]
+theorem State.not_odd_length_hist_of_dState {pw s} [hs : DState pw s] :
+¬Odd s.history.length := by simp
+
+@[simp]
+theorem State.aTurn_eq_of_DState {pw s} [hs : DState pw s] : s.aTurn = false := by
+  simp [aTurn]
+
+theorem Board.getd_toAltH?_eq_toAlt_of {pw t₁ t₂} {b₁ b₂ : Board}
+(h : ∃ s₁ s₂, sys.WF s₁ ∧ sys.WF s₂ ∧ b₁.toAlt pw t₁ s₁.hist = s₁ ∧
+b₂.toAlt pw t₂ s₂.hist = s₂ ∧ s₁ = s₂.setHist s₁.hist) :
+∃ hist, (b₁.toAltH? pw t₁).getd = b₂.toAlt pw t₂ hist := by
+  choose s₁ s₂ hs₁ hs₂ h₁ h₂ h₃ using h
+  have h₄ : ∃ s, sys.WF s ∧ b₁.toAlt pw t₁ s.hist = s; tauto
+  have h₅ := Classical.epsilon_spec h₄
+  generalize h₆ : (Classical.epsilon _ : AP.State) = s at h₅
+  choose hs h₅ using h₅; use s.hist
+  rw [toAltH?, choose?_eq_of_pos h₄, h₆]
+  clear h₆; simp; rw [←h₅]
+  generalize s₁.hist = ps₁ at *
+  generalize s₂.hist = ps₂ at *
+  generalize s.hist = ps at *
+  subst h₂ h₃ h₅
+  simp [AP.State.ext_iff] at h₁ ⊢
+  rcases h₁ with ⟨H₁, H₂, rfl⟩
+  simp [H₁, H₂]
+
 -- theorem Game.toAltH_playDMoveAt {pw} {g : Game pw} {h} [hs : DState pw g.s] :
 -- ∃ hist s', (g.s.toAltH pw).dMove (Point.toAlt # g.d.f g.s h) = some s' ∧
 -- (playDMoveAt g h).s.toAltH pw = s'.setHist hist
-
+-- 
 -- #check 0 #exit
 
 -- @[simp, instance]
@@ -761,13 +793,123 @@ theorem State.wf_getd_toAltH?_state₀ {pw} : sys.WF # state₀.toAltH? pw |>.ge
 --     simp [←h₁] at h₂
 --     rcases h₂ with rfl | ⟨h', h₂⟩; simp
 
+-- @[simp]
+-- theorem State.pw_toAltH {pw} {s : State} : (s.toAltH pw).pw = pw := by
+--   unfold toAltH toAltH? Board.toAltH?
+
+theorem Board.toAlt_eq_setHist {s : State} {pw t hist} (hist₁ : List PointZ) :
+s.board.toAlt pw t hist = (s.board.toAlt pw t hist₁).setHist hist := rfl
+
+theorem Board.toAlt_eq_setHist_nil {s : State} {pw t hist} :
+s.board.toAlt pw t hist = (s.board.toAlt pw t []).setHist hist := rfl
+
+theorem State.exi_wf_toAlt_board_iff_exi_hist {pw t} {s : State} :
+(∃ s₁, sys.WF s₁ ∧ s.board.toAlt pw t s₁.hist = s₁) ↔
+∃ hist, sys.WF (s.board.toAlt pw t hist) := by
+  constructor
+  · rintro ⟨s₁, hs₁, h₁⟩; use s₁.hist; rwa [h₁]
+  · rintro ⟨hist, h⟩; use s.board.toAlt pw t hist, h; simp
+
+theorem State.exi_hist_toAlt_board_of_wfCnd {pw t} {s : State}
+(h : WFCnd # s.board.toAlt pw t []) : ∃ hist, sys.WF # s.board.toAlt pw t hist := by
+  conv => right; ext; rw [Board.toAlt_eq_setHist_nil]
+  exact AP.State.exi_hist_wf_of_wfCnd h
+
+theorem State.exi_wf_toAlt_board_of_wfCnd {pw t} {s : State}
+(h : WFCnd # s.board.toAlt pw t []) :
+∃ s₁, sys.WF s₁ ∧ s.board.toAlt pw t s₁.hist = s₁ := by
+  rw [exi_wf_toAlt_board_iff_exi_hist]; exact exi_hist_toAlt_board_of_wfCnd h
+
+@[simp]
+theorem Game.squares_board_playAMoveAt {pw} {g : Game pw} :
+(playAMoveAt g).s.board.squares = g.s.board.squares := by
+  rw [playAMoveAt]; split_ifs <;> rfl
+
+theorem State.finite_univ_diff_squares_of_play' {pw} {a : A pw} {d n g s}
+(h₁ : (Set.univ \ s.board.squares).Finite) (h₂ : (initGame a d s).play n = g) :
+(Set.univ \ g.s.board.squares).Finite := by
+  induction n generalizing s
+  · simp at h₂; simpa [←h₂]
+  nm n ih
+  rw [Game.play_succ'] at h₂
+  generalize hg₀ : (initGame a d s).playMove = g₀ at h₂
+  apply @ih g₀.s
+  rotate_left
+  · convert h₂
+    subst hg₀
+    ext :1 <;> simp
+  subst hg₀
+  simp [Game.playMove]
+  split_ifs with h₃; on_goal 2 => simpa
+  simp [playDMoveAt, applyDMove, applyDMoveB]
+  split; assumption; simpa
+
+@[simp]
+theorem State.finite_univ_diff_squares_of_play {pw} {a : A pw} {d n g}
+(h : (initGame a d state₀).play n = g) : (Set.univ \ g.s.board.squares).Finite := by
+  apply finite_univ_diff_squares_of_play' _ h; simp
+
+@[simp]
+theorem State.finite_univ_diff_squares {s pw} [hs : WF pw s] :
+.univ \ s.board.squares |>.Finite := by
+  rw [wf_iff] at hs; obtain ⟨a, d, n, g, h₁, h₂⟩ := hs
+  have h₃ := finite_univ_diff_squares_of_play h₁
+  rcases h₂ with rfl | ⟨h₂, rfl⟩; exact h₃
+  simp [playDMoveAt, applyDMove, applyDMoveB]
+  split; exact h₃; simpa
+
+@[simp]
+theorem State.finite_image_univ_diff_squares {s pw} [hs : WF pw s] :
+(·.toAlt) '' (.univ \ s.board.squares) |>.Finite := by
+  apply Set.Finite.image; simp
+
+@[simp]
+theorem State.mem_ofSet_image_univ_diff_squares {s pw p} [hs : WF pw s] :
+p ∈ Set'.ofSet ((·.toAlt) '' (.univ \ s.board.squares)) ↔
+p ∈ (·.toAlt) '' (.univ \ s.board.squares) := by
+  simp [Set'.mem_ofSet]
+
+@[simp]
+theorem Point.toAlt_eq_iff {a b : Point} : a.toAlt = b.toAlt ↔ a = b := by
+  symm; constructor; rintro rfl; rfl
+  intro h; simp [toAlt] at h; ext <;> tauto
+
 -- #check 0 #exit
 
--- theorem Game.toAltH_playDMoveAt {pw} {g : Game pw} {h} [hs : DState pw g.s]
--- (playDMoveAt g h).s.toAltH pw = (g.s.toAltH pw)
+-- theorem State.exi_toAlt_board_not_aTurn_of_dState {pw s} [hs : DState pw s] :
+-- ∃ s₁, sys.WF s₁ ∧ s.board.toAlt pw false s₁.hist = s₁ := by
+--   cases hs; nm hs ht
+--   apply exi_wf_toAlt_board_of_wfCnd
+--   constructor
+--   ·
+--     simp
+--     sorry
+--   ·
+--     sorry
+--   ·
+--     sorry
+--   ·
+--     sorry
 
 -- #check 0 #exit
-
+-- 
+-- theorem State.exi_toAlt_board_of_dState {pw s t} [hs : DState pw s] :
+-- ∃ s₁, sys.WF s₁ ∧ s.board.toAlt pw t s₁.hist = s₁ := by
+-- 
+-- #check 0 #exit
+-- 
+-- theorem Game.toAltH_playDMoveAt_of_none {pw} {g : Game pw} {h} [hs : DState pw g.s]
+-- (h₁ : (g.d.f g.s h).m = none) : ∃ hist,
+-- (playDMoveAt g h).s.toAltH pw = g.s.toAlt pw hist := by
+--   simp [playDMoveAt, applyDMove, applyDMoveB, h₁, applyMove,State.toAltH,
+--     State.toAltH?, State.toAlt]
+--   
+--   congr 1
+--   apply Board.getd_toAltH?_eq_toAlt_of
+--   simp_rw [State.toAlt_eq]
+-- 
+-- #check 0 #exit
+-- 
 -- theorem dHws_and_dwn_lt_toAltH_playDMoveAt_dOptimal_of_dHws {pw} {g g₁ : Game pw} {h}
 -- [hs : DState pw g.s]
 -- (h₁ : g.d = (dOptimal pw).getd)
@@ -777,9 +919,9 @@ theorem State.wf_getd_toAltH?_state₀ {pw} : sys.WF # state₀.toAltH? pw |>.ge
 --   split_ands
 --   ·
 --     simp [←hg₁]
-
+-- 
 -- #check 0 #exit
-
+-- 
 -- theorem DHws_of_alt {pw} (h : AP.dHwsPw pw) : DHws pw := by
 --   specialize h 0
 --   generalize h₀ : state₀ = s
@@ -840,7 +982,8 @@ theorem State.wf_getd_toAltH?_state₀ {pw} : sys.WF # state₀.toAltH? pw |>.ge
 --   nm n
 --   simp at ih
 --   
---   simp [Game.play_succ', Game.playMove, h₃, playAMoveAt]
+--   rw [Game.play_succ', Game.playMove]
+--   simp [h₃, playAMoveAt]
 --   rw! [eq_true_of Game.act_playDMoveAt]
 --   rw! (castMode := .all) [true_and]
 --   
