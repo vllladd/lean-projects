@@ -746,12 +746,12 @@ theorem State.wf_getd_toAltH?_state₀ {pw} : sys.WF # state₀.toAltH? pw |>.ge
   wf_toAltH_state₀
 
 @[simp]
-theorem State.even_length_hist_of_dState {pw s} [hs : DState pw s] :
+theorem State.even_length_history_of_dState {pw s} [hs : DState pw s] :
 Even s.history.length := by
   have h := hs.ht; simp [aTurn] at h; exact h
 
 @[simp]
-theorem State.not_odd_length_hist_of_dState {pw s} [hs : DState pw s] :
+theorem State.not_odd_length_history_of_dState {pw s} [hs : DState pw s] :
 ¬Odd s.history.length := by simp
 
 @[simp]
