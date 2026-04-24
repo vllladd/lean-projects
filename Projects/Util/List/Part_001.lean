@@ -34,8 +34,8 @@ theorem unit_mem_guard_iff {P : Prop} [Decidable P] :
 () ∈ (guard P : List Unit) ↔ P := by
   by_cases h : P <;> simp [h]
 
-theorem eq_of_prefix_and_length_eq {α : Type*} {xs ys zs : List α}
-(hx : xs <+: zs) (hy : ys <+: zs) (hn : xs.length = ys.length) : xs = ys := by
+theorem eq_of_prefix_and_length_eq (hx : xs <+: zs) (hy : ys <+: zs)
+(hn : xs.length = ys.length) : xs = ys := by
   induction ys generalizing xs zs
   · simp at hn; exact hn
   nm y ys ih
@@ -50,6 +50,11 @@ theorem eq_of_prefix_and_length_eq {α : Type*} {xs ys zs : List α}
   constructor
   · rw [hx.1, hy.1]
   exact ih hx.2 hy.2 hn
+
+theorem eq_of_suffix_and_length_eq (hx : xs <:+ zs) (hy : ys <:+ zs)
+(hn : xs.length = ys.length) : xs = ys := by
+  suffices : xs.reverse = ys.reverse; simpa
+  apply List.eq_of_prefix_and_length_eq (zs := zs.reverse) <;> grind
 
 theorem prefix_of_prefix_snoc_and_ne {α : Type*} {xs ys : List α} {y : α}
 (h₁ : xs <+: ys ++ [y]) (h₂ : xs ≠ ys ++ [y]) : xs <+: ys := by

@@ -37,11 +37,6 @@ namespace List
 variable {α β γ : Type*}
 variable {xs ys zs : List α}
 
-theorem eq_of_suffix_and_length_eq (hx : xs <:+ zs) (hy : ys <:+ zs)
-(hn : xs.length = ys.length) : xs = ys := by
-  suffices : xs.reverse = ys.reverse; simpa
-  apply List.eq_of_prefix_and_length_eq (zs := zs.reverse) <;> grind
-
 -- #check 0 #exit
 
 end List

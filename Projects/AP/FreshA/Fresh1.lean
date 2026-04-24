@@ -8,7 +8,7 @@ def AStrat.Fresh1 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   ∀ s₁ p, (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → p ∉ s.aVisitedIcc s₁
 
 def AHwsFspCnd (f : State → State → FSP) (s s₂ : State) (fsp : FSP) : Prop :=
-  s₂.aHwsDisj # fsp.offset (s₂.diff s) ∪ f s s₂
+  s₂.aHwsDisj # fsp.offset (s.diff s₂) ∪ f s s₂
 
 def AStrat.RespectsFSP (f : State → State → FSP)
 (a : AStrat) (s : State) (fsp : FSP) : Prop :=
