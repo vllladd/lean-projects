@@ -4,7 +4,7 @@ namespace AP
 
 def AStrat.Fresh (a : AStrat) (s : State) (fsp : FSP) : Prop :=
   a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
-  s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p' ≠ a.f s' → p ≠ p'
+  s' ∈ s.aSimStatesIcoVia ⟨a, d⟩ s₁ → sys.validTr s' p' → p' ≠ a.f s' → p ≠ p'
 
 def aFreshFSP (s s₂ : State) : FSP :=
   (∅ : FSP).insertSet 0 (s.aNbhdsIcoPrev s₂.prev).toSet
@@ -26,7 +26,7 @@ theorem AStrat.Fresh.wf {a : AStrat} {s fsp} (h : a.Fresh s fsp) : a.WF := h.fre
 
 theorem AStrat.fresh_iff_alt₁ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
 a.Fresh1 s fsp ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p', (s₁, p) ∈ s.aSimPairs ⟨a, d⟩ →
-s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p ≠ p' := by
+s' ∈ s.aSimStatesIcoVia ⟨a, d⟩ s₁ → sys.validTr s' p' → p ≠ p' := by
   unfold Fresh
   rw [and_congr_right_iff]
   intro h
@@ -47,7 +47,7 @@ s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p ≠ p' := by
   · simp [State.mem_aSimPairs_iff_simulate_tr, hs₁, h₆]
     exact ⟨⟨_, h₂⟩, _, h₅⟩
   rcases h₄ with ⟨sx, h₄⟩
-  rw [State.mem_aSimStatesIco_iff_of h₂] at h₃
+  rw [State.mem_aSimStatesIcoVia_iff_of h₂] at h₃
   rcases h₃ with ⟨hs', k, hk, h₃⟩
   rw [State.mem_aVisitedIcc_iff_of h₂]
   right
@@ -56,7 +56,7 @@ s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → sys.validTr s' p' → p ≠ p' := by
 
 theorem AStrat.fresh_iff_alt₂ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
 a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p p',
-(s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ →
+(s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → s' ∈ s.aSimStatesIcoVia ⟨a, d⟩ s₁ →
 p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
   rw [fresh_iff_alt₁]
   constructor
@@ -71,7 +71,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
       subst h₆
       specialize h₁ _ _ h₃
       apply h₁; clear h₁ h₅
-      rw [State.mem_aSimStatesIco_iff] at h₄
+      rw [State.mem_aSimStatesIcoVia_iff] at h₄
       rcases h₄ with ⟨hs', k, n, hk, h₄, h₁⟩
       rw [State.mem_aSimPairs_iff_simulate_tr] at h₃
       rcases h₃ with ⟨hs₁, n', H₁, s₂, H₂, H₃⟩
@@ -102,7 +102,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
       rcases h₃ with ⟨hs₁, n, h₃, s₂, H₁, H₂⟩
       dsimp at H₁ H₂
       subst H₂
-      rw [State.mem_aSimStatesIco_iff] at h₄
+      rw [State.mem_aSimStatesIcoVia_iff] at h₄
       rcases h₄ with ⟨hs', k, n', hk, H₃, H₄⟩
       cases steps_eq_of_simulate_full_eq h₃ H₄
       clear H₄
@@ -124,7 +124,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
     symm; constructor
     · intro d hd s₁ s' p p' h₁ h₂ h₃
       apply h d hd s₁ s' p p' h₁ h₂; clear h
-      rw [State.mem_aSimStatesIco_iff] at h₂
+      rw [State.mem_aSimStatesIcoVia_iff] at h₂
       rcases h₂ with ⟨hs', k, n, hk, h₂, h₄⟩
       choose s₂ h₃ using h₃
       have h₅ := sys.reachable_of_simulate h₂
@@ -145,7 +145,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
       simp [State.mem_aSimPairs_iff_simulate_tr] at h
       specialize h hs₁ n h₁ s₂ h₂ h₃
       apply h; clear h
-      simp [State.mem_aSimStatesIco_iff]
+      simp [State.mem_aSimStatesIcoVia_iff]
       use hs
       have h₄ : n ≠ 0
       · rintro rfl
@@ -161,7 +161,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
     simp [State.mem_aSimPairs_iff_simulate_tr] at h
     specialize h hs₁ n h₁ s₂ h₂ _ _
     · rw [AState.aPos_eq_of_tr h₂]
-    · simp [State.mem_aSimStatesIco_iff]
+    · simp [State.mem_aSimStatesIcoVia_iff]
       use hs', k, n
     contrapose! h; clear h
     rw [AState.aPos_eq_of_tr h₂, ←h₄]
@@ -180,7 +180,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
 
 theorem AStrat.fresh_iff_alt₃ {a : AStrat} {s fsp} [hs : AState s] : a.Fresh s fsp ↔
 a.WF ∧ s.aForallWinsDisj fsp a ∧ ∀ (d : DStrat), d.WF → ∀ s₁ s' p,
-(s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → s' ∈ s.aSimStatesIco s₁ ⟨a, d⟩ → p ∉ s'.aPos.nbhd s.pw := by
+(s₁, p) ∈ s.aSimPairs ⟨a, d⟩ → s' ∈ s.aSimStatesIcoVia ⟨a, d⟩ s₁ → p ∉ s'.aPos.nbhd s.pw := by
   rw [fresh_iff_alt₂]
   congr!
   nm d hd s₁ s' p
@@ -207,7 +207,7 @@ p ∉ s.aNbhdsIcoPrev s₁ := by
   rw [h₄] at h₃
   by_cases h₅ : s = s₁
   · simp [h₅]
-  · simp [State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIco h₅ h₂]
+  · simp [State.mem_aVisitedIcoPrev_iff_exi_aSimStatesIcoVia h₅ h₂]
 
 @[simp]
 instance {s fsp} : aFresh s fsp |>.WF := by

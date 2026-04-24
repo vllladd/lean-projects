@@ -4,6 +4,7 @@ namespace System
 
 universe u
 variable {S T : Type u} {sys : System S T}
+variable {s s' s₁ s₂ s₃ : S}
 
 theorem exi_tr_of_pred_diff {p : S → Prop} {s s'}
 (h₁ : sys.Reachable s s') (h₂ : ¬p s) (h₃ : p s') :
@@ -20,3 +21,16 @@ sys.Reachable s₂ s' ∧ ¬p s₁ ∧ p s₂ := by
   specialize ih h₅ h₄
   choose s₁ s₂ t' H₁ H₂ H₃ H₄ H₅ using ih
   use s₁, s₂, t'; grind
+
+theorem eq_of_tree_and_reachable [hs : sys.Tree s]
+(h₁ : sys.Reachable s s') (h₂ : sys.Reachable s' s) : s = s' := by
+  rw [tree_def] at hs
+  choose hs h using hs
+  rw [reachable_iff_exi_trs] at h₁ h₂
+  choose ts₁ h₁ using h₁
+  choose ts₂ h₂ using h₂
+  specialize @h [] (ts₁ ++ ts₂) # by simp_all [trs_append]
+  simp at h
+  rcases h with ⟨rfl, rfl⟩
+  simp at h₁
+  exact h₁

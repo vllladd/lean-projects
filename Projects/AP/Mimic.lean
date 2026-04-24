@@ -18,12 +18,12 @@ instance {st s s'} : (dMimic st s s').WF := by unfold dMimic; infer_instance
 theorem aMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
 (h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
 (h₃ : sys.validTr s₂ (st.a.f s₁)) : (aMimic st s₀ s₀).f s₂ = st.a.f s₁ := by
-  simp [aMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
+  simp [aMimic, mkStratFn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
 
 theorem dMimic_apply_eq_of {st st' : Strat} {s₀ s₁ s₂ n} [hs₀ : sys.WF s₀]
 (h₁ : sys.simulate st.f s₀ n = (s₁, 0)) (h₂ : sys.simulate st'.f s₀ n = (s₂, 0))
 (h₃ : sys.validTr s₂ (st.d.f s₁)) : (dMimic st s₀ s₀).f s₂ = st.d.f s₁ := by
-  simp [dMimic, mk_strat_fn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
+  simp [dMimic, mkStratFn, guard, h₁, h₃, length_hist_sub_eq_of_simulate h₂]
 
 theorem State.aHws_of_rel {s s'} {r : State → State → Prop}
 [hs : sys.WF s] [hs' : sys.WF s'] (h₁ : s.aHws) (ht : s.aTurn = s'.aTurn) (h₂ : r s s')

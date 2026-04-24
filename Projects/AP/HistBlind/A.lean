@@ -15,7 +15,7 @@ theorem histBlind_aHistBlind : aHistBlind.HistBlind := by
   have h₃ : (λ s' => sys.WF s' ∧ s'.setHist hist = s.setHist hist) =
     (λ s' => sys.WF s' ∧ s'.setHist s.hist = s); simp [State.ext_iff]
   simp [AStrat.mk, Option.pure_def, Option.bind_eq_bind, AStrat.f_mk,
-    mk_strat_fn, choose?_eq_ite, h₃]
+    mkStratFn, choose?_eq_ite, h₃]
   split_ifs with h₂ <;> first | (rw [h₃] at h₂; contradiction) | simp
 
 @[simp]
@@ -445,7 +445,7 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
     apply a.validTr
     rw [←h₆']
     rwa [State.hasTr_setHist]
-  simp [aHistBlind, mk_strat_fn,
+  simp [aHistBlind, mkStratFn,
     choose?_eq_ite, h₃, h₄, h₇, h₈, H₄] at hd
   clear H₄
   rw [←h₆] at hd

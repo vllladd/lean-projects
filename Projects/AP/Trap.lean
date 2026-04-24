@@ -338,7 +338,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
     · generalize hp : d.f s₁ = p at H₁
       replace Hs₂ : DState s₂; use Hs₂; simp [←ih₁]
       generalize H₂ : d'.f s₂ = p'
-      simp [←hd', mk_strat_fn, guard] at H₂
+      simp [←hd', mkStratFn, guard] at H₂
       split_ifs at H₂ with H₃
       rotate_left
       · clear H₂
@@ -366,7 +366,7 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
           apply lt_add_of_le_of_pos H₃
           simp [Point.zero_def]
       simp at H₂
-      simp [←hd', mk_strat_fn, H₃]
+      simp [←hd', mkStratFn, H₃]
       rcases H₃ with ⟨s₂', H₃⟩
       use s₂'
       rw [H₂] at H₃ ⊢
@@ -641,7 +641,7 @@ theorem State.exi_dWins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
     simp [AState.tr_eq_some_iff] at h₃
     rcases h₃ with ⟨⟨ha₁, ha₂, ha₃⟩, hax⟩
     rwa [←hsd.aPos_eq_of_tr h₂]
-  simp [←hd, mk_strat_fn, choose?_eq_ite]
+  simp [←hd, mkStratFn, choose?_eq_ite]
   have h₇ := Classical.epsilon_spec h₆
   generalize hp : Classical.epsilon
     (λ p => sd.AReachable p ∧ ¬p = sd.aPos) = p at h₇ ⊢
@@ -675,7 +675,7 @@ theorem State.exi_dWins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
     rw [←hD]
     have h₅ := System.not_reachable_of_acyclic_and_simulate_and_lt hr hk
     simp [h₃] at h₅
-    simp [mk_strat_fn, h₅]
+    simp [mkStratFn, h₅]
   simp [System.simulate_add, h₂]
   rcases h₁ with ⟨n', h₁⟩
   use n'
@@ -689,7 +689,7 @@ theorem State.exi_dWins_of_simulate_aTrapped {s} [hs : sys.WF s] {n}
   have h₄ : sys.Reachable s₁ sd
   · exact System.reachable_of_simulate h₁
   rw [←hD]
-  simp [mk_strat_fn, h₄, Hd₁.1 h₃]
+  simp [mkStratFn, h₄, Hd₁.1 h₃]
 
 theorem State.exi_dWins_iff_exi_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF] :
 (∃ (d : DStrat), d.WF ∧ s.dWins ⟨a, d⟩) ↔

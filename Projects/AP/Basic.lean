@@ -40,7 +40,7 @@ def State.decideDState (s : State) : Bool :=
   s.decideWF && !s.aTurn
 
 @[simp]
-def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
+def mkStratFn (f : State → Option PointZ) (s : State) : PointZ :=
   (·.getD s.chooseMove) # do
     let p ← f s
     guard # sys.validTr s p
@@ -48,11 +48,11 @@ def mk_strat_fn (f : State → Option PointZ) (s : State) : PointZ :=
 
 @[simp]
 def AStrat.mk (f : State → Option PointZ) : AStrat :=
-  ⟨mk_strat_fn f⟩
+  ⟨mkStratFn f⟩
 
 @[simp]
 def DStrat.mk (f : State → Option PointZ) : DStrat :=
-  ⟨mk_strat_fn f⟩
+  ⟨mkStratFn f⟩
 
 -----
 
@@ -378,10 +378,12 @@ theorem DState.not_aState {sd} [hd : DState sd] : ¬AState sd := by
 instance {a : AStrat} {d : DStrat} [ha : a.WF] [hd : d.WF] : Strat.WF ⟨a, d⟩ := by
   rw [Strat.wf_iff]; exact ⟨ha, hd⟩
 
+@[simp]
 instance {f} [hf : sys.SimFn f] : AStrat.WF ⟨f⟩ := by
   rw [AStrat.wf_iff]; rw [System.simFn_def] at hf
   rintro s ⟨hs, ht⟩; apply hf
 
+@[simp]
 instance {f} [hf : sys.SimFn f] : DStrat.WF ⟨f⟩ := by
   rw [DStrat.wf_iff]; rw [System.simFn_def] at hf
   rintro s ⟨hs, ht⟩; apply hf
@@ -1084,15 +1086,15 @@ instance {pw p} : DState (initState pw p) := by
 instance {pw pw' p} : DState # (initState pw p).setPw pw' := by
   simp; infer_instance
 
-instance {f} : sys.SimFn # mk_strat_fn f := by
-  constructor; intro s hs h; unfold mk_strat_fn
+instance {f} : sys.SimFn # mkStratFn f := by
+  constructor; intro s hs h; unfold mkStratFn
   have h₁ := Classical.epsilon_spec h; dsimp
   cases h₂ : f s; simp; exact State.validTr_chooseMove h
   nm s'; simp [guard]; split_ifs with h₃; simpa
   simp; exact State.validTr_chooseMove h
 
-instance {f} : (AStrat.mk f).WF := by simp; infer_instance
-instance {f} : (DStrat.mk f).WF := by simp; infer_instance
+instance {f} : (AStrat.mk f).WF := by simp
+instance {f} : (DStrat.mk f).WF := by simp
 
 @[simp] theorem AStrat.f_mk {f} : (AStrat.mk' f).f = f := rfl
 @[simp] theorem DStrat.f_mk {f} : (DStrat.mk' f).f = f := rfl

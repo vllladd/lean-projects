@@ -1,4 +1,4 @@
-import Projects.AP.Moves
+import Projects.AP.Proximity
 import Projects.AP.FreshA.Tile
 
 namespace AP
