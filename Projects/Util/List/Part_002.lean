@@ -159,3 +159,72 @@ xs = (range xs.length).mapWith λ i h => xs[i]'(by grind) := by
 theorem eq_mapWith_getElem_range {n} (h : xs.length = n) :
 xs = (range n).mapWith λ i h => xs[i]'(by grind) := by
   convert xs.eq_mapWith_getElem_range'; exact h.symm
+
+attribute [simp] map_fst_zip map_snd_zip
+
+theorem length_le_sum_of [ha₁ : LinearOrder α] [ha₂ : Semiring α] [ha₃ : AddLeftMono α]
+(h : ∀ x ∈ xs, 1 ≤ x) : xs.length ≤ xs.sum := by
+  induction xs; simp
+  clear! xs
+  nm x xs ih
+  simp
+  specialize ih (by grind)
+  specialize h x (by simp)
+  nth_rw 2 [add_comm]
+  apply add_le_add ih h
+
+theorem length_lt_sum_of [ha₁ : LinearOrder α] [ha₂ : Semiring α]
+[ha₃ : AddLeftMono α] [ha₃ : AddLeftStrictMono α]
+(h₁ : ∀ x ∈ xs, 1 ≤ x) (h₂ : ∃ x ∈ xs, 1 < x) : xs.length < xs.sum := by
+  induction xs; simp_all
+  clear! xs
+  nm x xs ih
+  simp
+  specialize ih (by grind)
+  nth_rw 2 [add_comm]
+  choose y h₂ using h₂
+  simp at h₂
+  rcases h₂ with ⟨rfl | h₂, h₃⟩
+  · have h₄ : xs.length ≤ xs.sum
+    · apply length_le_sum_of
+      grind
+    exact add_lt_add_of_le_of_lt h₄ h₃
+  specialize ih ⟨y, by grind⟩
+  specialize h₁ x (by simp)
+  exact add_lt_add_of_lt_of_le ih h₁
+
+theorem mem_zip_iff {ys : List β} {xy} : xy ∈ xs.zip ys ↔ ∃ (i : ℕ) (h₁ : i < xs.length)
+(h₂ : i < ys.length), xs[i] = xy.1 ∧ ys[i] = xy.2 := by
+  induction xs generalizing ys <;> simp
+  nm x xs ih; cases ys <;> simp
+  rw [ih]; clear ih; simp
+  constructor; on_goal 2 => grind
+  rintro (rfl | h); use 0; simp; tauto
+
+@[simp]
+theorem mem_zip_range_length_iff {xy} : xy ∈ xs.zip (.range xs.length) ↔
+∃ (h : xy.2 < xs.length), xs[xy.2] = xy.1 := by
+  grind [mem_zip_iff]
+
+theorem take_eq_take_of_prefix {n} (h₁ : xs <+: ys)
+(h₂ : n ≤ xs.length) : xs.take n = ys.take n := by
+  induction xs generalizing ys n
+  · simp at h₂; simp [h₂]
+  nm x xs ih
+  cases ys; grind
+  nm y ys
+  simp at *
+  rcases h₁ with ⟨rfl, h₁⟩
+  cases n; rfl; grind
+
+theorem sum_le_of_prefix {xs ys: List ℕ} (h : xs <+: ys) : xs.sum ≤ ys.sum := by
+  obtain ⟨ys, rfl⟩ := h; simp
+
+theorem sum_lt_of_prefix {xs ys: List ℕ} (h₁ : xs <+: ys) (h₂ : xs.length ≠ ys.length)
+(h₃ : ∃ n ∈ ys.drop xs.length, n ≠ 0) : xs.sum < ys.sum := by
+  obtain ⟨ys, rfl⟩ := h₁; simp
+  obtain ⟨n, hn, h₃⟩ := h₃
+  simp at hn
+  simp [Nat.pos_iff_ne_zero]
+  rw [sum_eq_zero_iff]
+  grind
