@@ -420,3 +420,36 @@ theorem exi_f₃_prefix_kolIter {i} : ∃ xs, KolIter xs ∧ f₃ i <+: xs := by
 
 -- Its first 16 terms are:
 -- 1, 2, 2, 1, 1, 2, 1, 2, 2, 1, 2, 2, 1, 1, 2, 1, ...
+
+set_option linter.style.longLine false in section
+
+-- * The sequence does not contain words of the form ababa, because this would imply the impossible 111 (1 b, 1 a, 1 b) somewhere before. This demonstrates the conjecture made by Jon Perry: more than 6 1's or 6 2's in a word of 10 would necessitate something like aabaabaaba, which would imply the impossible 12121 before (word aabaababaa is also impossible because of ababa).
+-- ** (a(n)) is the unique fixed point of the 2-block substitution beta
+--       11 -> 12
+--       12 -> 122
+--       21 -> 112
+--       22 -> 1122.
+--   A 2-block substitution beta maps a word w(1)...w(2n) to the word
+--       beta(w(1)w(2))...beta(w(2n-1)w(2n)).
+--   If the word has odd length, then the last letter is ignored.
+-- ** It was noted by me in 1979 in the Bordeaux seminar on number theory that (a(n+1)) is fixed point of the 2-block substitution 11 -> 21, 12 -> 211, 21 -> 221,  22 -> 2211. (End)
+-- * These two formulas define completely the sequence: a(1)=1, a(2)=2, a(a(1) + a(2) + ... + a(k)) = (3 + (-1)^k)/2 and a(a(1) + a(2) + ... + a(k) + 1) = (3 - (-1)^k)/2
+-- * a(n+2)*a(n+1)*a(n)/2 = a(n+2) + a(n+1) + a(n) - 3
+-- * a(n+2)*a(n+1)*a(n)/2 = a(n+2) + a(n+1) + a(n) - 3 doesn't define the sequence uniquely
+-- ** a(n)*(a(n-1) + a(n-2) - 3) + a(n-1)*a(n-2) + 7 = 3*a(n-1) + 3*a(n-2).
+--   a(n)*(a(n-1) + a(n-2) - 3) = a(n-3)*(a(n-1) + a(n-2) - 3). (End)
+--   The parts identify when terms are same or different and they hold for any sequence of 1's and 2's with run lengths 1 or 2.
+-- * Start with a(1) = 1. By definition of the sequence, this says that the first run has length 1, so it must be a single 1, and a(2) = 2. Thus, the second run (which starts with this 2) must have length 2, so the third term must be also be a(3) = 2, and the fourth term can't be a 2, so must be a(4) = 1. Since a(3) = 2, the third run must have length 2, so we deduce a(5) = 1, a(6) = 2, and so on.
+-- * (Haskell) a = 1:2: drop 2 (concat . zipWith replicate a . cycle $ [1, 2])
+-- * (Python)
+--   def Kolakoski():
+--     x = y = -1
+--     while True:
+--       yield [2, 1][x&1]
+--       f = y &~ (y+1)
+--       x ^= f
+--       y = (y+1) | (f & (x>>1))
+--   K = Kolakoski()
+--   print([next(K) for _ in range(100)])
+
+end

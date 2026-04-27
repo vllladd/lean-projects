@@ -114,7 +114,21 @@ def Strat.ofFn (f : State → Option PointZ) : Strat where
 def State.diffStrat (s s₁ : State) : Strat :=
   .ofFn λ s' => (s.diffTrs s₁)[s.diff s']?
 
--- #check 0 #exit
+-- Interval of states `[s, s₁]`
+def State.simStatesIcc (s s₁ : State) : Finset State :=
+  s.simStatesIccVia (s.diffStrat s₁) s₁
+
+-- Interval of states `[s, s₁)`
+def State.simStatesIco (s s₁ : State) : Finset State :=
+  s.simStatesIcoVia (s.diffStrat s₁) s₁
+
+-- A states in interval `[s, s₁]`
+def State.aSimStatesIcc (s s₁ : State) : Finset State :=
+  s.aSimStatesIccVia (s.diffStrat s₁) s₁
+
+-- A states in interval `[s, s₁)`
+def State.aSimStatesIco (s s₁ : State) : Finset State :=
+  s.aSimStatesIcoVia (s.diffStrat s₁) s₁
 
 def State.aVisitedIcc' (s : State) (ps : List PointZ) : Set' PointZ :=
   match ps with

@@ -175,96 +175,296 @@ theorem point_eq_of_tr_eq_tr {s s' p₁ p₂} (h₁ : sys.tr s p₁ = some s')
   simp [h₃] at h₄
   exact h₄
 
--- #check 0 #exit
+theorem diff_eq_length_diffTrs {s s₁ : State} : s.diff s₁ = (s.diffTrs s₁).length := by
+  simp
 
--- theorem State.simulate_diffStrat {s s₁} [hs : sys.WF s] (h : sys.Reachable s s₁) :
--- sys.simulate (s.diffStrat s₁).f s (s.diff s₁) = (s₁, 0) := by
---   obtain ⟨f, hf, n, h₁⟩ := sys.reachable_iff_exi_simulate.mp h
---   obtain ⟨ps, h₂⟩ := sys.reachable_iff_exi_trs.mp h
---   
---   have hn : ps.length = n
---   ·
---     have h₃ := length_hist_eq_of_simulate_eq h₁
---     have h₄ := length_hist_eq_of_trs_eq h₂
---     grind
---   
---   generalize hg : (s.diffStrat s₁).f = g
---   
---   replace hg : ∀ ⦃s'⦄, (∃ k < n, sys.simulate f s k = (s', 0)) →
---     g s' = (s.diffTrs s₁)[s.diff s']!
---   ·
---     rintro s' ⟨k, hk, h₃⟩
---     subst hg
---     simp [diffStrat, diffTrs_eq_of_trs_full h₂, diff_eq_of_simulate_full h₃]
---     obtain ⟨ps₁, ps₂, p, H₁, rfl⟩ : ∃ (ps₁ ps₂ : List PointZ) (p : PointZ),
---       ps₁.length = k ∧ ps₁ ++ p :: ps₂ = ps
---     ·
---       use ps.take k, ps.drop (k + 1), ps[k]!
---       simp
---       use by omega
---       rw [List.ext_getElem_iff]
---       simp
---       grind
---     subst H₁
---     simp at hn ⊢
---     subst hn
---     rw [add_comm _ 1] at h₁
---     simp at h₁
---     choose sx h₁ sy h₄ h₅ using h₁
---     simp [h₃] at h₁
---     subst h₁
---     -- simp [sys.validTr_of_eq_some h₄]
---     simp at h₂
---     choose sx' h₂ sy' h₆ h₇ using h₂
---     obtain rfl : sx' = s'
---     ·
---       apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁)
---       iterate 4 grind
---       rw [length_hist_eq_of_simulate_eq h₃, length_hist_eq_of_trs_eq h₂]
---       rfl
---     rename' sx' => sx
---     obtain rfl : sy = sy'
---     ·
---       apply eq_of_reachable_and_length_hist_eq (s := sx) (s₃ := s₁)
---       iterate 4 grind
---       rw [length_hist_eq_of_tr h₆, length_hist_eq_of_tr h₄]
---     obtain rfl := point_eq_of_tr_eq_tr h₄ h₆
---     simp [sys.validTr_of_eq_some h₆]
---   
---   apply And.right (a := n = 0 ∨ ∃ k < n, sys.simulate f s k = (s, 0))
---   rw [diff_eq_of_simulate_full h₁]
---   
---   induction n generalizing s ps; simp_all
---   nm n ih
---   rw [System.simulate_succ_full'] at h₁ ⊢
---   choose sx h₁ h₃ using h₁
---   simp
---   use sx
---   cases ps
---   ·
---     clear ih
---     exfalso
---     simp at h₂
---     subst h₂
---     have h₄ := sys.reachable_of_tr h₁
---     have h₅ := sys.reachable_of_simulate h₃
---     have h₆ := sys.eq_of_tree_and_reachable h₄ h₅
---     simp [h₆] at h₁
---   nm p ps
---   simp at h₂ hn
---   choose sx' h₂ h₄ using h₂
---   obtain rfl : sx = sx'
---   ·
---     apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁)
---     iterate 4 grind
---     rw [length_hist_eq_of_tr h₁, length_hist_eq_of_tr h₂]
---   obtain rfl := point_eq_of_tr_eq_tr h₁ h₂
---   clear h₂
---   have hsx : sys.WF sx; grind
---   
---   specialize @ih sx _ (by grind) h₃ ps h₄ hn _
---   ·
---     clear ih
---     rintro s' ⟨k, hk, H⟩
---     sorry
---   sorry
+theorem State.simulate_diffStrat_eq_of {s s₁ n} [hs : sys.WF s] (h : sys.Reachable s s₁)
+(hn : n = s.diff s₁) : sys.simulate (s.diffStrat s₁).f s n = (s₁, 0) := by
+  subst hn; obtain ⟨f, hf, n, h₁⟩ := sys.reachable_iff_exi_simulate.mp h
+  obtain ⟨ps, h₂⟩ := sys.reachable_iff_exi_trs.mp h
+  have hn : ps.length = n
+  · have h₃ := length_hist_eq_of_simulate_eq h₁
+    have h₄ := length_hist_eq_of_trs_eq h₂
+    grind
+  generalize hg : (s.diffStrat s₁).f = g
+  replace hg : ∀ ⦃s'⦄, (∃ k < n, sys.simulate f s k = (s', 0)) →
+    g s' = (s.diffTrs s₁)[s.diff s']?
+  · rintro s' ⟨k, hk, h₃⟩
+    subst hg
+    simp [diffStrat, diffTrs_eq_of_trs_full h₂, diff_eq_of_simulate_full h₃]
+    obtain ⟨ps₁, ps₂, p, H₁, rfl⟩ : ∃ (ps₁ ps₂ : List PointZ) (p : PointZ),
+      ps₁.length = k ∧ ps₁ ++ p :: ps₂ = ps
+    · use ps.take k, ps.drop (k + 1), ps[k]!
+      simp
+      use by omega
+      rw [List.ext_getElem_iff]
+      simp
+      grind
+    subst H₁
+    simp at hn ⊢
+    subst hn
+    rw [add_comm _ 1] at h₁
+    simp at h₁
+    choose sx h₁ sy h₄ h₅ using h₁
+    simp [h₃] at h₁
+    subst h₁
+    simp at h₂
+    choose sx' h₂ sy' h₆ h₇ using h₂
+    obtain rfl : sx' = s'
+    · apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁)
+      iterate 4 grind
+      rw [length_hist_eq_of_simulate_eq h₃, length_hist_eq_of_trs_eq h₂]
+      rfl
+    rename' sx' => sx
+    obtain rfl : sy = sy'
+    · apply eq_of_reachable_and_length_hist_eq (s := sx) (s₃ := s₁)
+      iterate 4 grind
+      rw [length_hist_eq_of_tr h₆, length_hist_eq_of_tr h₄]
+    obtain rfl := point_eq_of_tr_eq_tr h₄ h₆
+    simp [sys.validTr_of_eq_some h₆]
+  replace hg : ∀ ⦃s'⦄, (∃ k < n, sys.simulate f s k = (s', 0)) →
+    ∃ h, (s.diffTrs s₁)[s.diff s']'h = g s'
+  · intro s' H₁
+    specialize hg H₁
+    symm at hg
+    rw [List.getElem?_eq_some_iff] at hg
+    tauto
+  apply And.right (a := n = 0 ∨ ∃ k < n, sys.simulate f s k = (s, 0))
+  rw [diff_eq_of_simulate_full h₁]
+  induction n generalizing s ps; simp_all
+  nm n ih
+  rw [System.simulate_succ_full'] at h₁ ⊢
+  choose sx h₁ h₃ using h₁
+  simp
+  use sx
+  cases ps
+  · clear ih
+    exfalso
+    simp at h₂
+    subst h₂
+    have h₄ := sys.reachable_of_tr h₁
+    have h₅ := sys.reachable_of_simulate h₃
+    have h₆ := sys.eq_of_tree_and_reachable h₄ h₅
+    simp [h₆] at h₁
+  nm p ps
+  simp at h₂ hn
+  choose sx' h₂ h₄ using h₂
+  obtain rfl : sx = sx'
+  · apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁)
+    iterate 4 grind
+    rw [length_hist_eq_of_tr h₁, length_hist_eq_of_tr h₂]
+  obtain rfl := point_eq_of_tr_eq_tr h₁ h₂
+  clear h₂
+  have hsx : sys.WF sx; grind
+  have H₁ : s.diffTrs s₁ = f s :: ps
+  · clear ih hg
+    apply diffTrs_eq_of_trs_full
+    simp; tauto
+  specialize @ih sx _ (by grind) h₃ ps h₄ hn _
+  · clear ih
+    rintro s' ⟨k, hk, H⟩
+    specialize @hg s' _
+    · clear hg
+      use k + 1, by omega
+      rw [sys.simulate_succ_full']
+      tauto
+    choose H₂ hg using hg
+    simp [diff_eq_of_simulate H, hn, diffTrs_eq_of_trs_full h₄, hk]
+    rw! [diff_eq_length_diffTrs] at hg
+    simp [H₁] at hg
+    have H₃ : s.diff s' = k + 1
+    · apply diff_eq_of_simulate_full (f := f)
+      rw [sys.simulate_succ_full']
+      tauto
+    simpa [H₃] using hg
+  rcases ih with ⟨rfl | ⟨k, hk, H₃⟩, H₂⟩
+  · simp_all
+    subst h₃ hn
+    clear H₁
+    specialize @hg s
+    simp [diff_eq_of_tr h₁, diffTrs_eq_of_tr h₁] at hg
+    simpa [hg] using h₁
+  simp [H₂]
+  specialize @hg s ⟨0, by simp⟩
+  simp [H₁] at hg
+  grind
+
+@[simp]
+theorem State.trs_diffTrs_iff {s s₁} [hs : sys.WF s] :
+sys.trs s (s.diffTrs s₁) = (s₁, []) ↔ sys.Reachable s s₁ := by
+  constructor; grind; intro h
+  rw [sys.reachable_iff_exi_trs] at h
+  choose ps h using h
+  rw [trs_diffTrs h]
+
+theorem State.diffTrs_prefix_of {s s₁ s₂} (h₁ : sys.Reachable s s₁)
+(h₂ : sys.Reachable s₁ s₂) : s.diffTrs s₁ <+: s.diffTrs s₂ := by
+  rw [sys.reachable_iff_exi_trs] at h₁ h₂
+  choose ps₁ h₁ using h₁; choose ps₂ h₂ using h₂
+  have h₃ : sys.trs s (ps₁ ++ ps₂) = (s₂, []); simp; tauto
+  simp [diffTrs_eq_of_trs_full h₁, diffTrs_eq_of_trs_full h₃]
+
+@[simp]
+theorem State.simulate_diffStrat_iff {s s₁ n} [hs : sys.WF s] :
+sys.simulate (s.diffStrat s₁).f s n = (s₁, 0) ↔ sys.Reachable s s₁ ∧ n = s.diff s₁ := by
+  symm; constructor; rintro ⟨h₁, rfl⟩; exact simulate_diffStrat_eq_of h₁ rfl
+  intro h₁; use by grind;; rw [diff_eq_of_simulate_full h₁]
+
+theorem State.mem_simStatesIcc_iff {s s₁ sx} [hs : sys.WF s] :
+sx ∈ s.simStatesIcc s₁ ↔ sys.Reachable s s₁ ∧
+∃ ps, ps <+: s.diffTrs s₁ ∧ sys.trs s ps = (sx, []) := by
+  unfold State.simStatesIcc
+  rw [mem_simStatesIccVia_iff]
+  constructor
+  · rintro ⟨k, n, hk, h₁, h₂⟩
+    use by grind
+    use s.diffTrs sx
+    simp
+    symm; use by grind
+    apply diffTrs_prefix_of
+    · grind
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk
+    simp at h₂
+    grind
+  rintro ⟨h₁, ps, h₂, h₃⟩
+  rw [sys.reachable_iff_exi_trs] at h₁
+  choose ps₁ h₁ using h₁
+  obtain ⟨ps₂, h₂⟩ := h₂
+  simp [diffTrs_eq_of_trs_full h₁] at h₂
+  subst h₂
+  simp at h₁
+  choose sy h₁ h₂ using h₁
+  simp [h₃] at h₁; subst h₁
+  rename' ps₂ => ps₁
+  use ps.length, ps.length + ps₁.length, by omega
+  have h₁ : sys.trs s (ps ++ ps₁) = (s₁, []); simp; tauto
+  symm; apply and_of
+  · apply simulate_diffStrat_eq_of; grind
+    rw [diff_eq_of_trs_full h₁]; simp
+  intro h
+  simp at h
+  choose sy h₄ h₅ using h
+  convert h₄
+  apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁); iterate 4 grind
+  rw [length_hist_eq_of_trs_eq h₃, length_hist_eq_of_simulate_eq h₄]; simp
+
+theorem State.mem_simStatesIco_iff {s s₁ sx} [hs : sys.WF s] :
+sx ∈ s.simStatesIco s₁ ↔ sx ≠ s₁ ∧ sys.Reachable s s₁ ∧
+∃ ps, ps <+: s.diffTrs s₁ ∧ sys.trs s ps = (sx, []) := by
+  unfold State.simStatesIco
+  rw [mem_simStatesIcoVia_iff]
+  constructor
+  · rintro ⟨k, n, hk, h₁, h₂⟩
+    constructor
+    · rintro rfl; simp [steps_eq_of_simulate_full_eq h₂ h₁] at hk
+    use by grind
+    use s.diffTrs sx
+    simp
+    symm; use by grind
+    apply diffTrs_prefix_of
+    · grind
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk
+    simp at h₂
+    grind
+  rintro ⟨h₀, h₁, ps, h₂, h₃⟩
+  rw [sys.reachable_iff_exi_trs] at h₁
+  choose ps₁ h₁ using h₁
+  obtain ⟨ps₂, h₂⟩ := h₂
+  simp [diffTrs_eq_of_trs_full h₁] at h₂
+  subst h₂
+  simp at h₁
+  choose sy h₁ h₂ using h₁
+  simp [h₃] at h₁; subst h₁
+  rename' ps₂ => ps₁
+  have H₁ : ps₁.length ≠ 0
+  · simp; rintro rfl; simp [h₀] at h₂
+  use ps.length, ps.length + ps₁.length, by omega
+  have h₁ : sys.trs s (ps ++ ps₁) = (s₁, []); simp; tauto
+  symm; apply and_of
+  · apply simulate_diffStrat_eq_of; grind
+    rw [diff_eq_of_trs_full h₁]; simp
+  intro h
+  simp at h
+  choose sy h₄ h₅ using h
+  convert h₄
+  apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁); iterate 4 grind
+  rw [length_hist_eq_of_trs_eq h₃, length_hist_eq_of_simulate_eq h₄]; simp
+
+theorem State.mem_aSimStatesIcc_iff {s s₁ sx} [hs : sys.WF s] :
+sx ∈ s.aSimStatesIcc s₁ ↔ AState sx ∧ sys.Reachable s s₁ ∧
+∃ ps, ps <+: s.diffTrs s₁ ∧ sys.trs s ps = (sx, []) := by
+  unfold State.aSimStatesIcc
+  rw [mem_aSimStatesIccVia_iff]
+  constructor
+  · rintro ⟨hsx, k, n, hk, h₁, h₂⟩
+    use hsx, by grind, s.diffTrs sx; simp
+    symm; use by grind
+    apply diffTrs_prefix_of
+    · grind
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk
+    simp at h₂
+    grind
+  rintro ⟨hsx, h₁, ps, h₂, h₃⟩
+  rw [sys.reachable_iff_exi_trs] at h₁
+  choose ps₁ h₁ using h₁
+  obtain ⟨ps₂, h₂⟩ := h₂
+  simp [diffTrs_eq_of_trs_full h₁] at h₂
+  subst h₂
+  simp at h₁
+  choose sy h₁ h₂ using h₁
+  simp [h₃] at h₁; subst h₁
+  rename' ps₂ => ps₁
+  use hsx, ps.length, ps.length + ps₁.length, by omega
+  have h₁ : sys.trs s (ps ++ ps₁) = (s₁, []); simp; tauto
+  symm; apply and_of
+  · apply simulate_diffStrat_eq_of; grind
+    rw [diff_eq_of_trs_full h₁]; simp
+  intro h
+  simp at h
+  choose sy h₄ h₅ using h
+  convert h₄
+  apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁); iterate 4 grind
+  rw [length_hist_eq_of_trs_eq h₃, length_hist_eq_of_simulate_eq h₄]; simp
+
+theorem State.mem_aSimStatesIco_iff {s s₁ sx} [hs : sys.WF s] :
+sx ∈ s.aSimStatesIco s₁ ↔ sx ≠ s₁ ∧ AState sx ∧ sys.Reachable s s₁ ∧
+∃ ps, ps <+: s.diffTrs s₁ ∧ sys.trs s ps = (sx, []) := by
+  unfold State.aSimStatesIco
+  rw [mem_aSimStatesIcoVia_iff]
+  constructor
+  · rintro ⟨hsx, k, n, hk, h₁, h₂⟩
+    simp [hsx]
+    constructor
+    · rintro rfl; simp [steps_eq_of_simulate_full_eq h₂ h₁] at hk
+    use by grind
+    use s.diffTrs sx
+    simp
+    symm; use by grind
+    apply diffTrs_prefix_of
+    · grind
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hk
+    simp at h₂
+    grind
+  rintro ⟨h₀, hsx, h₁, ps, h₂, h₃⟩; use hsx
+  rw [sys.reachable_iff_exi_trs] at h₁
+  choose ps₁ h₁ using h₁
+  obtain ⟨ps₂, h₂⟩ := h₂
+  simp [diffTrs_eq_of_trs_full h₁] at h₂
+  subst h₂
+  simp at h₁
+  choose sy h₁ h₂ using h₁
+  simp [h₃] at h₁; subst h₁
+  rename' ps₂ => ps₁
+  have H₁ : ps₁.length ≠ 0
+  · simp; rintro rfl; simp [h₀] at h₂
+  use ps.length, ps.length + ps₁.length, by omega
+  have h₁ : sys.trs s (ps ++ ps₁) = (s₁, []); simp; tauto
+  symm; apply and_of
+  · apply simulate_diffStrat_eq_of; grind
+    rw [diff_eq_of_trs_full h₁]; simp
+  intro h
+  simp at h
+  choose sy h₄ h₅ using h
+  convert h₄
+  apply eq_of_reachable_and_length_hist_eq (s := s) (s₃ := s₁); iterate 4 grind
+  rw [length_hist_eq_of_trs_eq h₃, length_hist_eq_of_simulate_eq h₄]; simp
