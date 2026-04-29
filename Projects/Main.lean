@@ -14,6 +14,7 @@ import Projects.Paramodulator
 import Projects.Esolangs
 import Projects.SK
 import Projects.Kolakoski
+import Projects.IndParser
 
 -- namespace AP
 -- 
