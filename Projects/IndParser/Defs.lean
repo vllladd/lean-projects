@@ -33,7 +33,7 @@ def Parser.inter (par₁ par₂ : Parser) : Parser where
   words := par₁.words ∩ par₂.words
 
 def Parser.univ : Parser where
-  words := Set.univ
+  words := .univ
 
 def FinFn.{u, v} {n : ℕ} (α : Fin n → Type u) (β : Type v) : Type (max u v + 1) :=
   match n with
@@ -80,7 +80,16 @@ inductive IndSpec.Ind (spec : IndSpec) : (∀ n, spec.ts n) → Word → Prop wh
   (part : (∀ n, spec.ts n) → Word → Prop) (ind : FinFn spec.ts Parser) (w : Word) :
   (∀ ps w, part ps w → Ind spec ps w) → mkFinFn (λ ps => .mk {w | part ps w}) = ind →
   callFinFn (spec.cs ind n |>.1) ps = xs → (spec.cs ind n).2 = ys →
-  w ∈ (xs.foldr Parser.inter Parser.univ).words → Ind spec ys default
+  w ∈ (xs.foldr Parser.inter Parser.univ).words → Ind spec ys w
 
 def IndSpec.toParser (spec : IndSpec) : FinFn spec.ts Parser :=
   mkFinFn λ ps => .mk {w | spec.Ind ps w}
+
+def Parser.bot : Parser where
+  words := ∅
+
+def Word.eps : Word where
+  xs := []
+
+def Parser.eps : Parser where
+  words := {.eps}
