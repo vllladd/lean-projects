@@ -198,12 +198,12 @@ theorem exprAdd_aux {f : ℕ → ℕ → ℕ} (h : ∀ x y, f x y = f (x - 1) (y
 
 @[simp] theorem length_defs_prog₁ : prog₁.defs.length = 6 := rfl
 
-@[simp] theorem prog₁_arity_0 : prog₁.arity 0 = 1:= rfl
-@[simp] theorem prog₁_arity_1 : prog₁.arity 1 = 0:= rfl
-@[simp] theorem prog₁_arity_2 : prog₁.arity 2 = 0:= rfl
-@[simp] theorem prog₁_arity_3 : prog₁.arity 3 = 1:= rfl
-@[simp] theorem prog₁_arity_4 : prog₁.arity 4 = 1:= rfl
-@[simp] theorem prog₁_arity_5 : prog₁.arity 5 = 2:= rfl
+@[simp] theorem prog₁_arity_0 : prog₁.arity 0 = 1 := rfl
+@[simp] theorem prog₁_arity_1 : prog₁.arity 1 = 0 := rfl
+@[simp] theorem prog₁_arity_2 : prog₁.arity 2 = 0 := rfl
+@[simp] theorem prog₁_arity_3 : prog₁.arity 3 = 1 := rfl
+@[simp] theorem prog₁_arity_4 : prog₁.arity 4 = 1 := rfl
+@[simp] theorem prog₁_arity_5 : prog₁.arity 5 = 2 := rfl
 
 @[simp]
 theorem wf_prog₁_refZero {n} : refZero.WF prog₁ n := by
