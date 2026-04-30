@@ -1,10 +1,11 @@
 import Projects.Util
+import Projects.Temp
 
 namespace IndParser
 
 @[ext]
 structure Word where
-  xs : List ℕ
+  (left word right : List ℕ)
 deriving Inhabited, DecidableEq
 
 @[ext]
@@ -12,84 +13,69 @@ structure Parser where
   words : Set Word
 deriving Inhabited
 
-def Word.succ (w : Word) : Word where
-  xs := w.xs.map .succ
+def Word.succ (w : Word) : Word :=
+  {w with word := w.word.map .succ}
 
-def Parser.succ (par : Parser) : Parser where
-  words := .succ '' par.words
+def Parser.succ (p : Parser) : Parser where
+  words := .succ '' p.words
 
-@[class]
-inductive ParType : Type → Type 1 where
-| par : ParType Parser
-| fn {α β} : ParType α → ParType α → ParType (α → β)
+instance : Membership Word Parser where
+  mem p w := w ∈ p.words
 
-def Word.concat (w₁ w₂ : Word) : Word where
-  xs := w₁.xs ++ w₂.xs
+def Parser.concat (p₁ p₂ : Parser) : Parser where
+  words := setOf # λ w => ∃ w₁ ∈ p₁, ∃ w₂ ∈ p₂,
+    w = ⟨w₁.left, w₁.word ++ w₂.word, w₂.right⟩ ∧
+    w₁.left ++ w₁.word = w₂.left ∧
+    w₂.word ++ w₂.right = w₁.right
 
-def Parser.concat (par₁ par₂ : Parser) : Parser where
-  words := {w | ∃ w₁ ∈ par₁.words, ∃ w₂ ∈ par₂.words, w₁.concat w₂ = w}
+inductive ExprType where
+| par : ExprType
+| var : ℕ → ExprType
+| fn : ExprType → ExprType → ExprType
+deriving Inhabited
 
-def Parser.inter (par₁ par₂ : Parser) : Parser where
-  words := par₁.words ∩ par₂.words
-
-def Parser.univ : Parser where
-  words := .univ
-
-def FinFn.{u, v} {n : ℕ} (α : Fin n → Type u) (β : Type v) : Type (max u v + 1) :=
-  match n with
-  | 0 => ULift.{max u v + 1} β
-  | n + 1 => α 0 → FinFn (λ (k : Fin n) => α ⟨k + 1, by omega⟩) β
-
-def mkFinFn.{u, v} {n : ℕ} {α : Fin n → Type u} {β : Type v}
-(f : (∀ n, α n) → β) : FinFn α β := by
-  induction n
-  · exact .up # f nofun
-  nm n ih
-  intro x
-  specialize @ih _ _
-  · rintro ⟨k, hk⟩
-    exact α ⟨k + 1, by omega⟩
-  · intro ps
-    apply f
-    rintro ⟨k, hk⟩
-    cases k
-    · exact x
-    nm k
-    specialize ps ⟨k, by omega⟩
-    convert ps
-  exact ih
-
-def callFinFn.{u, v} {n : ℕ} {α : Fin n → Type u} {β : Type v}
-(f : FinFn α β) (ps : ∀ n, α n) : β :=
-  match n with
-  | 0 => f.down
-  | n + 1 => callFinFn (f (ps 0)) (λ (k : Fin n) => ps ⟨k + 1, by omega⟩)
+inductive Expr where
+| ref : String → List Expr → Expr
+| ind : List Expr → Expr
+| left : Expr
+| right : Expr
+| concat : Expr → Expr → Expr
+deriving Inhabited
 
 @[ext]
-structure IndSpec : Type 1 where
-  (tn cn : ℕ)
-  ts : Fin tn → Type
-  ctns : Fin cn → ℕ
-  cts : ∀ n, Fin (ctns n) → Type
-  cs : FinFn ts Parser → ∀ n, FinFn (cts n) (List Parser) × ∀ n, ts n
-  H₁ : ∀ n, ParType (ts n) := by infer_instance
-  H₂ : ∀ n k, ParType (cts n k) := by infer_instance
+structure Ctor where
+  types : List ExprType
+  left : List Expr
+  right : List Expr
+deriving Inhabited
 
-inductive IndSpec.Ind (spec : IndSpec) : (∀ n, spec.ts n) → Word → Prop where
-| mk (n : Fin spec.cn) (ps : ∀ k, spec.cts n k) (xs : List Parser) (ys : ∀ n, spec.ts n) 
-  (part : (∀ n, spec.ts n) → Word → Prop) (ind : FinFn spec.ts Parser) (w : Word) :
-  (∀ ps w, part ps w → Ind spec ps w) → mkFinFn (λ ps => .mk {w | part ps w}) = ind →
-  callFinFn (spec.cs ind n |>.1) ps = xs → (spec.cs ind n).2 = ys →
-  w ∈ (xs.foldr Parser.inter Parser.univ).words → Ind spec ys w
+@[ext]
+structure Def where
+  types : List ExprType
+  ctors : List Ctor
+deriving Inhabited
 
-def IndSpec.toParser (spec : IndSpec) : FinFn spec.ts Parser :=
-  mkFinFn λ ps => .mk {w | spec.Ind ps w}
+@[ext]
+structure Grammar where
+  defs : Map String Def
+deriving Inhabited
 
-def Parser.bot : Parser where
-  words := ∅
+def ExprType.varsNum : ExprType → ℕ
+| .par => 0
+| .var i => i
+| .fn a b => max a.varsNum b.varsNum
 
-def Word.eps : Word where
-  xs := []
+def ExprType.WF (t : ExprType) (mx : ℕ) : Bool :=
+  t.varsNum ≤ mx
 
-def Parser.eps : Parser where
-  words := {.eps}
+def specTypes (ts₁ ts₂ : List ExprType) : Option ExprType := do
+  guard # ts₁.length = ts₂.length
+  none
+
+def Expr.type (mp : Map String (List ExprType)) (vars : List ExprType) : Expr → Option ExprType
+| .ref name args => do
+  let refTypes ← mp.get? name
+  let argTypes ← args.mapM # Expr.type mp vars
+  let _ ←  specTypes refTypes argTypes
+  pure .par
+| _ => none

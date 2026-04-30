@@ -115,4 +115,5 @@ import Projects.IndParser
 -- -- theorem cnd_state₀ : Edge.cnd₀ state₀ := by native_decide
 
 def main : IO Unit := do
-  IO.println "ok"
+  IO.println # Esolangs.Lang_001.prog₁.show
+    ⟨["0", "1", "not", "bool", "add"]⟩

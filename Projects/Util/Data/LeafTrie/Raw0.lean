@@ -14,86 +14,91 @@ variable {α β : Type*} [ha₁ : DecidableEq α] [ha₂ : Hashable α]
 variable {t t' t₁ t₂ t₃ : Raw₀ α β}
 
 @[simp]
-def IsLeaf (t : Raw₀ α β) : Prop := match t with
-| .leaf _ => True
-| _ => False
+def isLeaf (t : Raw₀ α β) : Bool := match t with
+| .leaf _ => true
+| _ => false
 
 @[simp]
-def IsNode (t : Raw₀ α β) : Prop := match t with
-| .node _ => True
-| _ => False
-
-instance : Decidable t.IsLeaf := match t with
-| .leaf _ => by dsimp; infer_instance
-| .node _ => by dsimp; infer_instance
+def isNode (t : Raw₀ α β) : Bool := match t with
+| .node _ => true
+| _ => false
 
 @[class]
 inductive WF : Raw₀ α β → Prop where
 | leaf {x} : WF # .leaf x
 | node {t} : DHashMap.Raw.WF t → (∀ k t₁, t.get? k = some t₁ → WF t₁) → WF (.node t)
 
--- #check 0 #exit
+theorem rec_3_eq {xs : List (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
+{M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈} :
+@rec_3 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈ xs =
+@List.rec _ _ H₅ (λ x xs acc => H₆ x xs
+(@rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈ x) acc) xs := by
+  induction xs; rfl; nm x xs ih; dsimp; rw [ih]
 
--- theorem rec_2_eq {arr : Array (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
--- {M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
--- @rec_2 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ arr =
--- (H₃ arr.toList # @rec_3 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ arr.toList) :=
+theorem rec_4_eq {xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)}
+{M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈} :
+@rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈ xs =
+@List.rec _ _ H₇ (λ (x : (_ : α) × Raw₀ α β) xs acc => H₈ x.1 x.2 (.ofList xs)
+(@rec α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈ x.2) acc) xs.toList := by
+  induction xs; rfl; nm i x xs ih; simp [ih]; rw [DHashMap.Internal.AssocList.ofList_toList]
 
--- theorem rec_3_eq {xs : List (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
--- {M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
--- @rec_3 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ xs =
--- @List.rec _ _ H₄ (λ x xs acc => H₅ x xs
--- (@rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ x) acc) xs := by
---   induction xs; rfl; nm x xs ih; dsimp; rw [ih]
+noncomputable
+def depthAux (t : Raw₀ α β) : ℕ :=
+  let r := @t.rec; r (λ _ => ℕ) (λ _ => ℕ) (λ _ => ℕ) (λ _ => ℕ) (λ _ => ℕ)
+  (λ _ => 0)               -- leaf
+  (λ _ n => n + 1)         -- node
+  (λ _ _ n => n)           -- std raw
+  (λ _ n => n)             -- array
+  0                        -- list nil
+  (λ _ _ n m => max n m)   -- list cons
+  0                        -- assoc list nil
+  (λ _ _ _ n m => max n m) -- assoc list cons
 
--- theorem rec_4_eq {xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)}
--- {M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇} :
--- @rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ xs =
--- @List.rec _ _ H₆ (λ (x : (_ : α) × Raw₀ α β) xs acc => H₇ x.1 x.2 (.ofList xs)
--- (@rec α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ x.2) acc) xs.toList := by
---   induction xs; rfl; nm i x xs ih; simp [ih]; rw [DHashMap.Internal.AssocList.ofList_toList]
+@[simp]
+theorem depthAux_leaf {x} : (leaf x : Raw₀ α β).depthAux = 0 := by
+  simp [depthAux]
 
--- noncomputable
--- def depthAux (t : Raw₀ α β) : ℕ :=
---   let f := @t.recOn
---   @f (λ _ => ℕ) (λ _ => ℕ) (λ _ => ℕ) (λ _ => ℕ) (λ _ => ℕ)
---     (λ _ => 0)
---     (λ _ n => n)
---     (λ n _ m => max n m)
---     (λ _ n => n)
---     0 (λ _ _ n m => max n m)
---     0 (λ _ _ _ n m => max (n + 1) m)
-
--- theorem depthAux_le {mp : DHashMap.Raw α (λ _ => Raw₀ α β)} {k}
--- (wf : mp.WF) (h : mp.get? k = some t) : t.depthAux < (node mp).depthAux := by
+-- theorem depthAux_lt_of_mem {mp i t} (h : mp.get? i = some t) :
+-- t.depthAux < (node mp : Raw₀ α β).depthAux := by
 --   classical
 --   nth_rw 2 [depthAux]
---   simp
---   simp only [rec_3_eq, rec_4_eq, List.rec_eq_foldr, List.foldr_max_eq_max?_map']
+--   simp [rec_3_eq, rec_4_eq, Order.lt_add_one_iff]
 --   generalize hb : mp.2.toList = bs
---   change _ < (0 :: bs.map (λ x => (0 :: x.toList.map
---     (λ x => x.snd.depthAux + 1)).max?.getD 0)).max?.getD 0
---   simp
---   generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) =>
---     (x.toList.map (λ x => x.snd.depthAux + 1)).max?.elim 0 (max 0)) = f
---   obtain ⟨b, h₁, h₂⟩ := wf.mp.mem_bucket_of_get?_eq_some h
---   replace h₁ : b ∈ bs; simpa [←hb]
---   generalize hb' : b :: bs.erase b = bs'
---   have h₃ : bs.Perm bs'; simpa [←hb']
---   rw [List.max?_eq_max?_of_perm (ys := bs'.map f) # h₃.map f]
---   simp [←hb']
---   suffices h₄ : t'.depthAux < f b
---   · cases ((bs.erase b).map f).max? <;> simp [h₄]
---   subst hf
---   dsimp
---   clear! val h wf bs bs'
---   generalize hx : b.toList.map (λ x => x.2.depthAux + 1) = xs
---   replace h₂ : (t'.depthAux + 1) ∈ xs
---   · rw [←hx, List.mem_map]; use ⟨k, t'⟩
---   clear k
---   cases h₃ : xs.max?
---   · simp at h₃; simp [h₃] at h₂
---   simp; linarith [List.le_max? h₂ h₃]
+--   simp only [List.rec_eq_foldr, List.foldr_max_eq_max?_map]
+--   
+--   generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) => _) = f
+--   change (λ x => (x.toList.map (λ x => x.snd.depthAux)).max?.elim 0 (max 0)) = f at hf
+--   
+--   simp [DHashMap.Raw.get?] at h
+--   obtain ⟨h₁, h₂⟩ := h
+--   
+--   -- add this as a new theorem
+--   rw [show max 0 = id by funext; simp]
+--   
+--   -- we need relation between Option.elim and Option.getD
+--   
+--   unfold Option.elim
+--   
+--   ·
+--     simp
+--   
+--   -- replace h₁ : b ∈ bs; simpa [←hb]
+--   -- generalize hb' : b :: bs.erase b = bs'
+--   -- have h₃ : bs.Perm bs'; simpa [←hb']
+--   -- rw [List.max?_eq_max?_of_perm (ys := bs'.map f) # h₃.map f]
+--   -- simp [←hb']
+--   -- suffices h₄ : t'.depthAux < f b
+--   -- · cases ((bs.erase b).map f).max? <;> simp [h₄]
+--   -- subst hf
+--   -- dsimp
+--   -- clear! val h wf bs bs'
+--   -- generalize hx : b.toList.map (λ x => x.2.depthAux + 1) = xs
+--   -- replace h₂ : (t'.depthAux + 1) ∈ xs
+--   -- · rw [←hx, List.mem_map]; use ⟨k, t'⟩
+--   -- clear k
+--   -- cases h₃ : xs.max?
+--   -- · simp at h₃; simp [h₃] at h₂
+--   -- simp; linarith [List.le_max? h₂ h₃]
 
 -- #check 0 #exit
 

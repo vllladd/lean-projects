@@ -230,3 +230,33 @@ theorem Equiv.forall_iff' {α β : Type*} {e : α ≃ β} {p : β → Prop} :
 @[simp]
 theorem Equiv.mk_symm {α β : Type*} {f : α → β} {g : β → α} {h₁ h₂} :
 (⟨f, g, h₁, h₂⟩ : α ≃ β).symm = ⟨g, f, h₂, h₁⟩ := rfl
+
+def FinFn.{u, v} {n : ℕ} (α : Fin n → Type u) (β : Type v) : Type (max u v + 1) :=
+  match n with
+  | 0 => ULift.{max u v + 1} β
+  | n + 1 => α 0 → FinFn (λ (k : Fin n) => α ⟨k + 1, by omega⟩) β
+
+def mkFinFn.{u, v} {n : ℕ} {α : Fin n → Type u} {β : Type v}
+(f : (∀ n, α n) → β) : FinFn α β := by
+  induction n
+  · exact .up # f nofun
+  nm n ih
+  intro x
+  specialize @ih _ _
+  · rintro ⟨k, hk⟩
+    exact α ⟨k + 1, by omega⟩
+  · intro ps
+    apply f
+    rintro ⟨k, hk⟩
+    cases k
+    · exact x
+    nm k
+    specialize ps ⟨k, by omega⟩
+    convert ps
+  exact ih
+
+def callFinFn.{u, v} {n : ℕ} {α : Fin n → Type u} {β : Type v}
+(f : FinFn α β) (ps : ∀ n, α n) : β :=
+  match n with
+  | 0 => f.down
+  | n + 1 => callFinFn (f (ps 0)) (λ (k : Fin n) => ps ⟨k + 1, by omega⟩)

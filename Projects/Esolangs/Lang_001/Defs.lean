@@ -14,7 +14,7 @@ deriving Inhabited, DecidableEq
 
 inductive Expr : Type where
 | arg : ℕ → Expr
-| call' : Target → (ℕ → Expr) → Expr
+| call : Target → List Expr → Expr
 deriving Inhabited
 
 @[ext]
@@ -63,8 +63,8 @@ def Prog.HasTarget (prog : Prog) (t : Target) : Prop :=
 def Expr.WF (prog : Prog) (arity : ℕ) (e : Expr) : Prop :=
   match e with
   | .arg i => i < arity
-  | .call' t args => prog.HasTarget t ∧ ∀ ⦃j⦄, if t.arity prog ≤ j
-    then args j = default else args j |>.WF prog arity
+  | .call t args => prog.HasTarget t ∧ args.length = t.arity prog ∧
+    ∀ e ∈ args, e.WF prog arity
 
 @[simp]
 def Def.WF (prog : Prog) (d : Def) : Prop :=
@@ -83,7 +83,7 @@ def Target.f (t : Target) (fs : List (List ℕ → ℕ)) : List ℕ → ℕ :=
 def Expr.eval (e : Expr) (prog : Prog) (fs : List (List ℕ → ℕ)) (args : List ℕ) : ℕ :=
   match e with
   | .arg i => args[i]!
-  | .call' t xs => t.f fs # List.range (t.arity prog) |>.map λ i => xs i |>.eval prog fs args
+  | .call t xs => t.f fs # xs.map λ x => x.eval prog fs args
 
 structure Prog.Compatible (prog : Prog) (fs : List (List ℕ → ℕ)) : Prop where
   length_fs : fs.length = prog.defs.length
@@ -97,9 +97,6 @@ class Prog.WF (prog : Prog) : Prop where
   arity_main : prog.main.arity = 1
   wf_def ⦃d⦄ : d ∈ prog.defs → d.WF prog
   exiu_compatible : ∃! fs, prog.Compatible fs
-
-def call (t : Target) (args : List Expr) : Expr :=
-  .call' t (args[·]!)
 
 open Classical in noncomputable
 def Prog.fs (prog : Prog) : List (List ℕ → ℕ) :=
@@ -115,3 +112,32 @@ def Prog.run (prog : Prog) (n : ℕ) : ℕ :=
 
 def fn (arity : ℕ) (f : List ℕ → ℕ) (xs : List ℕ) : ℕ :=
   if xs.length ≠ arity then default else f xs
+
+def Builtin.show (b : Builtin) : String :=
+  match b with
+  | .succ => "succ"
+  | .sub => "sub"
+
+def Target.show (t : Target) (defNames : Array String) : String :=
+  match t with
+  | .builtin b => b.show
+  | .custom i => defNames[i - 1]!
+
+def Expr.show (e : Expr) (defNames argNames : Array String) : String :=
+  match e with
+  | .arg i => argNames[i]!
+  | .call t args =>
+    t.show defNames ++ if args.length = 0 then "" else
+      "(" ++ ", ".intercalate (args.map (·.show defNames argNames)) ++ ")"
+
+def Def.show (d : Def) (defNames : Array String) (name : String) : String :=
+  let argNames := List.range d.arity |>.map λ i => String.ofList [.ofNat # 97 + i]
+  name ++ "".intercalate (argNames.map (" " ++ ·)) ++ " := " ++
+    d.expr.show defNames ⟨argNames⟩
+
+def Prog.show (prog : Prog) (defNames : Array String) : String :=
+  match prog.defs with
+  | mainDef :: defs =>
+    let xs := defs.zipWith (Def.show · defNames) defNames.toList
+    "\n".intercalate # xs ++ [mainDef.show defNames "main"]
+  | _ => ""
