@@ -983,7 +983,7 @@ theorem nodup_flatMap_flatMap_pair [ha : LinearOrder α]
 (xs.flatMap (λ x => ys.flatMap # λ y =>
 if x < y ∧ r x y then [(x, y)] else [])).Nodup := by
   classical
-  by_cases h₀ : IsEmpty α; simp; push_neg at h₀; replace h₀ := h₀.inhabited
+  by_cases h₀ : IsEmpty α; simp; push Not at h₀; replace h₀ := h₀.inhabited
   rw [nodup_flatMap]
   symm; split_ands
   · unfold Function.onFun Disjoint
@@ -1018,7 +1018,7 @@ theorem nodup_flatMap_flatMap_upair [ha : LinearOrder α]
 (xs.flatMap (λ x => ys.flatMap # λ y =>
 if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
   classical
-  by_cases h₀ : IsEmpty α; simp; push_neg at h₀; replace h₀ := h₀.inhabited
+  by_cases h₀ : IsEmpty α; simp; push Not at h₀; replace h₀ := h₀.inhabited
   generalize hA : (λ x => ys.flatMap # λ y =>
     if x < y ∧ r x y then [({x, y} : Set α)] else []) = A
   symm at hA
@@ -1126,7 +1126,7 @@ theorem getD_getElem?_replicate {n i : ℕ} {x : α} : (replicate n x)[i]?.getD 
 theorem getD_getElem?_append_replicate {n i : ℕ} {x : α} :
 (xs ++ replicate n x)[i]?.getD x = xs[i]?.getD x := by
   rw [getElem?_append]; split_ifs with h <;> simp
-  push_neg at h
+  push Not at h
   rw [getElem?_eq_none h]
   rfl
 
@@ -1377,7 +1377,7 @@ theorem sum_map_neg [ha : Ring α] : (xs.map (-·)).sum = -xs.sum := by
 theorem sum_take_le_of_nonneg [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : AddLeftMono α]
 {k} (h₁ : ∀ x ∈ xs, 0 ≤ x) : (xs.take k).sum ≤ xs.sum := by
   wlog h₂ : k ≤ xs.length with ih
-  · push_neg at h₂
+  · push Not at h₂
     specialize @ih α xs _ _ _ xs.length h₁ (by rfl)
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le # le_of_lt h₂
     simp

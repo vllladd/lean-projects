@@ -365,7 +365,7 @@ theorem dWins_dKingOp {a : AStrat} [ha : a.WF] : state₀.dWins ⟨a, dKingOp⟩
   rcases r with ⟨s₁, n⟩
   by_cases hn : n ≠ 0
   · use 200; simpa [f, hr]
-  push_neg at hn; subst hn
+  push Not at hn; subst hn
   have hs₁ := DState.of_simulate_mul_two_eq_full (n := 100) hr
   have h₁ : ∀ k ≤ 200, (f dKingOp k).1.aPos.dist 0 ≤ k / 2
   · intro k hk

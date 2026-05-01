@@ -555,7 +555,8 @@ mp.toList = mp.buckets.toList.flatMap (·.toList) := by
   clear ih
   induction b; rfl
   nm j y b ih
-  simp only [AssocList.foldrM, AssocList.toList_cons, List.cons_append]; grind
+  simp only [bind, AssocList.foldrM, AssocList.toList_cons, List.cons_append, List.cons.injEq,
+    true_and] at ih ⊢; grind
 
 theorem bucket_nodup_keys {mp : Raw α β} (wf : mp.WF) {b}
 (h : b ∈ mp.buckets) : b.toList.map (·.1) |>.Nodup := by

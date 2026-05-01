@@ -14,7 +14,7 @@ theorem State.aHws_iff_aHws_histBlind_both {s} [hs : sys.WF s] : s.aHws ↔
     infer_instance
   · rintro ⟨a, ha, h⟩
     rw [←not_dHws_iff, dHws_iff_dHws_histBlind]
-    push_neg
+    push Not
     simp
     intro d hd
     use a, inferInstance
@@ -33,7 +33,7 @@ theorem State.dHws_iff_dHws_histBlind_both {s} [hs : sys.WF s] : s.dHws ↔
     infer_instance
   · rintro ⟨a, ha, h⟩
     rw [←not_aHws_iff, aHws_iff_aHws_histBlind]
-    push_neg
+    push Not
     simp
     intro d hd
     use a, inferInstance

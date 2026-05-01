@@ -26,7 +26,7 @@ def isNode (t : Raw₀ α β) : Bool := match t with
 @[class]
 inductive WF : Raw₀ α β → Prop where
 | leaf {x} : WF # .leaf x
-| node {t} : DHashMap.Raw.WF t → (∀ k t₁, t.get? k = some t₁ → WF t₁) → WF (.node t)
+| node {t : _} : DHashMap.Raw.WF t → (∀ k t₁, t.get? k = some t₁ → WF t₁) → WF (.node t)
 
 theorem rec_3_eq {xs : List (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
 {M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈} :

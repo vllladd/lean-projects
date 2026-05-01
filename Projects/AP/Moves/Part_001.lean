@@ -108,7 +108,7 @@ theorem State.mem_aVisitedIcc_iff_of {s f n s₁ p} [hs : sys.WF s]
   apply exists_congr; intro k
   by_cases h : k ≠ n
   · simp [le_iff_eq_or_lt, h]
-  push_neg at h; subst h
+  push Not at h; subst h
   simp
   rintro s₂ hs₂ h₄ rfl
   simp [h₁] at h₄
@@ -715,7 +715,7 @@ s₁.aPos ∈ set → s₂.aPos ∈ set) (h₆ : ∀ s₁, sys.simulate st₁.f 
       use hsa₂, n * 2, G₃
       simp [G₆]
     · rwa [←AState.aPos_eq_of_tr G₆]
-    · rw [State.length_hist_eq_of_simulate_eq G₃]
+    · rw [State.length_hist_eq_of_simulate_eq G₃]; rfl
 
 theorem AState.getd_aSimPtsNcard_lt_of {s st₁ st₂ set} (n : ℕ)
 [hs : AState s] (h₁ : s.aWins st₁) (h₂ : s.aWins st₂)
@@ -845,7 +845,7 @@ sys.simulate st.f s n = (s₂, 0) := by
       cases steps_eq_of_simulate_full_eq h₁ h₃
       use k
   · simp [simStatesIccVia, simStatesRangeAuxVia, ReachableVia, ReachableVia', h₁]
-    push_neg at h₁
+    push Not at h₁
     intro k n hk h₂
     apply h₁
 
@@ -862,7 +862,7 @@ sys.simulate st.f s n = (s₂, 0) := by
       cases steps_eq_of_simulate_full_eq h₁ h₃
       use k
   · simp [simStatesIcoVia, simStatesRangeAuxVia, ReachableVia, ReachableVia', h₁]
-    push_neg at h₁
+    push Not at h₁
     intro k n hk h₂
     apply h₁
 

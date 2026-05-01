@@ -72,7 +72,7 @@ theorem reduced_S2 {a b} [ha : Reduced a] [hb : Reduced b] : Reduced (S %% a %% 
 
 @[simp, instance]
 theorem reduced_I : Reduced I :=
-  inferInstanceAs # Reduced # _ %% _
+  inferInstanceAs(Reduced # _ %% _)
 
 @[simp]
 theorem not_exprEq_iff {a b} : ¬ExprEq a b ↔ ExprNe a b := by
@@ -88,7 +88,7 @@ theorem I_reduces {a} : Reduces (I %% a) a :=
 
 @[simp, instance]
 theorem reduced_KI : Reduced KI :=
-  inferInstanceAs # Reduced # _ %% _
+  inferInstanceAs(Reduced # _ %% _)
 
 @[simp]
 theorem KI_reduces {a} : Reduces (KI %% a) I :=
@@ -100,7 +100,7 @@ theorem KI_reduces' {a b} : Reduces (KI %% a %% b) b := by
 
 @[simp, instance]
 theorem reduced_KK : Reduced KK :=
-  inferInstanceAs # Reduced # _ %% _
+  inferInstanceAs(Reduced # _ %% _)
 
 @[simp]
 theorem KK_reduces {a} : Reduces (KK %% a) K :=

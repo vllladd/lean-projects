@@ -35,6 +35,7 @@ compare a b = if a < b then Ordering.lt
 else if a = b then Ordering.eq else Ordering.gt := by
   rw [ha.compare_eq_compareOfLessAndEq]; rfl
 
+@[reducible]
 def Preorder.ofOrd {α : Type*} [ha : Ord α]
 (h_refl : ∀ (a : α), a ≤ a)
 (h_trans : ∀ (a b c : α), a ≤ b → b ≤ c → a ≤ c)
@@ -42,6 +43,7 @@ def Preorder.ofOrd {α : Type*} [ha : Ord α]
 Preorder α :=
   ⟨h_refl, h_trans, h_lt⟩
 
+@[reducible]
 def PartialOrder.ofOrd {α : Type*} [ha : Ord α]
 (h_refl : ∀ (a : α), a ≤ a)
 (h_trans : ∀ (a b c : α), a ≤ b → b ≤ c → a ≤ c)
@@ -51,6 +53,7 @@ PartialOrder α :=
   letI := Preorder.ofOrd h_refl h_trans h_lt
   ⟨h_ant⟩
 
+@[reducible]
 def LinearOrder.ofOrd {α : Type*} [ha : Ord α]
 (h_refl : ∀ (a : α), a ≤ a)
 (h_trans : ∀ (a b c : α), a ≤ b → b ≤ c → a ≤ c)
@@ -169,6 +172,7 @@ theorem isLt_compare_iff_lt {α : Type*} [ha : LinearOrder α] {x y : α} :
 theorem instDistribLatticeOfLinearOrder_toSemilatticeInf_toLE_eq {α : Type*} [ha : LinearOrder α] :
 (@instDistribLatticeOfLinearOrder α ha).toSemilatticeInf.toLE = ha.toLE := rfl
 
+@[reducible]
 def equivToLinearOrderAux {α β : Type*}
 [ha : LinearOrder α] (e : α ≃ β) : LinearOrder β := by
   let f := e.1
@@ -205,6 +209,15 @@ def equivToLinearOrderAux {α β : Type*}
     subst h_ord
     simp [isLe_compare_iff_le]
 
+theorem min_def₁ {α : Type*} [ha : LinearOrder α] :
+min (α := α) = λ x y => if x ≤ y then x else y := by
+  grind
+
+theorem max_def₁ {α : Type*} [ha : LinearOrder α] :
+max (α := α) = λ x y => if x ≤ y then y else x := by
+  grind
+
+@[reducible]
 def Equiv.toLinearOrder {α β : Type*}
 [ha : LinearOrder α] (e : α ≃ β) : LinearOrder β := by
   let f := e.1
@@ -242,11 +255,11 @@ def Equiv.toLinearOrder {α β : Type*}
   · intro a b; apply inj
     change g (f # g a ⊓ g b) = g (if g a ≤ g b then a else b)
     rw [gf, apply_ite (f := g)]
-    apply min_def
+    simp [min_def₁]
   · intro a b; apply inj
     change g (f # g a ⊔ g b) = g (if g a ≤ g b then b else a)
     rw [gf, apply_ite (f := g)]
-    apply max_def
+    simp [max_def₁]
   · intro a b
     unfold compareOfLessAndEq
     simp only [eq_iff]
@@ -411,7 +424,7 @@ theorem right_lt_max_add_one {a b : α} : b < max a b + 1 :=
 
 theorem min_eq_ite {α : Type*} [ha : LinearOrder α] {x y : α} :
 min x y = if x ≤ y then x else y := by
-  split_ifs with h₁; exact min_eq_left h₁; push_neg at h₁; exact min_eq_right_of_lt h₁
+  split_ifs with h₁; exact min_eq_left h₁; push Not at h₁; exact min_eq_right_of_lt h₁
 
 theorem abs_eq_ite {α : Type*} [ha₁ : LinearOrder α]
 [hs₂ : AddGroup α] [ha₃ : AddLeftMono α] {x : α} :
@@ -451,14 +464,6 @@ theorem bddAbove_range_neg {ι α : Type*} [ha₁ : LinearOrder α] [ha₂ : Rin
 BddAbove (Set.range (-f)) ↔ BddBelow (Set.range f) := by
   nth_rw 2 [←neg_neg f]; rw [bddBelow_range_neg]
 
-theorem le_of_le_min_left {α : Type*} [ha₁ : LinearOrder α]
-{a b c : α} (h : a ≤ min b c) : a ≤ b := by
-  rw [le_inf_iff] at h; exact h.1
-
-theorem le_of_le_min_right {α : Type*} [ha₁ : LinearOrder α]
-{a b c : α} (h : a ≤ min b c) : a ≤ c := by
-  rw [le_inf_iff] at h; exact h.2
-
 section
 
 variable {α : Type*} [ha₁ : DecidableEq α] [ha₂ : Fintype α]
@@ -472,7 +477,7 @@ theorem fintypeIdx_eq_iff {x y : α} : fintypeIdx x = fintypeIdx y ↔ x = y := 
   symm; constructor; rintro rfl; rfl; intro h; unfold fintypeIdx at h
   rwa [List.idxOf_inj] at h; simp
 
-open Classical in noncomputable
+open Classical in @[reducible] noncomputable
 def fintypeToLinearOrder : LinearOrder α where
   le a b := fintypeIdx a ≤ fintypeIdx b
   le_refl a := by rfl
@@ -521,7 +526,7 @@ structure LeCnd (le : α → α → Prop) : Prop where
   total : ∀ x y, le x y ∨ le y x
 
 theorem exi_leCnd : ∃ le, @LeCnd α le := by
-  obtain ⟨lin, h⟩ := @exists_wellOrder α
+  obtain ⟨lin, h⟩ := @exists_wellFoundedLT α
   use (· ≤ ·)
   constructor
   · simp
@@ -536,7 +541,7 @@ def leClassical : α → α → Prop :=
 theorem leCnd_leClassical : LeCnd # @leClassical α :=
   Classical.epsilon_spec exi_leCnd
 
-open Classical in noncomputable
+open Classical in @[reducible] noncomputable
 def linearOrderClassical : LinearOrder α where
   le := leClassical
   le_refl := leCnd_leClassical.refl

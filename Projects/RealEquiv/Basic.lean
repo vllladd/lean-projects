@@ -93,12 +93,12 @@ theorem Bits.take_sub {n k} : bs.take (n - k) = (bs.take n).take (n - k) := by
   simp [take]
   by_cases h : n < k
   · simp [show n - k = 0 by omega]
-  push_neg at h
+  push Not at h
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
   simp [List.range_add]
   rw [List.ext_getElem_iff]
   simp
-  intro i h₁ h₂
+  intro i h₁
   simp [List.getElem_append]
   intro h₃
   congr

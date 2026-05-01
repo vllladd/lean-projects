@@ -715,7 +715,7 @@ theorem exi_cyclic_simulate_of_not_simp_path' {a ts} [ha : sys.WF a]
       simp [h₅] at h₆
   clear! ts
   rw [simp_path'_snoc_iff] at h₃
-  push_neg at h₃
+  push Not at h₃
   specialize h₃ h₂
   obtain ⟨b₁, hb₁, ys, hy, h₃⟩ := h₃
   simp [hb] at hb₁
@@ -798,7 +798,7 @@ sys.Acyclic a ↔ ∀ f [sys.SimFn f] n m,
   have h₃ : ¬sys.simp_path' a zs
   ·
     unfold simp_path'
-    push_neg
+    push Not
     use xs, zs
     simp [hz]
     rw [trs_append]

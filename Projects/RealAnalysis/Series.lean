@@ -260,7 +260,7 @@ theorem limit_le_limit_of_forall_le {a b L M} (h₁ : tendsTo a L) (h₂ : tends
   linarith
 
 example : ¬∀ {a L}, tendsTo (|a ·|) L ↔ 0 ≤ L ∧ tendsTo a L := by
-  push_neg
+  push Not
   use λ n => if Even n then 1 else -1
   use 1
   simp

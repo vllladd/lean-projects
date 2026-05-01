@@ -601,7 +601,7 @@ ps ⊆ s'.taken := by
       simp at h₂
       choose s₁ h₃ h₂ using h₂
       exact sys.hasTr_of_eq_some h₃
-    push_neg at h₁
+    push Not at h₁
     obtain ⟨s', h₂⟩ := a.validTr h₁
     have hs' := DState.of_tr h₂
     specialize ihd s' ps hm
@@ -660,7 +660,7 @@ ps ⊆ s'.taken := by
     apply mem_taken_of_reachable # sys.reachable_of_simulate H₁
     exact H₀
   simp at h₁
-  push_neg at h₂
+  push Not at h₂
   by_cases h₃ : s.aPos ∉ ps
   · use 0
     intro n hn s₂ h₄ p₁ hp₁
@@ -674,7 +674,7 @@ ps ⊆ s'.taken := by
     contradiction
   rename' s₁ => sa
   have hsa := AState.of_tr h₁
-  push_neg at h₃
+  push Not at h₃
   clear! m
   suffices h : eventually # λ n => ∀ (s' : State),
     sys.simulate (Strat.f ⟨a, dChooseFromSet ps⟩) s n = (s', 0) → s.aPos ∈ s'.taken
@@ -700,7 +700,7 @@ ps ⊆ s'.taken := by
     simp [h₁'] at H₁
     choose s₂ H₂ H₁ using H₁
     exact sys.hasTr_of_eq_some H₂
-  push_neg at h₄
+  push Not at h₄
   replace h₄ := a.validTr h₄
   obtain ⟨sd, h₄⟩ := h₄
   have hsd := DState.of_tr h₄

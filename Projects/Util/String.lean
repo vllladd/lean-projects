@@ -198,7 +198,7 @@ def Nat.toStr' (xs : List Char) (n : ℕ) : List Char :=
 --     simp
 --     apply Nat.sub_eq_of_eq_add
 --     rw [Nat.mod_eq_of_lt] <;> omega
---   push_neg at h
+--   push Not at h
 --   rw [le_iff_eq_or_lt] at h
 --   rcases h with rfl | h
 --   · simp [toNat, toNat']

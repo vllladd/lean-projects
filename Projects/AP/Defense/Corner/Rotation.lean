@@ -256,7 +256,7 @@ theorem iter_rotRight_eq_mod_4 {n} : Corner.rotRight^[n] = Corner.rotRight^[n % 
   nm n ih
   by_cases h : n < 4
   · rw [Nat.mod_eq_of_lt h]
-  push_neg at h
+  push Not at h
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
   simp [Function.iterate_add]
   apply ih

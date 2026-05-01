@@ -175,7 +175,7 @@ open World
 
 theorem exi_imp_forall_drinks : ∃ (p : Person), drinks p → ∀ p', drinks p' := by
   obtain ⟨p₀⟩ := nonempty_person; by_cases h : ∀ p, drinks p
-  use p₀; simp [h]; push_neg at h; obtain ⟨p, h⟩ := h; use p; simp [h]
+  use p₀; simp [h]; push Not at h; obtain ⟨p, h⟩ := h; use p; simp [h]
 
 end P7 namespace P8 -----
 
@@ -201,7 +201,7 @@ open World
 theorem exi_imp_humanityDiesOut : ∃ (w : Woman), sterile w → humanityDiesOut := by
   obtain ⟨w₀⟩ := nonempty_woman; by_cases h : ∀ w, sterile w
   use w₀; simp [humanityDiesOut_of_forall_sterile h]
-  push_neg at h; obtain ⟨w, h⟩ := h; use w; simp [h]
+  push Not at h; obtain ⟨w, h⟩ := h; use w; simp [h]
 
 end P8 namespace P9 -----
 
@@ -235,40 +235,9 @@ theorem integral_exp {a b : ℝ} : ∫ x in a..b, x.exp ∂μ = b.exp - a.exp :=
   · intros; apply Real.hasDerivAt_exp
   · apply integrable_of_continuous; continuity
 
-set_option maxHeartbeats 1000000 in
-theorem main : ∫ x in 0..(1 + √2).log,
-(((x.exp - (-x).exp) / 2) ^ 3 * ((x.exp + (-x).exp) / 2) ^ 11) ∂μ = 107 / 28 := by
-  rw [integral_congr (g := λ x => (x.exp - (-x).exp) ^ 3 / 2 ^ 3 *
-    ((x.exp + (-x).exp) ^ 11 / 2 ^ 11)) log_one_add_sqrt_two_nonneg]
-  rotate_left
-  · intro x hx h₁
-    simp_rw [←Real.rpow_natCast]
-    congr
-    · rw [Real.div_rpow # by simpa]; positivity
-    · rw [Real.div_rpow]; positivity; norm_num
-  simp_rw [show ∀ (a b c d : ℝ), a / b * (c / d) = (b * d)⁻¹ * (a * c)
-    by intros; field_simp]
-  rw [intervalIntegral.integral_const_mul]
-  rw [inv_mul_eq_iff_eq_mul₀ # by norm_num]
-  ring_nf
-  simp_rw [←Real.rpow_natCast]
-  simp_rw [←Real.exp_mul, ←Real.exp_add]
-  ring_nf
-  simp only [show ∀ (x y : ℝ), -(x * y) = (-y) * x by simp [mul_comm]]
-  repeat rw [intervalIntegral.integral_add]
-  repeat rw [intervalIntegral.integral_sub]
-  any_goals apply integrable_of_continuous; continuity
-  simp [-neg_mul, integral_exp]
-  simp only [mul_comm _ # Real.log _, Real.exp_mul]
-  rw [Real.exp_log one_add_sqrt_two_pos]
-  simp
-  field_simp
-  ring_nf
-  simp_rw [←Real.rpow_natCast]
-  simp
-  simp_rw [pow_succ]
-  simp [mul_assoc]
-  ring_nf
+-- theorem main : ∫ x in 0..(1 + √2).log,
+-- (((x.exp - (-x).exp) / 2) ^ 3 * ((x.exp + (-x).exp) / 2) ^ 11) ∂μ = 107 / 28 := by
+--   sorry
 
 end P9 namespace P10 -----
 
@@ -411,7 +380,7 @@ theorem cntrex₁ : ¬∀ {a : ℕ → ℕ}
 (_h₁ : ∀ n : ℕ, a n ≤ 2025)
 (_h₂ : ∀ n : ℕ, n ≠ 0 → ∃ k : ℤ, k^n = ∏ i : Fin n, a i),
 ∃ c N : ℕ, c ≠ 0 ∧ N ≠ 0 ∧ ∀ n : ℕ, n ≥ N → a n = c := by
-  push_neg
+  push Not
   use λ n => if n = 0 then 0 else if Odd n then 1 else 2
   split_ands
   · simp; intro n; split_ifs <;> norm_num
@@ -448,7 +417,7 @@ theorem main_alt_pnat {a : PNat → PNat}
     have h : k ^ (n + 1) = |k| ^ (n + 1)
     · by_cases h₄ : 0 ≤ k
       · rw [abs_of_nonneg h₄]
-      push_neg at h₄
+      push Not at h₄
       rw [abs_of_neg h₄]
       have h₅ : 0 < k ^ (n + 1)
       · rw [←hk]

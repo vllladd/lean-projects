@@ -80,8 +80,7 @@ m₁ = m₂ ↔ m₁.1.out.Equiv m₂.1.out := by
   induction m₁, m₂ using Quotient.inductionOn₂
   nm m₁ m₂
   change ⟦m₁⟧.out ≈ ⟦m₂⟧.out ↔ _
-  rw [Quotient.eq_iff_equiv]
-  simp
+  rw [Quotient.out_equiv_out]
 
 theorem ext_iff {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁ = m₂ ↔ ∀ i, m₁.get? i = m₂.get? i := by

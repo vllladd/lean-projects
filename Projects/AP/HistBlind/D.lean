@@ -10,7 +10,7 @@ def State.dwn (s : State) : ℕ :=
 theorem State.dwn_eq_zero_of_aHws {s} [hs : sys.WF s] (h : s.aHws) : s.dwn = 0 := by
   apply Nat.find!_eq_zero_of
   rw [←not_dHws_iff, dHws_iff_dHws_bounded'] at h
-  push_neg at h ⊢; exact h
+  push Not at h ⊢; exact h
 
 @[simp]
 theorem State.dwn_setHist {s hist} [hs : sys.WF s] [hs' : sys.WF # s.setHist hist] :

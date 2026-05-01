@@ -13,7 +13,7 @@ theorem min_max_def {a b : Char} : (min a b = if a ≤ b then a else b) ∧
     · exact Std.le_of_lt h₁
     · subst h₂; simp
     · rw [Std.LawfulOrderLT.lt_iff] at h₁ ⊢
-      push_neg at h₁
+      push Not at h₁
       symm
       apply and_of
       · intro h₃; exact h₂ # Char.le_antisymm h₃ # h₁ h₃

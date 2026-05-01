@@ -105,7 +105,7 @@ theorem monoGt_neg {a} : monoGt (-a) ↔ monoLt a := by
 theorem misc₂ : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ}
 (_ : monoLe a) (_ : ∀ n, n ≤ τ n) (_ : ∀ n, τ n ≤ σ n)
 (_ : ∀ n, ε ≤ |a (σ n) - a (τ n)|), Subseq τ ∨ Subseq σ := by
-  push_neg
+  push Not
   use (·)
   use λ n => n + if Even n then 1 else 0
   use λ n => n * 2 + if Even n then 2 else 0
@@ -185,7 +185,7 @@ theorem forall_exi_le_or_forall_exi_ge {a : ℕ → ℝ} {L : ℝ} :
 (∀ N, ∃ n, N ≤ n ∧ a n ≤ L) ∨ (∀ N, ∃ n, N ≤ n ∧ L ≤ a n) := by
   rw [or_iff_not_imp_left]
   intro h₁ N
-  push_neg at h₁
+  push Not at h₁
   obtain ⟨N₁, h₁⟩ := h₁
   use N + N₁, by linarith
   apply le_of_lt

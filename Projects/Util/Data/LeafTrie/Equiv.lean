@@ -241,7 +241,7 @@ variable {t t' t₁ t₂ t₃ : Raw α β}
 --       rw [depth_eq_depth_inner]
 --       exact Raw₀.depth_lt h
 --     · exact depth_lt h₁
---   · push_neg at h₂
+--   · push Not at h₂
 --     left
 --     split_ands
 --     · rw [depth_eq_depth_inner]

@@ -29,7 +29,7 @@ theorem continuous_exp : continuous (·.exp) := by
   intro y h₁
   dsimp
   wlog hy : x ≤ y with ih
-  · push_neg at hy
+  · push Not at hy
     specialize @ih y ε hε _ rfl x _ # le_of_lt hy
     · clear ih
       rw [abs_sub_comm]

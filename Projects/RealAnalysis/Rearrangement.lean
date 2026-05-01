@@ -399,7 +399,7 @@ theorem mkRment_eq_iff {a L i j} (H : CondConv a) : mkRment a L i = mkRment a L 
   symm; constructor; rintro rfl; rfl; intro h
   by_contra! h₁
   wlog h₂ : i < j with ih
-  · push_neg at h₂; apply ih H h.symm # ne_symm' h₁; grind
+  · push Not at h₂; apply ih H h.symm # ne_symm' h₁; grind
   clear h₁
   simp_rw [mkRment_eq_getElem] at h
   have h₃ : i + 1 ≤ j + 1; omega

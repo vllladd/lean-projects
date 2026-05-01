@@ -14,12 +14,12 @@ eventually (λ n => p n ∧ q n) ↔ eventually p ∧ eventually q := by
 
 @[simp]
 theorem not_eventually_even : ¬eventually Even := by
-  unfold eventually; push_neg; simp
+  unfold eventually; push Not; simp
   intro N; use N * 2 + 1; simp; linarith
 
 @[simp]
 theorem not_eventually_odd : ¬eventually Odd := by
-  unfold eventually; push_neg; simp
+  unfold eventually; push Not; simp
   intro N; use N * 2; simp
 
 theorem eventually_or_of {p q : ℕ → Prop}
@@ -38,7 +38,7 @@ theorem eventually_iff_exi_least {p : ℕ → Prop} : eventually p ↔
   by_cases h₀ : ∀ n, p n
   · simp [h₀]; use 0; simpa
   simp [h₀]
-  push_neg at h₀
+  push Not at h₀
   obtain ⟨n₀, h₀⟩ := h₀
   constructor
   · intro h

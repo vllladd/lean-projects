@@ -50,7 +50,7 @@ instance : HasSubset FSP := ⟨Subset⟩
   
 @[simp]
 theorem hasLe_next {n p} : a.next.hasLe n p ↔ a.hasLe (n + 1) p := by
-  rw [←not_iff_not]; dsimp [next, hasLe]; push_neg
+  rw [←not_iff_not]; dsimp [next, hasLe]; push Not
   constructor <;> intro h k hk
   · specialize h (k - 1) # Nat.sub_le_of_le_add hk
     iterate 2 cases k; simp at h; simp [h]; nm k
@@ -61,7 +61,7 @@ theorem hasLe_next {n p} : a.next.hasLe n p ↔ a.hasLe (n + 1) p := by
 
 theorem hasLe_insertSet_eq_of_lt {n k ps} (h : k < n) :
 (fsp.insertSet n ps).hasLe k = fsp.hasLe k := by
-  ext p; rw [←not_iff_not]; dsimp [hasLe, insertSet]; push_neg
+  ext p; rw [←not_iff_not]; dsimp [hasLe, insertSet]; push Not
   apply forall_congr'
   intro i
   split_ifs with h₁
@@ -127,7 +127,7 @@ theorem hasLe_insertSet_of_le_and_le {m n k ps p} (h₁ : (fsp.insertSet n ps).h
 (h₂ : m ≤ n) : (fsp.insertSet m ps).hasLe k p := by
   by_cases h₃ : n ≤ k
   · exact hasLe_insertSet_of_le h₁ h₃ # h₂.trans h₃
-  push_neg at h₃
+  push Not at h₃
   rw [hasLe_insertSet_eq_of_lt h₃] at h₁
   exact hasLe_insertSet_of_hasLe h₁
 

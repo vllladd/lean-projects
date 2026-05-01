@@ -39,12 +39,12 @@ cnd₁ d arr₂ 0 := by
   rw [List.getElem?_append] at h₇ ⊢
   split_ifs at h₇ with h₈
   rotate_left
-  · push_neg at h₈
+  · push Not at h₈
     simp [List.getElem?_eq_some_iff] at h₇
   simp only [Array.length_toList, Array.getElem?_toList] at *
   split_ifs with h₉
   · apply h₄ <;> assumption
-  push_neg at h₉
+  push Not at h₉
   exfalso
   specialize h₄ i h₈ h₇
   rw [Array.getElem?_eq_some_iff] at h₄
@@ -167,7 +167,6 @@ theorem cnd₀_of_tr_tr_aState {sa sd sa' pa pd} [hsa : AState sa]
     simp only [Int.reduceNeg, add_tsub_cancel_left]
     ring_nf
     rw [ptsArr_eq_of_taken_eq # hsa.taken_eq_of_tr h₁, hsa.aPos_eq_of_tr h₁]
-    ring_nf
   simp [f₁, H₁, hsa.aPos_eq_of_tr h₁, getBorderPoint] at hpd
   rw [cnd₀_iff_cnd₁]
   have h₅ : offset + 7 ≤ xs.size

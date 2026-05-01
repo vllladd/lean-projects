@@ -133,7 +133,7 @@ theorem isCauSeq_bwSeq_fst {a : ℕ → ℝ} {y₁ y₂ : ℚ}
     · simp; calc
       d / 2 ≤ ε / 2 := by linarith
       _ < _ := by linarith
-    push_neg at h₂
+    push Not at h₂
     rw [←Real.ratCast_lt] at h₂
     suffices h₁ : ∃ (r : ℝ), 0 < r ∧ (d : ℝ) / 2 ^ r < ε
     · obtain ⟨r, hr, h₁⟩ := h₁

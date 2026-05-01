@@ -109,7 +109,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
       simp [←H₁]
       rw [if_neg]
       rotate_left
-      · push_neg; apply length_hist_le_of_reachable; grind
+      · push Not; apply length_hist_le_of_reachable; grind
       simp
     have ha₁ := ha' d₂ hd₂ (n * 2 + 1 + k)
     simp [H₂', H₃] at ha₁
@@ -137,7 +137,7 @@ theorem AState.aHwsDisj_nbhd_pw {s : State} {fsp : FSP} [hs : AState s]
       simp at G₃ ⊢
       by_cases hr : r ≤ n * 2 + 1
       · grind
-      push_neg at hr
+      push Not at hr
       contrapose! G₃
       obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_lt # le_of_lt hr
       replace hr : r ≠ 0; omega

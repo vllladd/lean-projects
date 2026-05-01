@@ -181,6 +181,7 @@ theorem nonempty_insert {x} : Insert.insert x mp ≠ ∅ := by
   simp [ext_iff', ←equiv_def]
   rcases mp with ⟨mp⟩
   simp [insert_def]
+  rw [Quotient.out_equiv_out]
   apply ne_of_congr Std.ExtDHashMap.mk'
   exact Std.ExtDHashMap.nonempty_insert
 

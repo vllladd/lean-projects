@@ -18,7 +18,7 @@ theorem abs_real_mk_sub_le_aux₁ {a : ℕ → ℚ} {x e : ℝ} {N} {ha : IsCauS
   rw [le_iff_eq_or_lt, Real.mk_eq, Real.mk_lt, or_iff_not_imp_left]
   intro h₂
   change ¬∀ _, _ at h₂
-  push_neg at h₂
+  push Not at h₂
   simp at h₂
   obtain ⟨y, hy, h₁⟩ := h₂
   change ∃ _, _
@@ -98,7 +98,7 @@ theorem abs_real_mk_sub_le {a : ℕ → ℚ} {x e : ℝ} {ha : IsCauSeq abs a}
     contrapose! h
     apply he.trans
     simp
-  push_neg at he
+  push Not at he
   rw [abs_le]
   constructor
   · linarith [abs_real_mk_sub_le_aux₁ (ha := ha) h]

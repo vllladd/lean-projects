@@ -248,7 +248,7 @@ theorem State.aSimPairs_state_eq_of_point_eq_of_fresh1 {s : State} {a : AStrat} 
     exact h₂
   exfalso
   wlog H₄ : n₁ < n₂ with ih
-  · push_neg at H₄
+  · push Not at H₄
     specialize @ih s a d s₂ s₁ p fsp _ _ ha h₃
     grind
   clear H₃

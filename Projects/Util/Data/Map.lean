@@ -188,6 +188,7 @@ theorem nonempty_insert {x} : Insert.insert x mp ≠ ∅ := by
   have h₁ := @ExtDHashMap.nonempty_insert α (λ _ => β) _ _
     mp x.toSigma
   simp at h₁
+  rw [Quotient.out_equiv_out]
   rwa [ExtDHashMap.inner_eq_iff_eq]
 
 @[simp]
@@ -217,6 +218,7 @@ theorem toList_eq_toList [LinearOrder α] {m₁ m₂ : Map α β} :
 m₁.toList = m₂.toList ↔ m₁ = m₂ := by
   rcases m₁ with ⟨⟨m₁⟩⟩; rcases m₂ with ⟨⟨m₂⟩⟩
   simp [ExtDHashMap.lift, toList, Quotient.lift_eq, ←DHashMap.equiv_def]
+  rw [Quotient.out_equiv_out]
 
 @[simp]
 theorem toList_eq_nil_iff [LinearOrder α] : mp.toList = [] ↔ mp = ∅ := by
@@ -594,7 +596,7 @@ theorem countP_values_modify_eq_of
 {p : β → Bool} {i : α} {f : β → β} (h : ∀ x, p (f x) = p x) :
 (mp.modify i f).values.countP p = mp.values.countP p := by
   by_cases h₁ : i ∉ mp; rw [modify_of_notMem h₁]
-  push_neg at h₁
+  push Not at h₁
   induction mp using ind; simp
   clear! mp
   nm mp j x ih hk

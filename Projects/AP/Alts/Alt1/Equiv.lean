@@ -422,7 +422,7 @@ theorem Game.s_play_initGame_d_set_eq_of_ne {pw a d s s₁ dRef n}
   have h₄ : s'.act; simpa [←h₃]
   by_cases h₅ : ¬AHasValidMove pw s'.board
   · iterate 2 rw [playAMoveAt_eq_of_neg # by tauto];; simp
-  push_neg at h₅
+  push Not at h₅
   have h₆ := @s_playAMoveAt_eq_iff_of _ (g₁.setState s') (g.setState s')
     (by simp) (by simp) (by simpa) (by simpa) (by simpa) (by simpa)
   rw [h₆]; clear h₆
@@ -647,7 +647,7 @@ theorem wf_playAMoveAt {pw} {g : Game pw}
   by_cases h : ¬g.s.act
   · rw [Game.playAMoveAt_eq_of_neg # by tauto]
     simpa [State.finish_eq_of_not_act h]
-  push_neg at h
+  push Not at h
   rw [State.wf_iff] at hs ⊢
   choose a d n g₁ h₁ h₂ using hs
   rcases h₂ with h₂ | ⟨h', h₂⟩
@@ -685,7 +685,7 @@ theorem wf_playAMoveAt {pw} {g : Game pw}
   · rw [←hg', Game.playAMoveAt_eq_of_neg # by grind]
     rw [←hgx, Game.playAMoveAt_eq_of_neg # by grind]
     simp [H₁]
-  push_neg at H₃
+  push Not at H₃
   have H₄ : g'.act
   · simp [←hg']
     rw [Game.playAMoveAt_eq_of_pos H₂ # by grind]

@@ -138,7 +138,7 @@ p'.dist s'.aPos ≤ ↑s.pw → p ≠ p' := by
     rcases h₁ with ⟨hs₁, n, h₁, s₂, h₂, h₃⟩
     dsimp at h₂ h₃; subst h₃
     rw [State.mem_aVisitedIcc_iff_of h₁]
-    push_neg
+    push Not
     split_ands
     · intro h₃
       specialize h s₁ s s.aPos s.aPos

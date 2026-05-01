@@ -83,7 +83,15 @@ a ≠ 0 ∧ a ≠ 2 ∧ a ≠ 3 ∧ ∀ ⦃x y⦄, a ≠ (!!(x (1 y))) := by
   generalize hn : sizeOf h = n
   induction n using Nat.strong_induction_on generalizing a
   nm n ih; subst hn; split_ands; on_goal 4 => intro x y
-  all_goals rintro rfl; repeat cases h <;> (try grind) <;> nm h
+  · rintro rfl; cases h <;> grind
+  · rintro rfl; cases h <;> try grind;; nm h₁ h₂
+    specialize @ih (sizeOf h₁) # by unfold PD._sizeOf_inst PD._sizeOf_1; simp;; grind
+  · rintro rfl; cases h <;> try grind
+  · rintro rfl; cases h <;> try grind;; nm h
+    cases h <;> (try grind) <;> nm h
+    · specialize @ih (sizeOf h) # by unfold PD._sizeOf_inst PD._sizeOf_1; simp; omega;; grind
+    cases h <;> try grind;; nm h₁ h₂
+    specialize @ih (sizeOf h₁) # by unfold PD._sizeOf_inst PD._sizeOf_1; simp; omega;; grind
 
 theorem not_p_0_2_3_rl1 {a}
 (h : P a) : a ≠ 0 ∧ a ≠ 2 ∧ a ≠ 3 ∧ ∀ x y, a ≠ (!!(x (1 y))) := by

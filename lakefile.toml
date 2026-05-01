@@ -13,10 +13,10 @@ backward.isDefEq.respectTransparency = false
 name = "mathlib"
 scope = "leanprover-community"
 
-[[require]]
-name = "tryAtEachStep"
-git = "https://github.com/dwrensha/tryAtEachStep"
-rev = "main"
+# [[require]]
+# name = "tryAtEachStep"
+# git = "https://github.com/dwrensha/tryAtEachStep"
+# rev = "main"
 
 [[lean_lib]]
 name = "Projects"

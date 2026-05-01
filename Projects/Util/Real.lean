@@ -299,7 +299,7 @@ theorem sqrt_le_self_iff {a : ℝ} : √a ≤ a ↔ a = 0 ∨ 1 ≤ a := by
   · rw [sqrt_eq_of_neg h]
     simp [ne_of_lt h]
     constructor <;> intro h <;> linarith
-  push_neg at h
+  push Not at h
   simp [sqrt_le_iff, h]
   rw [le_iff_eq_or_lt] at h
   rcases h with rfl | h; simp

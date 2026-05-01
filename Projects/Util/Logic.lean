@@ -2,7 +2,7 @@ import Projects.Util.Meta
 
 variable {α β γ : Type*}
 
-noncomputable
+@[reducible] noncomputable
 def Nonempty.inhabited {α : Type*} (h : Nonempty α) : Inhabited α :=
   Classical.inhabited_of_nonempty h
 
@@ -126,7 +126,7 @@ match h₁ : decide # R True ∧ R False with
 | false => isFalse # by
   simp only [forall_prop_iff]
   simp at h₁
-  push_neg
+  push Not
   exact h₁
 
 local instance {R : Prop → Prop}
@@ -138,19 +138,19 @@ match h₁ : decide # R True ∨ R False with
 | false => isFalse # by
   simp only [exi_prop_iff]
   simp at h₁
-  push_neg
+  push Not
   exact h₁
 
 theorem not_forall_congr_iff : ¬∀ (α : Type*) (P Q : α → Prop),
 ((∀ x, P x) ↔ (∀ x, Q x)) ↔ ∀ x, P x ↔ Q x := by
-  push_neg
+  push Not
   use ULift Prop, ULift.down, (¬·.down)
   have h₁ : (∀ P, ¬P) → False := by decide
   aesop
 
 theorem not_exi_congr_iff : ¬∀ (α : Type*) (P Q : α → Prop),
 ((∃ x, P x) ↔ (∃ x, Q x)) ↔ ∃ x, P x ↔ Q x := by
-  push_neg
+  push Not
   use ULift Prop, ULift.down, (¬·.down)
   have h₁ : ∀ P, P ∨ ¬P := by decide
   aesop

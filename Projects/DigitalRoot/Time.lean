@@ -88,7 +88,7 @@ theorem freqTimeMp_eq : freqTimeMp 10 = Set'.toMap (Set'.ofFinset # Finset.range
   by_cases h : d < 10
   · rw [get?_freqTimeMp_eq h]
     simpa
-  push_neg at h
+  push Not at h
   rw [if_neg # by linarith]
   unfold freqTimeMp freqTimeDigFn
   rw [Set'.fold_map_push_eq_map_toMap]
@@ -262,7 +262,7 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
     simp
     apply H₁ _ b
     simp [h₁]
-  push_neg at h₀
+  push Not at h₀
   
   simp [h₁] at H₂
   have h₃ := H₃ d b

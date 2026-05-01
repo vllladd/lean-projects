@@ -638,7 +638,7 @@ theorem cons_erase_perm_iff_mem [ha : DecidableEq α] {x} :
     simp
     generalize xs.count x = n at h ⊢
     cases n; simp at h; rfl
-  rw [count_erase_of_ne # ne_symm' h₁]
+  rw [count_erase_of_ne # ne_symm' h₁]; rfl
 
 @[simp]
 theorem perm_cons_erase_iff_mem [ha : DecidableEq α] {x} :

@@ -23,7 +23,7 @@ def mkSeq (r : α → α → Prop) (x : α) (n : ℕ) : α :=
 
 theorem not_linearOrder_imp_wellFounded : ¬∀ {α : Type} [LinearOrder α],
 WellFounded λ (xs ys : List α) => xs < ys := by
-  push_neg
+  push Not
   use ℕ, inferInstance
   rintro ⟨h⟩
   specialize h [1]
@@ -102,7 +102,7 @@ Acc r x ↔ ¬∃ (a : ℕ → α), r (a 0) x ∧ ∀ n, r (a # n + 1) (a n) := 
     specialize h₂ # n + 1
     contradiction
   intro h
-  push_neg at h
+  push Not at h
   exact acc_of_not_seq h
 
 theorem acc_iff_not_seq {r : α → α → Prop} {x} :

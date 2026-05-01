@@ -59,7 +59,8 @@ theorem AState.of_simulate_mul_two {sa} [ha : AState sa]
 {st : Strat} [hst : st.WF] {n} : AState (sys.simulate st.f sa # n * 2).1 := by
   induction n generalizing sa; exact ha
   nm n ih
-  simp [Nat.succ_mul, System.simulate]
+  simp [Nat.succ_mul]
+  simp [System.simulate]
   split; exact ha
   nm x sd h₁; clear x
   have hd := DState.of_tr h₁
@@ -340,12 +341,12 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   intro sa ha H h
   unfold State.dHws at h ⊢
   contrapose h
-  push_neg at h
+  push Not at h
   use dStratOfDWins sa, inferInstance
   intro a hsa
   by_cases h₁ : ¬sys.hasTr sa
   · simp [System.hasTr] at h₁; use 1; simp [h₁]
-  push_neg at h₁
+  push Not at h₁
   replace h₁ := hsa.validTr h₁
   generalize hpa : a.f sa = pa at h₁
   obtain ⟨sd, h₁⟩ := h₁
@@ -532,7 +533,7 @@ sa.aHws ↔ ∃ p sd, sys.tr sa p = some sd ∧ sd.aHws := by
 
 theorem AState.dHws_iff_tr {sa} [hs : AState sa] :
 sa.dHws ↔ ∀ p sd, sys.tr sa p = some sd → sd.dHws := by
-  rw [←State.not_aHws_iff, not_iff_comm']; push_neg
+  rw [←State.not_aHws_iff, not_iff_comm']; push Not
   convert hs.aHws_iff_tr using 5; nm p sd
   rw [and_congr_right_iff]; intro h
   have h₁ := DState.of_tr h; simp
@@ -556,7 +557,7 @@ sd.dHws ↔ ∃ p sa, sys.tr sd p = some sa ∧ sa.dHws := by
 
 theorem DState.aHws_iff_tr {sd} [hs : DState sd] :
 sd.aHws ↔ ∀ p sa, sys.tr sd p = some sa → sa.aHws := by
-  rw [←State.not_dHws_iff, not_iff_comm']; push_neg
+  rw [←State.not_dHws_iff, not_iff_comm']; push Not
   convert hs.dHws_iff_tr using 5; nm p sa
   rw [and_congr_right_iff]; intro h
   have h₁ := AState.of_tr h; simp

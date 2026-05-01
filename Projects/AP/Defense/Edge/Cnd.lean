@@ -113,12 +113,12 @@ theorem extract_ptsArr {s z n i j} :
   · rw [Array.extract_eq_empty_of_le # by omega]
     simp
     omega
-  push_neg at h
+  push Not at h
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
   by_cases h : n < i
   · rw [show n - i = 0 by omega]
     simp; omega
-  push_neg at h
+  push Not at h
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
   simp
   by_cases h : n < j
@@ -126,7 +126,7 @@ theorem extract_ptsArr {s z n i j} :
     simp [ptsArr, add_assoc]
     simp [List.range_add]
     omega
-  push_neg at h
+  push Not at h
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
   simp [ptsArr, add_assoc]
   simp [List.range_add]

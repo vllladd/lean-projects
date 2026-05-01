@@ -90,7 +90,7 @@ theorem nnr_of_sqrt_im_eq_zero {x : ℂ} (h : (√x).im = 0) : x.nnr := by
       simp [le_def] at h
       rcases h with ⟨h₃, h₄⟩
       use h₃, h₄.symm
-    · push_neg at h₃
+    · push Not at h₃
       clear h
       field_simp at h₃
       split_ands
@@ -107,11 +107,11 @@ theorem nnr_of_sqrt_im_eq_zero {x : ℂ} (h : (√x).im = 0) : x.nnr := by
       by_cases h₁ : a < 0
       · apply le_of_lt h₁ |>.trans
         simp
-      push_neg at h₁
+      push Not at h₁
       rw [Real.le_sqrt] <;> try positivity
       simp
   · exfalso
-    push_neg at h₂
+    push Not at h₂
     rw [Real.sin_half_eq_neg_sqrt _ # by linarith] at h
     rotate_left
     · linarith [x.neg_pi_lt_arg, Real.pi_pos]
@@ -127,7 +127,7 @@ theorem nnr_of_sqrt_im_eq_zero {x : ℂ} (h : (√x).im = 0) : x.nnr := by
       simp at h
       simp [le_def] at h
       linarith
-    · push_neg at h₃
+    · push Not at h₃
       field_simp at h₃
       clear h
       contrapose! h₃

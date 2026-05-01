@@ -34,7 +34,7 @@ def digSum (b n : ℕ) : ℕ :=
   if n < b then n else
   n % b + digSum b (n / b)
 decreasing_by
-  nm hb h; push_neg at hb h; exact hb.div_lt h
+  nm hb h; push Not at hb h; exact hb.div_lt h
 
 @[simp]
 theorem digSum_le {n} : digSum b n ≤ n := by
@@ -42,7 +42,7 @@ theorem digSum_le {n} : digSum b n ≤ n := by
   nm n ih
   unfold digSum
   split_ifs with h₁; rfl
-  push_neg at h₁
+  push Not at h₁
   specialize ih (n / b) # hb.div_lt h₁
   have h₂ := hb.two_le
   generalize digSum b (n / b) = k at ih ⊢
@@ -74,7 +74,7 @@ def digRoot (b n : ℕ) : ℕ :=
   if n < b then n else
   digRoot b # digSum b n
 decreasing_by
-  nm hb h; push_neg at hb h; rwa [digSum_lt_iff_base_le]
+  nm hb h; push Not at hb h; rwa [digSum_lt_iff_base_le]
 
 def digRoot' (b n : ℕ) : ℕ :=
   if n = 0 then 0
@@ -120,7 +120,7 @@ theorem digSum_eq_zero_iff {n} : digSum b n = 0 ↔ n = 0 := by
   unfold digSum
   simp [hb]
   split_ifs with h; rfl
-  push_neg at h
+  push Not at h
   simp
   symm; constructor; rintro rfl; simp
   rintro ⟨h₁, h₂⟩
@@ -203,7 +203,7 @@ theorem digRoot'_digSum {n} : digRoot' b (digSum b n) = digRoot' b n := by
   unfold digSum
   simp [hb]
   split_ifs with h; rfl
-  push_neg at h
+  push Not at h
   have h₁ := ih _ # hb.div_lt h
   rw [digRoot'_add, h₁, ←digRoot'_add]
   have h₂ : n % b + n / b = n - n / b * (b - 1)
@@ -235,7 +235,7 @@ theorem digRoot'_digSum {n} : digRoot' b (digSum b n) = digRoot' b n := by
 theorem digRoot_eq_digRoot' {n} : digRoot b n = digRoot' b n := by
   induction n using Nat.strong_induction_on; nm n ih
   unfold digRoot; split_ifs with h₁; rw [digRoot'_eq_of_lt_base h₁]
-  push_neg at h₁; rw [ih]; simp; rwa [digSum_lt_iff_base_le]
+  push Not at h₁; rw [ih]; simp; rwa [digSum_lt_iff_base_le]
 
 theorem digRoot_eq_of_lt_base {n} (h : n < b) : digRoot b n = n := by
   simp [digRoot_eq_digRoot', digRoot'_eq_of_lt_base h]

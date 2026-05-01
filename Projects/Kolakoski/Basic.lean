@@ -209,7 +209,7 @@ theorem le_length_f₂ {xs n k} [h : KolIter xs] (h₁ : n ≤ k) : n ≤ (f₂ 
   simp
   split_ifs with h₂
   · exact h₂
-  push_neg at h₂
+  push Not at h₂
   apply ih
   suffices : xs.length < (f₁ xs).length; omega
   simp
@@ -381,7 +381,7 @@ theorem exi_f₃_prefix_kolIter {i} : ∃ xs, KolIter xs ∧ f₃ i <+: xs := by
 --   by_cases h₁ : kolakoski' (N + 1) ≠ kolakoski' N
 --   ·
 --     use N + 1; grind
---   push_neg at h₁
+--   push Not at h₁
 --   use N + 2, by omega
 --   symm
 --   intro h₂

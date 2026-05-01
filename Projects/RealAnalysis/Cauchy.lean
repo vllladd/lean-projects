@@ -151,7 +151,7 @@ theorem bounded_of_isCauchy {a} (h : isCauchy a) : bounded a := by
     · exact Finset.le_sum_range hn
     suffices h₃ : 0 ≤ 1 + |a N|; linarith
     positivity
-  push_neg at hn
+  push Not at hn
   specialize h n hn
   suffices : |a n| - |a N| < 1; linarith
   apply lt_of_le_of_lt _ h
@@ -188,7 +188,7 @@ theorem converges_iff_isCauchy {a} : converges a ↔ isCauchy a :=
 
 theorem not_converges_sqrt : ¬converges (√·) := by
   unfold converges tendsTo eventually
-  push_neg
+  push Not
   intro L
   use 1, by norm_num
   intro N
@@ -208,7 +208,7 @@ theorem not_converges_sqrt : ¬converges (√·) := by
   · rw [Real.lt_sqrt, one_pow] <;> try positivity;; nlinarith
   clear hL
   by_cases hL : L < 0; linarith
-  push_neg at hL
+  push Not at hL
   rw [←sq_le_sq₀, Real.sq_sqrt, add_sq] <;> try positivity
   simp
   apply le_of_lt
@@ -220,7 +220,7 @@ theorem not_isCauchy_sqrt : ¬isCauchy (√·) := by
   rw [isCauchy_iff_converges]; exact not_converges_sqrt
 
 theorem isFakeCauchy_ne_isCauchy : isFakeCauchy ≠ isCauchy := by
-  apply ne_of_congr (· (√·)); simp; push_neg; left
+  apply ne_of_congr (· (√·)); simp; push Not; left
   use isFakeCauchy_sqrt, not_isCauchy_sqrt
 
 theorem isCauchy_add {a b} (ha : isCauchy a) (hb : isCauchy b) : isCauchy (a + b) := by

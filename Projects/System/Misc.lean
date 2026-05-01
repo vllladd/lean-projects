@@ -30,7 +30,7 @@ theorem aux₅ {f s m} : ∃ s₂ l, sys.simulate f s m = (s₂, l) := by
 
 theorem cntrex₁ : ¬∀ (S T : Type) (sys : System S T) (f s n),
 (∀ s', ¬sys.hasTr s') → ∃ k s', sys.simulate f s n = (s', k) ∧ 0 < k := by
-  push_neg
+  push Not
   use Unit, Unit, ⟨∅, λ _ _ => none⟩, (λ _ => ()), (), 0
   unfold hasTr
   simp
@@ -45,7 +45,7 @@ theorem aux₇ {f s n s'}
 
 theorem cntrex₂ : ¬∀ (S T : Type) (sys : System S T),
 DecidableHasTr sys → ∃ f, sys.SimFn f := by
-  push_neg
+  push Not
   use Unit, Empty, default
   simp
   refine' ⟨⟨_⟩⟩
@@ -59,7 +59,7 @@ theorem aux₈ {f s n} :
 
 theorem cntrex₃ : ¬∀ (α β : Type) (P : α → Prop)
 (_ : ¬∀ x, P x), ¬(∀ x (_ : β), P x) := by
-  push_neg
+  push Not
   use Unit, Empty, λ _ => False
   simp
 
@@ -68,7 +68,7 @@ theorem cntrex₄ : ¬∀ (S T : Type) (sys : System S T) (s) (_ : sys.Acyclic s
 (_ : sys.simulate f s n = (sn, x))
 (_ : sys.simulate f s m = (sm, y)),
 sn ≠ sm := by
-  push_neg
+  push Not
   use Unit, Unit, ⟨{()}, λ _ _ => none⟩, ()
   simp [simFn_def, acyclic_def, hasTr]
   refine' ⟨_, default, 0, 1, by simp [simulate]⟩
@@ -111,7 +111,7 @@ sn ≠ sm := by
 theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 {s} [Acyclic sys s] {f} [SimFn sys f],
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ ∀ x, sys.simulate f s n = (x, k) := by
-  push_neg
+  push Not
   use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
   simp [acyclic_def]
@@ -125,7 +125,7 @@ theorem cntrex₅ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 {s} [Acyclic sys s] {f} [SimFn sys f] {x},
 ∃ N, ∀ n, N ≤ n → ∃ k, 0 < k ∧ sys.simulate f s n = (x, k) := by
-  push_neg
+  push Not
   use Bool, Unit, ⟨{true}, λ _ _ => none⟩
   use inferInstance, true
   simp [acyclic_def]
@@ -141,7 +141,7 @@ theorem cntrex₆ : ¬∀ (S T : Type) (sys : System S T) [Finite S]
 theorem cntrex₇ : ¬∀ (S T : Type) (sys : System S T)
 (a ts₁ ts₂ b) (_ : ∀ t ∈ ts₁, sys.validTr b t),
 sys.trs a (ts₁ ++ ts₂) = sys.trs (sys.trs a ts₁).fst ts₂ := by
-  push_neg
+  push Not
   use Bool, Unit, ⟨∅, λ b _ => if b then some true else none⟩
   use false, [()], [], true
   simp [validTr]

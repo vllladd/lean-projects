@@ -46,7 +46,7 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
   rw [Nat.sub_eq_zero_iff_le] at hn
   replace hn : s.taken.size * 2 ≤ 1; apply hn.trans; simp
   replace hn : s.taken.size / 2 ≤ 1 / 2; omega
-  simp [Nat.lt_succ_iff, Nat.le_one_iff, H₁] at hn
+  simp [Nat.le_one_iff, H₁] at hn
   simp [hn, Nat.one_add] at h₆
   have H₃ : s.aPos ∉ s.taken
   · split_ifs at h₆ <;> subst h₆ <;> apply Set'.not_mem_of_subset h₅ <;> assumption
@@ -225,7 +225,7 @@ theorem State.exi_hist_wf_of_wfCnd {s} (h : WFCnd s) : ∃ hist, sys.WF # s.setH
       ext:1 <;> simp [ht]
     use p :: hist
     exact sys.wf_of_tr h₅
-  push_neg at h₁
+  push Not at h₁
   have h₁' : ∀ (p : PointZ), p.dist s.aPos ≤ s.pw → p ∉ s.taken
   · intro p hp h₂; specialize h₁ p h₂; linarith
   have H₃ := h.taken_ne_empty_of_aTurn ht

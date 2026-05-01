@@ -84,7 +84,7 @@ theorem exi_mkSubseq_eq_of_apply {a p n} (h : Infp a p)
     rw [mkSubseq]
     rw [Nat.find!_eq_iff, if_pos ⟨_, h₁⟩]
     exact ⟨h₁, h₂⟩
-  push_neg at h₂
+  push Not at h₂
   replace h₂ : ∃ k, k < n ∧ p (a k) ∧ ∀ r, k < r → r < n → ¬p (a r)
   · choose k hk h₂ using h₂
     obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_lt hk; clear hk

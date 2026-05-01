@@ -142,6 +142,7 @@ theorem nonempty_insert {x} : Insert.insert x s ≠ ∅ := by
   have h₁ := @Std.ExtDHashMap.nonempty_insert α (λ _ => Unit) _ _
     s ⟨x, ()⟩
   simp at h₁
+  rw [Quotient.out_equiv_out]
   rwa [Std.ExtDHashMap.inner_eq_iff_eq]
 
 @[simp]

@@ -712,7 +712,7 @@ s.dEntrapsAIn ⟨a, d⟩ {p | p ∈ (0 : PointZ).nbhd N} := by
   symm; constructor
   · rintro ⟨N, d, Hd, h⟩
     rw [←not_aHws_iff, aHws]
-    push_neg; simp
+    push Not; simp
     intro a Ha
     specialize h a Ha
     rcases h with ⟨n, h⟩
@@ -735,7 +735,7 @@ theorem State.dHws_of_exi_aTrapped {s} [hs : sys.WF s]
 (h : ∃ (d : DStrat), d.WF ∧ ∀ (a: AStrat), a.WF → ∃ n,
 (sys.simulate (Strat.mk a d).f s n).1.aTrapped) : s.dHws := by
   rcases h with ⟨d, Hd, h⟩
-  rw [←not_aHws_iff, aHws]; push_neg; simp
+  rw [←not_aHws_iff, aHws]; push Not; simp
   intro a Ha
   specialize h a Ha
   rcases h with ⟨n, h⟩

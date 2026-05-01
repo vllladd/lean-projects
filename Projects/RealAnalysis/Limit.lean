@@ -36,7 +36,7 @@ theorem tendsTo_unique {a L₁ L₂}
 (h₁ : tendsTo a L₁) (h₂ : tendsTo a L₂) : L₁ = L₂ := by
   by_contra! h₃
   wlog h₄ : L₁ < L₂ with ih
-  · push_neg at h₄; apply ne_symm' at h₃
+  · push Not at h₄; apply ne_symm' at h₃
     apply ih h₂ h₁ h₃; exact lt_of_le_of_ne h₄ h₃
   clear h₃
   generalize he : (L₂ - L₁) / 2 = e
@@ -235,13 +235,13 @@ theorem tendsTo_inv_aux₂ {a L} (h₁ : ∀ n, a n ≠ 0) (h₂ : L ≠ 0)
     intro n
     by_cases h₅ : n < N
     · exact h₄ _ h₅
-    · push_neg at h₅
+    · push Not at h₅
       exact le_of_lt # tendsTo_inv_aux₁ # h _ h₅
   use by simp [h₁]
   intro n
   by_cases h₅ : n < N
   · exact h₄ _ h₅
-  push_neg at h₅
+  push Not at h₅
   specialize h _ h₅
   by_contra! h₆
   have h₇ : |a n| < |L| / 2; linarith
@@ -310,7 +310,7 @@ theorem bddBelow_of_converges {a} (h : converges a) : BddBelow (Set.range a) := 
   rcases h₁ with ⟨⟨j, h₁, rfl⟩, h₂⟩
   by_cases h₃ : i < N
   · exact inf_le_of_right_le # h₂ i h₃
-  push_neg at h₃
+  push Not at h₃
   specialize h i h₃
   apply inf_le_of_left_le
   rw [abs_lt] at h
@@ -456,7 +456,7 @@ theorem tendsTo_mul {a₁ a₂ L₁ L₂} (h₁ : tendsTo a₁ L₁)
     have H := lb_lt_of_tendsTo h₁ |>.1 i
     simp [max_eq_ite]; split_ifs with h₃
     · rw [abs_eq_ite]; split_ifs <;> linarith
-    · push_neg at h₃
+    · push Not at h₃
       have H₃ := abs_nonneg # lb a₂
       suffices H₁ : 0 < a₁ i + |lb a₁| + 1; linarith
       rw [abs_eq_ite]; split_ifs <;> linarith
@@ -611,7 +611,7 @@ theorem bounded_of_converges {a} (h : converges a) : bounded a := by
   · rw [abs_of_nonneg h₁]; right
     trans ub a; rotate_left; apply le_abs_self
     exact le_of_lt # lt_ub_of_converges h
-  · push_neg at h₁; rw [abs_of_neg h₁]; left
+  · push Not at h₁; rw [abs_of_neg h₁]; left
     have h₂ := lb_lt_of_converges h (n := n)
     rw [neg_le, abs_of_neg] <;> linarith
 
@@ -707,7 +707,7 @@ theorem bounded_drop_iff {a k} : bounded (a # · + k) ↔ bounded a := by
     apply h.trans
     simp
     positivity
-  push_neg at hk
+  push Not at hk
   specialize h 0
   simp at h
   have hM := nonneg_of_abs_le h

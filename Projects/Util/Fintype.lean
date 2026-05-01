@@ -1,6 +1,6 @@
 import Projects.Util.Finset
 
-noncomputable
+@[reducible] noncomputable
 def Finite.toFintype {α : Type*} (ha : Finite α) : Fintype α :=
   Fintype.ofFinite α
 

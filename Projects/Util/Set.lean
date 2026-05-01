@@ -1,7 +1,7 @@
 import Projects.Util.Option
 import Projects.Util.Fintype
 
-noncomputable
+@[reducible] noncomputable
 def Set.Finite.toFintype {α : Type*}
 {sa : Set α} (ha : sa.Finite) : Fintype sa := by
   unfold Set.Finite at ha; exact ha.toFintype
@@ -177,7 +177,7 @@ theorem finite_univ_diff_diff_singleton_iff {x} :
   simp [finite_iff_exi_finset]
   by_cases h : x ∉ s
   · rw [Set.diff_singleton_eq_self h]
-  push_neg at h
+  push Not at h
   constructor <;> rintro ⟨s₁, h₁⟩
   · use s₁.erase x
     simp [h₁]
