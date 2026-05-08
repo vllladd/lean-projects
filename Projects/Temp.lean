@@ -32,6 +32,14 @@ namespace Real
 
 end Real
 
+namespace Option
+
+variable {α β γ : Type*}
+
+-- #check 0 #exit
+
+end Option
+
 namespace List
 
 variable {α β γ : Type*}

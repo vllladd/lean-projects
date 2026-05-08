@@ -12,7 +12,7 @@ def f (n : ℕ) : ℝ :=
   let a := r ^ r⁻¹
   (a ^ ·)^[n] 1
 
-example : f 2 = √2 ^ √2 := by
+theorem thm₁ : f 2 = √2 ^ √2 := by
   simp [f, sqrt_eq_rpow]
 
 theorem f_lt {n} (h : 1 < n) : f n < n := by
@@ -35,7 +35,7 @@ theorem f_lt {n} (h : 1 < n) : f n < n := by
   rw [div_lt_iff₀ # by linarith]
   simpa
 
-example : f 2003 < 2003 := by
+theorem thm₂ : f 2003 < 2003 := by
   apply f_lt; simp
 
 end P1 namespace P2 -----
@@ -139,15 +139,16 @@ class World where
   HorseT : Type
   Horse : Set HorseT
   WhiteHorse : Set HorseT
-  horse_univ : ∀ (e : HorseT), e ∈ Horse
-  exi_non_white_horse : ∃ (e : HorseT), e ∉ WhiteHorse
+  horse_univ : ∀ {e}, e ∈ Horse
+  exi_non_white_horse : ∃ e, e ∉ WhiteHorse
 
-example : World where
-  HorseT := String
-  Horse := Set.univ
-  WhiteHorse := {}
-  horse_univ e := by simp
-  exi_non_white_horse := by simp
+instance : Inhabited World := .mk
+  { HorseT := String
+  , Horse := .univ
+  , WhiteHorse := ∅
+  , horse_univ := by simp
+  , exi_non_white_horse := by simp
+  }
 
 variable [W : World]
 open World
@@ -158,17 +159,18 @@ theorem whiteHorse_ne_horse : WhiteHorse ≠ Horse := by
 
 end P6 namespace P7 -----
 
--- There exists a person such that if they drinks, everyone drinks
+-- There is a person such that if he drinks, then everyone drinks
 
 class World where
   Person : Type
   drinks : Person → Prop
   nonempty_person : Nonempty Person
 
-example : World where
-  Person := String
-  drinks _ := False
-  nonempty_person := inferInstance
+instance : Inhabited World := .mk
+  { Person := String
+  , drinks _ := False
+  , nonempty_person := inferInstance
+  }
 
 variable [W : World]
 open World
@@ -179,7 +181,7 @@ theorem exi_imp_forall_drinks : ∃ (p : Person), drinks p → ∀ p', drinks p'
 
 end P7 namespace P8 -----
 
--- There exists a woman such that if she becomes sterile, the entire humanity will die out
+-- There is a woman on earth such that if she becomes sterile, the whole human race will die out
 
 class World where
   Woman : Type
@@ -188,12 +190,13 @@ class World where
   nonempty_woman : Nonempty Woman
   humanityDiesOut_of_forall_sterile : (∀ w, sterile w) → humanityDiesOut
 
-example : World where
-  Woman := String
-  sterile _ := False
-  humanityDiesOut := False
-  nonempty_woman := inferInstance
-  humanityDiesOut_of_forall_sterile := by simp
+instance : Inhabited World := .mk
+  { Woman := String
+  , sterile _ := False
+  , humanityDiesOut := False
+  , nonempty_woman := inferInstance
+  , humanityDiesOut_of_forall_sterile := by simp
+  }
 
 variable [W : World]
 open World
@@ -471,7 +474,7 @@ theorem main_alt_pnat {a : PNat → PNat}
 end P10 namespace P11
 
 open Complex in
-example {x : ℂ} : √2 + √x = 2 ↔ x = 6 - 4 * √2 := by
+theorem thm₁ {x : ℂ} : √2 + √x = 2 ↔ x = 6 - 4 * √2 := by
   rw [←eq_sub_iff_add_eq']
   conv_lhs => rw [eq_iff_and_apply (f := (· ^ 2))]
   simp [sub_sq]
@@ -491,7 +494,7 @@ example {x : ℂ} : √2 + √x = 2 ↔ x = 6 - 4 * √2 := by
   simp [nnr]
 
 open Real in
-example : √(6 - 4 * √2) = 2 - √2 := by
+theorem thm₂ : √(6 - 4 * √2) = 2 - √2 := by
   have h : 4 * √2 ≤ 6
   · rw [←sq_le_sq₀] <;> try positivity
     rw [mul_pow]
@@ -510,7 +513,7 @@ example : √(6 - 4 * √2) = 2 - √2 := by
 
 end P11 namespace P12
 
-example {a b c : ℤ} (ha : -1 < a) (hb : -1 < b) (hc : -1 < c) :
+theorem thm₃ {a b c : ℤ} (ha : -1 < a) (hb : -1 < b) (hc : -1 < c) :
 3 * a * b * c ≤ a ^ 3 + b ^ 3 + c ^ 3 := by
   obtain ⟨ha, hb, hc⟩ : (0 : ℝ) ≤ a ∧ (0 : ℝ) ≤ b ∧ (0 : ℝ) ≤ c
   · exact_mod_cast (⟨ha, hb, hc⟩ : _ ∧ _ ∧ _)
@@ -540,7 +543,7 @@ theorem aux₁ {i j : ℕ} : i < j ↔ 2 ^ i + i < 2 ^ j + j := by
 theorem aux₂ {i j : ℕ} : i ≤ j ↔ 2 ^ i + i ≤ 2 ^ j + j := by
   contrapose!; exact aux₁
 
-example {x : ℤ} : (2 : ℝ) ^ x + x = 37 ↔ x = 5 := by
+theorem thm₁ {x : ℤ} : (2 : ℝ) ^ x + x = 37 ↔ x = 5 := by
   symm; constructor; rintro rfl; norm_num
   intro h; have h₁ : 0 ≤ x
   · contrapose! h; apply ne_of_lt

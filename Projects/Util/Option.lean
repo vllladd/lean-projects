@@ -20,9 +20,13 @@ theorem exists_eq_some_of_ne_none {x : Option α}
 (h : x ≠ none) : ∃ y, x = some y := by rwa [←ne_none_iff_exists']
 
 @[simp]
-theorem guard_bind_eq_some_iff {P : Prop} [Decidable P]
-{f : Unit → Option α} {x} :
+theorem guard_bind_eq_some_iff {P : Prop} [Decidable P] {f : Unit → Option α} {x} :
 (_root_.guard P : Option Unit).bind f = some x ↔ P ∧ f () = some x := by
+  by_cases h : P <;> simp [h]
+
+@[simp]
+theorem guard_bind_isSome_iff {P : Prop} [Decidable P] {f : Unit → Option α} :
+((_root_.guard P : Option Unit).bind f).isSome ↔ P ∧ (f ()).isSome := by
   by_cases h : P <;> simp [h]
 
 @[simp]
