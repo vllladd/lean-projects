@@ -1099,3 +1099,74 @@ theorem modify_of_notMem {i f} (h : i ∉ mp) : mp.modify i f = mp := by
   simp [eq_iff_inner, modify, Internal.Raw₀.modify]
   rw [if_neg]; simp; change ¬mp.contains i at h
   simp [contains, Internal.Raw₀.contains] at h; exact h
+
+theorem mem_iff_mem_inner {x : α} : x ∈ mp ↔ x ∈ mp.inner := by
+  change mp.contains x ↔ _
+  rcases mp with ⟨mp, wf⟩
+  simp [contains]
+  change _ ↔ mp.contains _
+  unfold Raw.contains
+  simp
+  tauto
+
+@[simp]
+theorem mem_mk_iff {x : α} {mp : Raw α β} {wf} : x ∈ mk mp wf ↔ x ∈ mp := by
+  rw [mem_iff_mem_inner]
+
+@[simp]
+theorem mk_equiv_mk_iff {mp₁ mp₂ : Raw α β} {wf₁ wf₂} :
+mk mp₁ wf₁ ~m mk mp₂ wf₂ ↔ mp₁.Equiv mp₂ :=
+  ⟨λ ⟨h⟩ => h, λ h => ⟨h⟩⟩
+
+@[simp]
+theorem insert_mk {mp : Raw α β} {wf i x} :
+(mk mp wf).insert i x = mk (mp.insert i x) wf.insert := by
+  simp [insert, Raw.insert]; grind
+
+@[simp]
+theorem toList_mk {mp : Raw α β} {wf} : (mk mp wf).toList = mp.toList := by
+  rfl
+
+namespace Raw
+
+variable {γ : Type*} {mp : Raw α β} {wf : mp.WF}
+  {f : γ → (i : α) → (x : β i) → mp.get? i = some x → γ} {z : γ}
+
+theorem ind {p : (mp : Raw α β) → mp.WF → Prop}
+(h₁ : ∀ (mp : Raw α β) wf, mp.isEmpty → p mp wf)
+(h₂ : ∀ (mp₁ mp₂ : Raw α β) wf₁ wf₂ i x, i ∉ mp₁ →
+mp₁.insert i x ~m mp₂ → p mp₁ wf₁ → p mp₂ wf₂) mp wf : p mp wf := by
+  generalize h₃ : (⟨mp, wf⟩ : DHashMap _ _) = mp'
+  have h₄ := mp'.ind (p := λ mp' => p mp'.1 mp'.2)
+  specialize h₄ _ _
+  · clear h₄
+    rintro ⟨mp₁, wf₁⟩
+    simp [DHashMap.isEmpty]
+    apply h₁
+  · clear h₄
+    rintro ⟨mp₁, wf₁⟩ ⟨mp₂, wf₂⟩ i x h₄ h₅ h₆
+    unfold DHashMap.instMembership at h₄
+    simp at h₄ h₅ h₆ ⊢
+    grind
+  subst h₃
+  exact h₄
+
+theorem toList_eq_nil_iff_isEmpty (wf : mp.WF) : mp.toList = [] ↔ mp.isEmpty := by
+  have h₁ := (DHashMap.mk mp wf).toList_eq_nil_iff_isEmpty
+  rwa [DHashMap.toList_mk] at h₁
+
+theorem toList_eq_nil_of_isEmpty (wf : mp.WF) (h₁ : mp.isEmpty) : mp.toList = [] := by
+  rwa [toList_eq_nil_iff_isEmpty wf]
+
+theorem le_foldWith_max [hh : LinearOrder γ] {i : α} {x : β i} {z : γ}
+{f : (i : α) → (x : β i) → mp.get? i = some x → γ} (wf : mp.WF) (h : mp.get? i = some x) :
+f i x h ≤ mp.foldWith wf (z := z) λ acc i x h => max acc (f i x h) := by
+  classical
+  generalize h₁ : mp.toList = xs
+  rw [foldWith_eq_foldl_toList]
+  have h₂ := mem_toList_iff_get?_eq_some wf |>.mpr h
+  simp only [h₁] at h₂ ⊢
+  exact @List.le_foldl_dite_max ((x : α) × β x) γ xs _ _
+    (λ x h => f x.1 x.2 (by grind)) ⟨i, x⟩ z z h₂
+
+end Raw

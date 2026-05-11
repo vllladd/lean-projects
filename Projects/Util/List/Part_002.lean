@@ -228,3 +228,54 @@ theorem sum_lt_of_prefix {xs ys: List ℕ} (h₁ : xs <+: ys) (h₂ : xs.length 
   simp [Nat.pos_iff_ne_zero]
   rw [sum_eq_zero_iff]
   grind
+
+theorem le_max_of_le_mem [ha : LinearOrder α] {x}
+(h : ∃ y ∈ xs, x ≤ y) : x ≤ xs.max (by grind) := by
+  obtain ⟨y, h₁, h₂⟩ := h; exact h₂.trans # le_max_of_mem h₁
+
+theorem foldl_eq_foldlWith' [ha : DecidableEq α] {f : β → α → β} {z} :
+xs.foldl f z = xs.foldlWith (λ acc x _ => f acc x) z := by
+  rw [foldlWith_eq_foldl]
+  simp
+  rw [←foldl_attach]
+  nth_rw 2 [←foldl_attach]
+  congr
+  grind
+
+theorem foldl_eq_foldlWith : foldl = λ (f : β → α → β) z (xs : List α) =>
+xs.foldlWith (z := z) (λ acc x _ => f acc x) := by
+  classical funext; rw [foldl_eq_foldlWith']
+
+theorem foldl_dite_mem_apply' [ha : DecidableEq α]
+{f : (x : α) → x ∈ xs → β} {g : γ → α → β → γ} {z} (z' : β) :
+xs.foldl (λ acc x => if h : x ∈ xs then g acc x (f x h) else z) =
+xs.foldl (λ acc x => g acc x # if h : x ∈ xs then f x h else z') := by
+  simp_rw [foldl_eq_foldlWith]; grind
+
+theorem foldl_dite_mem_apply [ha : DecidableEq α]
+{f : (x : α) → x ∈ xs → β} {g : γ → α → β → γ} {z z₁} (z' : β) :
+xs.foldl (λ acc x => if h : x ∈ xs then g acc x (f x h) else z) z₁ =
+xs.foldl (λ acc x => g acc x # if h : x ∈ xs then f x h else z') z₁ :=
+  congrArg (· z₁) # foldl_dite_mem_apply' z'
+
+theorem mapWith_eq_map_attach {f : (x : α) → x ∈ xs → β} :
+xs.mapWith f = xs.attach.map λ x => f x.1 x.2 := by
+  induction xs <;> simp; grind
+
+theorem le_foldl_dite_max [ha : DecidableEq α] [hb : LinearOrder β]
+{f : (x : α) → x ∈ xs → β} {x z z₁} (h : x ∈ xs) : f x h ≤ xs.foldl (init := z₁)
+λ acc x => if h : x ∈ xs then max acc (f x h) else z := by
+  rw [@xs.foldl_dite_mem_apply α β β _  f (λ acc _ x => max acc x) z z₁ z]
+  rw [foldl_eq_foldlWith]
+  dsimp
+  rw [foldlWith_max_eq_max?_mapWith]
+  rw [mapWith_eq_map_attach]
+  rw [max?_eq_some_max]
+  rotate_left
+  · simp
+    grind
+  simp
+  right
+  apply le_max_of_mem
+  simp
+  grind

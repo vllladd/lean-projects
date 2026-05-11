@@ -90,9 +90,9 @@ theorem depthAux_le {t : Raw₀ α β} [wf : t.WF] {k t'}
   generalize hb : mp.2.toList = bs
   change _ < (0 :: bs.map (λ x => (0 :: x.toList.map
     (λ x => x.snd.depthAux + 1)).max?.getD 0)).max?.getD 0
-  simp
+  simp only [List.max?_cons, Nat.fn_max_zero, Option.getD_some]
   generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) =>
-    (x.toList.map (λ x => x.snd.depthAux + 1)).max?.elim 0 (max 0)) = f
+    (x.toList.map (λ x => x.snd.depthAux + 1)).max?.elim 0 id) = f
   obtain ⟨b, h₁, h₂⟩ := wf.mp.mem_bucket_of_get?_eq_some h
   replace h₁ : b ∈ bs; simpa [←hb]
   generalize hb' : b :: bs.erase b = bs'

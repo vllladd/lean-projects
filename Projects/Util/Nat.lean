@@ -435,3 +435,9 @@ theorem mul_div_mul_succ {a b c : ℕ} : a * (b + 1) / ((b + 1) * c) = a / c :=
 
 theorem one_le_of_odd {n : ℕ} (h : Odd n) : 1 ≤ n := by
   by_contra h₁; simp at h₁; simp [h₁] at h
+
+attribute [simp] lt_one_add_iff
+
+@[simp]
+theorem fn_max_zero : max 0 = id := by
+  funext; simp

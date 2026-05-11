@@ -1,5 +1,49 @@
 import Projects.Util.Data.Set
 
+namespace Nat
+
+-- #check 0 #exit
+
+end Nat
+
+namespace Option
+
+variable {α β γ : Type*}
+
+-- #check 0 #exit
+
+end Option
+
+namespace List
+
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
+
+-- #check 0 #exit
+
+end List
+
+namespace Std.DHashMap
+
+variable {α : Type*} {β : α → Type*} {γ : Type*}
+variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
+variable {mp : DHashMap α β}
+
+-- #check 0 #exit
+
+end Std.DHashMap
+
+namespace Std.DHashMap.Raw
+
+variable {α : Type*} {β : α → Type*} {γ : Type*}
+variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
+variable {mp : Raw α β} {wf : mp.WF}
+  {f : γ → (i : α) → (x : β i) → mp.get? i = some x → γ} {z : γ}
+
+-- #check 0 #exit
+
+end Std.DHashMap.Raw
+
 namespace LeafTrie
 
 open Std
@@ -26,7 +70,12 @@ def isNode (t : Raw₀ α β) : Bool := match t with
 @[class]
 inductive WF : Raw₀ α β → Prop where
 | leaf {x} : WF # .leaf x
-| node {t : _} : DHashMap.Raw.WF t → (∀ k t₁, t.get? k = some t₁ → WF t₁) → WF (.node t)
+| node {mp : _} : DHashMap.Raw.WF mp → (∀ k t₁, mp.get? k = some t₁ → WF t₁) → WF (.node mp)
+
+attribute [simp, instance] WF.leaf
+
+variable {val : β}
+variable {mp₁ : DHashMap.Raw α λ _ => Raw₀ α β}
 
 theorem rec_3_eq {xs : List (DHashMap.Internal.AssocList α (λ _ => Raw₀ α β))}
 {M₁ M₂ M₃ M₄ M₅ H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈} :
@@ -58,115 +107,128 @@ def depthAux (t : Raw₀ α β) : ℕ :=
 theorem depthAux_leaf {x} : (leaf x : Raw₀ α β).depthAux = 0 := by
   simp [depthAux]
 
--- theorem depthAux_lt_of_mem {mp i t} (h : mp.get? i = some t) :
--- t.depthAux < (node mp : Raw₀ α β).depthAux := by
---   classical
---   nth_rw 2 [depthAux]
---   simp [rec_3_eq, rec_4_eq, Order.lt_add_one_iff]
---   generalize hb : mp.2.toList = bs
---   simp only [List.rec_eq_foldr, List.foldr_max_eq_max?_map]
---   
---   generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) => _) = f
---   change (λ x => (x.toList.map (λ x => x.snd.depthAux)).max?.elim 0 (max 0)) = f at hf
---   
---   simp [DHashMap.Raw.get?] at h
---   obtain ⟨h₁, h₂⟩ := h
---   
---   -- add this as a new theorem
---   rw [show max 0 = id by funext; simp]
---   
---   -- we need relation between Option.elim and Option.getD
---   
---   unfold Option.elim
---   
---   ·
---     simp
---   
---   -- replace h₁ : b ∈ bs; simpa [←hb]
---   -- generalize hb' : b :: bs.erase b = bs'
---   -- have h₃ : bs.Perm bs'; simpa [←hb']
---   -- rw [List.max?_eq_max?_of_perm (ys := bs'.map f) # h₃.map f]
---   -- simp [←hb']
---   -- suffices h₄ : t'.depthAux < f b
---   -- · cases ((bs.erase b).map f).max? <;> simp [h₄]
---   -- subst hf
---   -- dsimp
---   -- clear! val h wf bs bs'
---   -- generalize hx : b.toList.map (λ x => x.2.depthAux + 1) = xs
---   -- replace h₂ : (t'.depthAux + 1) ∈ xs
---   -- · rw [←hx, List.mem_map]; use ⟨k, t'⟩
---   -- clear k
---   -- cases h₃ : xs.max?
---   -- · simp at h₃; simp [h₃] at h₂
---   -- simp; linarith [List.le_max? h₂ h₃]
+theorem depthAux_lt_of_mem {mp i t} (h : mp.get? i = some t) :
+t.depthAux < (node mp : Raw₀ α β).depthAux := by
+  nth_rw 2 [depthAux]
+  simp [rec_3_eq, rec_4_eq, Order.lt_add_one_iff]
+  generalize hb : mp.2.toList = bs
+  simp only [List.rec_eq_foldr, List.foldr_max_eq_max?_map]
+  generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) => _) = f
+  change (λ x => (x.toList.map (λ x => x.snd.depthAux)).max?.elim 0 (max 0)) = f at hf
+  simp at hf ⊢
+  rw [List.max?_eq_some_max]
+  rotate_left
+  · simp
+    rintro rfl
+    simp at hb
+    simp [DHashMap.Raw.get?] at h
+    obtain ⟨h₁, h₂⟩ := h
+    simp [hb] at h₁
+  simp
+  apply List.le_max_of_le_mem
+  subst hf hb
+  simp
+  simp [DHashMap.Raw.get?] at h
+  choose h₁ h₂ using h
+  simp [DHashMap.Internal.Raw₀.get?] at h₂
+  generalize hj : (DHashMap.Internal.mkIdx _ h₁ (hash i) : USize).toNat = j
+  simp [hj] at h₂
+  generalize_proofs hh₁ hh₂ at h₂
+  generalize hb : mp.buckets[j] = b at h₂
+  rw [Internal.List.getValueCast?_eq_some_iff] at h₂
+  choose h₂ h₃ using h₂
+  have h₄ := Internal.List.getValueCast_mem h₂
+  rw [h₃] at h₄
+  use b
+  simp [←hb]
+  rw [List.max?_eq_some_max]
+  rotate_left
+  · simp
+    grind
+  simp
+  apply List.le_max_of_mem
+  simp
+  grind
+
+def get? (t : Raw₀ α β) (k : α) : Option (Raw₀ α β) :=
+  match t with
+  | leaf _ => none
+  | node mp => mp.get? k
+
+theorem WF.mp [H : (Raw₀.node mp₁).WF] : mp₁.WF := by
+  cases H; tauto
+
+theorem WF.mp_get? {k t} [H : (Raw₀.node mp₁).WF] (h : mp₁.get? k = some t) : t.WF := by
+  cases H; tauto
+
+theorem WF.get? {k t} [H : (Raw₀.node mp₁).WF] (h : (Raw₀.node mp₁).get? k = some t) : t.WF := by
+  cases H; tauto
+
+def recAux {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) (wf : t.WF) (motive₁ : ∀ val, γ (leaf val))
+(motive₂ : ∀ mp, mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (node mp)) : γ t :=
+  match t with
+  | leaf val => motive₁ val
+  | node mp => motive₂ mp wf.mp # λ i t h => t.recAux (wf.mp_get? h) motive₁ motive₂
+termination_by t.depthAux
+decreasing_by exact depthAux_lt_of_mem h
+
+def rec' {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) [wf : t.WF] (motive₁ : ∀ val, γ (leaf val))
+(motive₂ : ∀ mp, mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (node mp)) : γ t :=
+  t.recAux wf motive₁ motive₂
+
+def depth (t : Raw₀ α β) [wf : t.WF] : ℕ :=
+  t.rec' (γ := λ _ => ℕ) (λ _ => 0) # λ mp wf f =>
+  1 + mp.foldWith wf (z := 0) λ acc k t h => max acc # f k t h
+
+def empty : Raw₀ α β := node ∅
+
+instance : EmptyCollection (Raw₀ α β) := ⟨empty⟩
+theorem empty_def : (∅ : Raw₀ α β) = node ∅ := rfl
+
+@[instance]
+theorem WF.empty : (∅ : Raw₀ α β).WF := by
+  constructor <;> simp
+
+@[simp]
+theorem rec'_leaf {γ : Raw₀ α β → Sort*} {motive₁ : ∀ val, γ (leaf val)} {motive₂} :
+(leaf val).rec' motive₁ motive₂ = motive₁ val := by
+  simp [rec', recAux]
+
+@[simp]
+theorem rec'_node {γ : Raw₀ α β → Sort*} [wf : (node mp₁).WF] {motive₁}
+{motive₂ : ∀ mp, mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (node mp)} :
+(node mp₁).rec' motive₁ motive₂ = motive₂ mp₁ wf.mp λ _ t h =>
+t.recAux (wf.mp_get? h) motive₁ motive₂ := by
+  simp [rec', recAux]
+
+@[simp]
+theorem depth_leaf {val} : (leaf val : Raw₀ α β).depth = 0 := by
+  simp [depth]
+
+theorem WF.of_mp_get? {k} [wf : (Raw₀.node mp₁).WF] (h : mp₁.get? k = some t) : t.WF := by
+  cases wf; tauto
+
+@[simp]
+theorem depth_node {mp} [wf : (node mp : Raw₀ α β).WF] :
+(node mp).depth = 1 + mp.foldWith wf.mp (z := 0)
+λ acc _ t h => max acc # t.depth (wf := wf.of_mp_get? h) := by
+  simp [depth]; congr
+
+@[simp]
+theorem depth_empty : (∅ : Raw₀ α β).depth = 1 := by
+  simp [empty_def]
+
+theorem depth_lt_of_mp_get? {k t} [wf : (node mp₁).WF] (h : mp₁.get? k = some t) :
+t.depth (wf := wf.of_mp_get? h) < (node mp₁).depth := by
+  classical
+  simp
+  have h₁ := wf.mp
+  have h₂ := mp₁.mem_toList_iff_get?_eq_some (h := h₁) |>.mpr h
+  have h₃ := @mp₁.le_foldWith_max
+  exact @h₃ ha₁ ha₂ ℕ _ k t 0 (λ i t h => t.depth (wf := wf.of_mp_get? h)) h₁ h
 
 -- #check 0 #exit
 
--- theorem depthAux_le_mk {val : Option β} {mp : DHashMap.Raw α (λ _ => Raw₀ α β)}
--- (wf : (mk val mp).WF) {k : α} {t : Raw₀ α β} (h : mp.get? k = some t) :
--- t.depthAux < (mk val mp).depthAux := depthAux_le h
--- 
--- set_option linter.unusedVariables false in
--- def recAux {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) (wf : t.WF)
--- (motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
--- mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : γ t :=
---   match t with
---   | .mk val mp => motive val mp wf.mp #
---     λ i t h => t.recAux (wf.get1? h) motive
--- termination_by t.depthAux
--- decreasing_by exact depthAux_le h
--- 
--- def rec' {γ : Raw₀ α β → Sort*} (t : Raw₀ α β) [wf : t.WF]
--- (motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
--- mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)) : γ t :=
---   t.recAux wf motive
--- 
--- def depth (t : Raw₀ α β) [wf : t.WF] : ℕ :=
---   t.rec' # λ _ mp h₁ f => (mp.foldWith h₁ · 0) # λ acc i x h₂ =>
---   max acc # 1 + f i x h₂
--- 
--- def empty : Raw₀ α β := ⟨none, ∅⟩
--- 
--- instance : EmptyCollection (Raw₀ α β) := ⟨empty⟩
--- theorem empty_def : (∅ : Raw₀ α β) = ⟨none, ∅⟩ := rfl
--- 
--- instance : (∅ : Raw₀ α β).WF := by
---   constructor <;> simp
--- 
--- @[simp]
--- theorem rec'_mk {γ : Raw₀ α β → Sort*} {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF]
--- {motive : ∀ (val : Option β) (mp : DHashMap.Raw α (λ _ => Raw₀ α β)),
--- mp.WF → (∀ i t, mp.get? i = some t → γ t) → γ (mk val mp)} :
--- (⟨val, mp⟩ : Raw₀ α β).rec' motive =
--- motive val mp wf.mp (λ _ t h => t.rec' (wf := wf.get1? h) motive) := by
---   simp_rw [rec', recAux]
--- 
--- @[simp]
--- theorem depth_mk {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF] :
--- (⟨val, mp⟩ : Raw₀ α β).depth = mp.foldWith wf.mp
--- (λ acc _ (t' : Raw₀ α β) h => max acc # 1 + t'.depth (wf := wf.get1? h)) 0 := by
---   unfold depth; simp
--- 
--- @[simp]
--- theorem depth_empty : (∅ : Raw₀ α β).depth = 0 := by
---   simp [empty_def]
--- 
--- theorem depth_lt [wf : t.WF] {k t'} (h : t.mp.get? k = some t') :
--- t'.depth (wf := wf.get1? h) < t.depth := by
---   classical
---   rcases t with ⟨val, mp⟩
---   simp at h ⊢
---   have h₁ := DHashMap.Raw.mem_toList_iff_get?_eq_some wf.mp |>.mpr h
---   dsimp at h₁
---   have h₂ := wf.get1? h
---   rw [DHashMap.Raw.foldWith_eq_foldlWith_toList, List.foldlWith_max_eq_max?_mapWith]
---   apply Nat.lt_of_succ_le
---   change (⟨k, t'⟩ : Σ _, _).snd.depth + 1 ≤ _
---   apply List.le_elim_max_max?_of_mem
---   simp
---   use k, t', h₁
---   rw [add_comm]
--- 
 -- theorem WF.of_mem_toList {p} [wf : t.WF] (h : p ∈ t.mp.toList) : p.2.WF := by
 --   rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wf.mp] at h; exact wf.get1? h
 -- 
