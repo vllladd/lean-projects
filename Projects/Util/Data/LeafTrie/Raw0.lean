@@ -205,10 +205,18 @@ t.recAux (wf.mp_get? h) motive₁ motive₂ := by
 theorem depth_leaf {val} : (leaf val : Raw₀ α β).depth = 0 := by
   simp [depth]
 
+@[simp] theorem get?_leaf {x k} : (leaf x : Raw₀ α β).get? k = none := rfl
+@[simp] theorem get?_node {mp k} : (node mp : Raw₀ α β).get? k = mp.get? k := rfl
+
+theorem get?_eq_some_iff {k} : t.get? k = some t₁ ↔ ∃ mp, node mp = t ∧ mp.get? k = t₁ := by
+  cases t <;> simp
+
 theorem WF.of_mp_get? {k} [wf : (Raw₀.node mp₁).WF] (h : mp₁.get? k = some t) : t.WF := by
   cases wf; tauto
 
-@[simp]
+theorem WF.of_get? {k} [wf : t.WF] (h : t.get? k = some t₁) : t₁.WF := by
+  cases wf <;> simp_all; tauto
+
 theorem depth_node {mp} [wf : (node mp : Raw₀ α β).WF] :
 (node mp).depth = 1 + mp.foldWith wf.mp (z := 0)
 λ acc _ t h => max acc # t.depth (wf := wf.of_mp_get? h) := by
@@ -216,48 +224,36 @@ theorem depth_node {mp} [wf : (node mp : Raw₀ α β).WF] :
 
 @[simp]
 theorem depth_empty : (∅ : Raw₀ α β).depth = 1 := by
-  simp [empty_def]
+  simp [empty_def, depth_node]
 
-theorem depth_lt_of_mp_get? {k t} [wf : (node mp₁).WF] (h : mp₁.get? k = some t) :
+theorem depth_lt_of_mp_get? {k} [wf : (node mp₁).WF] (h : mp₁.get? k = some t) :
 t.depth (wf := wf.of_mp_get? h) < (node mp₁).depth := by
-  classical
-  simp
+  simp [depth_node]
   have h₁ := wf.mp
   have h₂ := mp₁.mem_toList_iff_get?_eq_some (h := h₁) |>.mpr h
   have h₃ := @mp₁.le_foldWith_max
   exact @h₃ ha₁ ha₂ ℕ _ k t 0 (λ i t h => t.depth (wf := wf.of_mp_get? h)) h₁ h
 
+theorem depth_lt_of_get? {k} [wf : t.WF] (h : t.get? k = some t₁) :
+t₁.depth (wf := wf.of_get? h) < t.depth := by
+  obtain ⟨mp, rfl, h₁⟩ := get?_eq_some_iff.mp h
+  exact depth_lt_of_mp_get? h
+
+theorem WF.of_mem_toList {mp p} [wf : (.node mp : Raw₀ α β).WF] (h : p ∈ mp.toList) : p.2.WF := by
+  rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wf.mp] at h; exact wf.get? h
+
+theorem wf_iff : t.WF ↔ (∃ x, leaf x = t) ∨
+(∃ mp, node mp = t ∧ mp.WF ∧ ∀ k t₁, mp.get? k = some t₁ → t₁.WF) := by
+  constructor
+  · rintro (h | h) <;> tauto
+  · rintro (⟨_, rfl, _⟩ | ⟨mp, rfl, h₁, h₂⟩) <;> constructor <;> assumption
+
+theorem wf_node_iff {mp} : (node mp : Raw₀ α β).WF ↔
+mp.WF ∧ ∀ k t₁, mp.get? k = some t₁ → t₁.WF := by
+  rw [wf_iff]; simp
+
 -- #check 0 #exit
 
--- theorem WF.of_mem_toList {p} [wf : t.WF] (h : p ∈ t.mp.toList) : p.2.WF := by
---   rw [DHashMap.Raw.mem_toList_iff_get?_eq_some wf.mp] at h; exact wf.get1? h
--- 
--- theorem wf_iff : t.WF ↔ t.mp.WF ∧ ∀ k t₁, t.mp.get? k = some t₁ → t₁.WF ∧ ¬t₁.isEmpty := by
---   rcases t with ⟨val, mp⟩; constructor
---   · rintro ⟨h₁, h₂, h₃⟩; tauto
---   · rintro ⟨h₁, h₂⟩; use h₁ <;> intro k t₁ h₃ <;> specialize h₂ k _ _ <;> tauto
--- 
--- def setVal (t : Raw₀ α β) (val : Option β) : Raw₀ α β :=
---   ⟨val, t.mp⟩
--- 
--- @[simp]
--- theorem setVal_mk {val val₁ mp} : (⟨val, mp⟩ : Raw₀ α β).setVal val₁ = ⟨val₁, mp⟩ := rfl
--- 
--- @[simp]
--- instance {x} [wf : t.WF] : WF # t.setVal x := by
---   rcases t with ⟨val, mp⟩
---   rcases wf with ⟨h₁, h₂, h₃⟩
---   dsimp; use h₁
--- 
--- @[simp] theorem val_setVal {val} : (t.setVal val).val = val := rfl
--- @[simp] theorem mp_setVal {val} : (t.setVal val).mp = t.mp := rfl
--- 
--- def erase1 (t : Raw₀ α β) (i : α) : Raw₀ α β :=
---   ⟨t.val, t.mp.erase i⟩
--- 
--- @[simp]
--- theorem erase1_mk {val mp i} : (⟨val, mp⟩ : Raw₀ α β).erase1 i = ⟨val, mp.erase i⟩ := rfl
--- 
 -- @[simp] theorem val_erase1 {i} : (t.erase1 i).val = t.val := rfl
 -- @[simp] theorem mp_erase1 {i} : (t.erase1 i).mp = t.mp.erase i := rfl
 -- 
