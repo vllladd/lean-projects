@@ -1,5 +1,19 @@
 import Projects.Util.Data.Set
 
+section Logic
+
+variable {α β γ : Type*}
+
+theorem dite_true_eq! : @dite α True = λ _ f _ => f trivial := by
+  funext; simp
+
+theorem dite_false_eq! : @dite α False = λ _ _ g => g not_false := by
+  funext; simp
+
+-- #check 0 #exit
+
+end Logic
+
 namespace Nat
 
 -- #check 0 #exit
@@ -21,6 +35,17 @@ variable {xs ys zs : List α}
 
 theorem flatMap_eq_flatten_map {f : α → List β} : xs.flatMap f = (xs.map f).flatten := by
   exact flatMap_def
+
+theorem foldr_fn_append_eq_flatMap {f : α → List β} {zs} :
+xs.foldr (λ x acc => f x ++ acc) zs = xs.flatMap f ++ zs := by
+  cases xs <;> simp; rfl
+
+theorem map_eq_map_attach {f : α → β} : xs.map f = xs.attach.map (λ x => f x.1) := by
+  simp
+
+@[simp]
+theorem getElem?_singleton_eq_some_iff {x y : α} {i} : [x][i]? = some y ↔ i = 0 ∧ x = y := by
+  grind
 
 -- #check 0 #exit
 
@@ -80,14 +105,109 @@ theorem assocList_foldrM_Id_eq_foldr_toList
 bs.foldrM (m := Id) f z = bs.toList.foldr (λ x => f x.1 x.2) z :=
   assocList_foldr_eq_foldr_toList
 
--- omit hh₁ hh₂ in open Classical in
--- theorem assocList_foldrM_eq! : @Internal.AssocList.foldrM =
--- λ (α : Type*) (β : α → Type*) (m : Type* → Type*) [Monad m]
--- (f : (x : α) → β x → γ → m γ) (z : γ) (bs : AssocList α β) =>
--- if m = Id then bs.toList.foldr (λ x => f x.1 x.2) z else
--- bs.foldrM
--- := by
---   sorry
+omit hh₁ hh₂ in open Classical in
+theorem assocList_foldrM_eq!.{u, v, w} : @Internal.AssocList.foldrM.{w, v, u, w} =
+λ (α : Type u) (β : α → Type v) (γ : Type w) (m : Type w → Type w) [H : Monad m]
+(f : (x : α) → β x → γ → m γ) (z : γ) (bs : Internal.AssocList α β) =>
+if h : m = Id ∧ H ≍ Id.instMonad then by
+  rcases h with ⟨rfl, h⟩
+  exact bs.toList.foldr (λ x => f x.1 x.2) z
+else bs.foldrM f z := by
+  funext α β γ m H f z bs
+  simp only [right_eq_dite_iff, forall_and_index]
+  rintro rfl
+  revert f
+  simp only [Id]
+  rintro f rfl
+  simp [-Id.instMonad]
+  generalize_proofs H
+  cases H
+  rfl
+
+omit hh₁ hh₂ in
+theorem toList_eq_flatMap_buckets : mp.toList = mp.buckets.toList.flatMap (·.toList) := by
+  rw [toList, Internal.foldRev, Internal.foldRevM, ←Array.foldrM_toList]
+  generalize mp.buckets.toList = xs; clear! mp
+  simp only [Id.run, pure, assocList_foldrM_Id_eq_foldr_toList, Sigma.eta,
+    List.foldr_cons_eq_append']
+  rw [List.foldrM_eq_foldr]; unfold Id Id.instMonad
+  simp only [pure, bind, List.foldr_append_eq_append, List.append_nil]; rfl
+
+omit hh₂ in
+theorem of_getCast?_eq_some {xs : Internal.AssocList α β} {k x}
+(h : xs.getCast? k = some x) : ⟨k, x⟩ ∈ xs.toList := by
+  induction xs generalizing k x <;> simp at h ⊢
+  nm r y xs ih
+  rw [Internal.List.getValueCast?_cons] at h
+  simp at h
+  split_ifs at h with h₁
+  · subst h₁
+    simp at h
+    subst h
+    simp
+  right
+  simp_rw [Internal.AssocList.getCast?_eq] at ih
+  tauto
+
+theorem distinct_keys_of_mem_buckets {xs} (wf : mp.WF) (h : xs ∈ mp.buckets) :
+∀ k x y, ⟨k, x⟩ ∈ xs.toList → ⟨k, y⟩ ∈ xs.toList → x = y := by
+  intro k x y h₁ h₂
+  generalize h₃ : DHashMap.mk mp wf = mp₁
+  have h₄ : ∀ ⦃z⦄, z ∈ xs.toList → z ∈ mp₁.toList
+  · intro z hz
+    rw [DHashMap.toList, toList_eq_flatMap_buckets]
+    simp
+    grind
+  replace h₁ := h₄ h₁
+  replace h₂ := h₄ h₂
+  rw [DHashMap.mem_toList_iff_get?_eq_some] at h₁ h₂
+  grind
+
+theorem distinct_keys_of_mem_toList_buckets {xs} (wf : mp.WF) (h : xs ∈ mp.buckets.toList) :
+∀ k x y, ⟨k, x⟩ ∈ xs.toList → ⟨k, y⟩ ∈ xs.toList → x = y := by
+  simp at h; exact distinct_keys_of_mem_buckets wf h
+
+omit hh₂ in
+theorem getCast?_eq_some_iff {xs : Internal.AssocList α β} {k x}
+(h : ∀ k x y, ⟨k, x⟩ ∈ xs.toList → ⟨k, y⟩ ∈ xs.toList → x = y) :
+xs.getCast? k = some x ↔ ⟨k, x⟩ ∈ xs.toList := by
+  constructor; use of_getCast?_eq_some
+  rw [Internal.AssocList.getCast?_eq]
+  intro h₁
+  induction xs generalizing k x <;> simp at h₁
+  nm r y xs ih
+  rcases h₁ with ⟨rfl, h₁⟩ | h₁
+  · simp at h₁
+    simp [h₁]
+  simp
+  rw [Internal.List.getValueCast?_cons]
+  simp
+  split_ifs with h₂
+  · subst h₂
+    simp
+    tauto
+  apply ih _ h₁
+  tauto
+
+theorem getCast?_eq_some_iff_of_mem_buckets {xs k x} (wf : mp.WF)
+(h : xs ∈ mp.buckets) : xs.getCast? k = some x ↔ ⟨k, x⟩ ∈ xs.toList :=
+  getCast?_eq_some_iff # distinct_keys_of_mem_buckets wf h
+
+theorem get?_eq_some_iff_mem_toList {k x} (wf : mp.WF) :
+mp.get? k = some x ↔ ⟨k, x⟩ ∈ mp.toList := by
+  generalize h₁ : DHashMap.mk mp wf = mp₁
+  convert_to mp₁.get? k = some x ↔ ⟨k, x⟩ ∈ mp₁.toList
+  · subst h₁
+    rw [get?, DHashMap.get?]
+    grind
+  · subst h₁
+    rfl
+  simp
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_toList_eq_nil_iff {xs : Internal.AssocList α β} :
+xs.toList = [] ↔ xs = .nil := by
+  unfold Internal.AssocList.toList; split <;> simp
 
 -- #check 0 #exit
 
@@ -192,8 +312,7 @@ t.depthAux < (node mp : Raw₀ α β).depthAux := by
   simp [←hb]
   rw [List.max?_eq_some_max]
   rotate_left
-  · simp
-    grind
+  · simp only [ne_eq, List.map_eq_nil_iff]; grind
   simp
   apply List.le_max_of_mem
   simp
@@ -345,3 +464,75 @@ mp.WF ∧ ∀ k t₁, mp.get? k = some t₁ → t₁.WF := by
 --   rw! [DHashMap.Raw.toList, DHashMap.Raw.Internal.foldRev,
 --     DHashMap.Raw.Internal.foldRevM]
 --   simp [pure, Id.run]
+--   
+--   trans
+--     ((mp.buckets.foldr (λ x1 x2 => DHashMap.Internal.AssocList.foldrM (m := Id)
+--     (λ a b d => ⟨a, b⟩ :: (d : List ((_ : α) × Raw₀ α β))) x2 x1) []).mapWith
+--           λ x h =>
+--           haveI : x.2.WF := (
+--             by
+--               simp only [DHashMap.Raw.assocList_foldrM_Id_eq_foldr_toList, Sigma.eta,
+--                 List.foldr_cons_eq_append'] at h
+--               rw [←Array.foldr_toList, hb] at h
+--               dsimp [Id] at h
+--               rw [List.foldr_fn_append_eq_flatMap] at h
+--               simp at h
+--               obtain ⟨xs, h₁, h₂⟩ := h
+--               rcases x with ⟨x, t₁⟩
+--               dsimp
+--               apply wf₃ x t₁
+--               rw [DHashMap.Raw.get?_eq_some_iff_mem_toList wf₂]
+--               rw [DHashMap.Raw.toList_eq_flatMap_buckets]
+--               simp; grind
+--           ); x.2.depth).max?.elim
+--     0 id
+-- 
+-- -- #check 0 #exit
+--   
+--   on_goal 2 => congr
+--   rw [List.mapWith_eq_map]
+--   simp
+--   split_ifs with h₁
+--   ·
+--     simp at h₁ ⊢
+--     unfold Id at h₁
+--     rw [←Array.foldr_toList] at h₁
+--     rw [List.foldr_fn_append_eq_flatMap] at h₁
+--     simp at h₁
+--     clear ih; nm x; clear x
+--     clear wf₂
+--     have h₂ : bs.map f = bs.map (λ _ => 0)
+--     ·
+--       rw [List.map_eq_map_iff]
+--       subst hf
+--       simp
+--       intro b₁ hb₁
+--       specialize h₁ b₁ (by grind)
+--       simp [h₁]
+--     rw [h₂]
+--     clear! f
+--     simp
+--     rw [List.max?_replicate]
+--     grind
+--   
+--   unfold Id Id.instMonad
+--   iterate 2 rw! [←Array.foldr_toList]
+--   iterate 2 rw! [List.foldr_fn_append_eq_flatMap]
+--   simp
+--   rw! [←DHashMap.Raw.toList_eq_flatMap_buckets]
+--   generalize hb₁ : Array.mk bs = bs₁
+--   subst hb
+--   rename' bs₁ => bs
+--   simp at hb₁
+--   simp [hb₁]
+--   clear h₁
+--   nm x; clear x
+--   
+--   rw! [DHashMap.Raw.toList_eq_flatMap_buckets, hb₁]
+--   rw! [List.map_flatMap, List.map_eq_flatMap, List.flatMap, List.flatMap]
+--   nth_rw 1 [List.map_eq_map_attach]
+--   nth_rw 2 [List.map_eq_map_attach]
+--   
+--   congr 1
+--   
+--   sorry
