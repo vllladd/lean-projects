@@ -19,6 +19,9 @@ namespace List
 variable {α β γ : Type*}
 variable {xs ys zs : List α}
 
+theorem flatMap_eq_flatten_map {f : α → List β} : xs.flatMap f = (xs.map f).flatten := by
+  exact flatMap_def
+
 -- #check 0 #exit
 
 end List
@@ -39,6 +42,52 @@ variable {α : Type*} {β : α → Type*} {γ : Type*}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
 variable {mp : Raw α β} {wf : mp.WF}
   {f : γ → (i : α) → (x : β i) → mp.get? i = some x → γ} {z : γ}
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldr_nil {f : (x : α) → β x → γ → γ} {z} :
+Internal.AssocList.nil.foldr f z = z := rfl
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldr_cons {f : (x : α) → β x → γ → γ} {k x z} {bs} :
+(Internal.AssocList.cons k x bs).foldr f z =
+f k x (bs.foldr f z) := rfl
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldr_eq_foldr_toList
+{bs : Internal.AssocList α β} {f : (x : α) → β x → γ → γ} {z} :
+bs.foldr f z = bs.toList.foldr (λ x => f x.1 x.2) z := by
+  induction bs generalizing z <;> simp
+  nm k x bs ih; grind
+
+omit hh₁ hh₂ in
+theorem foldr_foldr_eq_foldr_flatMap_buckets_list {bs : List (Internal.AssocList α β)} :
+bs.foldr (λ x y => DHashMap.Internal.AssocList.foldr
+(λ a b d => Sigma.mk a b :: d) y x) [] = bs.flatMap (·.toList) := by
+  simp; rfl
+
+omit hh₁ hh₂ in
+theorem foldr_foldr_eq_foldr_flatMap_buckets_array {bs : Array (Internal.AssocList α β)} :
+bs.foldr (λ x y => DHashMap.Internal.AssocList.foldr
+(λ a b d => Sigma.mk a b :: d) y x) [] = bs.toList.flatMap (·.toList) := by
+  rcases bs with ⟨bs⟩
+  simp only [assocList_foldr_eq_foldr_toList, Sigma.eta, List.foldr_cons_eq_append',
+    List.size_toArray, List.foldr_toArray', List.foldr_append_eq_append, List.append_nil,
+    List.flatMap_eq_flatten_map]
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldrM_Id_eq_foldr_toList
+{bs : Internal.AssocList α β} {f : (x : α) → β x → γ → γ} {z} :
+bs.foldrM (m := Id) f z = bs.toList.foldr (λ x => f x.1 x.2) z :=
+  assocList_foldr_eq_foldr_toList
+
+-- omit hh₁ hh₂ in open Classical in
+-- theorem assocList_foldrM_eq! : @Internal.AssocList.foldrM =
+-- λ (α : Type*) (β : α → Type*) (m : Type* → Type*) [Monad m]
+-- (f : (x : α) → β x → γ → m γ) (z : γ) (bs : AssocList α β) =>
+-- if m = Id then bs.toList.foldr (λ x => f x.1 x.2) z else
+-- bs.foldrM
+-- := by
+--   sorry
 
 -- #check 0 #exit
 
@@ -252,72 +301,47 @@ theorem wf_node_iff {mp} : (node mp : Raw₀ α β).WF ↔
 mp.WF ∧ ∀ k t₁, mp.get? k = some t₁ → t₁.WF := by
   rw [wf_iff]; simp
 
--- #check 0 #exit
-
--- @[simp] theorem val_erase1 {i} : (t.erase1 i).val = t.val := rfl
--- @[simp] theorem mp_erase1 {i} : (t.erase1 i).mp = t.mp.erase i := rfl
--- 
--- @[simp]
--- instance {i} [wf : t.WF] : WF # t.erase1 i := by
---   rcases t with ⟨val, mp⟩
---   rw [wf_iff] at wf ⊢
---   dsimp at wf ⊢
---   rcases wf with ⟨h₁, h₂⟩
---   use h₁.erase
---   intro k t₁ h₃
---   apply h₂ k t₁
---   rw [DHashMap.Raw.get?_erase h₁] at h₃
---   simp at h₃; exact h₃.2
--- 
--- def insert1 (t : Raw₀ α β) (i : α) (t₁ : Raw₀ α β) : Raw₀ α β :=
---   if t₁.isEmpty then t.erase1 i else ⟨t.val, t.mp.insert i t₁⟩
--- 
--- theorem insert1_mk {val mp i t₁} : (⟨val, mp⟩ : Raw₀ α β).insert1 i t₁ =
--- ⟨val, if t₁.isEmpty then mp.erase i else mp.insert i t₁⟩ := by
---   unfold insert1; split_ifs <;> rfl
--- 
--- @[simp]
--- theorem val_insert1 {i t₁} : (t.insert1 i t₁).val = t.val := by
---   cases t; simp [insert1_mk]
--- 
--- theorem mp_insert1 {i} : (t.insert1 i t₁).mp =
--- if t₁.isEmpty then t.mp.erase i else t.mp.insert i t₁ := by
---   cases t; simp [insert1_mk]
--- 
--- @[simp]
--- instance {i} [wf : t.WF] [wf₁ : t₁.WF] : WF # t.insert1 i t₁ := by
---   dsimp [insert1]
---   split_ifs with h
---   · infer_instance
---   rw [wf_iff] at wf ⊢
---   rcases wf with ⟨h₁, h₂⟩
---   dsimp
---   use h₁.insert
---   intro k t₂ h₃
---   rw [DHashMap.Raw.get?_insert h₁] at h₃
---   simp at h₃
---   split_ifs at h₃ with h₄
---   · simp at h₃
---     subst h₃
---     use wf₁
---   exact h₂ _ _ h₃
--- 
--- def get1? (t : Raw₀ α β) (i : α) : Option (Raw₀ α β) :=
---   t.mp.get? i
--- 
--- theorem get1?_erase1 {i j} [wf : t.WF] :
--- (t.erase1 i).get1? j = if i = j then none else t.get1? j := by
---   simp [get1?, DHashMap.Raw.get?_erase wf.mp]
--- 
--- theorem get1?_insert1 {i j} {t₁ : Raw₀ α β} [wf : t.WF] :
--- (t.insert1 i t₁).get1? j = if i = j then
--- if t₁.isEmpty then none else some t₁ else t.get1? j := by
---   unfold insert1
---   by_cases h : t₁.isEmpty <;> simp [h]
---   · rw [get1?_erase1]
---   · simp [get1?, DHashMap.Raw.get?_insert wf.mp]
--- 
--- @[simp]
--- theorem get1?_erase1_eq_some_iff {i j} [wf : t.WF] :
--- (t.erase1 i).get1? j = some t₁ ↔ i ≠ j ∧ t.get1? j = t₁ := by
---   rw [get1?_erase1]; split_ifs with h <;> simp [h]
+-- theorem depthAux_eq_depth [wf : t.WF] : t.depthAux = t.depth := by
+--   classical
+--   suffices h : ∀ (wf : t.WF), t.depthAux = t.depth; tauto
+--   apply @t.rec' (wf := wf) (γ := λ t => ∀ (wf : t.WF), t.depthAux = t.depth) <;> clear! t
+--   ·
+--     intro x wf
+--     simp
+--   intro mp wf₁ ih wf₂
+--   unfold depthAux
+--   simp [rec_3_eq, rec_4_eq]
+--   generalize hb : mp.2.toList = bs
+--   simp only [List.rec_eq_foldr, List.foldr_max_eq_max?_map]
+--   generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) => _) = f
+--   change (λ x => (x.toList.map (λ x => x.snd.depthAux)).max?.elim 0 (max 0)) = f at hf
+--   simp at hf ⊢
+--   
+--   rw [wf_node_iff] at wf₂
+--   obtain ⟨wf₂, wf₃⟩ := wf₂
+--   
+--   -- by_cases h₁ : mp.isEmpty
+--   -- ·
+--   --   rw [←DHashMap.Raw.toList_eq_nil_iff_isEmpty wf₂] at h₁
+--   -- 
+--   -- rw [List.max?_eq_some_max]
+--   -- rotate_left
+--   -- · simp
+--   --   rintro rfl
+--   --   simp at hb
+--   --   simp [DHashMap.Raw.get?] at h
+--   --   obtain ⟨h₁, h₂⟩ := h
+--   --   simp [hb] at h₁
+--   -- simp
+--   -- apply List.le_max_of_le_mem
+--   -- subst hf hb
+--   
+--   rw [depth_node, Nat.add_comm 1]
+--   simp
+--   
+--   rw [DHashMap.Raw.foldWith_eq_foldlWith_toList, List.foldlWith_max_eq_max?_mapWith]
+--   simp
+--   
+--   rw! [DHashMap.Raw.toList, DHashMap.Raw.Internal.foldRev,
+--     DHashMap.Raw.Internal.foldRevM]
+--   simp [pure, Id.run]
