@@ -719,16 +719,15 @@ theorem foldWith_empty {wf : (∅ : Raw α β).WF}
 (∅ : Raw α β).foldWith wf f z = z := by
   classical simp [foldWith_eq_fold]
 
-theorem foldWith_eq_foldl_toList [hh₃ : ∀ i, DecidableEq (β i)] :
-mp.foldWith wf f z = mp.toList.foldl (λ acc x =>
-if h : x ∈ mp.toList then f acc x.1 x.2 #
-mem_toList_iff_get?_eq_some wf |>.mp h else z) z := by
+theorem foldWith_eq_foldl_toList [∀ i, DecidableEq (β i)] : mp.foldWith wf f z =
+mp.toList.foldl (λ acc x => if h : x ∈ mp.toList then f acc x.1 x.2 #
+mem_toList_iff_get?_eq_some wf |>.mp (by grind) else z) z := by
   simp [mem_toList_iff_get?_eq_some wf]
   exact foldWith_eq_foldl_toList'
 
-theorem foldWith_eq_foldlWith_toList [hh₃ : ∀ i, DecidableEq (β i)] :
-mp.foldWith wf f z = mp.toList.foldlWith (λ acc x h =>
-f acc x.1 x.2 # mem_toList_iff_get?_eq_some wf |>.mp h) z := by
+theorem foldWith_eq_foldlWith_toList [∀ i, DecidableEq (β i)] :
+mp.foldWith wf f z = mp.toList.foldlWith (λ acc x h => f acc x.1 x.2 #
+mem_toList_iff_get?_eq_some wf |>.mp h) z := by
   rw [List.foldlWith_eq_foldl]
   exact foldWith_eq_foldl_toList
 
@@ -1168,5 +1167,146 @@ f i x h ≤ mp.foldWith wf (z := z) λ acc i x h => max acc (f i x h) := by
   simp only [h₁] at h₂ ⊢
   exact @List.le_foldl_dite_max ((x : α) × β x) γ xs _ _
     (λ x h => f x.1 x.2 (by grind)) ⟨i, x⟩ z z h₂
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldr_nil {f : (x : α) → β x → γ → γ} {z} :
+Internal.AssocList.nil.foldr f z = z := rfl
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldr_cons {f : (x : α) → β x → γ → γ} {k x z} {bs} :
+(Internal.AssocList.cons k x bs).foldr f z =
+f k x (bs.foldr f z) := rfl
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldr_eq_foldr_toList
+{bs : Internal.AssocList α β} {f : (x : α) → β x → γ → γ} {z} :
+bs.foldr f z = bs.toList.foldr (λ x => f x.1 x.2) z := by
+  induction bs generalizing z <;> simp
+  nm k x bs ih; grind
+
+omit hh₁ hh₂ in
+theorem foldr_foldr_eq_foldr_flatMap_buckets_list {bs : List (Internal.AssocList α β)} :
+bs.foldr (λ x y => DHashMap.Internal.AssocList.foldr
+(λ a b d => Sigma.mk a b :: d) y x) [] = bs.flatMap (·.toList) := by
+  simp; rfl
+
+omit hh₁ hh₂ in
+theorem foldr_foldr_eq_foldr_flatMap_buckets_array {bs : Array (Internal.AssocList α β)} :
+bs.foldr (λ x y => DHashMap.Internal.AssocList.foldr
+(λ a b d => Sigma.mk a b :: d) y x) [] = bs.toList.flatMap (·.toList) := by
+  rcases bs with ⟨bs⟩
+  simp only [assocList_foldr_eq_foldr_toList, Sigma.eta, List.foldr_cons_eq_append',
+    List.size_toArray, List.foldr_toArray', List.foldr_append_eq_append, List.append_nil,
+    List.flatMap_eq_flatten_map]
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_foldrM_Id_eq_foldr_toList
+{bs : Internal.AssocList α β} {f : (x : α) → β x → γ → γ} {z} :
+bs.foldrM (m := Id) f z = bs.toList.foldr (λ x => f x.1 x.2) z :=
+  assocList_foldr_eq_foldr_toList
+
+omit hh₁ hh₂ in open Classical in
+theorem assocList_foldrM_eq!.{u, v, w} : @Internal.AssocList.foldrM.{w, v, u, w} =
+λ (α : Type u) (β : α → Type v) (γ : Type w) (m : Type w → Type w) [H : Monad m]
+(f : (x : α) → β x → γ → m γ) (z : γ) (bs : Internal.AssocList α β) =>
+if h : m = Id ∧ H ≍ Id.instMonad then by
+  rcases h with ⟨rfl, h⟩
+  exact bs.toList.foldr (λ x => f x.1 x.2) z
+else bs.foldrM f z := by
+  funext α β γ m H f z bs
+  simp only [right_eq_dite_iff, forall_and_index]
+  rintro rfl
+  revert f
+  simp only [Id]
+  rintro f rfl
+  simp [-Id.instMonad]
+  generalize_proofs H
+  cases H
+  rfl
+
+omit hh₁ hh₂ in
+theorem toList_eq_flatMap_buckets : mp.toList = mp.buckets.toList.flatMap (·.toList) := by
+  rw [toList, Internal.foldRev, Internal.foldRevM, ←Array.foldrM_toList]
+  generalize mp.buckets.toList = xs; clear! mp
+  simp only [Id.run, pure, assocList_foldrM_Id_eq_foldr_toList, Sigma.eta,
+    List.foldr_cons_eq_append']
+  rw [List.foldrM_eq_foldr]; unfold Id Id.instMonad
+  simp only [pure, bind, List.foldr_append_eq_append, List.append_nil]; rfl
+
+omit hh₂ in
+theorem of_getCast?_eq_some {xs : Internal.AssocList α β} {k x}
+(h : xs.getCast? k = some x) : ⟨k, x⟩ ∈ xs.toList := by
+  induction xs generalizing k x <;> simp at h ⊢
+  nm r y xs ih
+  rw [Internal.List.getValueCast?_cons] at h
+  simp at h
+  split_ifs at h with h₁
+  · subst h₁
+    simp at h
+    subst h
+    simp
+  right
+  simp_rw [Internal.AssocList.getCast?_eq] at ih
+  tauto
+
+theorem distinct_keys_of_mem_buckets {xs} (wf : mp.WF) (h : xs ∈ mp.buckets) :
+∀ k x y, ⟨k, x⟩ ∈ xs.toList → ⟨k, y⟩ ∈ xs.toList → x = y := by
+  intro k x y h₁ h₂
+  generalize h₃ : DHashMap.mk mp wf = mp₁
+  have h₄ : ∀ ⦃z⦄, z ∈ xs.toList → z ∈ mp₁.toList
+  · intro z hz
+    rw [DHashMap.toList, toList_eq_flatMap_buckets]
+    simp
+    grind
+  replace h₁ := h₄ h₁
+  replace h₂ := h₄ h₂
+  rw [DHashMap.mem_toList_iff_get?_eq_some] at h₁ h₂
+  grind
+
+theorem distinct_keys_of_mem_toList_buckets {xs} (wf : mp.WF) (h : xs ∈ mp.buckets.toList) :
+∀ k x y, ⟨k, x⟩ ∈ xs.toList → ⟨k, y⟩ ∈ xs.toList → x = y := by
+  simp at h; exact distinct_keys_of_mem_buckets wf h
+
+omit hh₂ in
+theorem getCast?_eq_some_iff {xs : Internal.AssocList α β} {k x}
+(h : ∀ k x y, ⟨k, x⟩ ∈ xs.toList → ⟨k, y⟩ ∈ xs.toList → x = y) :
+xs.getCast? k = some x ↔ ⟨k, x⟩ ∈ xs.toList := by
+  constructor; use of_getCast?_eq_some
+  rw [Internal.AssocList.getCast?_eq]
+  intro h₁
+  induction xs generalizing k x <;> simp at h₁
+  nm r y xs ih
+  rcases h₁ with ⟨rfl, h₁⟩ | h₁
+  · simp at h₁
+    simp [h₁]
+  simp
+  rw [Internal.List.getValueCast?_cons]
+  simp
+  split_ifs with h₂
+  · subst h₂
+    simp
+    tauto
+  apply ih _ h₁
+  tauto
+
+theorem getCast?_eq_some_iff_of_mem_buckets {xs k x} (wf : mp.WF)
+(h : xs ∈ mp.buckets) : xs.getCast? k = some x ↔ ⟨k, x⟩ ∈ xs.toList :=
+  getCast?_eq_some_iff # distinct_keys_of_mem_buckets wf h
+
+theorem get?_eq_some_iff_mem_toList {k x} (wf : mp.WF) :
+mp.get? k = some x ↔ ⟨k, x⟩ ∈ mp.toList := by
+  generalize h₁ : DHashMap.mk mp wf = mp₁
+  convert_to mp₁.get? k = some x ↔ ⟨k, x⟩ ∈ mp₁.toList
+  · subst h₁
+    rw [get?, DHashMap.get?]
+    grind
+  · subst h₁
+    rfl
+  simp
+
+omit hh₁ hh₂ in @[simp]
+theorem assocList_toList_eq_nil_iff {xs : Internal.AssocList α β} :
+xs.toList = [] ↔ xs = .nil := by
+  unfold Internal.AssocList.toList; split <;> simp
 
 end Raw

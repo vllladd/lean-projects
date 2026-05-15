@@ -53,3 +53,9 @@ def toSet (xs : List α) : Set α := {x | x ∈ xs}
 
 def toVec (xs : List α) : Fin xs.length → α :=
   (xs[·])
+
+def min! [Min α] [Top α] (xs : List α) : α :=
+  xs.min?.getD ⊤
+
+def max! [Max α] [Bot α] (xs : List α) : α :=
+  xs.max?.getD ⊥

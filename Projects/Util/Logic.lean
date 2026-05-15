@@ -435,3 +435,15 @@ theorem eq_symm_iff_simp {α : Type*} {x y : α} : (x = y ↔ y = x) ↔ True :=
 
 theorem comm_of_symm {α : Type*} {r : α → α → Prop} {x y}
 (h : ∀ {x y}, r x y → r y x) : r x y ↔ r y x := ⟨h, h⟩
+
+theorem dite_true_eq! : @dite α True = λ _ f _ => f trivial := by
+  funext; simp
+
+theorem dite_false_eq! : @dite α False = λ _ _ g => g not_false := by
+  funext; simp
+
+theorem min_comm! [ha : SemilatticeInf α] : min = (λ (x y : α) => min y x) := by
+  funext; grind
+
+theorem max_comm! [ha : SemilatticeSup α] : max = (λ (x y : α) => max y x) := by
+  funext; grind

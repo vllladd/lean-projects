@@ -279,3 +279,166 @@ theorem le_foldl_dite_max [ha : DecidableEq α] [hb : LinearOrder β]
   apply le_max_of_mem
   simp
   grind
+
+theorem flatMap_eq_flatten_map {f : α → List β} : xs.flatMap f = (xs.map f).flatten := by
+  exact flatMap_def
+
+theorem foldr_fn_append_eq_flatMap {f : α → List β} {zs} :
+xs.foldr (λ x acc => f x ++ acc) zs = xs.flatMap f ++ zs := by
+  cases xs <;> simp; rfl
+
+theorem map_eq_map_attach {f : α → β} : xs.map f = xs.attach.map (λ x => f x.1) := by
+  simp
+
+@[simp]
+theorem getElem?_singleton_eq_some_iff {x y : α} {i} : [x][i]? = some y ↔ i = 0 ∧ x = y := by
+  grind
+
+theorem foldr_eq_foldl' {f : α → α → α} {z}
+[Std.Associative f] [Std.LawfulIdentity f z] : xs.foldr f z = xs.foldl f z :=
+  foldr_eq_foldl
+
+theorem foldr_eq_foldr_map {f : α → β → β} {z} (g₁ : α → β) (g₂ : β → β → β)
+(h : ∀ ⦃x acc⦄, f x acc = g₂ (g₁ x) acc) : xs.foldr f z = (xs.map g₁).foldr g₂ z := by
+  rw [foldr_map, funext₂ @h]
+
+theorem foldl_eq_foldl_map {f : β → α → β} {z} (g₁ : α → β) (g₂ : β → β → β)
+(h : ∀ ⦃acc x⦄, f acc x = g₂ acc (g₁ x)) : xs.foldl f z = (xs.map g₁).foldl g₂ z := by
+  rw [foldl_map, funext₂ @h]
+
+@[simp] theorem min!_nil [Top α] [Min α] : ([] : List α).min! = ⊤ := rfl
+@[simp] theorem max!_nil [Bot α] [Max α] : ([] : List α).max! = ⊥ := rfl
+
+@[simp]
+theorem min!_cons [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] {x} :
+(x :: xs).min! = min x xs.min! := by
+  simp [min!, min?]; cases xs <;> simp; exact foldl_assoc
+
+@[simp]
+theorem max!_cons [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] {x} :
+(x :: xs).max! = max x xs.max! := by
+  simp [max!, max?]; cases xs <;> simp; exact foldl_assoc
+
+theorem elim_min?_eq_min! [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] {f : α → α} {z : α} :
+xs.min?.elim z f = if xs = [] then z else f xs.min! := by
+  cases xs <;> simp; nm x xs; congr; simp [min!, min?]; cases xs <;> simp
+
+theorem elim_max?_eq_max! [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] {f : α → α} {z : α} :
+xs.max?.elim z f = if xs = [] then z else f xs.max! := by
+  cases xs <;> simp; nm x xs; congr; simp [max!, max?]; cases xs <;> simp
+
+@[simp]
+theorem elim_min?_id_eq_min! [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α]
+{z : α} : xs.min?.elim z id = haveI := Classical.propDecidable;
+if z = ⊤ ∨ xs ≠ [] then xs.min! else z := by
+  cases xs <;> simp; nm x xs; simp [min!, min?]; cases xs <;> simp
+
+@[simp]
+theorem elim_max?_id_eq_max! [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α]
+{z : α} : xs.max?.elim z id = haveI := Classical.propDecidable;
+if z = ⊥ ∨ xs ≠ [] then xs.max! else z := by
+  cases xs <;> simp; nm x xs; simp [max!, max?]; cases xs <;> simp
+
+@[simp]
+theorem min_append [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] :
+(xs ++ ys).min! = min xs.min! ys.min! := by
+  induction xs generalizing ys <;> simp; grind
+
+@[simp]
+theorem max_append [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] :
+(xs ++ ys).max! = max xs.max! ys.max! := by
+  induction xs generalizing ys <;> simp; grind
+
+theorem min!_eq_min [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] (h : xs ≠ []) :
+xs.min! = xs.min (by grind) := by
+  induction xs <;> simp; grind; clear! xs; nm x xs ih
+  rw [min_cons, elim_min?_eq_min!]; split_ifs with h₁; subst h₁; simp; grind
+
+theorem max!_eq_max [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] (h : xs ≠ []) :
+xs.max! = xs.max (by grind) := by
+  induction xs <;> simp; grind; clear! xs; nm x xs ih
+  rw [max_cons, elim_max?_eq_max!]; split_ifs with h₁; subst h₁; simp; grind
+
+@[simp]
+theorem min_cons_cons' [ha₁ : SemilatticeInf α] {x y} :
+(x :: y :: xs).min (by simp) = min x ((y :: xs).min (by simp)) := by
+  rw [min_cons_cons]; induction xs generalizing x y; simp
+  clear! xs; nm k xs ih; simp_rw [min_cons_cons, ih]; grind
+
+@[simp]
+theorem max_cons_cons' [ha₁ : SemilatticeSup α] {x y} :
+(x :: y :: xs).max (by simp) = max x ((y :: xs).max (by simp)) := by
+  rw [max_cons_cons]; induction xs generalizing x y; simp
+  clear! xs; nm k xs ih; simp_rw [max_cons_cons, ih]; grind
+
+theorem Perm.min [ha₁ : SemilatticeInf α] {h₁ : xs ≠ []} {h₂ : ys ≠ []}
+(h : xs ~ ys) : xs.min h₁ = ys.min h₂ := by
+  induction h <;> clear! xs ys; simp
+  · nm x xs ys h ih; cases xs; simp at h; simp [h]
+    nm x₁ xs; cases ys; simp at h; nm y₁ ys; simp at ih; simp [ih]
+  · nm x y xs; rw! [min_cons_cons, show min y x = min x y by grind, ←min_cons_cons]; rfl
+  · nm xs ys zs h₃ h₄ ih₁ ih₂; apply ih₁.trans # ih₂.trans rfl; rintro rfl; simp [h₂] at h₄
+
+theorem Perm.max [ha₁ : SemilatticeSup α] {h₁ : xs ≠ []} {h₂ : ys ≠ []}
+(h : xs ~ ys) : xs.max h₁ = ys.max h₂ := by
+  induction h <;> clear! xs ys; simp
+  · nm x xs ys h ih; cases xs; simp at h; simp [h]
+    nm x₁ xs; cases ys; simp at h; nm y₁ ys; simp at ih; simp [ih]
+  · nm x y xs; rw! [max_cons_cons, show max y x = max x y by grind, ←max_cons_cons]; rfl
+  · nm xs ys zs h₃ h₄ ih₁ ih₂; apply ih₁.trans # ih₂.trans rfl; rintro rfl; simp [h₂] at h₄
+
+theorem Perm.min! [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α]
+(h : xs ~ ys) : xs.min! = ys.min! := by
+  cases xs; simp at h; simp [h]; nm x xs; cases ys; simp at h
+  nm y ys; iterate 2 rw [min!_eq_min (by grind)];; exact h.min
+
+theorem Perm.max! [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α]
+(h : xs ~ ys) : xs.max! = ys.max! := by
+  cases xs; simp at h; simp [h]; nm x xs; cases ys; simp at h
+  nm y ys; iterate 2 rw [max!_eq_max (by grind)];; exact h.max
+
+@[simp]
+theorem min!_reverse [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] :
+xs.reverse.min! = xs.min! := by
+  apply Perm.min!; simp
+
+@[simp]
+theorem max!_reverse [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] :
+xs.reverse.max! = xs.max! := by
+  apply Perm.max!; simp
+
+@[simp]
+theorem foldr_min_eq_min! [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] {z} :
+xs.foldr min z = min z xs.min! := by
+  induction xs <;> simp; grind
+
+@[simp]
+theorem foldr_max_eq_max! [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] {z} :
+xs.foldr max z = max z xs.max! := by
+  induction xs <;> simp; grind
+
+@[simp]
+theorem foldl_min_eq_min! [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] {z} :
+xs.foldl min z = min z xs.min! := by
+  rw [←foldr_reverse, ←min!_reverse, min_comm!, foldr_min_eq_min!]; grind
+
+@[simp]
+theorem foldl_max_eq_max! [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] {z} :
+xs.foldl max z = max z xs.max! := by
+  rw [←foldr_reverse, ←max!_reverse, max_comm!, foldr_max_eq_max!]; grind
+
+theorem min!_flatten [ha₁ : SemilatticeInf α] [ha₂ : OrderTop α] {L : List (List α)} :
+L.flatten.min! = (L.map min!).min! := by
+  induction L <;> simp; grind
+
+theorem max!_flatten [ha₁ : SemilatticeSup α] [ha₂ : OrderBot α] {L : List (List α)} :
+L.flatten.max! = (L.map max!).max! := by
+  induction L <;> simp; grind
+
+theorem min!_flatMap [hb₁ : SemilatticeInf β] [hb₂ : OrderTop β] {f : α → List β} :
+(xs.flatMap f).min! = (xs.map λ x => f x |>.min!).min! := by
+  rw [flatMap, min!_flatten, map_map]; rfl
+
+theorem max!_flatMap [hb₁ : SemilatticeSup β] [hb₂ : OrderBot β] {f : α → List β} :
+(xs.flatMap f).max! = (xs.map λ x => f x |>.max!).max! := by
+  rw [flatMap, max!_flatten, map_map]; rfl
