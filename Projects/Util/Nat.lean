@@ -7,6 +7,21 @@ def find! (p : ℕ → Prop) : ℕ :=
   haveI := Classical.propDecidable
   if h : ∃ n, p n ∧ ∀ k < n, ¬p k then h.choose else 0
 
+def powTwo (n : ℕ) : Bool :=
+  if n = 1 then true
+  else if n = 0 ∨ Odd n then false
+  else powTwo (n / 2)
+
+def chkLe (n : ℕ) (p : ℕ → Bool) : Bool :=
+  p n && match n with
+  | 0 => true
+  | n + 1 => chkLe n p
+
+def chkLt (n : ℕ) (p : ℕ → Bool) : Bool :=
+  match n with
+  | 0 => true
+  | n + 1 => chkLe n p
+
 -----
 
 theorem rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
@@ -441,3 +456,70 @@ attribute [simp] lt_one_add_iff
 @[simp]
 theorem fn_max_zero : max 0 = id := by
   funext; simp
+
+@[simp]
+theorem odd_two_pow_iff {n : ℕ} : Odd (2 ^ n) ↔ n = 0 := by
+  grind
+
+@[simp]
+theorem powTwo_eq_true_iff {n} : powTwo n ↔ ∃ k, 2 ^ k = n := by
+  fun_induction powTwo; simp
+  · nm n h₁ h₂
+    simp
+    rintro k rfl
+    simp_all
+  nm n h₁ h₂ ih
+  simp at h₂
+  rw [ih]; clear ih
+  rw [even_iff_exi] at h₂
+  rcases h₂ with ⟨h₂, n, rfl⟩
+  simp
+  cases n
+  · simp at h₂
+  nm n
+  constructor <;> rintro ⟨k, h₃⟩
+  · use k + 1
+    omega
+  · cases k
+    · omega
+    nm k
+    use k
+    omega
+
+@[simp]
+theorem powTwo_eq_false_iff {n} : powTwo n = false ↔ ∀ k, 2 ^ k ≠ n := by
+  contrapose!; simp
+
+instance {n : ℕ} : Decidable (∃ k, 2 ^ k = n) :=
+  decidable_of_iff' (powTwo n) (by simp)
+
+instance {n : ℕ} : Decidable (∀ k, 2 ^ k ≠ n) :=
+  decidable_of_iff' (!powTwo n) (by simp)
+
+@[simp]
+theorem chkLe_eq_true_iff {n p} : chkLe n p ↔ ∀ k ≤ n, p k := by
+  induction n <;> simp [chkLe]; grind
+
+@[simp]
+theorem chkLe_eq_false_iff {n p} : chkLe n p = false ↔ ∃ k ≤ n, !p k := by
+  induction n <;> simp [chkLe]; grind
+
+@[simp]
+theorem chkLt_eq_true_iff {n p} : chkLt n p ↔ ∀ k < n, p k := by
+  induction n <;> simp [chkLt]
+
+@[simp]
+theorem chkLt_eq_false_iff {n p} : chkLt n p = false ↔ ∃ k < n, !p k := by
+  induction n <;> simp [chkLt]
+
+instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (∀ k ≤ n, p k) :=
+  decidable_of_iff' (chkLe n p) (by simp)
+
+instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (∃ k ≤ n, p k) :=
+  decidable_of_iff' (!chkLe n (!p ·)) (by simp)
+
+instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (∀ k < n, p k) :=
+  decidable_of_iff' (chkLt n p) (by simp)
+
+instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (∃ k < n, p k) :=
+  decidable_of_iff' (!chkLt n (!p ·)) (by simp)
