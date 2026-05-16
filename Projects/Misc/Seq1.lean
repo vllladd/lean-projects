@@ -65,10 +65,15 @@ theorem N₁Comp_eq : N₁Comp = 72 := rfl
 
 @[simp]
 theorem N₁_eq : N₁ = 72 := by
-  rw [N₁, Nat.find!_eq_of (n := 9)] <;> simp <;> native_decide
+  rw [N₁, Nat.find!_eq_of (n := 9)] <;> simp; decide_cbv
+  suffices h : ∀ n ∈ (List.range 9).map seq₁, 0 < n → n.powTwo
+  · simpa using h
+  have h : List.range 9 = (List.range 10).init
+  · nth_rw 2 [List.range_succ]; simp
+  rw [h]; clear h
+  rw [List.map_init, map_seq₁_range_10]
+  decide_cbv
 
 @[csimp]
 theorem N₁_eq_N₁Comp : N₁ = N₁Comp := by
   simp
-
-#eval N₁
