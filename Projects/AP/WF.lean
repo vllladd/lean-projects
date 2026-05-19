@@ -9,6 +9,7 @@ structure WFCnd (s : State) : Prop where
   exi_aMove_of_not_aTurn_and_taken_ne_empty : s.aTurn = false → s.taken ≠ ∅ →
     ∃ p, s.aMove p |>.isSome
 
+@[simp]
 theorem State.wfCnd_of_wf {s} [hs : sys.WF s] : WFCnd s where
   aPos_not_mem_taken := by simp
   taken_ne_empty_of_aTurn ht := AState.mk hs ht |>.taken_ne_empty

@@ -689,3 +689,14 @@ theorem size_set'_ofList_nbhd_int_nat {p : PointZ} {n : ℕ} :
   simp
 
 end
+
+section
+
+variable [ha₁ : Ring α] [ha₂ : LinearOrder α] [ha₃ : IsOrderedAddMonoid α]
+variable {a b c : Point α}
+
+@[simp]
+theorem dist_pos_iff_ne : 0 < a.dist b ↔ a ≠ b := by
+  contrapose!; simp
+
+end

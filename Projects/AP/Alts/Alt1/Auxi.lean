@@ -1,4 +1,3 @@
-import Projects.AP.Util
 import Projects.AP.Alts.Alt1.Defs
 
 namespace AP.Alt₁
