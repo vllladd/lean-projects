@@ -139,7 +139,7 @@ theorem Base.eq_two_or_three_le : b = 2 ∨ 3 ≤ b := by
 
 @[simp]
 theorem digRoot'_base_two {n} : digRoot' 2 n = if n = 0 then 0 else 1 := by
-  simp [digRoot']; split_ifs with h₁ h₂ <;> omega
+  simp [digRoot']
 
 theorem digRoot'_add_base {n} : digRoot' b (n + b) = digRoot' b (n + 1) := by
   rcases hb.eq_two_or_three_le with rfl | h₁; simp; nth_rw 1 [digRoot']
