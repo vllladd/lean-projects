@@ -50,6 +50,142 @@ theorem even_shiftLeft_succ {n k : ℕ} : Even (n <<< (k + 1)) := by
 theorem not_odd_shiftLeft_succ {n k : ℕ} : ¬Odd (n <<< (k + 1)) := by
   simp
 
+@[simp]
+theorem forall_even_shiftRight_iff {n : ℕ} : (∀ k, Even (n >>> k)) ↔ n = 0 := by
+  symm; constructor; rintro rfl; simp
+  intro h
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h₁ : n >>> 1 = 0
+  · cases n; rfl; nm n
+    rw [Nat.shiftRight_eq_div_pow] at h₁
+    simp at h₁
+    subst h₁
+    specialize h 0
+    simp at h
+  specialize ih (n >>> 1) (by omega)
+  simp [h₁] at ih
+  choose k ih using ih
+  specialize h (k + 1)
+  rw [add_comm] at h
+  simp [Nat.shiftRight_add] at h
+  grind
+
+theorem shiftRight_add' {n m k : ℕ} : n >>> (m + k) = n >>> k >>> m := by
+  rw [add_comm, shiftRight_add]
+
+@[simp]
+theorem mul_two_add_one_div_two {n : ℕ} : (n * 2 + 1) / 2 = n := by
+  omega
+
+theorem div_two_eq_shiftRight {n : ℕ} : n / 2 = n >>> 1 := by
+  simp [shiftRight_eq_div_pow]
+
+theorem eq_iff_odd_shiftRight {n m : ℕ} : n = m ↔ ∀ k, Odd (n >>> k) ↔ Odd (m >>> k) := by
+  constructor; rintro rfl; simp; intro h
+  induction n using Nat.strong_induction_on generalizing m
+  nm n ih
+  by_cases h₁ : n = 0
+  · clear ih
+    subst h₁
+    simp at h
+    rw [h]
+  by_cases h₂ : m = 0
+  · clear ih
+    subst h₂
+    simp at h
+    rw [h]
+  by_cases h₃ : n = 1
+  · subst h₃; clear h₁
+    have h₃ := h 0
+    simp at h₃
+    replace h := forall_spec (· + 1) h
+    simp [shiftRight_add'] at h
+    cases m; simp at h₂; nm m; cases m; rfl; nm m
+    simp [add_assoc, shiftRight_eq_div_pow] at h
+  have h₄ : m ≠ 1
+  · rintro rfl
+    clear h₂
+    have h₂ := h 0
+    simp at h₂
+    replace h := forall_spec (· + 1) h
+    simp [shiftRight_add'] at h
+    cases n; simp at h₂; nm n; cases n; simp at h₃
+    simp [add_assoc, shiftRight_eq_div_pow] at h
+  simp at h₄
+  specialize @ih (n >>> 1) (by omega) (m >>> 1)
+  convert_to n / 2 * 2 + n % 2 = m / 2 * 2 + m % 2; iterate 2 simp
+  have h₅ : m % 2 = n % 2
+  · specialize h 0
+    simp at h
+    grind
+  rw [h₅]; clear h₅
+  congr 2
+  simp [Nat.div_two_eq_shiftRight]
+  apply ih
+  intro k
+  specialize h (k + 1)
+  simpa [shiftRight_add'] using h
+
+attribute [simp] Nat.lt_two_pow_self
+
+@[simp]
+theorem shiftRight_add_left {n m : ℕ} : n >>> (m + n) = 0 := by
+  rw [shiftRight_eq_div_pow]; simp; apply lt_of_le_of_lt (b := m + n) <;> simp
+
+@[simp]
+theorem shiftRight_add_right {n m : ℕ} : n >>> (n + m) = 0 := by
+  rw [add_comm]; simp
+
+theorem div_mul_eq_div_div {n m k : ℕ} : n / (m * k) = n / m / k := by
+  rw [Nat.div_div_eq_div_mul]
+
+@[simp]
+theorem mul_two_add_one_div_two_pow_succ {n m : ℕ} : (n * 2 + 1) / 2 ^ (m + 1) = n / 2 ^ m := by
+  rw [pow_succ]; nth_rw 2 [mul_comm]; rw [div_mul_eq_div_div]; simp
+
+@[simp]
+theorem mul_two_add_one_shiftRight_succ {n m : ℕ} : (n * 2 + 1) >>> (m + 1) = n >>> m := by
+  simp [shiftRight_eq_div_pow]
+
+@[simp]
+theorem lor_one_shiftRight_succ {n m : ℕ} : (n ||| 1) >>> (m + 1) = n >>> (m + 1) := by
+  change bitwise _ _ _ >>> _ = _
+  unfold bitwise
+  simp
+  split_ifs with h
+  · simp [h]
+  change ((_ ||| 0) + (_ ||| 0) + 1) >>> _ = _
+  simp [←mul_two]
+  simp [shiftRight_eq_div_pow, pow_succ', Nat.div_div_eq_div_mul]
+
+@[simp]
+theorem mul_two_shiftRight_succ {n m : ℕ} : (n * 2) >>> (m + 1) = n >>> m := by
+  simp [shiftRight_eq_div_pow, pow_succ']
+
+theorem lor_one_eq_ite {n : ℕ} : n ||| 1 = if Odd n then n else n + 1 := by
+  change bitwise _ _ _ = _
+  unfold bitwise
+  simp
+  split_ifs with h₁ h₂ h₂
+  iterate 2 grind
+  all_goals
+    change (_ ||| 0) + (_ ||| 0) + _ = _
+    simp [←mul_two]
+  · rw [odd_iff_exi] at h₂
+    omega
+  · simp at h₂
+    rw [even_iff_exi] at h₂
+    omega
+
+@[simp]
+theorem mul_two_lor_one_eq {n : ℕ} : n * 2 ||| 1 = n * 2 + 1 := by
+  rw [lor_one_eq_ite]; simp
+
+@[simp]
+theorem mul_two_add_one_lor_one_eq {n : ℕ} : (n * 2 + 1) ||| 1 = n * 2 + 1 := by
+  rw [lor_one_eq_ite]; simp
+
 -- #check 0 #exit
 
 end Nat
@@ -84,8 +220,7 @@ namespace BitVec
 variable {w : ℕ}
 variable {x y z : BitVec w}
 
-@[simp]
-def ofBit (b : Bit) : BitVec w :=
+def ofBit (w : ℕ) (b : Bit) : BitVec w :=
   match b with
   | 0 => 0
   | 1 => 1
@@ -94,57 +229,116 @@ def lowestBit (x : BitVec w) : Bit :=
   .ofBool # Odd x.toNat
 
 def ofBits (w : ℕ) (bs : List Bit) : BitVec w :=
-  bs.foldr (λ bit x => (x <<< 1) ||| ofBit bit) 0
+  bs.foldr (λ bit x => (x <<< 1) ||| ofBit w bit) 0
 
 def toBits (x : BitVec w) : List Bit :=
   List.range w |>.map # λ n => (x >>> n).lowestBit
 
 -----
 
--- @[simp]
--- theorem ofNatLT_eq_ofNatLT_iff {n m hn hm} :
--- (.ofNatLT n hn : BitVec w) = .ofNatLT m hm ↔ n = m := by
---   simp [BitVec.ofNatLT]
--- 
--- @[simp]
--- theorem lowestBit_ofNat {n} : (BitVec.ofNat w n).lowestBit = .ofBool (Odd (n % 2 ^ w)) := rfl
--- 
--- @[simp]
--- theorem toBits_zero : (BitVec.ofNat w 0).toBits = .replicate w 0 := by
---   simp [toBits]
--- 
--- @[simp]
--- theorem toBits_nil {n} : (BitVec.ofNat 0 n).toBits = [] := rfl
--- 
--- @[simp]
--- theorem ofBits_nil : ofBits [] = BitVec.ofNat 0 0 := rfl
--- 
--- attribute [-simp] Bit.ofBool
--- 
--- example : (cons true (BitVec.ofNat 17 25)).toBits =
--- (BitVec.ofNat 17 25).toBits ++ [.ofBool true] := by
---   native_decide
--- 
--- @[simp]
--- theorem toBits_cons {b} : (cons b x).toBits = x.toBits ++ [.ofBool b] := by
---   rcases x with ⟨⟨x, h⟩⟩
---   simp [toBits, cons, BitVec.cast, BitVec.ofNatLT, List.range_succ, lowestBit]
---   simp [Nat.shiftRight_or_distrib]
---   split_ands
---   · intro n hn h₁
---     obtain ⟨w, rfl⟩ := Nat.exists_eq_add_of_lt hn; clear hn
---     rw [show n + w + 1 = w + 1 + n by omega] at h₁
---     simp [Nat.shiftLeft_add] at h₁
---   cases b <;> simp
---   simp [Nat.shiftRight_eq_zero _ _ h]
--- 
--- @[simp]
--- theorem ofBits_snoc {bs : List Bit} {b} : ofBits (bs ++ [b]) = cons b (ofBits bs)
--- 
+@[simp]
+theorem ofNatLT_eq_ofNatLT_iff {n m hn hm} :
+(.ofNatLT n hn : BitVec w) = .ofNatLT m hm ↔ n = m := by
+  simp [BitVec.ofNatLT]
+
+@[simp]
+theorem lowestBit_ofNat {n} : (BitVec.ofNat w n).lowestBit = .ofBool (Odd (n % 2 ^ w)) := rfl
+
+@[simp]
+theorem toBits_zero : (BitVec.ofNat w 0).toBits = .replicate w 0 := by
+  simp [toBits]
+
+@[simp]
+theorem toBits_nil {n} : (BitVec.ofNat 0 n).toBits = [] := rfl
+
+@[simp]
+theorem ofBits_nil : ofBits w [] = BitVec.ofNat w 0 := rfl
+
+attribute [-simp] Bit.ofBool
+
+@[simp] theorem ofBit_zero : ofBit w 0 = 0 := rfl
+@[simp] theorem ofBit_one : ofBit w 1 = 1 := rfl
+
+@[simp]
+theorem toBits_cons {b} : (cons b x).toBits = x.toBits ++ [.ofBool b] := by
+  rcases x with ⟨⟨x, h⟩⟩
+  simp [toBits, cons, BitVec.cast, BitVec.ofNatLT, List.range_succ, lowestBit]
+  simp [Nat.shiftRight_or_distrib]
+  split_ands
+  · intro n hn h₁
+    obtain ⟨w, rfl⟩ := Nat.exists_eq_add_of_lt hn; clear hn
+    rw [show n + w + 1 = w + 1 + n by omega] at h₁
+    simp [Nat.shiftLeft_add] at h₁
+  cases b <;> simp
+  simp [Nat.shiftRight_eq_zero _ _ h]
+
+theorem shiftLeft_one_eq_mul_two : x <<< 1 = x * 2 := by
+  rw [shiftLeft_eq_mul_twoPow]; congr; simp [twoPow]; clear! w x
+  rw [←BitVec.toFin_inj]; simp; ext; simp; rw [Nat.shiftLeft_eq]; simp
+
+theorem mod_self_pow_succ {n m : ℕ} (hn : n ≠ 1) (hm : m ≠ 0) : n % n ^ (m + 1) = n := by
+  cases n; simp; nm n; simp at hn; apply Nat.mod_eq_of_lt
+  apply lt_self_pow₀ <;> simp <;> omega
+
+theorem mul_two_or_one_eq : x * 2 ||| 1 = x * 2 + 1 := by
+  rcases x with ⟨⟨x, h⟩⟩
+  rw [←BitVec.toFin_inj]
+  simp
+  ext
+  simp [Fin.val_mul, Fin.val_add]
+  cases w <;> simp
+  nm w
+  nth_rw 1 [Nat.pow_succ]
+  rw [Nat.mul_mod_mul_right]
+  simp
+  by_cases h₁ : x < 2 ^ w
+  · rw [Nat.mod_eq_of_lt h₁]
+    rw [Nat.mod_eq_of_lt # by omega]
+  simp at h₁
+  replace h₁ : ∃ y, x = 2 ^ w + y
+  · use x % 2 ^ w
+    obtain ⟨x, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
+    simp; simp [pow_succ, Nat.mul_two] at h
+    rw [Nat.mod_eq_of_lt h]
+  obtain ⟨x, rfl⟩ := h₁
+  simp; simp [pow_succ, Nat.mul_two] at h
+  rw [Nat.mod_eq_of_lt h]
+  rw [Nat.add_mod, Nat.one_mod_two_pow # by omega]
+  by_cases h₁ : w = 0; simp_all
+  rw [Nat.add_mul, ←pow_succ]
+  simp
+  rw [Nat.mod_eq_of_lt]
+  omega
+
+theorem foldr_eq_add_toBits {bs : List Bit} {z : BitVec w} :
+bs.foldr (λ bit (x : BitVec w) => (x <<< 1) ||| ofBit w bit) z =
+(z <<< bs.length) + ofBits w bs := by
+  unfold ofBits
+  induction bs generalizing z <;> simp
+  nm b bs ih
+  rw [ih]; clear ih
+  cases b <;> simp [shiftLeft_add]
+  generalize z <<< bs.length = n
+  generalize bs.foldr _ _ = x
+  simp only [shiftLeft_one_eq_mul_two]
+  rw [←add_mul]
+  rw [show (1#w) = 1 by rfl]
+  simp_rw [mul_two_or_one_eq]
+  grind
+
+@[simp]
+theorem ofBits_snoc {bs : List Bit} {b : Bit} :
+ofBits (w + 1) (bs ++ [b]) = ofBit _ b <<< bs.length + ofBits _ bs := by
+  rw [ofBits]; simp [foldr_eq_add_toBits]
+
+@[simp]
+theorem length_toBits : x.toBits.length = w := by
+  simp [toBits]
+
 -- #check 0 #exit
--- 
+
 -- @[simp]
--- theorem ofBits_toBits : ofBits x.toBits = x := by
+-- theorem ofBits_toBits : ofBits _ x.toBits = x := by
 --   induction x
 --   ·
 --     simp
