@@ -659,7 +659,7 @@ theorem ofBits_toBits {bs : ByteArray} : ofBits bs.toBits = bs := by
 
 @[simp] theorem toBits_empty : empty.toBits = [] := rfl
 
-theorem ofBits'_of_length_le_8 {bs₁ : List UInt8} {bs₂ : List Bit}
+theorem ofBits'_of_length_le {bs₁ : List UInt8} {bs₂ : List Bit}
 (h₁ : bs₂ ≠ []) (h₂ : bs₂.length ≤ 8) : ofBits' bs₁ bs₂ = .ofBits bs₂ :: bs₁ := by
   unfold ofBits'; simp [h₁]; rw [List.take_eq_self_of_le h₂, List.drop_eq_nil_of_le h₂]; simp
 
@@ -689,12 +689,12 @@ theorem toBits_ofBits {bs : List Bit} :
   · simp [h₁]
   by_cases h₂ : bs.length = 8
   · simp [h₂]
-    simp [ofBits, toBits, ofBits'_of_length_le_8 h₁ # by omega]
+    simp [ofBits, toBits, ofBits'_of_length_le h₁ # by omega]
     rw [BitVec.toBits_ofBits_of_length_eq h₂]
   by_cases h₃ : bs.length < 8
   · clear ih
     rw [Nat.mod_eq_of_lt h₃]
-    simp [ofBits, toBits, ofBits'_of_length_le_8 h₁ # le_of_lt h₃]
+    simp [ofBits, toBits, ofBits'_of_length_le h₁ # le_of_lt h₃]
     rw [BitVec.toBits_ofBits_of_length_le # by omega]
     simp
     rw [Nat.mod_eq_of_lt]
@@ -724,6 +724,51 @@ theorem toBits_ofBits {bs : List Bit} :
   congr 1
   rw [BitVec.toBits_ofBits]
   simp; omega
+
+theorem ofBits_of_length_le {bs : List Bit}
+(h₁ : bs ≠ []) (h₂ : bs.length ≤ 8) : ofBits bs = ⟨⟨[.ofBits bs]⟩⟩ := by
+  rw [ofBits, ofBits'_of_length_le h₁ h₂]; rfl
+
+@[simp]
+theorem size_mk {bs} : (⟨bs⟩ : ByteArray).size = bs.size := rfl
+
+@[simp]
+theorem get!_mk {bs i} : (⟨bs⟩ : ByteArray).get! i = bs[i]! := rfl
+
+attribute [-simp] List.getElem!_eq_getElem?_getD
+
+-- #check 0 #exit
+
+-- @[simp]
+-- theorem toList_mk {bs} : (⟨bs⟩ : ByteArray).toList = bs.toList := by
+--   rcases bs with ⟨bs⟩
+--   simp [toList]
+--   rw [show [] = (bs.take 0).reverse by simp]
+--   nth_rw 3 [show bs = bs.drop 0 by simp]
+--   generalize 0 = i
+--   generalize hx : (⟨⟨bs⟩⟩ : ByteArray) = xs
+--   
+--   clear hx
+--   
+--   -- replace hx : xs.size = bs.length; simp [←hx]
+--   induction bs generalizing xs i
+--   ·
+--     unfold toList.loop
+--     simp
+--   nm b bs ih
+
+-- #check 0 #exit
+
+-- theorem toList_eq_toList_data {bs : ByteArray} : bs.toList = bs.data.toList := by
+--   cases bs; simp
+
+-- theorem ofBits_of_le_length {bs : List Bit} (h : 8 ≤ bs.length) :
+-- ofBits bs = ⟨⟨.ofBits (bs.take 8) :: (ofBits (bs.drop 8)).toList⟩⟩ := by
+--   nth_rw 1 [ofBits]
+--   rw [ofBits']
+--   simp [show bs ≠ [] by grind]
+--   rw [ofBits'_eq_append]
+--   simp [ofBits]
 
 -- #check 0 #exit
 
@@ -838,7 +883,11 @@ ofBits (bs₁ ++ bs₂) = (writeBits bs₂ |>.run (ofBits bs₁) |>.2) := by
 --   induction n using Nat.strong_induction_on generalizing bs
 --   nm n ih
 --   subst hn
---   by_cases h : bs.length < 8
+--   by_cases h : bs = []
 --   ·
---     sorry
+--     subst h
+--     simp
+--   by_cases h₁ : bs.length < 8
+--   ·
+--     rw [ByteArray.ofBits'_of_length_le]
 --   sorry
