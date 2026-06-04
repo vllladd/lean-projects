@@ -151,4 +151,4 @@ theorem toList_set₁ : set₁.toList = list₁ := by
 
 @[simp]
 theorem size_set₁ : set₁.size = 9 := by
-  rw [←Set'.length_toList, toList_set₁, list₁_eq]; rfl
+  rw [←Set'.length_toList, toList_set₁, length_list₁]
