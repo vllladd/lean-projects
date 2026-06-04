@@ -1,6 +1,6 @@
 import Projects.Util
 
-namespace Misc
+namespace Misc.P001
 
 namespace P1
 
