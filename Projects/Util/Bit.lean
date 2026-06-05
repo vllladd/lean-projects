@@ -50,7 +50,6 @@ def xor : Bit → Bit → Bit
 | 0, a => a
 | 1, a => a.not
 
-@[simp]
 def ofBool (b : Bool) : Bit :=
   match b with
   | true => 1
@@ -102,3 +101,36 @@ theorem ne_iff_eq_not {a b : Bit} : a ≠ b ↔ a = b.not := by
 @[simp]
 theorem not_not {b : Bit} : b.not.not = b := by
   cases b <;> rfl
+
+@[simp] theorem ofBool_false : ofBool false = 0 := rfl
+@[simp] theorem ofBool_true : ofBool true = 1 := rfl
+@[simp] theorem toBool_0 : toBool 0 = false := rfl
+@[simp] theorem toBool_1 : toBool 1 = true := rfl
+
+@[simp]
+theorem ofBool_eq_zero_iff {b : Bool} : ofBool b = 0 ↔ b = false := by
+  cases b <;> simp
+
+@[simp]
+theorem ofBool_eq_one_iff {b : Bool} : ofBool b = 1 ↔ b = true := by
+  cases b <;> simp
+
+@[simp]
+theorem toBool_eq_false_iff {b : Bit} : b.toBool = false ↔ b = 0 := by
+  cases b <;> simp
+
+@[simp]
+theorem toBool_eq_true_iff {b : Bit} : b.toBool = true ↔ b = 1 := by
+  cases b <;> simp
+
+@[simp]
+theorem toBool_ofBool {b : Bool} : (ofBool b).toBool = b := by
+  cases b <;> rfl
+
+@[simp]
+theorem ofBool_toBool {b : Bit} : ofBool b.toBool = b := by
+  cases b <;> rfl
+
+@[simp]
+theorem ofBool_eq_iff {b₁ b₂} : ofBool b₁ = ofBool b₂ ↔ b₁ = b₂ := by
+  cases b₁ <;> cases b₂ <;> simp

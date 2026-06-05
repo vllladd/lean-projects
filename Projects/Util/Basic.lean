@@ -13,9 +13,11 @@ import Projects.Util.Array
 import Projects.Util.Sigma
 import Projects.Util.Order
 import Projects.Util.Monad
+import Projects.Util.UInt8
 import Projects.Util.Option
 import Projects.Util.String
 import Projects.Util.Finset
+import Projects.Util.BitVec
 import Projects.Util.Fintype
 import Projects.Util.Algebra
 import Projects.Util.Complex

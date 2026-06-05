@@ -442,3 +442,42 @@ theorem min!_flatMap [hb₁ : SemilatticeInf β] [hb₂ : OrderTop β] {f : α �
 theorem max!_flatMap [hb₁ : SemilatticeSup β] [hb₂ : OrderBot β] {f : α → List β} :
 (xs.flatMap f).max! = (xs.map λ x => f x |>.max!).max! := by
   rw [flatMap, max!_flatten, map_map]; rfl
+
+theorem range_add' {n m : Nat} : range (n + m) = range m ++ (range n).map (m + ·) := by
+  rw [add_comm, range_add]
+
+theorem range_succ' {n : ℕ} : range (n + 1) = 0 :: (range n).map (· + 1) := by
+  rw [range_add']; simp; omega
+
+@[simp]
+theorem map_getElem!_range_length [ha : Inhabited α] :
+(range xs.length).map (xs[·]!) = xs := by
+  apply ext_getElem <;> simp
+
+theorem map_getElem!_range_of_le_length [ha : Inhabited α] {n : ℕ}
+(h : n ≤ xs.length) : (range n).map (xs[·]!) = xs.take n := by
+  apply ext_getElem <;> simp; omega
+
+theorem map_getElem!_range_of_length_le [ha : Inhabited α] {n : ℕ}
+(h : xs.length ≤ n) : (range n).map (xs[·]!) = xs ++ replicate (n - xs.length) default := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; simp [range_add]
+
+theorem map_getElem!_range [ha : Inhabited α] {n : ℕ} :
+(range n).map (xs[·]!) = xs.take n ++ replicate (n - xs.length) default := by
+  by_cases h : n ≤ xs.length
+  · simp [Nat.sub_eq_zero_of_le h, map_getElem!_range_of_le_length h]
+  · rw [map_getElem!_range_of_length_le # by omega]; simp; omega
+
+theorem foldr_apply {f : α → β → β} {z : β}
+(g₁ : β → γ) (g₂ : γ → β) (h : ∀ ⦃x⦄, g₂ (g₁ x) = x) :
+xs.foldr f z = g₂ (xs.foldr (λ x acc => g₁ # f x # g₂ acc) (g₁ z)) := by
+  induction xs <;> grind
+
+theorem foldl_apply {f : β → α → β} {z : β}
+(g₁ : β → γ) (g₂ : γ → β) (h : ∀ ⦃x⦄, g₂ (g₁ x) = x) :
+xs.foldl f z = g₂ (xs.foldl (λ acc x => g₁ # f (g₂ acc) x) (g₁ z)) := by
+  simp_rw [foldl_eq_foldr_reverse, foldr_apply _ _ h]
+
+@[simp]
+theorem take_take_same {n : ℕ} : (xs.take n).take n = xs.take n := by
+  rw [take_take]; simp

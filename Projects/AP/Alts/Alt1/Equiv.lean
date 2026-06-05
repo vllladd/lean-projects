@@ -1,6 +1,5 @@
 import Projects.AP.Util
 import Projects.AP.Alts.Alt1.Auxi
-import Projects.Temp
 
 namespace AP.Alt₁
 

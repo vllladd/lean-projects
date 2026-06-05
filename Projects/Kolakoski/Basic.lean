@@ -1,5 +1,4 @@
 import Projects.Kolakoski.Defs
-import Projects.Temp
 
 namespace KolakoskiSequence
 

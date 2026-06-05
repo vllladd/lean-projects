@@ -447,3 +447,6 @@ theorem min_comm! [ha : SemilatticeInf α] : min = (λ (x y : α) => min y x) :=
 
 theorem max_comm! [ha : SemilatticeSup α] : max = (λ (x y : α) => max y x) := by
   funext; grind
+
+@[simp]
+theorem fmap_Id {α β : Type} {f : α → β} {x : α} : @Functor.map Id _ α β f x = f x := rfl

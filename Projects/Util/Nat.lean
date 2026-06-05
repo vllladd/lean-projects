@@ -22,6 +22,19 @@ def chkLt (n : ℕ) (p : ℕ → Bool) : Bool :=
   | 0 => true
   | n + 1 => chkLe n p
 
+def toDigList' (b n : ℕ) : List ℕ :=
+  if b ≤ 1 then [] else if n = 0 then []
+  else (n % b) :: toDigList' b (n / b)
+decreasing_by
+  nm h₁ h₂; rw [Nat.div_lt_iff_lt_mul (by omega)]
+  cases n; simp at h₂; simp; omega
+
+def toDigList (b n : ℕ) : List ℕ :=
+  if n = 0 then [0] else (toDigList' b n).reverse
+
+def ofDigList (b : ℕ) (ds : List ℕ) : ℕ :=
+  ds.foldl (λ n d => n * b + d) 0
+
 -----
 
 theorem rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
@@ -523,3 +536,237 @@ instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (
 
 instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (∃ k < n, p k) :=
   decidable_of_iff' (!chkLt n (!p ·)) (by simp)
+
+@[simp]
+theorem todogots₁_zero {b} : toDigList b 0 = [0] := by rfl
+
+theorem lt_pow_length_toDigList {b n : ℕ} (hb : 2 ≤ b) : n < b ^ (toDigList b n).length := by
+  unfold toDigList
+  split_ifs with h₁
+  · simp [h₁]
+    omega
+  fun_induction toDigList'
+  · omega
+  · simp
+  nm n h₂ h₃ ih
+  simp at ih ⊢
+  specialize ih (by omega)
+  clear h₁ h₂
+  by_cases h₁ : n < b
+  · clear ih
+    simp [pow_succ]
+    rw [mul_comm]
+    apply lt_mul_of_lt_of_one_le h₁
+    apply Nat.one_le_pow
+    omega
+  simp at h₁
+  specialize ih h₁
+  rw [Nat.div_lt_iff_lt_mul (by omega)] at ih
+  simp [pow_succ]
+  omega
+
+theorem lt_pow_of_length_toDigList_eq {b n k : ℕ}
+(h : (toDigList b n).length = k) (hb : 2 ≤ b) : n < b ^ k := by
+  subst h; exact lt_pow_length_toDigList hb
+
+attribute [simp] mod_one
+
+@[simp]
+theorem mul_two_lor_mul_two {n m : ℕ} : n * 2 ||| m * 2 = (n ||| m) * 2 := by
+  change bitwise _ _ _ = (bitwise _ _ _) * 2; rw [bitwise]; simp; split_ifs with h₁ h₂
+  change _ = (_ ||| _) * 2; simp [h₁]; change _ = (_ ||| _) * 2; simp [h₂]; omega
+
+@[simp]
+theorem mul_two_succ_lor_mul_two {n m : ℕ} : n * 2 + 1 ||| m * 2 = (n ||| m) * 2 + 1 := by
+  change bitwise _ _ _ = (bitwise _ _ _) * 2 + 1; rw [bitwise]; simp; split_ifs with h₁
+  change _ = (_ ||| _) * 2 + 1; simp [h₁]; omega
+
+@[simp]
+theorem mul_two_lor_mul_two_succ {n m : ℕ} : n * 2 ||| m * 2 + 1 = (n ||| m) * 2 + 1 := by
+  rw [Nat.or_comm]; simp; rw [Nat.or_comm]
+
+@[simp]
+theorem mul_two_succ_lor_mul_two_succ {n m : ℕ} : n * 2 + 1 ||| m * 2 + 1 = (n ||| m) * 2 + 1 := by
+  change bitwise _ _ _ = (bitwise _ _ _) * 2 + 1; rw [bitwise]; simp; omega
+
+@[simp]
+theorem odd_lor_iff {n m : ℕ} : Odd (n ||| m) ↔ Odd n ∨ Odd m := by
+  induction n using Nat.mod_2_ind <;> nm n <;>
+  induction m using Nat.mod_2_ind <;> nm m <;> simp
+
+@[simp]
+theorem even_lor_iff {n m : ℕ} : Even (n ||| m) ↔ Even n ∧ Even m := by
+  rw [←not_odd_iff_even, odd_lor_iff]; simp
+
+@[simp]
+theorem even_shiftLeft_succ {n k : ℕ} : Even (n <<< (k + 1)) := by
+  simp [shiftLeft_eq, pow_succ]
+
+@[simp]
+theorem not_odd_shiftLeft_succ {n k : ℕ} : ¬Odd (n <<< (k + 1)) := by
+  simp
+
+@[simp]
+theorem forall_even_shiftRight_iff {n : ℕ} : (∀ k, Even (n >>> k)) ↔ n = 0 := by
+  symm; constructor; rintro rfl; simp
+  intro h
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h₁ : n >>> 1 = 0
+  · cases n; rfl; nm n
+    rw [Nat.shiftRight_eq_div_pow] at h₁
+    simp at h₁
+    subst h₁
+    specialize h 0
+    simp at h
+  specialize ih (n >>> 1) (by omega)
+  simp [h₁] at ih
+  choose k ih using ih
+  specialize h (k + 1)
+  rw [add_comm] at h
+  simp [Nat.shiftRight_add] at h
+  grind
+
+theorem shiftRight_add' {n m k : ℕ} : n >>> (m + k) = n >>> k >>> m := by
+  rw [add_comm, shiftRight_add]
+
+@[simp]
+theorem mul_two_add_one_div_two {n : ℕ} : (n * 2 + 1) / 2 = n := by
+  omega
+
+theorem div_two_eq_shiftRight {n : ℕ} : n / 2 = n >>> 1 := by
+  simp [shiftRight_eq_div_pow]
+
+theorem eq_iff_odd_shiftRight {n m : ℕ} : n = m ↔ ∀ k, Odd (n >>> k) ↔ Odd (m >>> k) := by
+  constructor; rintro rfl; simp; intro h
+  induction n using Nat.strong_induction_on generalizing m
+  nm n ih
+  by_cases h₁ : n = 0
+  · clear ih
+    subst h₁
+    simp at h
+    rw [h]
+  by_cases h₂ : m = 0
+  · clear ih
+    subst h₂
+    simp at h
+    rw [h]
+  by_cases h₃ : n = 1
+  · subst h₃; clear h₁
+    have h₃ := h 0
+    simp at h₃
+    replace h := forall_spec (· + 1) h
+    simp [shiftRight_add'] at h
+    cases m; simp at h₂; nm m; cases m; rfl; nm m
+    simp [add_assoc, shiftRight_eq_div_pow] at h
+  have h₄ : m ≠ 1
+  · rintro rfl
+    clear h₂
+    have h₂ := h 0
+    simp at h₂
+    replace h := forall_spec (· + 1) h
+    simp [shiftRight_add'] at h
+    cases n; simp at h₂; nm n; cases n; simp at h₃
+    simp [add_assoc, shiftRight_eq_div_pow] at h
+  simp at h₄
+  specialize @ih (n >>> 1) (by omega) (m >>> 1)
+  convert_to n / 2 * 2 + n % 2 = m / 2 * 2 + m % 2; iterate 2 simp
+  have h₅ : m % 2 = n % 2
+  · specialize h 0
+    simp at h
+    grind
+  rw [h₅]; clear h₅
+  congr 2
+  simp [Nat.div_two_eq_shiftRight]
+  apply ih
+  intro k
+  specialize h (k + 1)
+  simpa [shiftRight_add'] using h
+
+attribute [simp] Nat.lt_two_pow_self
+
+@[simp]
+theorem shiftRight_add_left {n m : ℕ} : n >>> (m + n) = 0 := by
+  rw [shiftRight_eq_div_pow]; simp; apply lt_of_le_of_lt (b := m + n) <;> simp
+
+@[simp]
+theorem shiftRight_add_right {n m : ℕ} : n >>> (n + m) = 0 := by
+  rw [add_comm]; simp
+
+theorem div_mul_eq_div_div {n m k : ℕ} : n / (m * k) = n / m / k := by
+  rw [Nat.div_div_eq_div_mul]
+
+@[simp]
+theorem mul_two_add_one_div_two_pow_succ {n m : ℕ} : (n * 2 + 1) / 2 ^ (m + 1) = n / 2 ^ m := by
+  rw [pow_succ]; nth_rw 2 [mul_comm]; rw [div_mul_eq_div_div]; simp
+
+@[simp]
+theorem mul_two_add_one_shiftRight_succ {n m : ℕ} : (n * 2 + 1) >>> (m + 1) = n >>> m := by
+  simp [shiftRight_eq_div_pow]
+
+@[simp]
+theorem lor_one_shiftRight_succ {n m : ℕ} : (n ||| 1) >>> (m + 1) = n >>> (m + 1) := by
+  change bitwise _ _ _ >>> _ = _
+  unfold bitwise
+  simp
+  split_ifs with h
+  · simp [h]
+  change ((_ ||| 0) + (_ ||| 0) + 1) >>> _ = _
+  simp [←mul_two]
+  simp [shiftRight_eq_div_pow, pow_succ', Nat.div_div_eq_div_mul]
+
+@[simp]
+theorem mul_two_shiftRight_succ {n m : ℕ} : (n * 2) >>> (m + 1) = n >>> m := by
+  simp [shiftRight_eq_div_pow, pow_succ']
+
+theorem lor_one_eq_ite {n : ℕ} : n ||| 1 = if Odd n then n else n + 1 := by
+  change bitwise _ _ _ = _
+  unfold bitwise
+  simp
+  split_ifs with h₁ h₂ h₂
+  iterate 2 grind
+  all_goals
+    change (_ ||| 0) + (_ ||| 0) + _ = _
+    simp [←mul_two]
+  · rw [odd_iff_exi] at h₂
+    omega
+  · simp at h₂
+    rw [even_iff_exi] at h₂
+    omega
+
+@[simp]
+theorem mul_two_lor_one_eq {n : ℕ} : n * 2 ||| 1 = n * 2 + 1 := by
+  rw [lor_one_eq_ite]; simp
+
+@[simp]
+theorem mul_two_add_one_lor_one_eq {n : ℕ} : (n * 2 + 1) ||| 1 = n * 2 + 1 := by
+  rw [lor_one_eq_ite]; simp
+
+theorem mod_self_pow_succ {n m : ℕ} (hn : n ≠ 1) (hm : m ≠ 0) : n % n ^ (m + 1) = n := by
+  cases n; simp; nm n; simp at hn; apply Nat.mod_eq_of_lt
+  apply lt_self_pow₀ <;> simp <;> omega
+
+theorem beq_eq_eq {n m : ℕ} : (n == m) = decide (n = m) := rfl
+
+theorem mod_two_eq_one_iff_odd {n : ℕ} : n % 2 = 1 ↔ Odd n := by
+  rw [Nat.odd_iff]
+
+theorem mod_two_eq_zero_iff_even {n : ℕ} : n % 2 = 0 ↔ Even n := by
+  rw [Nat.even_iff]
+
+theorem testBit_eq_odd {n i : ℕ} : n.testBit i = decide (Odd (n >>> i)) := by
+  simp [-decide_shiftRight_mod_two_eq_one, testBit, beq_eq_eq, mod_two_eq_one_iff_odd]
+
+theorem ne_zero_of_odd {n : ℕ} (h : Odd n) : n ≠ 0 := by
+  rintro rfl; simp at h
+
+theorem pos_of_odd {n : ℕ} (h : Odd n) : 0 < n :=
+  pos_of_ne_zero # ne_zero_of_odd h
+
+@[simp]
+theorem sum_min_left {n m : ℕ} : n - min n m = n - m := by
+  omega
+
+@[simp]
+theorem sum_min_right {n m : ℕ} : n - min m n = n - m := by
+  omega
