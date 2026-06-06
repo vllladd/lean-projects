@@ -1,4 +1,4 @@
-import Projects.Util
+import Projects.Digits
 
 namespace Nat
 
@@ -10,14 +10,6 @@ namespace List
 
 variable {α β γ : Type*}
 variable {xs ys zs : List α}
-
-@[simp]
-theorem nodup_filter_range {n p} : (range n |>.filter p).Nodup :=
-  Nodup.filter _ (by simp)
-
-theorem eq_of_sortedLE_and_perm [ha : LinearOrder α]
-(h₁ : xs.SortedLE) (h₂ : ys.SortedLE) (h₃ : xs ~ ys) : xs = ys := by
-  rw [sortedLE_iff_pairwise] at h₁ h₂; apply eq_of_perm_of_pairwise h₃ h₁ h₂ <;> simp
 
 -- #check 0 #exit
 
@@ -34,14 +26,6 @@ variable [hc₁ : DecidableEq γ] [hc₂ : Hashable γ]
 variable {s s' s₁ s₂ s₃ : Set' α}
 variable [ha : LinearOrder α]
 omit ha
-
-include ha in @[simp]
-theorem toList_ofList_eq_self_iff {xs : List α} : (ofList xs).toList = xs ↔ xs.SortedLT := by
-  have h₁ : (ofList xs).toList.SortedLT; simp
-  constructor <;> intro h; rwa [←h]
-  apply List.eq_of_sortedLE_and_perm h₁.sortedLE h.sortedLE
-  apply List.perm_of_subset_and_nodup (by simp) h.nodup
-  all_goals intro; simp
 
 -- #check 0 #exit
 

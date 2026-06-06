@@ -590,3 +590,14 @@ theorem sSup_mem_iff {s : Set α} : sSup s ∈ s ↔ ∃ x ∈ s, ∀ y ∈ s, y
   · rintro ⟨x, hx, h⟩; contrapose! h; exact exists_not_le_of_sSup_not_mem h hx
 
 end
+
+namespace List
+
+variable {α β γ : Type*}
+variable {xs ys zs : List α}
+
+theorem eq_of_sortedLE_and_perm [ha : LinearOrder α]
+(h₁ : xs.SortedLE) (h₂ : ys.SortedLE) (h₃ : xs ~ ys) : xs = ys := by
+  rw [sortedLE_iff_pairwise] at h₁ h₂; apply eq_of_perm_of_pairwise h₃ h₁ h₂ <;> simp
+
+end List

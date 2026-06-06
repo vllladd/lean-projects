@@ -1465,3 +1465,11 @@ theorem eq_singleton_iff_size {x} : s = singleton x ↔ s.size = 1 ∧ x ∈ s :
 
 theorem singleton_eq_iff_size {x} : singleton x = s ↔ s.size = 1 ∧ x ∈ s := by
   simp [ext_iff, size_eq_one_iff]; grind
+
+include ha in @[simp]
+theorem toList_ofList_eq_self_iff {xs : List α} : (ofList xs).toList = xs ↔ xs.SortedLT := by
+  have h₁ : (ofList xs).toList.SortedLT; simp
+  constructor <;> intro h; rwa [←h]
+  apply List.eq_of_sortedLE_and_perm h₁.sortedLE h.sortedLE
+  apply List.perm_of_subset_and_nodup (by simp) h.nodup
+  all_goals intro; simp

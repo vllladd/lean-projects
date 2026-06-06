@@ -2,39 +2,10 @@ import Projects.DigitalRoot.Defs
 
 namespace DigitalRoot
 
-class Base (b : ℕ) : Prop where
-  h : 2 ≤ b
-
-theorem base_iff {b} : Base b ↔ 2 ≤ b := ⟨(·.1), (⟨·⟩)⟩
-
-def Base.decide (b : ℕ) : Bool :=
-  2 ≤ b
-
-theorem base_iff_decide {b} : Base b ↔ Base.decide b := by
-  simp [base_iff, Base.decide]
-
-instance {b} : Decidable # Base b :=
-  decidable_of_iff' _ base_iff_decide
-
-instance : Base 2 := by decide
-
-variable {b} [hb : Base b]
-
-@[simp] theorem Base.two_le : 2 ≤ b := hb.1
-@[simp] theorem Base.one_lt : 1 < b := hb.1
-@[simp] theorem Base.one_le : 1 ≤ b := by linarith [hb.one_lt]
-@[simp] theorem Base.pos : 0 < b := by linarith [hb.two_le]
-@[simp] theorem Base.ne_zero : b ≠ 0 := by linarith [hb.one_le]
-
-theorem Base.div_lt {n} (h : b ≤ n) : n / b < n := by
-  calc
-  _ < n / b + n / b * (b - 1) := by simp [h]
-  _ = n / b * (b - 1 + 1) := by ring_nf
-  _ = n / b * b := by rw [Nat.sub_add_cancel # by simp]
-  _ ≤ _ := by simp
+variable {b : ℕ} [hb : b.Base]
 
 def digSum₁ (b n : ℕ) : ℕ :=
-  if ¬Base b then 0 else
+  if ¬b.Base then 0 else
   if n < b then n else
   n % b + digSum₁ b (n / b)
 decreasing_by
@@ -46,14 +17,14 @@ theorem digSum₁_eq_digSum : digSum₁ = Nat.digSum := by
   induction n using Nat.strong_induction_on
   nm n ih
   unfold digSum₁ Nat.digSum
-  simp [base_iff]
+  simp [Nat.base_iff]
   split_ifs with hb h₁
   · unfold Nat.toDigList
     split_ifs with hn <;> simp
     unfold Nat.toDigList'
     simp [hb]
   · simp at hb
-    rw [Nat.toDigList_of_lt_base hb h₁]
+    rw [Nat.toDigList_of_lt_base h₁]
     simp
   simp at hb h₁
   have h₂ : n / b < n
@@ -89,10 +60,10 @@ Nat.digSum b (digRoot b n) = digRoot b n := by
   induction g generalizing n
   · simp at hg; simp [hg]
   nm g ih
-  simp
+  rw [Function.iterate_succ, Function.comp_apply]
   by_cases h₂ : n < b
-  · suffices h₂ : b.digSum (b.digSum n) = b.digSum n
-    rwa [Function.iterate_fixed h₂]
+  · suffices h₃ : b.digSum (b.digSum n) = b.digSum n
+    · rwa [Function.iterate_fixed h₃]
     nth_rw 2 [Nat.digSum]
     rw [Nat.toDigList]
     split_ifs with hn
@@ -139,274 +110,351 @@ theorem digRoot_digSum {b n} : digRoot b (Nat.digSum b n) = digRoot b n :=
 @[simp]
 theorem digRootComp'_gas_zero {b n} : digRootComp' b n 0 = n := rfl
 
--- theorem digRootComp'_base_le_one {b n g} (h₁ : b ≤ 1) (h₂ : g ≠ 0) :
--- digRootComp' b n g = 0 := by
---   induction g generalizing n
---   ·
---     simp at h₂
---   nm g ih
---   simp [digRootComp']
---   split_ifs with h
+@[simp]
+theorem digRootComp'_zero {b g} : digRootComp' b 0 g = 0 := by
+  induction g <;> simp [digRootComp']; tauto
 
--- #check 0 #exit
+theorem digRootComp'_base_le_one {b n g}
+(h₁ : b ≤ 1) (h₂ : g ≠ 0) : digRootComp' b n g = 0 := by
+  cases g; simp at h₂; nm g; simp [digRootComp']
+  split_ifs with h₃; omega; simp [Nat.digSum_of_base_le_one h₁]
 
--- @[simp]
--- theorem digRootComp'_gas_succ {b n g} :
--- digRootComp' b n (g + 1) = digRootComp' b (Nat.digSum b n) g := by
---   nth_rw 1 [digRootComp']
---   split_ifs with h; on_goal 2 => rfl
---   rw [Nat.digSum_of_lt_base]
+theorem digRootComp'_of_lt_base {b n g} (h : n < b) : digRootComp' b n g = n := by
+  induction g <;> simp [digRootComp']; omega
 
--- #check 0 #exit
+@[simp]
+theorem digRootComp'_gas_succ {b n g} :
+digRootComp' b n (g + 1) = digRootComp' b (Nat.digSum b n) g := by
+  by_cases hb : b ≤ 1
+  · rw [digRootComp'_base_le_one hb (by simp)]
+    simp [Nat.digSum_of_base_le_one hb]
+  replace hb : 2 ≤ b; omega
+  nth_rw 1 [digRootComp']
+  split_ifs with h; on_goal 2 => rfl
+  rw [Nat.digSum_of_lt_base h, digRootComp'_of_lt_base h]
 
--- @[simp]
--- theorem digRootComp_eq_digRoot : digRootComp = digRoot := by
---   ext b n
---   rw [@digRoot_eq_iterate b n, digRootComp]
---   generalize hg : n = g
---   suffices : digRootComp' b n g = (Nat.digSum b)^[g] n
---   · grind
---   clear hg
---   by_cases h₁ : b ≤ 1
---   ·
---     sorry
---   induction g generalizing n
---   · simp
---   nm g ih
---   simp [digRootComp']
---   split_ifs with h₁
---   ·
--- 
--- #check 0 #exit
--- 
--- def digRootComp (b n : ℕ) : ℕ :=
---   if ¬Base b then 0 else
---   if n < b then n else
---   digRootComp b # Nat.digSum b n
--- decreasing_by
---   nm hb h; push Not at hb h; rwa [digSum_lt_iff_base_le]
--- 
--- #check 0 #exit
--- 
--- def digRoot' (b n : ℕ) : ℕ :=
---   if n = 0 then 0
---   else if n % (b - 1) = 0 then b - 1
---   else n % (b - 1)
--- 
--- @[simp]
--- theorem digRoot_zero : digRoot b 0 = 0 := by
---   unfold digRoot; simp [hb]
--- 
--- omit hb in @[simp]
--- theorem digRoot'_zero : digRoot' b 0 = 0 := rfl
--- 
--- omit hb in
--- theorem digRoot'_eq_of_lt_base {n} (h : n < b) : digRoot' b n = n := by
---   unfold digRoot'
---   split_ifs with h₁ h₂
---   · exact h₁.symm
---   · obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero h₂; clear h₂
---     cases b; simp; nm b
---     simp_all
---     rcases h₁ with ⟨h₁, h₂⟩
---     cases k; simp at h₂; nm k
---     cases k; simp; nm k
---     simp [Nat.mul_add] at h
---     cases b; simp at h₁; nm b
---     ring_nf at h
---     simp at h
---   · cases b; simp at h; nm b
---     simp_all only [add_tsub_cancel_right]
---     rw [Nat.lt_succ_iff, le_iff_eq_or_lt] at h
---     rcases h with rfl | h; simp at h₂
---     rw [Nat.mod_eq_of_lt h]
--- 
--- @[simp]
--- theorem digSum_zero : digSum b 0 = 0 := by
---   simp [digSum]
--- 
--- @[simp]
--- theorem digSum_eq_zero_iff {n} : digSum b n = 0 ↔ n = 0 := by
---   induction n using Nat.strong_induction_on
---   nm n ih
---   unfold digSum
---   simp [hb]
---   split_ifs with h; rfl
---   push Not at h
---   simp
---   symm; constructor; rintro rfl; simp
---   rintro ⟨h₁, h₂⟩
---   rw [ih _ # hb.div_lt h] at h₂
---   simp at h₂
---   linarith
--- 
--- omit hb in @[simp]
--- theorem digRoot'_digRoot' {n} : digRoot' b (digRoot' b n) = digRoot' b n := by
---   cases n; simp; nm n
---   unfold digRoot'; simp
---   split_ifs <;> simp_all
--- 
--- theorem Base.eq_two_or_three_le : b = 2 ∨ 3 ≤ b := by
---   cases hb; omega
--- 
--- @[simp]
--- theorem digRoot'_base_two {n} : digRoot' 2 n = if n = 0 then 0 else 1 := by
---   simp [digRoot']
--- 
--- theorem digRoot'_add_base {n} : digRoot' b (n + b) = digRoot' b (n + 1) := by
---   rcases hb.eq_two_or_three_le with rfl | h₁; simp; nth_rw 1 [digRoot']
---   simp; rw [Nat.add_mod, Nat.mod_self_sub_one_eq_one h₁]; simp; rfl
--- 
--- theorem digRoot'_add_base_sub_one {n} (h : n ≠ 0) :
--- digRoot' b (n + (b - 1)) = digRoot' b n := by
---   cases n; simp at h; nm n; simp [digRoot'_add_base]
--- 
--- omit hb in @[simp]
--- theorem digRoot'_base_sub_one : digRoot' b (b - 1) = b - 1 := by
---   unfold digRoot'; simp [eq_comm]
--- 
--- @[simp]
--- theorem Base.sub_one_ne_zero : b - 1 ≠ 0 := by
---   cases hb; omega
--- 
--- theorem digRoot'_base_sub_one_add {n} (h : n ≠ 0) :
--- digRoot' b (b - 1 + n) = digRoot' b n := by
---   rw [add_comm]; exact digRoot'_add_base_sub_one h
--- 
--- theorem digRoot'_add {n m} :
--- digRoot' b (n + m) = digRoot' b (digRoot' b n + digRoot' b m) := by
---   cases n; simp; nm n; cases m; simp; nm m
---   nth_rw 1 [digRoot']; iterate 2 nth_rw 2 [digRoot']; simp
---   split_ifs with h₁ h₂ h₃ h₃ h₂ h₃ h₃
---   · rw [digRoot'_add_base_sub_one] <;> simp
---   · rw [Nat.add_mod, h₂] at h₁; simp at h₁; contradiction
---   · rw [Nat.add_mod, h₃] at h₁; simp at h₁; contradiction
---   · unfold digRoot'; simp [h₁, h₂]
---   · rw [Nat.add_mod, h₂] at h₁; simp at h₁; contradiction
---   · rw [digRoot'_base_sub_one_add h₃, Nat.add_mod, h₂]; simp
---     rw [digRoot'_eq_of_lt_base]; trans b - 1; apply Nat.mod_lt; simp; simp
---   · rw [digRoot'_add_base_sub_one h₂, Nat.add_mod, h₃]; simp
---     rw [digRoot'_eq_of_lt_base]; trans b - 1; apply Nat.mod_lt; simp; simp
---   · unfold digRoot'; simp [h₁, h₂]
--- 
--- @[simp]
--- theorem digRoot'_lt_base {n} : digRoot' b n < b := by
---   unfold digRoot'; split_ifs with h₁ h₂; iterate 2 simp
---   trans b - 1; apply Nat.mod_lt; simp; simp
--- 
--- @[simp]
--- theorem digRoot'_le_base {n} : digRoot' b n ≤ b :=
---   le_of_lt digRoot'_lt_base
--- 
--- theorem digRoot'_mul_base_sub_one_add {n k} (h : n ≠ 0) :
--- digRoot' b (k * (b - 1) + n) = digRoot' b n := by
---   induction k; simp; nm k hk
---   rwa [Nat.succ_mul, add_assoc, add_comm (b - 1), ←add_assoc,
---     digRoot'_add_base_sub_one (by omega)]
--- 
--- @[simp]
--- theorem not_base_zero : ¬Base 0 := by
---   rintro ⟨h⟩; omega
--- 
--- @[simp]
--- theorem digRoot'_digSum {n} : digRoot' b (digSum b n) = digRoot' b n := by
---   induction n using Nat.strong_induction_on
---   nm n ih
---   unfold digSum
---   simp [hb]
---   split_ifs with h; rfl
---   push Not at h
---   have h₁ := ih _ # hb.div_lt h
---   rw [digRoot'_add, h₁, ←digRoot'_add]
---   have h₂ : n % b + n / b = n - n / b * (b - 1)
---   · rw [Nat.mul_sub, tsub_tsub_assoc (by simp) (by simp)]
---     simp [Nat.mod_eq_sub_div_mul]
---   rw [h₂]; clear h₂
---   have h₂ : n / b * (b - 1) ≤ n
---   · rw [Nat.mul_sub]; simp; trans n <;> simp
---   obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h₂
---   nth_rw 1 [hk]; simp
---   rw [hk, digRoot'_mul_base_sub_one_add]
---   rintro rfl; simp at hk
---   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h
---   simp at hk; contrapose! hk; clear h hk h₁ h₂ ih
---   apply ne_symm'; apply ne_of_lt
---   rw [add_comm b, Nat.mul_sub, Nat.add_mul]; simp
---   have h : n / b + 1 ≤ n / b * b + b
---   · apply Nat.succ_le_of_lt
---     cases b; simp at hb; nm b
---     rw [Nat.mul_succ]; omega
---   suffices h₁ : n / b * b + b < n + b + (n / b + 1)
---   · exact Nat.sub_lt_right_of_lt_add h h₁
---   clear h; cases b; simp; nm b; rw [Nat.mul_succ]
---   suffices h : n / (b + 1) * b ≤ n; linarith
---   change _ / _ * (b + 1 - 1) ≤ _
---   generalize b + 1 = k at hb ⊢
---   trans n / k * k <;> simp
---   
--- theorem digRoot_eq_digRoot' {n} : digRoot b n = digRoot' b n := by
---   induction n using Nat.strong_induction_on; nm n ih
---   unfold digRoot; split_ifs with h₁; rw [digRoot'_eq_of_lt_base h₁]
---   push Not at h₁; rw [ih]; simp; rwa [digSum_lt_iff_base_le]
--- 
--- theorem digRoot_eq_of_lt_base {n} (h : n < b) : digRoot b n = n := by
---   simp [digRoot_eq_digRoot', digRoot'_eq_of_lt_base h]
--- 
--- @[simp]
--- theorem digRoot_digRoot {n} : digRoot b (digRoot b n) = digRoot b n := by
---   simp [digRoot_eq_digRoot']
--- 
--- @[simp]
--- theorem digRoot_base_two {n} : digRoot 2 n = if n = 0 then 0 else 1 := by
---   simp [digRoot_eq_digRoot']
--- 
--- theorem digRoot_add_base {n} : digRoot b (n + b) = digRoot b (n + 1) := by
---   simp [digRoot_eq_digRoot', digRoot'_add_base]
--- 
--- theorem digRoot_add_base_sub_one {n} (h : n ≠ 0) :
--- digRoot b (n + (b - 1)) = digRoot b n := by
---   simp [digRoot_eq_digRoot', digRoot'_add_base_sub_one h]
--- 
--- @[simp]
--- theorem digRoot_base_sub_one : digRoot b (b - 1) = b - 1 := by
---   simp [digRoot_eq_digRoot']
--- 
--- theorem digRoot_base_sub_one_add {n} (h : n ≠ 0) :
--- digRoot b (b - 1 + n) = digRoot b n := by
---   simp [digRoot_eq_digRoot', digRoot'_base_sub_one_add h]
--- 
--- theorem digRoot_add {n m} :
--- digRoot b (n + m) = digRoot b (digRoot b n + digRoot b m) := by
---   simp [digRoot_eq_digRoot']; exact digRoot'_add
--- 
--- @[simp]
--- theorem digRoot_lt_base {n} : digRoot b n < b := by
---   simp [digRoot_eq_digRoot']
--- 
--- @[simp]
--- theorem digRoot_le_base {n} : digRoot b n ≤ b := by
---   simp [digRoot_eq_digRoot']
--- 
--- theorem digRoot_mul_base_sub_one_add {n k} (h : n ≠ 0) :
--- digRoot b (k * (b - 1) + n) = digRoot b n := by
---   simp [digRoot_eq_digRoot', digRoot'_mul_base_sub_one_add h]
--- 
--- @[simp]
--- theorem digRoot_digSum {n} : digRoot b (digSum b n) = digRoot b n := by
---   simp [digRoot_eq_digRoot']
--- 
--- instance : Base 10 := ⟨by norm_num⟩
--- 
--- @[simp]
--- theorem digRoot_digRoot_add_left {n m} : digRoot b (n + digRoot b m) = digRoot b (n + m) := by
---   simp [digRoot_add]
--- 
--- @[simp]
--- theorem digRoot_digRoot_add_right {n m} : digRoot b (digRoot b n + m) = digRoot b (n + m) := by
---   simp [digRoot_add]
--- 
--- @[simp]
--- theorem digRoot_eq_self_iff {n} : digRoot b n = n ↔ n < b := by
---   constructor
---   · intro h₁; rw [←h₁]; simp
---   · exact digRoot_eq_of_lt_base
+theorem digRoot_eq_digRootComp : digRoot = digRootComp := by
+  ext b n
+  rw [@digRoot_eq_iterate b n, digRootComp]
+  generalize hg : n = g
+  suffices : digRootComp' b n g = (Nat.digSum b)^[g] n
+  · grind
+  clear hg
+  by_cases hb : b ≤ 1
+  · cases g; simp; nm g
+    rw [digRootComp'_base_le_one hb (by simp)]
+    rw [Function.iterate_succ']
+    simp [Nat.digSum_of_base_le_one hb]
+  replace hb : 2 ≤ b; omega
+  induction g generalizing n
+  · simp
+  nm g ih
+  simp [digRootComp']
+  split_ifs with h₁
+  on_goal 2 => apply ih
+  clear ih
+  rw [Nat.digSum_of_lt_base h₁]
+  induction g
+  · simp
+  nm g ih
+  rw [Function.iterate_succ']
+  simp [←ih]
+  rw [Nat.digSum_of_lt_base h₁]
+
+def digRootAlt₁ (b n : ℕ) : ℕ :=
+  if ¬b.Base then 0 else
+  if n < b then n else
+  digRootAlt₁ b # Nat.digSum b n
+decreasing_by
+  nm hb h; push Not at hb h; rwa [digSum_lt_iff_base_le]
+
+theorem digRoot_of_lt_base {b n} (h : n < b) : digRoot b n = n := by
+  rw [digRoot_eq_digRootComp, digRootComp, digRootComp'_of_lt_base h]
+
+theorem digRoot_step {b n} : digRoot b n = digRoot b (Nat.digSum b n) := by
+  simp
+
+@[simp]
+theorem digRoot_zero {b} : digRoot b 0 = 0 := by
+  rw [digRoot_eq_digRootComp, digRootComp]; simp
+
+theorem digRoot_of_base_le_one {b n} (hb : b ≤ 1) : digRoot b n = 0 := by
+  cases n; simp; rw [digRoot_eq_digRootComp, digRootComp, digRootComp'_base_le_one hb]; simp
+
+theorem digRoot_eq_digRootAlt₁ : digRoot = digRootAlt₁ := by
+  ext b n
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h₁ : n < b
+  · rw [digRoot_of_lt_base h₁]
+    unfold digRootAlt₁
+    simp [Nat.base_iff]
+    split_ifs with hb
+    · omega
+    rfl
+  rw [digRootAlt₁]
+  simp [Nat.base_iff]
+  split_ifs with hb
+  · rw [digRoot_of_base_le_one hb]
+  replace hb : b.Base := ⟨by omega⟩
+  rw [digRoot_step]
+  apply ih
+  rw [Nat.digSum_lt_iff_base_le]; omega
+
+def digRootFast (b n : ℕ) : ℕ :=
+  if b ≤ 1 ∨ n = 0 then 0
+  else if n % (b - 1) = 0 then b - 1
+  else n % (b - 1)
+
+@[simp]
+theorem digRoot_base_zero {n} : digRoot 0 n = 0 := by
+  simp [digRoot_of_base_le_one]
+
+@[simp]
+theorem digRoot_base_one {n} : digRoot 1 n = 0 := by
+  simp [digRoot_of_base_le_one]
+
+theorem digRoot_lt_base_of {b n} (hb : b ≠ 0) : digRoot b n < b := by
+  by_cases hb : b = 1; simp [hb]
+  replace hb : b.Base := ⟨by omega⟩
+  have h₁ := @digSum_digRoot b n; rw [Nat.digSum_eq_self_iff] at h₁; omega
+
+@[simp]
+theorem digRoot_lt_Nat.base_iff {b n} : digRoot b n < b ↔ b ≠ 0 := by
+  constructor; omega; exact digRoot_lt_base_of
+
+@[simp]
+theorem digRoot_digRoot {b n} : digRoot b (digRoot b n) = digRoot b n := by
+  nth_rw 1 [digRoot_eq_iterate]
+  generalize hk : digRoot b n = k;
+  rw [←hk]; nth_rw 1 [hk]; clear hk
+  induction k <;> simp_all
+
+@[simp]
+theorem digRoot_base : digRoot b b = 1 := by
+  have H := hb; rw [Nat.base_iff] at hb
+  rw [digRoot_step, Nat.digSum_base, digRoot_of_lt_base]; omega
+
+theorem digRoot_eq_digSum_of {n} (h : n + 1 < b * 2) : digRoot b n = Nat.digSum b n := by
+  have H := hb; rw [Nat.base_iff] at hb; by_cases h₁ : n < b
+  · rw [digRoot_of_lt_base h₁, Nat.digSum_of_lt_base h₁]
+  simp at h₁
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
+  replace h : n + 1 < b; omega
+  rw [add_comm b n]
+  rw [digRoot_step]
+  generalize hr : Nat.digSum b (n + b) = r
+  rw [Nat.digSum_add_base_of_lt_base (by omega)] at hr
+  subst hr
+  rw [digRoot_of_lt_base h]
+
+@[simp]
+theorem digRoot_base_sub_one {b} : digRoot b (b - 1) = b - 1 := by
+  cases b; simp; nm b; rw [digRoot_of_lt_base]; simp
+
+@[simp]
+theorem digRoot_base_two {n} : digRoot 2 n = if n = 0 then 0 else 1 := by
+  rw [digRoot_eq_digRootAlt₁]
+  fun_induction digRootAlt₁
+  · simp_all [Nat.base_iff]
+  · grind
+  nm n h₁ h₂ ih
+  clear h₁
+  replace h₂ : 2 ≤ n; omega
+  simpa using ih
+
+@[simp]
+theorem digRoot_one : digRoot b 1 = 1 := by
+  have H := hb; rw [Nat.base_iff] at hb; rw [digRoot_of_lt_base]; omega
+
+@[simp]
+theorem digRoot_mul_base {b n} : digRoot b (n * b) = digRoot b n := by
+  rw [digRoot_step]; simp only [Nat.digSum_mul_base, digRoot_digSum]
+
+@[simp]
+theorem digRoot_base_mul {b n} : digRoot b (b * n) = digRoot b n := by
+  rw [mul_comm]; simp
+
+@[simp]
+theorem digRoot_mul_base_pow {b n k} : digRoot b (n * b ^ k) = digRoot b n := by
+  rw [digRoot_step]; simp only [Nat.digSum_mul_base_pow, digRoot_digSum]
+
+@[simp]
+theorem digRoot_base_pow_mul {b n k} : digRoot b (b ^ k * n) = digRoot b n := by
+  rw [mul_comm]; simp
+
+@[simp]
+theorem digRoot_mod_base_pred {n} : digRoot b n % (b - 1) = n % (b - 1) := by
+  have H := hb; rw [Nat.base_iff] at hb
+  induction n using Nat.ind_dig b
+  · nm n h
+    rw [digRoot_of_lt_base h]
+  nm k c hk hc ih
+  rw [digRoot_step, Nat.digSum_mul_base_add hc]
+  rw [ih]
+  rotate_left
+  · apply lt_of_le_of_lt (b := k + c) <;> simp; omega
+  clear ih
+  rw [Nat.add_mod]
+  rw [Nat.digSum_mod_base_pred]
+  simp
+  have h : k * b = k * (b - 1) + k
+  · cases b; simp at hb; nm b
+    simp [mul_add]
+  rw [h]; clear h
+  nth_rw 2 [Nat.add_mod]
+  simp
+
+@[simp]
+theorem digRoot_eq_zero_iff {b n} : digRoot b n = 0 ↔ b ≤ 1 ∨ n = 0 := by
+  symm; constructor
+  · rintro (h | rfl)
+    · rw [digRoot_of_base_le_one h]
+    simp
+  intro h
+  by_contra! h₁
+  rcases h₁ with ⟨hb, hn⟩
+  replace hb : b.Base := ⟨by omega⟩
+  contrapose! h; clear h
+  induction n using Nat.ind_dig b
+  · nm n h
+    rwa [digRoot_of_lt_base h]
+  nm k c hk hc ih
+  rw [digRoot_step, Nat.digSum_mul_base_add hc]
+  apply ih
+  · simp; apply lt_of_le_of_lt (b := k) <;> simp; omega
+  simp; omega
+
+@[simp]
+theorem digRoot_base_succ_le {b n} : digRoot (b + 1) n ≤ b := by
+  rw [←Nat.lt_add_one_iff, digRoot_lt_Nat.base_iff]; omega
+
+@[simp]
+theorem digRoot_le_base_pred {b n} : digRoot b n ≤ b - 1 := by
+  cases b <;> simp
+
+theorem digRoot_add_base {b n} : digRoot b (n + b) = digRoot b (n + 1) := by
+  by_cases hb : b ≤ 1
+  · simp [digRoot_of_base_le_one hb]
+  replace hb : 2 ≤ b; omega
+  have h₁ := @digRoot_mod_base_pred b ⟨hb⟩ (n + b)
+  have h₂ := @digRoot_mod_base_pred b ⟨hb⟩ (n + 1)
+  have h : (n + b) % (b - 1) = (n + 1) % (b - 1)
+  ·
+    cases b; simp at hb; nm b
+    simp
+    rw [show n + (b + 1) = n + 1 + b by omega]
+    simp
+  rw [h] at h₁; clear h
+  have h₃ : digRoot b (n + b) = b - 1 ↔ digRoot b (n + 1) = b - 1
+  · constructor
+    · intro h; simp [h] at h₁; symm at h₁; simp [h₁] at h₂
+      apply Nat.eq_of_le_and_mod_eq_zero; omega; simp; omega; simp; exact h₂
+    · intro h; simp [h] at h₂; symm at h₂; simp [h₂] at h₁
+      apply Nat.eq_of_le_and_mod_eq_zero; omega; simp; omega; simp; exact h₁
+  by_cases h₄ : digRoot b (n + b) = b - 1
+  · rw [h₄, h₃.mp h₄]
+  have h₅ := h₄; rw [h₃] at h₅
+  replace h₄ := lt_of_le_of_ne (by simp) h₄
+  replace h₅ := lt_of_le_of_ne (by simp) h₅
+  apply Nat.eq_of_mod_eq_mod _ h₄ h₅
+  rw [h₁, h₂]
+
+theorem digRoot_add_base_pred {b n} (hn : n ≠ 0) : digRoot b (n + (b - 1)) = digRoot b n := by
+  by_cases hb : b ≤ 1
+  · simp [digRoot_of_base_le_one hb]
+  replace hb : 2 ≤ b; omega
+  cases n
+  · simp at hn
+  nm n
+  rw [show n + 1 + (b - 1) = n + b by omega]
+  rw [digRoot_add_base]
+
+@[csimp]
+theorem digRoot_eq_digRootFast : digRoot = digRootFast := by
+  ext b n
+  by_cases hb : b ≤ 1
+  · rw [digRoot_of_base_le_one hb]
+    simp [digRootFast, hb]
+  have hb' := hb
+  replace hb : 2 ≤ b; omega
+  induction n using Nat.ind_step (b - 1)
+  · nm n h
+    rw [digRoot_of_lt_base (by omega)]
+    simp [digRootFast, hb']
+    split_ifs with hn h₁
+    · exact hn
+    · exact Nat.eq_of_le_and_mod_eq_zero (by omega) hn (le_of_lt h) h₁
+    rw [Nat.mod_eq_of_lt h]
+  nm n ih
+  by_cases hn : n = 0
+  · subst hn
+    simp [digRootFast]
+    omega
+  rw [digRoot_add_base_pred hn]
+  rw [ih _ (by omega)]; clear ih
+  simp [digRootFast, hb', hn]
+
+theorem digRoot_add {n m} : digRoot b (n + m) = digRoot b (digRoot b n + digRoot b m) := by
+  have H := hb; rw [Nat.base_iff] at hb
+  have hb' : ¬(b ≤ 1); omega
+  by_cases hn : n = 0; subst hn; simp
+  by_cases hm : m = 0; subst hm; simp
+  rw [digRoot_eq_digRootFast]
+  simp [digRootFast, hb', hn, hm]
+  cases b; simp at hb; nm b; simp
+  by_cases h₁ : n % b = 0 <;> simp [h₁]
+  · rw [Nat.add_mod n m, h₁]; simp
+    by_cases h₂ : m % b = 0 <;> simp [h₂]
+  by_cases h₂ : m % b = 0 <;> simp [h₂]
+  rw [Nat.add_mod n m, h₂]; simp
+
+@[simp]
+theorem digRoot_add_digRoot_succ_lt_base_mul_two_iff {b n m} :
+digRoot b n + digRoot b m + 1 < b * 2 ↔ b ≠ 0 := by
+  use by omega
+  intro h
+  have h₁ : digRoot b n < b; simpa
+  have h₂ : digRoot b m < b; simpa
+  omega
+
+theorem digRoot_add' {n m} :
+digRoot b (n + m) = Nat.digSum b (digRoot b n + digRoot b m) := by
+  have H := hb; rw [Nat.base_iff] at hb
+  rw [digRoot_add]
+  nth_rw 1 [digRoot_eq_digSum_of]
+  simp
+
+@[simp]
+theorem digRoot_mul_base_add {n k} :
+digRoot b (n * b + k) = digRoot b (n + k) := by
+  have H := hb; rw [Nat.base_iff] at hb
+  rw [digRoot_add]; simp; rw [←digRoot_add]
+
+@[simp]
+theorem digRoot_base_pred_add {b n} (h : n ≠ 0) :
+digRoot b (b - 1 + n) = digRoot b n := by
+  rwa [add_comm, digRoot_add_base_pred]
+
+@[simp]
+theorem digRoot_digRoot_add_left {n m} :
+digRoot b (n + digRoot b m) = digRoot b (n + m) := by
+  rw [digRoot_add]; simp; rw [←digRoot_add]
+
+@[simp]
+theorem digRoot_digRoot_add_right {n m} :
+digRoot b (digRoot b n + m) = digRoot b (n + m) := by
+  rw [add_comm]; simp; rw [add_comm]
+
+@[simp]
+theorem digRoot_eq_self_iff {n} : digRoot b n = n ↔ n < b := by
+  constructor
+  · intro h₁; rw [←h₁]; simp
+  · intro h; rw [digRoot_of_lt_base h]
+
+@[simp]
+theorem digRoot_le_base {b n} : digRoot b n ≤ b := by
+  by_cases hb : b ≤ 1
+  · simp [digRoot_of_base_le_one hb]
+  replace hb : b.Base := ⟨by omega⟩
+  apply le_of_lt; simp

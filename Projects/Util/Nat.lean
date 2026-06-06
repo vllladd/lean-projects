@@ -22,20 +22,9 @@ def chkLt (n : ℕ) (p : ℕ → Bool) : Bool :=
   | 0 => true
   | n + 1 => chkLe n p
 
-def toDigList' (b n : ℕ) : List ℕ :=
-  if b ≤ 1 then [] else if n = 0 then []
-  else (n % b) :: toDigList' b (n / b)
-decreasing_by
-  nm h₁ h₂; rw [Nat.div_lt_iff_lt_mul (by omega)]
-  cases n; simp at h₂; simp; omega
-
-def toDigList (b n : ℕ) : List ℕ :=
-  if n = 0 then [0] else (toDigList' b n).reverse
-
-def ofDigList (b : ℕ) (ds : List ℕ) : ℕ :=
-  ds.foldl (λ n d => n * b + d) 0
-
 -----
+
+attribute [simp] mod_one mod_le
 
 theorem rec_const (n m : ℕ) : n.rec m (λ _ a => a) = m := by
   induction n <;> simp_all only [rec_zero]
@@ -538,40 +527,6 @@ instance {n : ℕ} {p : ℕ → Prop} [h : ∀ k, Decidable (p k)] : Decidable (
   decidable_of_iff' (!chkLt n (!p ·)) (by simp)
 
 @[simp]
-theorem todogots₁_zero {b} : toDigList b 0 = [0] := by rfl
-
-theorem lt_pow_length_toDigList {b n : ℕ} (hb : 2 ≤ b) : n < b ^ (toDigList b n).length := by
-  unfold toDigList
-  split_ifs with h₁
-  · simp [h₁]
-    omega
-  fun_induction toDigList'
-  · omega
-  · simp
-  nm n h₂ h₃ ih
-  simp at ih ⊢
-  specialize ih (by omega)
-  clear h₁ h₂
-  by_cases h₁ : n < b
-  · clear ih
-    simp [pow_succ]
-    rw [mul_comm]
-    apply lt_mul_of_lt_of_one_le h₁
-    apply Nat.one_le_pow
-    omega
-  simp at h₁
-  specialize ih h₁
-  rw [Nat.div_lt_iff_lt_mul (by omega)] at ih
-  simp [pow_succ]
-  omega
-
-theorem lt_pow_of_length_toDigList_eq {b n k : ℕ}
-(h : (toDigList b n).length = k) (hb : 2 ≤ b) : n < b ^ k := by
-  subst h; exact lt_pow_length_toDigList hb
-
-attribute [simp] mod_one
-
-@[simp]
 theorem mul_two_lor_mul_two {n m : ℕ} : n * 2 ||| m * 2 = (n ||| m) * 2 := by
   change bitwise _ _ _ = (bitwise _ _ _) * 2; rw [bitwise]; simp; split_ifs with h₁ h₂
   change _ = (_ ||| _) * 2; simp [h₁]; change _ = (_ ||| _) * 2; simp [h₂]; omega
@@ -770,3 +725,62 @@ theorem sum_min_left {n m : ℕ} : n - min n m = n - m := by
 @[simp]
 theorem sum_min_right {n m : ℕ} : n - min m n = n - m := by
   omega
+
+theorem eq_div_mod (n k : ℕ) : n = n / k * k + n % k := by
+  simp
+
+theorem eq_mod_div (n k : ℕ) : n = n % k + n / k * k := by
+  simp
+
+theorem eq_of_mod_eq_mod {n m : ℕ} (k : ℕ)
+(hn : n < k) (hm : m < k) (h : n % k = m % k) : n = m := by
+  rw [mod_eq_of_lt hn, mod_eq_of_lt hm] at h; exact h
+
+theorem ind_step (k : ℕ) {p : ℕ → Prop} (h₁ : ∀ n, n < k → p n)
+(h₂ : ∀ n, (∀ c < n + k, p c) → p (n + k)) : ∀ n, p n := by
+  intro n
+  induction n using Nat.strong_induction_on
+  nm n ih
+  by_cases h₃ : n < k
+  · exact h₁ _ h₃
+  simp at h₃
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h₃; clear h₃
+  rw [add_comm] at ih ⊢
+  exact h₂ _ ih
+
+theorem not_le_mod {n k : ℕ} (hk : k ≠ 0) : ¬(k ≤ n % k) := by
+  simp; apply mod_lt; omega
+
+@[simp]
+theorem sub_succ_div_self_eq_zero {n m : ℕ} : (n - (m + 1)) / n = 0 := by
+  rw [Nat.div_eq_zero_iff]; omega
+
+theorem exi_mul_add (n b : ℕ) (h : b ≠ 0) : ∃ m r, r < b ∧ n = m * b + r := by
+  use n / b, n % b; simp; apply Nat.mod_lt; omega
+
+theorem lt_self_mul_add_iff {a b c : ℕ} : a < a * b + c ↔
+(a ≠ 0 ∨ c ≠ 0) ∧ (a ≠ 0 → (b = 0 → a < c) ∧ (b ≠ 0 → c = 0 → b ≠ 1)) := by
+  cases a <;> cases b <;> cases c <;> grind
+
+@[simp]
+theorem lt_self_mul_iff' {b n : ℕ} : n < n * b ↔ 2 ≤ b ∧ n ≠ 0 := by
+  cases n <;> simp; omega
+
+@[simp]
+theorem lt_mul_self_iff' {b n : ℕ} : n < b * n ↔ 2 ≤ b ∧ n ≠ 0 := by
+  rw [mul_comm]; simp
+
+theorem eq_of_le_and_dvd {n b}
+(hb : b ≠ 0) (hn : n ≠ 0) (h₁ : n ≤ b) (h₂ : b ∣ n) : n = b := by
+  suffices : b ≤ n; omega
+  by_contra! h₃
+  clear h₁
+  obtain ⟨n, rfl⟩ := h₂
+  contrapose! h₃; clear h₃
+  simp [hb]
+  rintro rfl
+  simp at hn
+
+theorem eq_of_le_and_mod_eq_zero {n b}
+(hb : b ≠ 0) (hn : n ≠ 0) (h₁ : n ≤ b) (h₂ : n % b = 0) : n = b :=
+  eq_of_le_and_dvd hb hn h₁ # dvd_of_mod_eq_zero h₂

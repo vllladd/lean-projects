@@ -481,3 +481,7 @@ xs.foldl f z = g₂ (xs.foldl (λ acc x => g₁ # f (g₂ acc) x) (g₁ z)) := b
 @[simp]
 theorem take_take_same {n : ℕ} : (xs.take n).take n = xs.take n := by
   rw [take_take]; simp
+
+@[simp]
+theorem nodup_filter_range {n p} : (range n |>.filter p).Nodup :=
+  Nodup.filter _ (by simp)
