@@ -340,8 +340,7 @@ theorem digRoot_add_base {b n} : digRoot b (n + b) = digRoot b (n + 1) := by
   have h₁ := @digRoot_mod_base_pred b ⟨hb⟩ (n + b)
   have h₂ := @digRoot_mod_base_pred b ⟨hb⟩ (n + 1)
   have h : (n + b) % (b - 1) = (n + 1) % (b - 1)
-  ·
-    cases b; simp at hb; nm b
+  · cases b; simp at hb; nm b
     simp
     rw [show n + (b + 1) = n + 1 + b by omega]
     simp
