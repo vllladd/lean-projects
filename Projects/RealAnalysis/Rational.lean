@@ -4,7 +4,7 @@ namespace RealAnalysis
 
 open Classical in noncomputable
 def monoLtRatSeq (x : ℝ) (n : ℕ) : ℚ :=
-Classical.epsilon # λ r => x - 1 / 2 ^ n < r ∧ r < x - 1 / 2 ^ (n + 1)
+τ r, x - 1 / 2 ^ n < r ∧ r < x - 1 / 2 ^ (n + 1)
 
 theorem monoLtRatSeq_cnd {x : ℝ} {n : ℕ} :
 ∃ (r : ℚ), x - 1 / 2 ^ n < r ∧ r < x - 1 / 2 ^ (n + 1) := by
@@ -15,7 +15,7 @@ theorem monoLtRatSeq_cnd {x : ℝ} {n : ℕ} :
 
 theorem monoLtRatSeq_btwn {x : ℝ} {n : ℕ} :
 x - 1 / 2 ^ n < monoLtRatSeq x n ∧ monoLtRatSeq x n < x - 1 / 2 ^ (n + 1) :=
-  Classical.epsilon_spec monoLtRatSeq_cnd
+  τ_spec monoLtRatSeq_cnd
 
 theorem lt_monoLtRatSeq {x : ℝ} {n : ℕ} :
 x - 1 / 2 ^ n < monoLtRatSeq x n := monoLtRatSeq_btwn.1

@@ -1,5 +1,7 @@
 import Mathlib.Tactic
 
+open Lean TSyntax.Compat
+
 syntax:min term atomic(" #" ws) term:min : term
 syntax:min term atomic(" ##" ws) term:min : term
 
@@ -30,6 +32,5 @@ macro_rules
 macro "nm " args:(ppSpace colGt Lean.binderIdent)+ : tactic =>
   `(tactic| rename_i $args*)
 
--- axiom aesop' {P : Prop} : P
--- 
--- macro "aesop'" : tactic => `(tactic| exact aesop')
+macro "τ" xs:explicitBinders ", " b:term : term =>
+  expandExplicitBinders ``Classical.epsilon xs b

@@ -115,13 +115,12 @@ theorem Proof.subst_of {s s' i} (h : Proof s) : Proof # s.subst i s' := by
 
 open Classical in noncomputable
 def ProofD.shortest (p : ProofD) : ProofD :=
-  Classical.epsilon # λ p₁ => p₁.stat = p.stat ∧
-  ∀ (p₂ : ProofD), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂
+  τ p₁, p₁.stat = p.stat ∧ ∀ (p₂ : ProofD), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂
 
 theorem ProofD.shortest_spec {p : ProofD} : p.shortest.stat = p.stat ∧
 ∀ (p' : ProofD), p'.stat = p.stat → sizeOf p.shortest ≤ sizeOf p' := by
   unfold shortest
-  apply Classical.epsilon_spec (p := λ (p₁ : ProofD) => p₁.stat = p.stat ∧
+  apply τ_spec (p := λ (p₁ : ProofD) => p₁.stat = p.stat ∧
     ∀ (p₂ : ProofD), p₂.stat = p.stat → sizeOf p₁ ≤ sizeOf p₂)
   have h₁ : ∃ (n : ℕ) (p' : ProofD), p'.stat = p.stat ∧ sizeOf p' = n
   · simp

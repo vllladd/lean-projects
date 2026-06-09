@@ -4,7 +4,7 @@ namespace Misc.Seq1
 
 open Classical in noncomputable
 def seq₁ : ℕ → ℕ :=
-  Classical.epsilon λ a => a 0 = 1 ∧ ∀ n, n ≠ 0 →
+  τ a, a 0 = 1 ∧ ∀ n, n ≠ 0 →
   a n = (List.range n |>.map a |>.filter (¬n ∣ ·) |>.sum)
 
 open Classical in noncomputable
@@ -29,7 +29,7 @@ theorem seq₁Comp_zero : seq₁Comp 0 = 1 := by
 @[simp]
 theorem seq₁Comp_eq_seq₁ : seq₁Comp = seq₁ := by
   unfold seq₁; symm
-  apply epsilon_eq_of
+  apply τ_eq_of
   · simp
     intro n hn
     unfold seq₁Comp

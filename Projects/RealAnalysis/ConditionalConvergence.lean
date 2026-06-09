@@ -34,11 +34,11 @@ def fgCnd (F : ℝ → ℝ) (a : ℕ → ℝ) (f g : ℕ → ℕ) : Prop :=
 
 noncomputable
 def fAux (F : ℝ → ℝ) (a : ℕ → ℝ) : ℕ → ℕ :=
-  Classical.epsilon # λ f => ∃ g, fgCnd F a f g
+  τ f, ∃ g, fgCnd F a f g
 
 noncomputable
 def gAux (F : ℝ → ℝ) (a : ℕ → ℝ) : ℕ → ℕ :=
-  Classical.epsilon # λ g => fgCnd F a (fAux F a) g
+  τ g, fgCnd F a (fAux F a) g
 
 noncomputable
 def f (a : ℕ → ℝ) : ℕ → ℕ :=
@@ -174,7 +174,7 @@ theorem exi_fgCnd {F} : ∃ f g, fgCnd F a f g := by
   use f, g, hfg, hf, hg, Hf H.infp_nonneg, Hg # by simp [H.infp_neg], Hfg
 
 theorem fgCnd_fAux_gAux {F} : fgCnd F a (fAux F a) (gAux F a) :=
-  Classical.epsilon_spec # Classical.epsilon_spec H.exi_fgCnd
+  τ_spec # τ_spec H.exi_fgCnd
 
 theorem fAux_add_gAux {F n} : fAux F a n + gAux F a n = n :=
   H.fgCnd_fAux_gAux.1 n

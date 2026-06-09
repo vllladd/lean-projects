@@ -18,7 +18,7 @@ def bwLimit (a : ℕ → ℝ) (M : ℚ) : ℝ :=
 
 open Classical in noncomputable
 def bwSubseq (a : ℕ → ℝ) (M : ℚ) (n : ℕ) : ℕ :=
-  Classical.epsilon # λ i => (∀ k < n, bwSubseq a M k < i) ∧
+  τ i, (∀ k < n, bwSubseq a M k < i) ∧
   let (y₁, y₂) := bwSeq a (-M) M n
   y₁ ≤ a i ∧ a i ≤ y₂
 
@@ -242,11 +242,9 @@ y₁ ≤ a i ∧ a i ≤ y₂ := by
     rw [abs_lt] at h
     constructor <;> linarith
   nm n ih
-  have h₁ := Classical.epsilon_spec ih
-  generalize h₂ : Classical.epsilon (λ i =>
-    (∀ k < n, bwSubseq a M k < i) ∧
-    match bwSeq a (-M) M n with
-    | (y₁, y₂) => ↑y₁ ≤ a i ∧ a i ≤ ↑y₂) = i at h₁
+  have h₁ := τ_spec ih
+  generalize h₂ : (τ i, (∀ k < n, bwSubseq a M k < i) ∧
+    match bwSeq a (-M) M n with | (y₁, y₂) => ↑y₁ ≤ a i ∧ a i ≤ ↑y₂) = i at h₁
   rcases h₁ with ⟨h₁, h₃⟩
   generalize hr : bwSeq a (-M) M n = r at h₃ ⊢
   rcases r with ⟨y₁, y₂⟩
@@ -281,7 +279,7 @@ theorem bwSubseq_cnd {a : ℕ → ℝ} {M : ℚ} {n : ℕ} (h : ∀ n, |a n| < M
 let (y₁, y₂) := bwSeq a (-M) M n
 y₁ ≤ a (bwSubseq a M n) ∧ a (bwSubseq a M n) ≤ y₂ := by
   have h₁ := @bwSubseq_cnd' a M n h
-  have h₂ := Classical.epsilon_spec h₁
+  have h₂ := τ_spec h₁
   rw [←bwSubseq] at h₂; exact h₂
 
 theorem bwSubseq_lt_of_lt {a : ℕ → ℝ} {M : ℚ} {i j : ℕ} (h : ∀ n, |a n| < M)

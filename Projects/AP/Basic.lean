@@ -1088,7 +1088,7 @@ instance {pw pw' p} : DState # (initState pw p).setPw pw' := by
 
 instance {f} : sys.SimFn # mkStratFn f := by
   constructor; intro s hs h; unfold mkStratFn
-  have h₁ := Classical.epsilon_spec h; dsimp
+  have h₁ := τ_spec h; dsimp
   cases h₂ : f s; simp; exact State.validTr_chooseMove h
   nm s'; simp [guard]; split_ifs with h₃; simpa
   simp; exact State.validTr_chooseMove h

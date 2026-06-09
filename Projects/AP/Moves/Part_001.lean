@@ -536,8 +536,8 @@ theorem AState.aSeek_exi_tr_of {s P} [hs : AState s]
   rw [choose?_eq_of_exi]
   rotate_left; exact h
   simp
-  have h₁ := Classical.epsilon_spec h
-  generalize hp : Classical.epsilon (λ p => ∃ s₁, sys.tr s p = some s₁ ∧ P s₁) = p at h₁ ⊢
+  have h₁ := τ_spec h
+  generalize hp : (τ p, ∃ s₁, sys.tr s p = some s₁ ∧ P s₁) = p at h₁ ⊢
   choose s₁ h₁ h₂ using h₁
   simpa [sys.validTr_of_eq_some h₁, h₁]
 

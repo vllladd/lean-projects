@@ -56,7 +56,7 @@ theorem not_acc_iff_seqCnd {r : α → α → Prop} {x} : ¬Acc r x ↔ ∃ y, S
 theorem not_acc_iff_seqNext {r : α → α → Prop} {x} : ¬Acc r x ↔ SeqCnd r x (seqNext r x) := by
   classical
   rw [not_acc_iff_seqCnd]; constructor
-  · intro h; have h₁ := Classical.epsilon_spec (p := SeqCnd r x) h
+  · intro h; have h₁ := τ_spec (p := SeqCnd r x) h
     unfold seqNext; simpa [choose?_eq_of_exi h]
   · intro h; exact ⟨_, h⟩
 

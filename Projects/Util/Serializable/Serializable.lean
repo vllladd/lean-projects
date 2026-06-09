@@ -30,11 +30,11 @@ import Projects.Util.Serializable.Deserializer
 -- 
 -- noncomputable
 -- def f : α → List Bit :=
---   Classical.epsilon # λ f => ∃ g, Cnd ser dser f g
+--   τ f, ∃ g, Cnd ser dser f g
 -- 
 -- noncomputable
 -- def g : List Bit → ℕ × α :=
---   Classical.epsilon # λ g => Cnd ser dser f g
+--   τ g, Cnd ser dser f g
 -- 
 -- def serialize (x : α) : ByteArray :=
 --   StateT.run' (m := Id) (do ser x; getOutput) ∅
@@ -49,7 +49,7 @@ import Projects.Util.Serializable.Deserializer
 -- include H
 -- 
 -- theorem cnd_fg : @Cnd α ser dser f g :=
---   Classical.epsilon_spec # Classical.epsilon_spec H.cnd
+--   τ_spec # τ_spec H.cnd
 -- 
 -- theorem ser_eq_writeBits {x : α} : ser x = writeBits (f x) :=
 --   cnd_fg.ser_eq_writeBits

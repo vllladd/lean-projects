@@ -1024,8 +1024,8 @@ if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
   symm at hA
   rw [funext_iff] at hA
   generalize hf : (λ (s : Set α) =>
-    ( Classical.epsilon # λ x => x ∈ s ∧ ∀ y ∈ s, x ≤ y
-    , Classical.epsilon # λ x => x ∈ s ∧ ∀ y ∈ s, y ≤ x
+    ( τ x, x ∈ s ∧ ∀ y ∈ s, x ≤ y
+    , τ x, x ∈ s ∧ ∀ y ∈ s, y ≤ x
     )) = f
   generalize hB : (xs.flatMap A).map f = B
   suffices h : B.Nodup
@@ -1048,7 +1048,7 @@ if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
     subst hf
     simp
     have h₂ := le_of_lt h₁
-    rw [epsilon_eq_of (x := x), epsilon_eq_of (x := y)] <;> simp [h₂]
+    rw [τ_eq_of (x := x), τ_eq_of (x := y)] <;> simp [h₂]
     all_goals intro h₃; apply le_antisymm <;> assumption
   subst hB; exact nodup_flatMap_flatMap_pair hxs hys
 

@@ -26,7 +26,7 @@ theorem size₀_le {n s} (h : stateCnd₀ n s) : size₀ ≤ n :=
 
 @[simp]
 theorem state₀_spec : stateCnd₀ size₀ state₀ :=
-  Classical.epsilon_spec size₀_spec
+  τ_spec size₀_spec
 
 @[simp, instance]
 theorem alwaysMovable1_state₀ : AlwaysMovable1 state₀ :=
@@ -57,7 +57,7 @@ trBox₁.y ≤ p.y ∧ (trBox₁.y = p.y → p.x ≤ trBox₁.x) :=
   trBox_spec (by simp) h
 
 theorem state₁_spec : sys.Reachable state₀ state₁ ∧ state₁.boxes = .singleton trBox₁ := by
-  apply Classical.epsilon_spec (p := λ s =>
+  apply τ_spec (p := λ s =>
     sys.Reachable state₀ s ∧ s.boxes = Set'.singleton trBox₁)
   have h₁ := trBox₁_mem
   rw [boxesReachable] at h₁
@@ -91,7 +91,7 @@ theorem alwaysMovable1_state₁ : AlwaysMovable1 state₁ :=
   alwaysMovable1_of_reachable (s := state₀) # by simp
 
 theorem state₂_spec : sys.Reachable state₁ state₂ ∧ state₂.boxes ≠ .singleton trBox₁ := by
-  apply Classical.epsilon_spec (p := λ s =>
+  apply τ_spec (p := λ s =>
     sys.Reachable state₁ s ∧ s.boxes ≠ Set'.singleton trBox₁)
   have h₁ := alwaysMovable1_state₁.1.2
   specialize h₁ _ (by rfl)
@@ -167,7 +167,7 @@ theorem not_trBox₁_mem_boxes_state₀ : trBox₁ ∉ state₂.boxes := by
 
 omit H in
 theorem box_mem_boxes_of {s : State} (h : s.boxes.size ≠ 0) : s.box ∈ s.boxes := by
-  simp [Set'.eq_empty_iff] at h; apply Classical.epsilon_spec h
+  simp [Set'.eq_empty_iff] at h; apply τ_spec h
 
 omit H in @[simp high]
 theorem box_mem_boxes_of_alwaysMovable1 {s : State}
@@ -199,7 +199,7 @@ theorem box_eq_of_mem_boxes {s p} [hs : AlwaysMovable1 s]
 
 theorem state₃_spec : state₃.box = trBox₁ ∧
 ∃ s', sys.Reachable state₂ s' ∧ s'.BoxPushed state₃ := by
-  apply Classical.epsilon_spec (p := λ s => s.box = trBox₁ ∧
+  apply τ_spec (p := λ s => s.box = trBox₁ ∧
     ∃ s', sys.Reachable state₂ s' ∧ s'.BoxPushed s)
   have h := trBox₁_mem_boxesReachable_state₂
   rw [mem_boxesReachable_iff] at h
@@ -215,7 +215,7 @@ theorem state₃_spec : state₃.box = trBox₁ ∧
   simp only [ne_def, boxes_eq_singleton_box, Set'.singleton_eq_iff]; grind
 
 theorem state₃'_spec : sys.Reachable state₂ state₃' ∧ state₃'.BoxPushed state₃ :=
-  Classical.epsilon_spec state₃_spec.2
+  τ_spec state₃_spec.2
 
 @[simp]
 theorem box_state₃ : state₃.box = trBox₁ :=

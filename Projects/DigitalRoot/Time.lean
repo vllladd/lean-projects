@@ -117,7 +117,7 @@ theorem freqTimeDig'_eq_some_of_freqTimeDig_eq_some {d}
   unfold freqTimeDig at h; simp at h
   generalize hp : (λ d => d ≤ 10 ∧ ∀ d', ¬d' = d →
     freqTimeCount 10 d' < freqTimeCount 10 d) = p at h
-  generalize hd₁ : Classical.epsilon p = d₁ at h
+  generalize hd₁ : (τ x, p x) = d₁ at h
   rcases h with ⟨h₁, rfl⟩
   rename' d₁ => d
   clear! p
@@ -202,23 +202,19 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
   unfold freqTimeDig; simp
   generalize hp : (λ d => d ≤ 10 ∧ ∀ d', ¬d' = d →
     freqTimeCount 10 d' < freqTimeCount 10 d) = p
-  generalize hd₁ : Classical.epsilon p = d₁
-  
+  generalize hd₁ : (τ x, p x) = d₁
   simp [freqTimeDig'] at h
   split at h <;> simp at h
   nm xs a b c e ys h₁; clear xs
   rcases h with ⟨h, h₂⟩
   symm at h₂; subst h₂
-  
   generalize hA : (freqTimeMp 10).toList.mergeSort (λ a b => b.2 ≤ a.2) = A at h₁
-  
   have H₁ : ∀ x y, (x, y) ∈ A → x < 10
   · intro x y h₃
     simp [←hA] at h₃
     replace h₃ := Map.mem_of_get?_eq_some h₃
     simp at h₃
     exact h₃
-  
   have H₃ : ∀ x y, (x, y) ∈ A → freqTimeCount 10 x = y
   · intro x y h₃
     have h₃' := h₃
@@ -226,10 +222,8 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
     rw [get?_freqTimeMp_eq] at h₃
     simp at h₃; exact h₃
     exact H₁ _ y h₃'
-  
   have H₂ : A.Pairwise (λ a b => b.2 ≤ a.2)
-  ·
-    rw [←hA]
+  · rw [←hA]
     have h₂ := (freqTimeMp 10).toList.pairwise_mergeSort (le := λ a b => b.2 ≤ a.2)
     specialize h₂ _ _
     · simp only [decide_eq_true_eq, Prod.forall, forall_const]
@@ -237,9 +231,8 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
     · simp only [Bool.or_eq_true, decide_eq_true_eq, le_total, implies_true]
     simp at h₂
     exact h₂
-  
   suffices h₂ : p d
-  · have h₃ := Classical.epsilon_spec ⟨_, h₂⟩
+  · have h₃ := τ_spec ⟨_, h₂⟩
     rw [hd₁] at h₃; clear hd₁
     subst hp
     use h₂
@@ -249,9 +242,7 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
     specialize h₄ _ h₆
     specialize h₅ _ # ne_symm' h₆
     linarith
-  
   clear! d₁
-  
   rw [←hp]
   dsimp
   split_ands
@@ -259,31 +250,25 @@ theorem freqTimeDig_eq_some_of_freqTimeDig'_eq_some {d}
     apply H₁ _ b
     simp [h₁]
   intro d' h₂
-  
   by_cases h₀ : 10 ≤ d'
   · rw [freqTimeCount_eq_zero_of_base_le h₀]
     simp
     apply H₁ _ b
     simp [h₁]
   push Not at h₀
-  
   simp [h₁] at H₂
   have h₃ := H₃ d b
   simp [h₁] at h₃
   subst h₃
   rcases H₂ with ⟨⟨h₃, h₄⟩, h₅, h₆⟩
-  
   have h₇ : (d', freqTimeCount 10 d') ∈ A
   · rw [←hA]
     simp
     rwa [get?_freqTimeMp_eq]
-  
   replace h : e < freqTimeCount 10 d
   · omega
   clear h₃
-  
   apply lt_of_le_of_lt _ h
-  
   simp [h₁, h₂] at h₇
   rcases h₇ with ⟨h₇, h₈⟩ | h₇
   · rw [h₈]

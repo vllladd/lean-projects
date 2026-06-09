@@ -21,7 +21,7 @@ def size₀ : ℕ :=
 
 open Classical in noncomputable
 def state₀ : State :=
-  Classical.epsilon # stateCnd₀ size₀
+  τ s, stateCnd₀ size₀ s
 
 open Classical in noncomputable
 def trBox₁ : PointZ :=
@@ -29,20 +29,20 @@ def trBox₁ : PointZ :=
 
 open Classical in noncomputable
 def state₁ : State :=
-  Classical.epsilon λ s => sys.Reachable state₀ s ∧ s.boxes = .singleton trBox₁
+  τ s, sys.Reachable state₀ s ∧ s.boxes = .singleton trBox₁
 
 open Classical in noncomputable
 def state₂ : State :=
-  Classical.epsilon λ s => sys.Reachable state₁ s ∧ s.boxes ≠ .singleton trBox₁
+  τ s, sys.Reachable state₁ s ∧ s.boxes ≠ .singleton trBox₁
 
 open Classical in noncomputable
 def _root_.Sokoban.State.box (s : State) : PointZ :=
-  Classical.epsilon λ p => p ∈ s.boxes
+  τ p, p ∈ s.boxes
 
 open Classical in noncomputable
 def state₃ : State :=
-  Classical.epsilon λ s => s.box = trBox₁ ∧ ∃ s', sys.Reachable state₂ s' ∧ s'.BoxPushed s
+  τ s, s.box = trBox₁ ∧ ∃ s', sys.Reachable state₂ s' ∧ s'.BoxPushed s
 
 open Classical in noncomputable
 def state₃' : State :=
-  Classical.epsilon λ s => sys.Reachable state₂ s ∧ s.BoxPushed state₃
+  τ s, sys.Reachable state₂ s ∧ s.BoxPushed state₃

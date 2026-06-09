@@ -536,10 +536,10 @@ theorem exi_leCnd : ∃ le, @LeCnd α le := by
   · exact le_total
 
 def leClassical : α → α → Prop :=
-  Classical.epsilon LeCnd
+  τ x, LeCnd x
 
 theorem leCnd_leClassical : LeCnd # @leClassical α :=
-  Classical.epsilon_spec exi_leCnd
+  τ_spec exi_leCnd
 
 open Classical in @[reducible] noncomputable
 def linearOrderClassical : LinearOrder α where

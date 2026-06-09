@@ -46,8 +46,8 @@ theorem monoGt_iff_succ_lt {a} : monoGt a ↔ ∀ n, a (n + 1) < a n := by
   rw [←Nat.add_assoc]
   exact ih.trans' # h _
 
-theorem iterate_gap' {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ} {i k : ℕ}
-(ha : monoLe a) (hτ : ∀ n, n ≤ τ n) (h : ∀ n, ε ≤ a (σ n) - a (τ n)) :
+theorem iterate_gap' {a : ℕ → ℝ} {t σ : ℕ → ℕ} {ε : ℝ} {i k : ℕ}
+(ha : monoLe a) (ht : ∀ n, n ≤ t n) (h : ∀ n, ε ≤ a (σ n) - a (t n)) :
 k * ε ≤ a (σ^[k] i) - a i := by
   induction k; simp; nm k ih
   rw [Function.iterate_succ']
@@ -55,14 +55,14 @@ k * ε ≤ a (σ^[k] i) - a i := by
   suffices : ε ≤ a (σ # σ^[k] i) - a (σ^[k] i); linarith; clear ih
   generalize σ^[k] i = n; clear k
   specialize h n
-  suffices H : a n ≤ a (τ n); linarith
+  suffices H : a n ≤ a (t n); linarith
   apply ha
-  apply hτ
+  apply ht
 
-theorem iterate_gap {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ} {i k : ℕ}
-(ha : monoLe a) (hτ : ∀ n, n ≤ τ n) (hσ : ∀ n, τ n ≤ σ n)
-(h : ∀ n, ε ≤ |a (σ n) - a (τ n)|) : k * ε ≤ a (σ^[k] i) - a i := by
-  apply iterate_gap' ha hτ
+theorem iterate_gap {a : ℕ → ℝ} {t σ : ℕ → ℕ} {ε : ℝ} {i k : ℕ}
+(ha : monoLe a) (ht : ∀ n, n ≤ t n) (hσ : ∀ n, t n ≤ σ n)
+(h : ∀ n, ε ≤ |a (σ n) - a (t n)|) : k * ε ≤ a (σ^[k] i) - a i := by
+  apply iterate_gap' ha ht
   intro n
   specialize h n
   rw [abs_of_nonneg] at h; exact h
@@ -70,8 +70,8 @@ theorem iterate_gap {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ} {i k : �
   apply ha
   apply hσ
 
-theorem misc₁ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ} {k : ℕ}
-(hε : 0 < ε) (hσ : ∀ n, τ n ≤ σ n) (h : ∀ n, ε ≤ |a (σ n) - a (τ n)|) : τ k < σ k := by
+theorem misc₁ {a : ℕ → ℝ} {t σ : ℕ → ℕ} {ε : ℝ} {k : ℕ}
+(hε : 0 < ε) (hσ : ∀ n, t n ≤ σ n) (h : ∀ n, ε ≤ |a (σ n) - a (t n)|) : t k < σ k := by
   apply lt_of_le_of_ne; apply hσ
   intro h₁
   specialize h k
@@ -102,9 +102,9 @@ theorem monoGe_neg {a} : monoGe (-a) ↔ monoLe a := by
 theorem monoGt_neg {a} : monoGt (-a) ↔ monoLt a := by
   unfold monoLt monoGt; simp
 
-theorem misc₂ : ¬∀ {a : ℕ → ℝ} {τ σ : ℕ → ℕ} {ε : ℝ}
-(_ : monoLe a) (_ : ∀ n, n ≤ τ n) (_ : ∀ n, τ n ≤ σ n)
-(_ : ∀ n, ε ≤ |a (σ n) - a (τ n)|), Subseq τ ∨ Subseq σ := by
+theorem misc₂ : ¬∀ {a : ℕ → ℝ} {t σ : ℕ → ℕ} {ε : ℝ}
+(_ : monoLe a) (_ : ∀ n, n ≤ t n) (_ : ∀ n, t n ≤ σ n)
+(_ : ∀ n, ε ≤ |a (σ n) - a (t n)|), Subseq t ∨ Subseq σ := by
   push Not
   use (·)
   use λ n => n + if Even n then 1 else 0

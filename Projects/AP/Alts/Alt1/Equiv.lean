@@ -770,8 +770,8 @@ b₂.toAlt pw t₂ s₂.hist = s₂ ∧ s₁ = s₂.setHist s₁.hist) :
 ∃ hist, (b₁.toAltH? pw t₁).getd = b₂.toAlt pw t₂ hist := by
   choose s₁ s₂ hs₁ hs₂ h₁ h₂ h₃ using h
   have h₄ : ∃ s, sys.WF s ∧ b₁.toAlt pw t₁ s.hist = s; tauto
-  have h₅ := Classical.epsilon_spec h₄
-  generalize h₆ : (Classical.epsilon _ : AP.State) = s at h₅
+  have h₅ := τ_spec h₄
+  generalize h₆ : (τ _, _ : AP.State) = s at h₅
   choose hs h₅ using h₅; use s.hist
   rw [toAltH?, choose?_eq_of_pos h₄, h₆]
   clear h₆; simp; rw [←h₅]

@@ -424,18 +424,18 @@ theorem AState.aHistBlind_tr_aHws {sa} [ha : AState sa]
   use sd, hd
   have h₃ : ∃ s', sys.WF s' ∧ s'.setHist sa.hist = sa
   · use sa; simp
-  generalize h₄ : Classical.epsilon
-    (λ s' => sys.WF s' ∧ s'.setHist sa.hist = sa) = s'
-  have h₅ := Classical.epsilon_spec h₃; rw [h₄] at h₅
+  generalize h₄ :
+    (τ s', sys.WF s' ∧ s'.setHist sa.hist = sa) = s'
+  have h₅ := τ_spec h₃; rw [h₄] at h₅
   rcases h₅ with ⟨h₅, h₆⟩
   have h₆' := setHist_eq_comm.mp h₆
   have H₆ := System.wf_of_tr hd
   have h₇' : sys.WF # sa.setHist s'.hist; rwa [h₆']
   have h₇ : s'.aHws; rw [←h₆']; simpa
   unfold State.aHws at h₇
-  generalize h₈ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
+  generalize h₈ : (τ (a : AStrat), a.WF ∧
     ∀ (d : DStrat), d.WF → s'.aWins ⟨a, d⟩) = a
-  have h₉ := Classical.epsilon_spec h₇
+  have h₉ := τ_spec h₇
   rw [h₈] at h₉
   rcases h₉ with ⟨H₁, H₂⟩
   have H₃ : AState s'; use h₅; rw [←h₆']; simp

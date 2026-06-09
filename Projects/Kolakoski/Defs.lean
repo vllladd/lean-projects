@@ -6,7 +6,7 @@ variable {α : Type*}
 
 noncomputable
 def setToSeq (s : Set ℕ) (n : ℕ) : ℕ :=
-  Classical.epsilon fun k => k ∈ s ∧ (s.filter (· < k)).ncard = n
+  τ k, k ∈ s ∧ (s.filter (· < k)).ncard = n
 
 noncomputable
 def runs (a : ℕ → α) : ℕ → ℕ :=
@@ -23,4 +23,4 @@ def IsKolakoski (K : ℕ → ℕ) : Prop :=
 
 noncomputable
 def kolakoski : ℕ → ℕ :=
-  Classical.epsilon fun K => IsKolakoski K ∧ K 0 = 1
+  τ K, IsKolakoski K ∧ K 0 = 1

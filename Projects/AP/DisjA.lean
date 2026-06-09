@@ -620,9 +620,8 @@ ps ⊆ s'.taken := by
   have h₁' := h₁
   simp [dChooseFromSet, choose?_eq_ite] at h₁
   split_ifs at h₁ with h₂
-  · have h₃ := Classical.epsilon_spec h₂
-    generalize (Classical.epsilon #
-      λ p => p ∈ ps ∧ p ∉ s.taken ∧ ¬p = s.aPos) = p at h₁ h₃
+  · have h₃ := τ_spec h₂
+    generalize (τ p, p ∈ ps ∧ p ∉ s.taken ∧ ¬p = s.aPos) = p at h₁ h₃
     rcases h₃ with ⟨h₃, h₄, h₅⟩
     simp [DState.validTr_iff, ne_symm' h₅, h₄] at h₁
     have hs₁ := sys.wf_of_tr h₁
@@ -718,8 +717,8 @@ ps ⊆ s'.taken := by
     simp [←DState.aPos_eq_of_tr h₁'] at h₃ ⊢
     clear hsd
     use h₃
-  have h₇ := Classical.epsilon_spec h₆
-  generalize (Classical.epsilon # λ y => y ∈ ps ∧
+  have h₇ := τ_spec h₆
+  generalize (τ y, y ∈ ps ∧
     y ∉ sd.taken ∧ y ≠ sd.aPos) = pa at h₅ h₇
   rcases h₇ with ⟨h₇, h₈, h₉⟩
   simp [DState.validTr_iff, ne_symm' h₉, h₈] at h₅

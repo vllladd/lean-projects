@@ -10,13 +10,13 @@ def converges (a : ℕ → ℝ) : Prop :=
 
 noncomputable
 def limit (a : ℕ → ℝ) : ℝ :=
-  Classical.epsilon # tendsTo a
+  τ L, tendsTo a L
 
 noncomputable def someLt (x : ℝ) : ℝ :=
-  Classical.epsilon (· < x)
+  τ y, y < x
 
 noncomputable def someGt (x : ℝ) : ℝ :=
-  Classical.epsilon (x < ·)
+  τ y, x < y
 
 noncomputable def glb (a : ℕ → ℝ) : ℝ :=
   ⨅ i, a i
@@ -282,11 +282,11 @@ theorem tendsTo_inv {a L} (h₁ : L ≠ 0) (h₂ : tendsTo a L) : tendsTo a⁻¹
 
 @[simp]
 theorem someLt_lt {x} : someLt x < x :=
-  Classical.epsilon_spec (p := (· < x)) # exists_lt _
+  τ_spec (p := (· < x)) # exists_lt _
 
 @[simp]
 theorem lt_someGt {x} : x < someGt x :=
-  Classical.epsilon_spec (p := (x < ·)) # exists_gt _
+  τ_spec (p := (x < ·)) # exists_gt _
 
 theorem converges_of_tendsTo {a L} (h : tendsTo a L) : converges a := ⟨_, h⟩
 
@@ -626,7 +626,7 @@ theorem boundedBy_zero_iff_const_zero {a : ℕ → ℝ} : boundedBy a 0 ↔ a = 
   constructor; rintro rfl; simp; intro h; ext; simp [h]
 
 theorem limit_eq_of_tendsTo {a L} (h : tendsTo a L) : limit a = L :=
-  epsilon_eq_of h # λ _ h₁ => tendsTo_unique h₁ h
+  τ_eq_of h # λ _ h₁ => tendsTo_unique h₁ h
 
 theorem tendsTo_limit_of_tendsTo {a L} (h : tendsTo a L) : tendsTo a (limit a) := by
   rwa [limit_eq_of_tendsTo h]

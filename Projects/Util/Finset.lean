@@ -238,10 +238,10 @@ theorem eq_of_sum_eq_sum_and_forall_le {α : Type*} {s : Finset α}
     by
       clear! i
       let p := λ i k => f i + k = g i
-      use λ i => Classical.epsilon # p i
+      use λ i => τ x, p i x
       intro i h₃
       specialize h₂ i h₃
-      have h₄ := Classical.epsilon_spec (p := p i)
+      have h₄ := τ_spec (p := p i)
       specialize h₄ _
       · simp [p]
         obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h₂

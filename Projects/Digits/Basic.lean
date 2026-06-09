@@ -40,24 +40,30 @@ theorem Base.one_mod : 1 % b = 1 := by
 theorem Base.one_div : 1 / b = 0 := by
   rw [Nat.div_eq_of_lt]; simp
 
+theorem Base.sub_div_mul_sub_one_succ_lt {n} : n - n / b * (b - 1) + 1 < n + b := by
+  rw [←Nat.sub_add_comm # Nat.div_mul_le_of_le # by simp]
+  apply Nat.add_sub_lt_add_of_sub_lt; calc
+  _ ≤ 1 := by simp
+  _ < _ := by simp
+
 @[simp]
-theorem toDigList_zero {b} : toDigList b 0 = [0] := by rfl
+theorem toDigList_zero : toDigList b 0 = [0] := by
+  simp [toDigList]
 
 @[simp]
 theorem toDigList_one : toDigList b 1 = [1] := by
   simp [toDigList]; iterate 2 unfold toDigList'; simp
 
-theorem lt_pow_length_toDigList {b n : ℕ} (hb : 2 ≤ b) : n < b ^ (toDigList b n).length := by
+theorem lt_pow_length_toDigList {n} : n < b ^ (toDigList b n).length := by
   unfold toDigList
+  simp
   split_ifs with h₁
   · simp [h₁]
-    omega
   fun_induction toDigList'
+  · nm k h; simp at h
   · omega
-  · simp
   nm n h₂ h₃ ih
   simp at ih ⊢
-  specialize ih (by omega)
   clear h₁ h₂
   by_cases h₁ : n < b
   · clear ih
@@ -68,13 +74,13 @@ theorem lt_pow_length_toDigList {b n : ℕ} (hb : 2 ≤ b) : n < b ^ (toDigList 
     omega
   simp at h₁
   specialize ih h₁
-  rw [Nat.div_lt_iff_lt_mul (by omega)] at ih
+  rw [Nat.div_lt_iff_lt_mul (by simp)] at ih
   simp [pow_succ]
   omega
 
-theorem lt_pow_of_length_toDigList_eq {b n k : ℕ}
-(h : (toDigList b n).length = k) (hb : 2 ≤ b) : n < b ^ k := by
-  subst h; exact lt_pow_length_toDigList hb
+theorem lt_pow_of_length_toDigList_eq {n k : ℕ}
+(h : (toDigList b n).length = k) : n < b ^ k := by
+  subst h; exact lt_pow_length_toDigList
 
 @[simp]
 theorem sum_toDigList'_zero {b} : (toDigList' b 0).sum = 0 := by
@@ -131,11 +137,11 @@ theorem toDigList_base_one_succ {n} : toDigList 1 (n + 1) = [] := by
 
 @[simp]
 theorem digSum_base_zero {n} : digSum 0 n = 0 := by
-  simp [digSum]; cases n <;> simp
+  simp [digSum]; cases n <;> simp [toDigList]
 
 @[simp]
 theorem digSum_base_one {n} : digSum 1 n = 0 := by
-  simp [digSum]; cases n <;> simp
+  simp [digSum]; cases n <;> simp [toDigList]
 
 theorem toDigList'_of_lt_base {b n} (hn : n ≠ 0) (h : n < b) : toDigList' b n = [n] := by
   rw [toDigList', if_neg (by omega)]
@@ -144,13 +150,13 @@ theorem toDigList'_of_lt_base {b n} (hn : n ≠ 0) (h : n < b) : toDigList' b n 
   rw [if_neg (by omega)]
   simp [mod_eq_of_lt h]
 
-theorem toDigList_of_lt_base {b n} (h : n < b) : toDigList b n = [n] := by
-  unfold toDigList; split_ifs with hn; simp [hn]
-  simp [toDigList'_of_lt_base hn h]
+theorem toDigList_of_lt_base {n} (h : n < b) : toDigList b n = [n] := by
+  unfold toDigList; split_ifs with hn; simp at hn; grind
+  rw [toDigList'_of_lt_base] <;> grind
 
 @[simp]
 theorem digSum_zero {b} : digSum b 0 = 0 := by
-  simp [digSum]
+  simp [digSum, toDigList]; split_ifs <;> rfl
 
 @[simp]
 theorem digSum_one : digSum b 1 = 1 := by
@@ -158,6 +164,7 @@ theorem digSum_one : digSum b 1 = 1 := by
 
 theorem digSum_of_lt_base {b n} (h : n < b) : digSum b n = n := by
   by_cases h₁ : b ≤ 1; simp [show n = 0 by omega]
+  have hb : Base b := ⟨by omega⟩
   rw [digSum, toDigList_of_lt_base h]; rfl
 
 theorem digSum_lt_iff_base_le {n} : digSum b n < n ↔ b ≤ n := by
@@ -166,6 +173,7 @@ theorem digSum_lt_iff_base_le {n} : digSum b n < n ↔ b ≤ n := by
   · contrapose! h₁
     rw [digSum_of_lt_base h₁]
   unfold digSum toDigList
+  simp
   split_ifs with hn <;> simp; omega
   clear hn
   induction n using Nat.strong_induction_on
@@ -189,9 +197,7 @@ theorem digSum_lt_iff_base_le {n} : digSum b n < n ↔ b ≤ n := by
   linarith
 
 theorem digSum_of_base_le_one {b n} (hb : b ≤ 1) : digSum b n = 0 := by
-  unfold digSum toDigList
-  split_ifs with hn <;> simp
-  unfold toDigList'; simp [hb]
+  unfold digSum toDigList; simp [hb]
 
 @[simp]
 theorem digSum_eq_self_iff {n} : digSum b n = n ↔ n = 0 ∨ n < b := by
@@ -211,13 +217,14 @@ theorem digSum_eq_self_iff {n} : digSum b n = n ↔ n = 0 ∨ n < b := by
 theorem digSum_step {n} : digSum b n = n % b + digSum b (n / b) := by
   have hb' := hb.1
   nth_rw 1 [digSum, toDigList]
+  simp
   split_ifs with hn
   · simp [hn]
   simp
   rw [toDigList', if_neg (by omega), if_neg hn]
   simp
   rw [digSum, toDigList]
-  split_ifs with h₁
+  split_ifs with h h₁; omega
   · simp [h₁]
   simp
 
@@ -321,3 +328,64 @@ theorem digSum_mod_base_pred {n} : digSum b n % (b - 1) = n % (b - 1) := by
   rw [add_assoc]
   nth_rw 2 [add_mod]
   simp
+
+@[simp]
+theorem ofDigList_singleton {b n} : ofDigList b [n] = n := by
+  simp [ofDigList]
+
+theorem toDigList'_mul_base_add {k c} (hk : k ≠ 0) (hc : c < b) :
+toDigList' b (k * b + c) = c :: toDigList' b k := by
+  nth_rw 1 [toDigList']
+  simp [hk, Nat.mod_eq_of_lt hc]
+  rw [Nat.add_div (by simp)]
+  simp [Nat.mod_eq_of_lt hc]
+  simp [Nat.not_le_of_lt hc]
+  simp [Nat.div_eq_of_lt hc]
+
+theorem toDigList_mul_base_add {k c} (hk : k ≠ 0) (hc : c < b) :
+toDigList b (k * b + c) = toDigList b k ++ [c] := by
+  unfold toDigList; simp [hk]; rw [toDigList'_mul_base_add hk hc]
+
+@[simp]
+theorem Base.ne_one : b ≠ 1 := by
+  cases hb; omega
+
+@[simp]
+theorem ofDigList_toDigList {n} : ofDigList b (toDigList b n) = n := by
+  induction n using ind_dig b
+  · nm n h
+    rw [toDigList_of_lt_base h]
+    simp
+  nm k c hk hc ih
+  rw [toDigList_mul_base_add hk hc]
+  nth_rw 1 [ofDigList]
+  simp
+  rw [←ofDigList]
+  apply ih
+  rw [Nat.lt_self_mul_add_iff]
+  simp [hk]
+
+@[simp]
+theorem toDigList'_zero : toDigList' b 0 = [] := by
+  unfold toDigList'; simp
+
+@[simp]
+theorem toDigList'_eq_nil_iff {n} : toDigList' b n = [] ↔ n = 0 := by
+  unfold toDigList'; simp
+
+@[simp]
+theorem toDigList_ne_nil {n} : toDigList b n ≠ [] := by
+  simp [toDigList]; split_ifs with hn <;> simp [hn]
+
+-- @[simp]
+-- theorem divRev_digRev {n} : digRev b (digRev b n) = n := by
+--   sorry
+-- 
+-- -- #check 0 #exit
+-- 
+-- theorem length_toDigList_eq_iff {n k} :
+-- (toDigList b n).length = k ↔ k ≠ 0 ∧ b ^ (k - 1) ≤ n ∧ n < b ^ k := by
+--   -- cases k
+--   -- ·
+--   --   simp
+--   sorry

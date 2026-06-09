@@ -246,9 +246,9 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
   use inferInstance
   intro s hist hs hs' h₁
   have h₂ : ∃ (sd : State), sys.WF sd ∧ sd.setHist hist = s.setHist hist; use s, hs.wf
-  generalize h₃ : Classical.epsilon (λ (sd : State) =>
+  generalize h₃ : (τ (sd : State),
     sys.WF sd ∧ sd.setHist hist = s.setHist hist) = sd
-  have h₄ := Classical.epsilon_spec h₂
+  have h₄ := τ_spec h₂
   rw [h₃] at h₄
   rcases h₄ with ⟨hsd, h₄⟩
   replace hsd : DState sd
@@ -258,9 +258,9 @@ theorem histBlind_dHistBlind : dHistBlind.HistBlind := by
     rw [h₄]
     simp
   have h₅ : ∃ (sd : State), sys.WF sd ∧ sd.setHist s.hist = s; use s, hs.wf; simp
-  generalize h₆ : Classical.epsilon (λ (sd : State) =>
+  generalize h₆ : (τ (sd : State),
     sys.WF sd ∧ sd.setHist s.hist = s) = sd'
-  have h₇ := Classical.epsilon_spec h₅
+  have h₇ := τ_spec h₅
   rw [h₆] at h₇
   rcases h₇ with ⟨hsd', h₇⟩
   replace hsd' : DState sd'
@@ -348,8 +348,8 @@ sa.dHws ∧ sa.dwn < sd.dwn := by
   simp [dHistBlind, choose?_eq_ite] at h₁
   have h₃ : ∃ (sd' : State), sys.WF sd' ∧ sd'.setHist sd.hist = sd
   · use sd; simp [hsd.wf]
-  have h₅ := Classical.epsilon_spec h₃
-  generalize h₄ : Classical.epsilon (λ (sd' : State) =>
+  have h₅ := τ_spec h₃
+  generalize h₄ : (τ (sd' : State),
     sys.WF sd' ∧ sd'.setHist sd.hist = sd) = sd' at h₁ h₅
   rcases h₅ with ⟨hsd', h₅⟩
   have h₅' := setHist_eq_comm.mp h₅
@@ -363,8 +363,8 @@ sa.dHws ∧ sa.dwn < sd.dwn := by
     rw [←h₅] at hsd h₂
     simp at h₂
     exact hsd'.exi_tr_dHws_and_dwn_lt h₂
-  have h₇ := Classical.epsilon_spec h₆
-  generalize h₈ : Classical.epsilon (λ p => ∃ sa,
+  have h₇ := τ_spec h₆
+  generalize h₈ : (τ p, ∃ sa,
     sys.tr sd' p = some sa ∧ sa.dHws ∧ sa.dwn < sd'.dwn) = p at h₁ h₇
   rcases h₇ with ⟨sa', h₇, h₉, H⟩
   have H₁ : sys.tr sd p = sa'.setHist (p :: sd.hist)

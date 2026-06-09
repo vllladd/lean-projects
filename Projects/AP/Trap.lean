@@ -642,9 +642,8 @@ theorem State.exi_dWins_of_aTrapped {s} [hs : sys.WF s] {a : AStrat} [Ha : a.WF]
     rcases h₃ with ⟨⟨ha₁, ha₂, ha₃⟩, hax⟩
     rwa [←hsd.aPos_eq_of_tr h₂]
   simp [←hd, mkStratFn, choose?_eq_ite]
-  have h₇ := Classical.epsilon_spec h₆
-  generalize hp : Classical.epsilon
-    (λ p => sd.AReachable p ∧ ¬p = sd.aPos) = p at h₇ ⊢
+  have h₇ := τ_spec h₆
+  generalize hp : (τ p, sd.AReachable p ∧ ¬p = sd.aPos) = p at h₇ ⊢
   rcases h₇ with ⟨hp₁, hp₂⟩
   have hp₃ := not_mem_taken_of_aReachable hp₁
   simpa [h₆, hsd.validTr_iff, ne_symm' hp₂, hp₃]

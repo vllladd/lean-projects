@@ -100,7 +100,7 @@ class Prog.WF (prog : Prog) : Prop where
 
 open Classical in noncomputable
 def Prog.fs (prog : Prog) : List (List ℕ → ℕ) :=
-  Classical.epsilon prog.Compatible
+  τ fs, prog.Compatible fs
 
 open Classical in noncomputable
 def Prog.eval (prog : Prog) (i : ℕ) (xs : List ℕ) : ℕ :=

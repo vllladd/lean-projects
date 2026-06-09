@@ -13,8 +13,8 @@ def choose? {α : Type*} (p : α → Prop) : Option α :=
 
 noncomputable
 def idNC (x : α) : α :=
-  haveI : Inhabited α := ⟨x⟩
-  Classical.epsilon (x = ·)
+  haveI : Nonempty α := ⟨x⟩
+  τ y, x = y
 
 open Classical in noncomputable
 def ite' (p : Prop) (x y : α) : α :=
@@ -24,7 +24,12 @@ open Classical in noncomputable
 def dite' (p : Prop) (f : p → α) (g : ¬p → α) : α :=
   if h : p then f h else g h
 
+-- #check 0 #exit
+
 -----
+
+theorem τ_spec {p : α → Prop} (h : ∃ y, p y) : p # @Classical.epsilon α h.nonempty p :=
+  Classical.epsilon_spec h
 
 theorem hv {α : Type*} (x : α) : ∃ y, y = x := exists_eq
 
@@ -64,9 +69,9 @@ theorem eq_true_of {P : Prop} (h : P) : P = True := by simpa
 theorem skolemize {α β : Type*} [hb : Nonempty β] {p : α → Prop} {q : α → β → Prop} :
 (∀ x, p x → ∃ y, q x y) ↔ ∃ (f : α → β), ∀ x, p x → q x (f x) := by
   constructor
-  · intro h; use λ x => Classical.epsilon λ y => p x → q x y
+  · intro h; use λ x => τ y, p x → q x y
     intro x hx; specialize h x hx;
-    convert Classical.epsilon_spec h; simp [hx]
+    convert τ_spec h; simp [hx]
   rintro ⟨f, h⟩ x hx; specialize h x hx; use f x
 
 theorem skolemize' {α β : Type*} [hb : Nonempty β] {p : α → β → Prop} :
@@ -92,8 +97,8 @@ theorem not_iff_comm' {P Q : Prop} : (¬P ↔ Q) ↔ (P ↔ ¬Q) := by tauto
 
 theorem imp_cpos {P Q : Prop} : (P → Q) ↔ (¬Q → ¬P) := by tauto
 
-theorem choose_eq_epsilon {α : Type*} [Nonempty α] {P : α → Prop} (h : ∃ x, P x) :
-h.choose = Classical.epsilon P := by
+theorem choose_eq_τ {α : Type*} [Nonempty α] {P : α → Prop} (h : ∃ x, P x) :
+h.choose = τ x, P x := by
   simp only [Exists.choose, Classical.choose, Classical.indefiniteDescription,
     Classical.epsilon, Classical.strongIndefiniteDescription]
   simp [h]
@@ -204,21 +209,21 @@ theorem dite_eq_dite_of_pos {α : Type*} {P Q : Prop} [hp : Decidable P] [hq : D
 theorem choose?_eq_dite {α : Type*} {p : α → Prop} :
 haveI := Classical.propDecidable; choose? p =
 if h : ∃ x, p x then haveI : Nonempty α := ⟨h.choose⟩
-some # Classical.epsilon p else none := by
+some # τ x, p x else none := by
   unfold choose?; split_ifs with h₁; on_goal 2 => rfl
-  have ha : Nonempty α; use h₁.choose; rw [choose_eq_epsilon]
+  have ha : Nonempty α; use h₁.choose; rw [choose_eq_τ]
 
 theorem choose?_eq_ite {α : Type*} {p : α → Prop} [ha : Nonempty α] :
 haveI := Classical.propDecidable; choose? p =
-if ∃ x, p x then some # Classical.epsilon p else none := by
+if ∃ x, p x then some # τ x, p x else none := by
   rw [choose?_eq_dite]; split_ifs <;> simp
 
 theorem choose?_eq_of_exi {α : Type*} {p : α → Prop} (h : ∃ x, p x) :
-haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (Classical.epsilon p) := by
-  simp [choose?, h]; generalize_proofs h₁; exact choose_eq_epsilon h
+haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (τ x, p x) := by
+  simp [choose?, h]; generalize_proofs h₁; exact choose_eq_τ h
 
 theorem choose?_eq_of_pos {α : Type*} {p : α → Prop} (h : ∃ x, p x) :
-haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (Classical.epsilon p) :=
+haveI : Nonempty α := ⟨h.choose⟩; choose? p = some (τ x, p x) :=
   choose?_eq_of_exi h
 
 @[simp]
@@ -256,24 +261,24 @@ theorem match_decide_eq_ite {α : Type*} {P} [H : Decidable P] {x y : α} :
 
 @[simp]
 theorem choose?_eq_some_iff {α : Type*} {p : α → Prop} {x} :
-haveI : Nonempty α := ⟨x⟩; choose? p = some x ↔ p x ∧ Classical.epsilon p = x := by
+haveI : Nonempty α := ⟨x⟩; choose? p = some x ↔ p x ∧ (τ x, p x) = x := by
   have h₁ : Nonempty α := ⟨x⟩; simp [choose?]; constructor
-  · rintro ⟨h₂, rfl⟩; use h₂.choose_spec, choose_eq_epsilon h₂ |>.symm
-  · rintro ⟨h₂, h₃⟩; use ⟨_, h₂⟩; rwa [choose_eq_epsilon ⟨_, h₂⟩]
+  · rintro ⟨h₂, rfl⟩; use h₂.choose_spec, choose_eq_τ h₂ |>.symm
+  · rintro ⟨h₂, h₃⟩; use ⟨_, h₂⟩; rwa [choose_eq_τ ⟨_, h₂⟩]
 
-theorem epsilon_eq_of_exiu {α : Type*} [ha : Nonempty α] {p : α → Prop} {x}
-(h₁ : p x) (h₂ : ∃! x, p x) : Classical.epsilon p = x := by
+theorem τ_eq_of_exiu {α : Type*} [ha : Nonempty α] {p : α → Prop} {x}
+(h₁ : p x) (h₂ : ∃! x, p x) : (τ x, p x) = x := by
   have hp : p = λ y => x = y
   · ext y; obtain ⟨z, h₂, h₃⟩ := h₂
     constructor <;> intro h₄
     · rw [h₃ _ h₁, h₃ _ h₄]
     · rwa [←h₄]
-  have h₃ := Classical.epsilon_spec h₂
+  have h₃ := τ_spec h₂
   dsimp at h₃; subst hp; simp at h₃; exact h₃.symm
 
-theorem epsilon_eq_of {α : Type*} [ha : Nonempty α] {p : α → Prop} {x}
-(h₁ : p x) (h₂ : ∀ y, p y → y = x) : Classical.epsilon p = x := by
-  apply epsilon_eq_of_exiu h₁; use x
+theorem τ_eq_of {α : Type*} [ha : Nonempty α] {p : α → Prop} {x}
+(h₁ : p x) (h₂ : ∀ y, p y → y = x) : (τ x, p x) = x := by
+  apply τ_eq_of_exiu h₁; use x
 
 theorem Bool.dite_eq_false_iff {α : Type*} {b : Bool}
 {f : b = false → α} {g : ¬(b = false) → α} : (if h : b = false then f h else g h) =
@@ -320,14 +325,12 @@ x = y ↔ x = y ∧ f x = f y := by
   simp_all only [iff_self_and, implies_true]
 
 @[simp]
-theorem epsilon_eq_left {α : Type*} {x : α} [ha : Nonempty α] :
-Classical.epsilon (λ y => y = x) = x := by
-  apply epsilon_eq_of <;> simp
+theorem epsilon_eq_left {α : Type*} {x : α} [ha : Nonempty α] : (τ y, y = x) = x := by
+  apply τ_eq_of <;> simp
 
 @[simp]
-theorem epsilon_eq_right {α : Type*} {x : α} [ha : Nonempty α] :
-Classical.epsilon (λ y => x = y) = x := by
-  apply epsilon_eq_of <;> simp
+theorem epsilon_eq_right {α : Type*} {x : α} [ha : Nonempty α] : (τ y, x = y) = x := by
+  apply τ_eq_of <;> simp
 
 @[simp] theorem iff_not_left_imp_iff {P Q : Prop} : (P ↔ (¬P → Q)) ↔ (Q → P) := by tauto
 @[simp] theorem not_left_iff_imp_iff {P Q : Prop} : (¬P ↔ (P → Q)) ↔ (Q → ¬P) := by tauto
@@ -411,8 +414,8 @@ theorem not_decide_eq_decide {p q : Prop} [hp : Decidable p] [hq : Decidable q] 
 
 theorem choose?_of_pos {P : Option α → Prop} {p : α → Prop}
 (h₁ : ∃ x, p x) (h₂ : ∀ x, haveI : Nonempty α := ⟨h₁.choose⟩
-Classical.epsilon p = x → p x → P (some x)) : P (choose? p) := by
-  rw [choose?_eq_of_pos h₁]; exact h₂ _ rfl # Classical.epsilon_spec h₁
+(τ x, p x) = x → p x → P (some x)) : P (choose? p) := by
+  rw [choose?_eq_of_pos h₁]; exact h₂ _ rfl # τ_spec h₁
 
 theorem choose?_of_neg {P : Option α → Prop} {p : α → Prop}
 (h₁ : ∀ x, ¬p x) (h₂ : P none) : P (choose? p) := by

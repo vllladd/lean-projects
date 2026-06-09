@@ -36,7 +36,7 @@ def fixNCnd (f : α → α) (x : α) (k : ℕ) : Prop :=
 
 open Classical in noncomputable
 def fixN (f : α → α) (x : α) : ℕ :=
-  epsilon # f.fixNCnd x
+  τ y, f.fixNCnd x y
 
 open Classical in noncomputable
 def fix (f : α → α) (x : α) : α :=
@@ -289,15 +289,15 @@ theorem iterate_add' {f : α → α} {n m : ℕ} : f^[n + m] = f^[m] ∘ f^[n] :
 
 theorem fixCnd_spec {f : α → α} {x : α} (k : ℕ)
 (h : f.IsFixedPt # f^[k] x) : f.fixNCnd x (f.fixN x) := by
-  unfold fixNCnd fixN; apply Classical.epsilon_spec (p := f.fixNCnd x)
+  unfold fixNCnd fixN; apply τ_spec (p := f.fixNCnd x)
   unfold fixNCnd; use k
 
 theorem fix_spec {f : α → α} {x : α} (k : ℕ)
 (h : f.IsFixedPt # f^[k] x) : f.fixCnd x k := by
   unfold fixCnd fix fixN fixNCnd
   generalize hp : (λ k => f.IsFixedPt # f^[k] x) = p
-  generalize hm : Classical.epsilon p = m
-  have h₁ := Classical.epsilon_spec (p := p) (by subst hp; use k)
+  generalize hm : (τ x, p x) = m
+  have h₁ := τ_spec (p := p) (by subst hp; use k)
   nth_rw 1 [←hp] at h₁
   simp [hm] at h₁
   have h₂ : ∀ ⦃r⦄, f^[k + r] x = f^[k] x

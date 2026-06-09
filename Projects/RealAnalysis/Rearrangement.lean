@@ -7,7 +7,7 @@ def Rment (σ : ℕ → ℕ) : Prop :=
 
 noncomputable
 def rinv (σ : ℕ → ℕ) (n : ℕ) : ℕ :=
-  Classical.epsilon # λ k => σ k = n
+  τ k, σ k = n
 
 noncomputable
 def mkRmentP (a : ℕ → ℝ) (is : List ℕ) : ℕ :=
@@ -100,7 +100,7 @@ theorem rinv_cancel_left {σ n} (h : Rment σ) : rinv σ (σ n) = n := by
 
 theorem rinv_cancel_right {σ n} (h : Rment σ) : σ (rinv σ n) = n := by
   unfold rinv
-  apply Classical.epsilon_spec (p := λ k => σ k = n)
+  apply τ_spec (p := λ k => σ k = n)
   apply h.2
 
 theorem rment_rinv {σ} (h : Rment σ) : Rment (rinv σ) := by

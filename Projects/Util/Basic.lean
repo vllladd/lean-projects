@@ -24,7 +24,7 @@ import Projects.Util.Complex
 import Projects.Util.Quotient
 import Projects.Util.Multiset
 import Projects.Util.ListBool
-import Projects.Util.ArrayBool
+import Projects.Util.BoolArray
 import Projects.Util.SetTheory
 import Projects.Util.ByteArray
 import Projects.Util.Eventuality

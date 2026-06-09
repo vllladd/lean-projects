@@ -176,8 +176,8 @@ sys.tr sd pd = some sa' → p sa') : sa₀.aHws ∧ p sa₀ := by
   specialize h₂ sa hp H
   simp only [aStratChoose, choose?_eq_ite]
   replace h₂ : ∃ pa, aStratChooseCnd p sa pa := h₂
-  have h₃ := Classical.epsilon_spec h₂
-  generalize h₁ : Classical.epsilon (aStratChooseCnd p sa) = pa at h₃ ⊢
+  have h₃ := τ_spec h₂
+  generalize h₁ : (τ x, aStratChooseCnd p sa x) = pa at h₃ ⊢
   unfold aStratChooseCnd at h₃
   obtain ⟨sd, h₃, h₄⟩ := h₃; use sd
   simp [h₂, h₁, sys.validTr_iff_isSome, h₃]; apply h₄
@@ -352,13 +352,13 @@ theorem AState.aHws_of_not_dHws {sa} [ha : AState sa] (h : ¬sa.dHws) : sa.aHws 
   obtain ⟨sd, h₁⟩ := h₁
   have hd := DState.of_tr h₁
   specialize h pa sd h₁
-  generalize Hpd : Classical.epsilon (λ pd => ∃ sa', sys.tr sd pd = some sa' ∧
+  generalize Hpd : (τ pd, ∃ sa', sys.tr sd pd = some sa' ∧
     ∃ d, d.WF ∧ ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩) = pd
-  have h₂ := Classical.epsilon_spec h; rw [Hpd] at h₂
+  have h₂ := τ_spec h; rw [Hpd] at h₂
   obtain ⟨sa', h₂, h₃⟩ := h₂
-  generalize Hd : Classical.epsilon (λ (d : DStrat) => d.WF ∧
+  generalize Hd : (τ (d : DStrat), d.WF ∧
     ∀ (a : AStrat), a.WF → sa'.dWins ⟨a, d⟩) = d
-  have h₄ := Classical.epsilon_spec h₃; rw [Hd] at h₄
+  have h₄ := τ_spec h₃; rw [Hd] at h₄
   obtain ⟨h₄, h₅⟩ := h₄
   specialize h₅ a hsa
   obtain ⟨n, h₅⟩ := h₅
@@ -482,9 +482,9 @@ theorem State.aHws_of_not_dHws {s : State} [hs : sys.WF s]
   · contrapose! h; exact AState.dHws_of_tr' h₁ h
   replace h := ha.aHws_of_not_dHws h
   unfold State.aHws at h
-  generalize h₂ : Classical.epsilon (λ (a : AStrat) => a.WF ∧
+  generalize h₂ : (τ (a : AStrat), a.WF ∧
     ∀ (d : DStrat), d.WF → sa.aWins { a := a, d := d }) = a
-  have h₃ := Classical.epsilon_spec h; rw [h₂] at h₃
+  have h₃ := τ_spec h; rw [h₂] at h₃
   rcases h₃ with ⟨h₃, h₄⟩
   specialize h₄ d hd n
   rw [←h₄]
@@ -681,9 +681,8 @@ theorem State.exi_aWins_of_ind' {s} [hs : sys.WF s]
   · intro sa ha H ih; dsimp
     specialize h₂ sa ih
     simp [aSeek, mkStratFn, choose?_eq_ite, h₂]
-    generalize hp : Classical.epsilon
-      (λ pa => ∃ sd, sys.tr sa pa = some sd ∧ p sd) = pa
-    have h₄ := Classical.epsilon_spec h₂
+    generalize hp : (τ pa, ∃ sd, sys.tr sa pa = some sd ∧ p sd) = pa
+    have h₄ := τ_spec h₂
     rw [hp] at h₄
     rcases h₄ with ⟨sd, h₄, h₅⟩
     simp [sys.validTr_of_eq_some h₄]

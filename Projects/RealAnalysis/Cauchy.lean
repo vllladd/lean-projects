@@ -79,7 +79,7 @@ theorem isCauchy_of_isCauSeq {a : ℕ → ℚ} (h : IsCauSeq abs a) : isCauchy (
 theorem isCauSeq_iff_isCauchy {a : ℕ → ℚ} : IsCauSeq abs a ↔ isCauchy (a ·) :=
   ⟨isCauchy_of_isCauSeq, isCauSeq_of_isCauchy⟩
 
-theorem forall_epsilon_iff {p : ℝ → Prop}
+theorem forall_eps_iff {p : ℝ → Prop}
 (h : ∀ {ε₁ ε₂}, 0 < ε₁ → ε₁ < ε₂ → p ε₁ → p ε₂) :
 (∀ ε, 0 < ε → p ε) ↔ ∀ ε, 0 < ε → ε < 1 → p ε := by
   use λ h e he he' => h e he
@@ -101,7 +101,7 @@ def isFakeCauchy (a : ℕ → ℝ) : Prop :=
 
 theorem isFakeCauchy_iff {a} : isFakeCauchy a ↔ ∀ ε, 0 < ε → ε < 1 →
 ∃ N, ∀ i, N ≤ i → |a i - a (i + 1)| < ε := by
-  apply forall_epsilon_iff; rintro e₁ e₂ h₁ h₂ ⟨N, h⟩
+  apply forall_eps_iff; rintro e₁ e₂ h₁ h₂ ⟨N, h⟩
   use N; intro n hn; linarith [h n hn]
 
 theorem isFakeCauchy_sqrt : isFakeCauchy (√·) := by
