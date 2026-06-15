@@ -485,3 +485,48 @@ theorem take_take_same {n : ℕ} : (xs.take n).take n = xs.take n := by
 @[simp]
 theorem nodup_filter_range {n p} : (range n |>.filter p).Nodup :=
   Nodup.filter _ (by simp)
+
+attribute [simp] sortedLT_range
+
+theorem sortedLE.filter [ha : LinearOrder α] {p : α → Bool}
+(h : xs.SortedLE) : (xs.filter p).SortedLE := by
+  rw [sortedLE_iff_pairwise] at h ⊢; apply h.filter
+
+theorem sortedLT.filter [ha : LinearOrder α] {p : α → Bool}
+(h : xs.SortedLT) : (xs.filter p).SortedLT := by
+  rw [sortedLT_iff_pairwise] at h ⊢; apply h.filter
+
+@[simp]
+theorem sortedLE_range {n} : (range n).SortedLE := by
+  apply SortedLT.sortedLE; simp
+
+@[simp]
+theorem sortedLE_filter_range {n} {p : ℕ → Bool} : (range n |>.filter p).SortedLE := by
+  apply sortedLE.filter; simp
+
+@[simp]
+theorem sortedLT_filter_range {n} {p : ℕ → Bool} : (range n |>.filter p).SortedLT := by
+  apply sortedLT.filter; simp
+
+@[simp]
+theorem filter_eq_filter {p q : α → Bool} :
+xs.filter p = xs.filter q ↔ ∀ x ∈ xs, p x ↔ q x := by
+  symm; constructor
+  · intro h; induction xs <;> grind
+  · intro h x hx; grind [congrArg (x ∈ ·) h]
+
+theorem filter_eq_filter_of' {p : α → Bool} (q : α → Prop)
+(h₁ : haveI := Classical.propDecidable; ys = xs.filter q)
+(h₂ : ∀ x ∈ xs, p x → q x) : xs.filter p = ys.filter p := by
+  subst h₁; simpa
+
+theorem filter_and {p q : α → Bool} :
+xs.filter (λ x => p x && q x) = (xs.filter q).filter p := by
+  simp
+
+theorem filter_and' {p q : α → Bool} :
+xs.filter (λ x => p x && q x) = (xs.filter p).filter q := by
+  simp [Bool.and_comm]
+
+theorem filter_eq_self_of {p : α → Bool} (h : ∀ x ∈ xs, p x) : xs.filter p = xs := by
+  simpa

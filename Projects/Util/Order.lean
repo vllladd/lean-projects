@@ -400,6 +400,23 @@ theorem length_icc_int_nat {z : ℤ} {a b : ℕ} :
 (icc (z - a) (z + b)).length = a + b + 1 := by
   unfold instLocallyFiniteOrderListInt; simp [icc]; omega
 
+theorem icc_eq_range {n m} (h : n ≤ m) : icc n m = (range (m - n + 1)).map (n + ·) := by
+  change (range _).map _ = _; rw [Nat.add_one_sub h]
+
+theorem icc_split (k : ℕ) {n m} (h₁ : n ≤ k) (h₂ : k < m) :
+icc n m = icc n k ++ icc (k + 1) m := by
+  rw [icc_eq_range (by omega), icc_eq_range h₁, icc_eq_range # by omega]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₁; clear h₁
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt h₂; clear h₂
+  rw [show n + k + m + 1 - n + 1 = m + k + 2 by omega]
+  rw [show n + k - n + 1 = k + 1 by omega]
+  rw [show n + k + m + 1 - (n + k + 1) = m by omega]
+  rw [List.ext_getElem_iff]
+  split_ands <;> simp; omega
+  intro i h₁ h₂
+  rw [getElem_append]
+  simp; omega
+
 end List
 
 variable {α : Type*}

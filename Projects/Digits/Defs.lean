@@ -26,3 +26,9 @@ def digSum (b n : ℕ) : ℕ :=
 
 def digRev (b n : ℕ) : ℕ :=
   ofDigList b (toDigList b n).reverse
+
+def digsNum (b n : ℕ) : ℕ :=
+  toDigList b n |>.length
+
+def Emirp (b n : ℕ) : Prop :=
+  digRev b n |>.Prime

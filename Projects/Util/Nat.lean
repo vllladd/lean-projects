@@ -784,3 +784,79 @@ theorem eq_of_le_and_dvd {n b}
 theorem eq_of_le_and_mod_eq_zero {n b}
 (hb : b ≠ 0) (hn : n ≠ 0) (h₁ : n ≤ b) (h₂ : n % b = 0) : n = b :=
   eq_of_le_and_dvd hb hn h₁ # dvd_of_mod_eq_zero h₂
+
+@[simp]
+theorem not_prime_0 : ¬Nat.Prime 0 := by
+  decide
+
+@[simp]
+theorem not_prime_1 : ¬Nat.Prime 1 := by
+  decide
+
+@[simp]
+theorem prime_2 : Nat.Prime 2 := by
+  decide
+
+theorem prime_add_prime_iff {p : ℕ → ℕ → ℕ → Prop} (hp : ∀ a b c, p a b c ↔ p b a c) :
+(∀ (a b c : ℕ), a.Prime → b.Prime → c.Prime → a + b = c → p a b c) ↔
+(∀ (a c : ℕ), a.Prime → c.Prime → Odd a → a + 2 = c → p a 2 c) := by
+  constructor
+  · intro h a c ha hc ha₁
+    apply h <;> simp [ha, hc]
+  intro h a b c ha hb h₁ h₂
+  have h₄ : Even a ↔ Odd b
+  · by_contra h₅
+    simp [not_iff'] at h₅
+    by_cases h₄ : Even a <;> simp [h₄] at h₅
+    · rw [Nat.Prime.even_iff (by assumption)] at h₄ h₅
+      subst h₄ h₅ h₂
+      norm_num at h₁
+    simp at h₄
+    have h₆ : Even c
+    · subst h₂
+      exact Odd.add_odd h₄ h₅
+    rw [h₁.even_iff] at h₆
+    subst h₆
+    have := ha.two_le
+    have := hb.two_le
+    omega
+  wlog h₅ : Odd a ∧ Even b with ih
+  · rw [hp]
+    apply @ih p hp h b a c hb ha h₁ (by omega) <;> clear ih h
+    · contrapose!; simp [h₄]
+    simp at h₅
+    rw [←Nat.not_odd_iff_even] at h₄ ⊢
+    tauto
+  clear h₄
+  choose h₄ h₅ using h₅
+  rw [hb.even_iff] at h₅
+  subst h₅; clear hb
+  tauto
+
+theorem three_dvd_add_two_four {n : ℕ} : 3 ∣ n ∨ 3 ∣ n + 2 ∨ 3 ∣ n + 4 := by
+  rw [show 4 = 1 + 3 by rfl, ←Nat.add_assoc, Nat.dvd_add_self_right]
+  induction n <;> simp [add_assoc]; tauto
+
+theorem prime_iff' {n : ℕ} : n.Prime ↔ 2 ≤ n ∧ ∀ k, 2 ≤ k → k < n → ¬(k ∣ n) := by
+  constructor
+  · intro h
+    use h.two_le
+    intro k h₁ h₂ h₃
+    obtain ⟨n, rfl⟩ := h₃
+    rw [prime_mul_iff] at h
+    grind
+  rintro ⟨h₁, h₂⟩
+  constructor <;> simp; omega
+  rintro a b rfl
+  cases a; simp at h₁; nm a
+  cases b; simp at h₁; nm b
+  simp
+  rw[or_iff_not_imp_left]
+  intro ha
+  by_contra hb
+  apply h₂ (a + 1) (by omega) (by grind); clear h₂
+  simp
+
+theorem eq_of_prime_and_dvd {n p : ℕ} (hp : p.Prime) (hn : n.Prime) (h : p ∣ n) : n = p := by
+  rw [prime_iff'] at hn; have h₁ := hn.2 p hp.two_le; simp [h] at h₁
+  exact eq_of_le_and_dvd hp.ne_zero (by grind) h₁ h

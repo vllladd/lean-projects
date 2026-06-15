@@ -453,3 +453,9 @@ theorem max_comm! [ha : SemilatticeSup α] : max = (λ (x y : α) => max y x) :=
 
 @[simp]
 theorem fmap_Id {α β : Type} {f : α → β} {x : α} : @Functor.map Id _ α β f x = f x := rfl
+
+theorem τ_eq_of_setOf [ha : Nonempty α] {p : α → Prop} {x}
+(h : setOf p = {x}) : (τ x, p x) = x := by
+  apply τ_eq_of; simpa using congrArg (x ∈ ·) h
+  intro y hy; replace h := congrArg (y ∈ ·) h
+  simp at h; tauto

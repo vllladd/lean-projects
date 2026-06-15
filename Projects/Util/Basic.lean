@@ -4,6 +4,7 @@ import Projects.Util.Fin
 import Projects.Util.Int
 import Projects.Util.Rat
 import Projects.Util.Acc
+import Projects.Util.Sum
 import Projects.Util.Real
 import Projects.Util.Prod
 import Projects.Util.Char

@@ -54,8 +54,8 @@ theorem toDigList_zero : toDigList b 0 = [0] := by
 theorem toDigList_one : toDigList b 1 = [1] := by
   simp [toDigList]; iterate 2 unfold toDigList'; simp
 
-theorem lt_pow_length_toDigList {n} : n < b ^ (toDigList b n).length := by
-  unfold toDigList
+theorem lt_pow_digsNum {n} : n < b ^ digsNum b n := by
+  unfold digsNum toDigList
   simp
   split_ifs with h₁
   · simp [h₁]
@@ -78,9 +78,9 @@ theorem lt_pow_length_toDigList {n} : n < b ^ (toDigList b n).length := by
   simp [pow_succ]
   omega
 
-theorem lt_pow_of_length_toDigList_eq {n k : ℕ}
-(h : (toDigList b n).length = k) : n < b ^ k := by
-  subst h; exact lt_pow_length_toDigList
+theorem lt_pow_of_digsNum_eq {n k : ℕ}
+(h : digsNum b n = k) : n < b ^ k := by
+  subst h; exact lt_pow_digsNum
 
 @[simp]
 theorem sum_toDigList'_zero {b} : (toDigList' b 0).sum = 0 := by
@@ -377,15 +377,135 @@ theorem toDigList'_eq_nil_iff {n} : toDigList' b n = [] ↔ n = 0 := by
 theorem toDigList_ne_nil {n} : toDigList b n ≠ [] := by
   simp [toDigList]; split_ifs with hn <;> simp [hn]
 
--- @[simp]
--- theorem divRev_digRev {n} : digRev b (digRev b n) = n := by
---   sorry
--- 
--- -- #check 0 #exit
--- 
--- theorem length_toDigList_eq_iff {n k} :
--- (toDigList b n).length = k ↔ k ≠ 0 ∧ b ^ (k - 1) ≤ n ∧ n < b ^ k := by
---   -- cases k
---   -- ·
---   --   simp
---   sorry
+theorem digRev_of_lt_base {n} (h : n < b) : digRev b n = n := by
+  rw [digRev, toDigList_of_lt_base h]; simp
+
+omit hb in @[simp]
+theorem ofDigList_nil : ofDigList b [] = 0 := rfl
+
+@[simp]
+theorem ofDigList_snoc {c cs} : ofDigList b (cs ++ [c]) = ofDigList b cs * b + c := by
+  rw [ofDigList, List.foldl_append]; simp; rfl
+
+omit hb in @[simp]
+theorem ofDigList_cons {c cs} :
+ofDigList b (c :: cs) = c * b ^ cs.length + ofDigList b cs := by
+  simp [ofDigList]; induction cs generalizing c <;> simp; grind
+
+theorem toDigList_mul_base {k} (hk : k ≠ 0) :
+toDigList b (k * b) = toDigList b k ++ [0] := by
+  rw [←toDigList_mul_base_add hk (by simp)]; rfl
+
+@[simp]
+theorem digRev_mul_base {k} : digRev b (k * b) = digRev b k := by
+  by_cases hk : k = 0
+  · simp [hk]
+  unfold digRev
+  rw [toDigList_mul_base hk]
+  simp
+
+theorem digRev_mul_base_add {k c} (hk : k ≠ 0) (hc : c < b) :
+digRev b (k * b + c) = c * b ^ (digsNum b k) + digRev b k := by
+  unfold digsNum digRev; simp [toDigList_mul_base_add hk hc]
+
+example : ¬∀ (b n : ℕ) [Base b], digRev b (digRev b n) = n := by
+  simp; use 2, by simp, 2; decide_cbv
+
+theorem digsNum_eq_iff {n k} : digsNum b n = k ↔
+(n = 0 ∧ k = 1) ∨ (k ≠ 0 ∧ b ^ (k - 1) ≤ n ∧ n < b ^ k) := by
+  unfold digsNum
+  induction n using ind_dig b generalizing k
+  · nm n hn
+    rw [toDigList_of_lt_base hn]
+    simp
+    constructor
+    · rintro rfl
+      simp [hn]
+      omega
+    rintro (⟨rfl, rfl⟩ | ⟨h₁, h₂, h₃⟩); rfl
+    cases k; simp at h₁; nm k
+    cases k; rfl; nm k
+    clear h₁ h₃; exfalso
+    simp at h₂
+    simp [pow_add] at h₂
+    contrapose! hn; clear hn
+    apply h₂.trans'
+    cases k <;> simp
+    nm k
+    rw [one_le_pow_iff] <;> simp
+  nm n c hn hc ih
+  rw [toDigList_mul_base_add hn hc]
+  simp
+  cases k <;> simp
+  nm k
+  simp at ih
+  specialize @ih n _ k
+  · simp [lt_self_mul_add_iff]
+    omega
+  rw [ih]; clear ih
+  have hb' := hb.1
+  constructor
+  · rintro (⟨rfl, rfl⟩ | ⟨h₁, h₂, h₃⟩)
+    · simp at hn
+    cases k; simp at h₁; nm k
+    simp at h₂ ⊢
+    clear h₁
+    simp [pow_succ] at h₃ ⊢
+    split_ands <;> nlinarith
+  · rintro (⟨⟨rfl, rfl⟩, rfl⟩ | ⟨h₁, h₂⟩)
+    · simp at hn
+    cases k
+    · simp at h₁ h₂
+      exfalso
+      cases n; simp at hn; nm n
+      simp [add_mul] at h₂
+      omega
+    nm k
+    simp [hn]
+    simp [pow_succ] at h₁ h₂ ⊢
+    split_ands <;> nlinarith
+
+theorem digRev_eq_of_digsNum_eq_two {n} (h : digsNum b n = 2) :
+digRev b n = n % b * b + n / b := by
+  have hb' := hb.1
+  unfold digRev
+  simp [digsNum_eq_iff] at h
+  rcases h with ⟨h₁, h₂⟩
+  induction n using ind_dig b
+  · omega
+  nm n c h₃ h₄ ih; clear ih
+  simp [toDigList_mul_base_add h₃ h₄]
+  induction n using ind_dig b
+  rotate_left
+  · nm n d h₅ h₆ ih
+    clear ih h₁ h₃
+    exfalso
+    contrapose! h₂; clear h₂
+    simp [pow_two, add_mul]
+    cases n
+    · simp at h₅
+    nm n
+    simp [add_mul]
+    omega
+  nm d h₅
+  simp [toDigList_of_lt_base h₅]
+  rw [Nat.add_div (by simp)]
+  simpa [mod_eq_of_lt h₄, div_eq_of_lt h₄]
+
+@[simp]
+theorem digsNum_zero : digsNum b 0 = 1 := by
+  simp [digsNum]
+
+theorem digsNum_of_lt_base {n} (hn : n < b) : digsNum b n = 1 := by
+  simp [digsNum, toDigList_of_lt_base hn]
+
+theorem digsNum_base_mul_add {k c} (hk : k ≠ 0) (hc : c < b) :
+digsNum b (k * b + c) = digsNum b k + 1 := by
+  unfold digsNum; simp [toDigList_mul_base_add hk hc]
+
+theorem digsNum_base_mul {k} (hk : k ≠ 0) :
+digsNum b (k * b) = digsNum b k + 1 := by
+  rw [←digsNum_base_mul_add (c := 0) hk (by simp)]; rfl
+
+instance {b} : DecidablePred (Emirp b) := by
+  unfold Emirp; infer_instance
