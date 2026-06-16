@@ -3,7 +3,7 @@ import Projects.Digits
 namespace Misc.P002.P1
 
 def Cnd₁ (n : ℕ) : Prop :=
-  Nat.digsNum 10 n = 2 ∧ n.Prime ∧ Nat.Emirp 10 n
+  Nat.digsNum 10 n = 2 ∧ n.Prime ∧ (Nat.digRev 10 n).Prime
 
 open Classical in noncomputable
 def set₁ : Set' ℕ :=

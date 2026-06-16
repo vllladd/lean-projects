@@ -49,6 +49,16 @@ variable {xs ys zs : List α}
 
 end List
 
+section MonadState
+
+variable {α β γ : Type}
+variable {σ : Type} {M : Type → Type}
+variable [hσ : MonadState σ M] [hM : Monad M]
+
+-- #check 0 #exit
+
+end MonadState
+
 namespace Set
 
 variable {α β γ : Type*}

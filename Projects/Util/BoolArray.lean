@@ -1,14 +1,16 @@
 import Projects.Util.Array
-import Projects.Util.ListBool
+import Projects.Util.BoolList
 
 namespace Array
 
-def decideArrayBool (p : Array Bool → Bool) (n : ℕ) : Bool :=
-  List.decideListBool (p # ⟨·⟩) n
+def decideBoolArray (p : Array Bool → Bool) (n : ℕ) : Bool :=
+  List.decideBoolList (p # ⟨·⟩) n
 
-theorem decideArrayBool_iff {p : Array Bool → Prop} [hp : DecidablePred p] {n : ℕ} :
-decideArrayBool p n ↔ ∀ (xs : Array Bool), xs.size = n → p xs := by
-  rw [decideArrayBool, List.decideListBool_iff]
+-----
+
+theorem decideBoolArray_iff {p : Array Bool → Prop} [hp : DecidablePred p] {n : ℕ} :
+decideBoolArray p n ↔ ∀ (xs : Array Bool), xs.size = n → p xs := by
+  rw [decideBoolArray, List.decideBoolList_iff]
   apply Iff.intro
   · intro a xs a_1
     subst a_1
@@ -19,4 +21,4 @@ decideArrayBool p n ↔ ∀ (xs : Array Bool), xs.size = n → p xs := by
 
 instance {p : Array Bool → Prop} [hp : DecidablePred p] {n : ℕ} :
 Decidable # ∀ (xs : Array Bool), xs.size = n → p xs :=
-  decidable_of_bool (decideArrayBool p n) decideArrayBool_iff
+  decidable_of_bool (decideBoolArray p n) decideBoolArray_iff

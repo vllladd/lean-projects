@@ -506,6 +506,3 @@ digsNum b (k * b + c) = digsNum b k + 1 := by
 theorem digsNum_base_mul {k} (hk : k ≠ 0) :
 digsNum b (k * b) = digsNum b k + 1 := by
   rw [←digsNum_base_mul_add (c := 0) hk (by simp)]; rfl
-
-instance {b} : DecidablePred (Emirp b) := by
-  unfold Emirp; infer_instance

@@ -29,6 +29,3 @@ def digRev (b n : ℕ) : ℕ :=
 
 def digsNum (b n : ℕ) : ℕ :=
   toDigList b n |>.length
-
-def Emirp (b n : ℕ) : Prop :=
-  digRev b n |>.Prime

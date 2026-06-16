@@ -530,3 +530,21 @@ xs.filter (λ x => p x && q x) = (xs.filter p).filter q := by
 
 theorem filter_eq_self_of {p : α → Bool} (h : ∀ x ∈ xs, p x) : xs.filter p = xs := by
   simpa
+
+theorem suffix_antisymm {α : Type*} {xs ys : List α}
+(h₁ : xs <:+ ys) (h₂ : ys <:+ xs) : xs = ys := by
+  obtain ⟨ys, rfl⟩ := h₁; obtain ⟨zs, h₂⟩ := h₂; simp [←append_assoc] at h₂; grind
+
+attribute [simp] drop_suffix
+
+@[simp]
+theorem drop_eq_self_iff {n} : xs.drop n = xs ↔ n = 0 ∨ xs.length = 0 := by
+  grind
+
+@[simp]
+theorem drop_length_add {n} : xs.drop (xs.length + n) = [] := by
+  induction xs <;> simp_all
+
+@[simp]
+theorem drop_add_length {n} : xs.drop (n + xs.length) = [] := by
+  rw [add_comm]; simp
