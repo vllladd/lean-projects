@@ -238,6 +238,6 @@ theorem toBits_ofBits_of_le_length {bs : List Bit} (h : w ≤ bs.length) :
 theorem toBits_eq_nil_iff : x.toBits = [] ↔ w = 0 := by
   rw [List.eq_nil_iff_length_eq_zero, length_toBits]
 
--- #check 0 #exit
-
-end BitVec
+@[simp]
+theorem ofBits_singleton {b} : ofBits w [b] = ofBit w b := by
+  simp [ofBits]

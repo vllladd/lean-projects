@@ -60,4 +60,5 @@ theorem toBitVec_eq_iff : x.toBitVec = y.toBitVec ↔ x = y := by
 @[simp]
 theorem toBits_eq_mk : x.toBits = x.toBitVec.toBits := rfl
 
-end UInt8
+@[simp]
+theorem one_shl_one : (1 : UInt8) <<< (1 : UInt8) = 2 := rfl

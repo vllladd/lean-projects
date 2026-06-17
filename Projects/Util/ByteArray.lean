@@ -125,3 +125,50 @@ theorem size_mk {bs} : (⟨bs⟩ : ByteArray).size = bs.size := rfl
 
 @[simp]
 theorem get!_mk {bs i} : (⟨bs⟩ : ByteArray).get! i = bs[i]! := rfl
+
+@[simp]
+theorem toList_mk {bs} : (⟨bs⟩ : ByteArray).toList = bs.toList := by
+  rcases bs with ⟨bs⟩
+  simp [toList]
+  rw [show [] = (bs.take 0).reverse by simp]
+  generalize h : bs.length = i
+  rw [show 0 = bs.length - i by omega]
+  clear h
+  induction i
+  · simp
+    rw [toList.loop]
+    simp
+  nm i ih
+  rw [toList.loop]
+  simp
+  split_ifs with h
+  rotate_left
+  · simp at h
+    subst h
+    simp
+  by_cases h₁ : bs.length ≤ i
+  · rw [show bs.length - i = 0 by omega] at ih
+    rw [show bs.length - (i + 1) = 0 by omega]
+    simp at ih ⊢
+    rw [toList.loop] at ih
+    simpa [h] using ih
+  simp at h₁
+  rw [show bs.length - (i + 1) + 1 = bs.length - i by omega]
+  rw [show bs.length - (i + 1) = bs.length - i - 1 by omega]
+  rw [List.getElem!_eq_getElem (by omega)]
+  nth_rw 2 [show bs.length - i = bs.length - i - 1 + 1 by omega] at ih
+  rw [List.take_add_one] at ih
+  simp at ih
+  rw [List.getElem?_eq_getElem (by omega)] at ih
+  simpa using ih
+
+theorem toList_eq_toList_data {bs : ByteArray} : bs.toList = bs.data.toList := by
+  cases bs; simp
+
+theorem ofBits_of_le_length {bs : List Bit} (h : 8 ≤ bs.length) :
+ofBits bs = ⟨⟨.ofBits (bs.take 8) :: (ofBits (bs.drop 8)).toList⟩⟩ := by
+  nth_rw 1 [ofBits]
+  rw [ofBits']
+  simp [show bs ≠ [] by grind]
+  rw [ofBits'_eq_append]
+  simp [ofBits]

@@ -14,15 +14,6 @@ section monad
 variable {α β γ : Type}
 variable {M : Type → Type} [hM₁ : Monad M] [hM₂ : LawfulMonad M]
 
-omit hM₂ in @[simp]
-theorem sequence_nil : sequence ([] : List (M α)) = pure [] := rfl
-
--- @[simp]
--- theorem sequence_cons {m : M α} {ms} :
--- sequence (m :: ms) = m >>= λ x => sequence ms >>= λ xs => pure (x :: xs) := by
---   nth_rw 1 [sequence]
---   simp [traverse, List.traverse]
-
 -- #check 0 #exit
 
 end monad
@@ -75,8 +66,12 @@ theorem ProgM.wf_bind {m : ProgM α} {f : α → ProgM β}
       exact (H₂ y).2 h₅ h₃
 
 @[instance]
-theorem ProgM.wf_fmap {m : ProgM α} {f : α → β} [H₁ : m.WF] : (f <$> m).WF :=
-  inferInstanceAs(WF # m >>= λ x => pure (f x))
+theorem ProgM.monadCnd_wf : MonadCnd (M := ProgM) WF := by
+  use wf_pure; apply wf_bind
+
+@[instance]
+theorem ProgM.wf_map {m : ProgM α} {f : α → β} [H₁ : m.WF] : (f <$> m).WF :=
+  MonadCnd.map inferInstance
 
 example : ¬(gets List.length : ProgM _).WF := by
   rintro ⟨h₁, -⟩; specialize @h₁ [] [] 0 (by rfl)
@@ -175,19 +170,12 @@ theorem ProgM.wf_readBitsUntil {p} : (readBitsUntil p).WF := by
     replace h₂ := List.find?_some h₂
     grind
 
--- theorem ProgM.wf_sequence {ms : List (ProgM α)} (h : ∀ m ∈ ms, m.WF) : (sequence ms).WF := by
---   induction ms
---   ·
---     simp
---   nm m ms ih
---   simp
-
--- #check 0 #exit
-
 @[instance, simp]
 theorem ProgM.wf_readNat : readNat.WF := by
   unfold readNat; infer_instance
 
--- @[instance, simp]
--- theorem ProgM.writeNat {n} : (writeNat n).WF := by
---   unfold VerifiedIO.writeNat
+@[instance, simp]
+theorem ProgM.writeNat {n} : (writeNat n).WF := by
+  unfold VerifiedIO.writeNat; apply MonadCnd.bind
+  · apply MonadCnd.replicateM'; infer_instance
+  · infer_instance

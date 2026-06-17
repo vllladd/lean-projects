@@ -16,8 +16,9 @@ end Nat
 
 namespace List
 
-variable {α β γ : Type*}
+variable {α β γ : Type}
 variable {xs ys zs : List α}
+variable {M : Type → Type} [H₁ : Monad M] [H₂ : LawfulMonad M]
 
 -- #check 0 #exit
 
@@ -45,41 +46,6 @@ namespace UInt8
 end UInt8
 
 namespace ByteArray
-
-attribute [-simp] List.getElem!_eq_getElem?_getD
-
--- #check 0 #exit
-
--- @[simp]
--- theorem toList_mk {bs} : (⟨bs⟩ : ByteArray).toList = bs.toList := by
---   rcases bs with ⟨bs⟩
---   simp [toList]
---   rw [show [] = (bs.take 0).reverse by simp]
---   nth_rw 3 [show bs = bs.drop 0 by simp]
---   generalize 0 = i
---   generalize hx : (⟨⟨bs⟩⟩ : ByteArray) = xs
---   
---   clear hx
---   
---   -- replace hx : xs.size = bs.length; simp [←hx]
---   induction bs generalizing xs i
---   ·
---     unfold toList.loop
---     simp
---   nm b bs ih
-
--- #check 0 #exit
-
--- theorem toList_eq_toList_data {bs : ByteArray} : bs.toList = bs.data.toList := by
---   cases bs; simp
-
--- theorem ofBits_of_le_length {bs : List Bit} (h : 8 ≤ bs.length) :
--- ofBits bs = ⟨⟨.ofBits (bs.take 8) :: (ofBits (bs.drop 8)).toList⟩⟩ := by
---   nth_rw 1 [ofBits]
---   rw [ofBits']
---   simp [show bs ≠ [] by grind]
---   rw [ofBits'_eq_append]
---   simp [ofBits]
 
 -- #check 0 #exit
 
@@ -112,6 +78,9 @@ def flush' : Ser Unit := modify # λ s =>
 def flush : Ser Unit := do
   bif (←get).bitMask != 0 then pure () else flush'
 
+def finish : Ser Unit := do
+  bif (←get).bitMask == 1 then pure () else flush'
+
 def writeBit' (b : Bit) : Ser Unit := modify # λ s =>
   { bytes := s.bytes
     curByte := match b with
@@ -127,7 +96,7 @@ def writeBits (bs : List Bit) : Ser Unit :=
   bs.forM writeBit
 
 def getOutput : Ser ByteArray := do
-  flush; gets (·.bytes)
+  finish; gets (·.bytes)
 
 def ofBits (bs : List Bit) : Serializer :=
   StateT.run (m := Id) (writeBits bs) ∅ |>.2
@@ -143,10 +112,10 @@ variable {s : Serializer}
 theorem writeBits_nil : writeBits [] = pure () := rfl
 
 @[simp]
-theorem getOutput_empty : getOutput.run ∅ = (∅, ∅) := rfl
+theorem finish_empty : finish.run ∅ = ((), ∅) := rfl
 
-@[simp low]
-theorem writeBits_empty {bs} : (writeBits bs).run ∅ = ((), ofBits bs) := rfl
+@[simp]
+theorem getOutput_empty : getOutput.run ∅ = (∅, ∅) := rfl
 
 @[simp]
 theorem ofBits_nil : ofBits [] = ∅ := rfl
@@ -172,13 +141,13 @@ theorem flush_flush : flush.run (flush.run s).2 = flush.run s := by
   simp [flush, h]
 
 @[simp]
+theorem finish_finish {s} : finish.run (finish.run s).2 = finish.run s := by
+  simp [finish]; split_ifs <;> simp_all [flush']
+
+@[simp]
 theorem flush_ofBits {bs} : flush.run (ofBits bs) = ((), ofBits bs) := by
   induction bs using List.reverseRecOn; simp
   unfold ofBits; simp [writeBit, writeBit']; rfl
-
-@[simp]
-theorem getOutput_ofBits {bs} : getOutput.run (ofBits bs) = (ofBits bs |>.bytes, ofBits bs) := by
-  simp [getOutput]
 
 @[simp]
 theorem bytes_empty : (∅ : Serializer).bytes = ∅ := rfl
@@ -188,8 +157,14 @@ theorem ofBits_append {bs₁ bs₂} :
 ofBits (bs₁ ++ bs₂) = (writeBits bs₂ |>.run (ofBits bs₁) |>.2) := by
   unfold ofBits; simp
 
+@[simp]
+theorem bitMask_empty : (∅ : Serializer).bitMask = 1 := rfl
+
+-- #check 0 #exit
+
 -- @[simp]
--- theorem bytes_ofBits {bs : List Bit} : (ofBits bs).bytes = .ofBits bs := by
+-- theorem fst_getOutput_ofBits {bs : List Bit} :
+-- (getOutput.run (ofBits bs)).1 = .ofBits bs := by
 --   generalize hn : bs.length = n
 --   induction n using Nat.strong_induction_on generalizing bs
 --   nm n ih
@@ -200,5 +175,27 @@ ofBits (bs₁ ++ bs₂) = (writeBits bs₂ |>.run (ofBits bs₁) |>.2) := by
 --     simp
 --   by_cases h₁ : bs.length < 8
 --   ·
---     rw [ByteArray.ofBits'_of_length_le]
+--     clear ih
+--     rw [ByteArray.ofBits_of_length_le h (by omega)]
+--     
+--     -- rw [ofBits, writeBits, List.forM_eq_sequence']
+--     -- simp
+--     -- cases bs
+--     -- ·
+--     --   simp at h
+--     -- clear h
+--     -- nm b₀ bs
+--     -- simp at h₁
+--     -- replace h₁ : bs.length ≤ 6; omega
+--     -- 
+--     -- induction bs
+--     -- ·
+--     --   -- simp [writeBit, writeBit', flush, getOutput, finish, flush']
+--     --   -- split <;> rfl
+--     --   cases b₀ <;> rfl
+--     -- nm b₁ bs ih
+--     -- specialize ih (by grind)
+--     -- simp at h₁
+--     -- replace h₁ : bs.length ≤ 5; omega
+--     
 --   sorry

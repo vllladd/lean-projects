@@ -51,5 +51,5 @@ def readNat : ProgM ℕ := do
   pure # bs.length - 1
 
 def writeNat (n : ℕ) : ProgM Unit := do
-  replicateM_ n (writeBit 1)
+  replicateM' n (writeBit 1)
   writeBit 0
