@@ -62,3 +62,45 @@ theorem toBits_eq_mk : x.toBits = x.toBitVec.toBits := rfl
 
 @[simp]
 theorem one_shl_one : (1 : UInt8) <<< (1 : UInt8) = 2 := rfl
+
+instance : LinearOrder UInt8 where
+  le_refl {x} := by simp
+  le_trans {x y z} (h₁ h₂) := by trans y <;> assumption
+  le_antisymm {x y} (h₁ h₂) := UInt8.le_antisymm h₁ h₂
+  le_total {x y} := UInt8.le_total x y
+  toDecidableLE {x y} := inferInstance
+  lt_iff_le_not_ge {x y} := Std.LawfulOrderLT.lt_iff x y
+  min_def {x y} := by rfl
+  max_def {x y} := by rfl
+
+@[simp]
+theorem ofBits_snoc {bs : List Bit} {b : Bit} : ofBits (bs ++ [b]) =
+ofBits bs ||| (if bs.length < 8 then ofBit b <<< UInt8.ofNat bs.length else 0) := by
+  apply UInt8.eq_of_toBitVec_eq
+  simp
+  congr
+  split_ifs with h
+  · simp [Nat.mod_eq_of_lt h]
+  simp
+  apply BitVec.shiftLeft_eq_zero
+  omega
+
+@[simp]
+theorem ofNat_eq_zero_iff {n : ℕ} : UInt8.ofNat n = 0 ↔ n % 256 = 0 := by
+  simp [ofNat, UInt8.eq_iff_toBitVec_eq]
+
+@[simp]
+theorem ofNat_eq_one_iff {n : ℕ} : UInt8.ofNat n = 1 ↔ n % 256 = 1 := by
+  simp [ofNat, UInt8.eq_iff_toBitVec_eq]
+
+@[simp]
+theorem one_shiftLeft_ne_zero {n : ℕ} : 1 <<< (UInt8.ofNat n) ≠ 0 := by
+  simp [UInt8.ext_iff, Nat.shiftLeft_eq]
+  rw [Nat.mod_eq_of_lt]; simp
+  change 2 ^ (n % 8) < 2 ^ 8
+  rw [Nat.pow_lt_pow_iff_right (by simp)]
+  apply Nat.mod_lt; simp
+
+@[simp]
+theorem one_shiftLeft_eq_one_iff {n : ℕ} : 1 <<< (UInt8.ofNat n) = 1 ↔ n % 8 = 0 := by
+  simp [ofNat, UInt8.eq_iff_toBitVec_eq]

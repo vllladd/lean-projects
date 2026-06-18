@@ -860,3 +860,49 @@ theorem prime_iff' {n : ℕ} : n.Prime ↔ 2 ≤ n ∧ ∀ k, 2 ≤ k → k < n 
 theorem eq_of_prime_and_dvd {n p : ℕ} (hp : p.Prime) (hn : n.Prime) (h : p ∣ n) : n = p := by
   rw [prime_iff'] at hn; have h₁ := hn.2 p hp.two_le; simp [h] at h₁
   exact eq_of_le_and_dvd hp.ne_zero (by grind) h₁ h
+
+@[simp]
+theorem one_shiftLeft_eq_one_iff {n : ℕ} : 1 <<< n = 1 ↔ n = 0 := by
+  cases n <;> simp [shiftLeft_eq]
+
+theorem ind_bit {p : ℕ → Prop} (h₁ : p 0) (h₂ : ∀ n, p n → p (n * 2))
+(h₃ : ∀ n, p n → p (n * 2 + 1)) : ∀ n, p n := by
+  intro n; induction n using Nat.strong_induction_on; nm n ih
+  induction n using mod_2_ind <;> nm n
+  · cases n
+    · simpa
+    nm n
+    apply h₂
+    apply ih
+    omega
+  · apply h₃
+    apply ih
+    omega
+
+theorem or_mul_two_pow {n m k : ℕ} : (n ||| m) * 2 ^ k = n * 2 ^ k ||| m * 2 ^ k := by
+  iterate 3 rw [←shiftLeft_eq];; rw [shiftLeft_or_distrib]
+
+theorem or_two_pow_eq_add_of {n k : ℕ} (h : n < 2 ^ k) : n ||| 2 ^ k = n + 2 ^ k := by
+  induction n using ind_bit generalizing k
+  · simp
+  · nm n ih
+    cases k
+    · simp
+    nm k
+    simp [pow_add, ←add_mul] at h ⊢
+    exact ih h
+  · nm n ih
+    cases k
+    · simp at h
+    nm k
+    simp [pow_add] at h ⊢
+    rw [show n * 2 + 1 + 2 ^ k * 2 = (n + 2 ^ k) * 2 + 1 by omega]
+    simp
+    apply ih
+    omega
+
+theorem two_pow_or_eq_add_of {n k : ℕ} (h : n < 2 ^ k) : 2 ^ k ||| n = 2 ^ k + n := by
+  rw [Nat.or_comm, add_comm, or_two_pow_eq_add_of h]
+
+theorem eq_div_add_mod (n b : ℕ) : n = n / b * b + n % b := by
+  simp

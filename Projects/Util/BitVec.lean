@@ -1,5 +1,6 @@
 import Projects.Util.Bit
 import Projects.Util.Array
+import Projects.Util.Order
 
 namespace BitVec
 
@@ -241,3 +242,109 @@ theorem toBits_eq_nil_iff : x.toBits = [] ↔ w = 0 := by
 @[simp]
 theorem ofBits_singleton {b} : ofBits w [b] = ofBit w b := by
   simp [ofBits]
+
+instance : LinearOrder (BitVec w) where
+  le_refl {x} := by simp
+  le_trans {x y z} (h₁ h₂) := by trans y <;> assumption
+  le_antisymm {x y} (h₁ h₂) := BitVec.le_antisymm h₁ h₂
+  le_total {x y} := BitVec.le_total x y
+  toDecidableLE {x y} := inferInstance
+  lt_iff_le_not_ge {x y} := Std.LawfulOrderLT.lt_iff x y
+  min_def {x y} := by
+    dsimp [min, minOfOrd', compare, instOrdBitVec, compareOfLessAndEq]
+    split_ifs <;> simp_all
+    · exfalso; nm x y h₁ h₂; contrapose! h₂; exact BitVec.lt_asymm h₁
+    · apply BitVec.le_antisymm <;> assumption
+  max_def {x y} := by
+    dsimp [max, minOfOrd', compare, instOrdBitVec, compareOfLessAndEq]
+    split_ifs <;> simp_all
+    · exfalso; nm x y h₁ h₂; contrapose! h₂; exact BitVec.lt_asymm h₁
+    · nm xs ys h₁ h₂ h₃; apply h₂; apply BitVec.le_antisymm <;> assumption
+
+@[simp]
+theorem ofBits_snoc {bs b} : ofBits w (bs ++ [b]) =
+ofBits w bs ||| (BitVec.ofBit w b <<< bs.length) := by
+  simp [ofBits]; induction bs <;> grind
+
+@[simp low]
+theorem ofNat_eq_ofNat_iff {n k : ℕ} :
+BitVec.ofNat w n = BitVec.ofNat w k ↔ w = 0 ∨ n % 2 ^ w = k % 2 ^ w := by
+  symm; constructor
+  · cases w <;> simp
+    nm w
+    intro h
+    apply eq_of_toFin_eq
+    simp
+    apply Fin.ext
+    simpa
+  contrapose!
+  rintro ⟨hw, hn⟩
+  apply ne_of_congr (·.toFin.1)
+  simpa
+
+@[simp]
+theorem ofNat_eq_one_iff {n : ℕ} : BitVec.ofNat w n = 1#w ↔ w = 0 ∨ n % 2 ^ w = 1 := by
+  cases w <;> simp
+
+theorem ext_iff {x y : BitVec w} : x = y ↔ x.toNat = y.toNat := by
+  rcases x, y with ⟨⟨⟨x⟩⟩, ⟨⟨y⟩⟩⟩; simp
+
+@[simp]
+theorem one_shiftLeft_eq_zero_iff {n : ℕ} : 1#w <<< n = 0#w ↔ w = 0 ∨ w ≤ n := by
+  by_cases hw : w = 0 <;> simp [hw]
+  rw [BitVec.ext_iff]
+  simp [Nat.shiftLeft_eq]
+  by_cases h : n < w
+  · contrapose!; simp [h]
+    rw [Nat.mod_eq_of_lt]; rotate_left
+    · rwa [Nat.pow_lt_pow_iff_right (by simp)]
+    simp
+  simp at h
+  simp [h]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h; clear h
+  simp [Nat.pow_add]
+
+@[simp]
+theorem one_shiftLeft_eq_one_iff {n : ℕ} : 1#w <<< n = 1#w ↔ w = 0 ∨ n = 0 := by
+  cases n <;> simp; nm n
+  symm; constructor; rintro rfl; simp
+  contrapose!
+  intro hw
+  unfold instHShiftLeftNat
+  dsimp only
+  rw [BitVec.shiftLeft]
+  simp [hw]
+  rw [Nat.one_mod_two_pow (by omega)]
+  rw [Nat.shiftLeft_eq]
+  simp
+  apply ne_of_congr Even
+  simp
+  cases w; simp at hw; nm w; clear hw
+  rw [←Nat.mod_two_eq_zero_iff_even]
+  simp
+
+@[simp]
+theorem le_size_pow : x ≤ BitVec.ofNat w (2 ^ w - 1) := by
+  rcases x with ⟨⟨n, h⟩⟩; change n ≤ _ % _; rw [Nat.mod_eq_of_lt] <;> omega
+
+@[simp]
+theorem toNat_lt_size_pow : x.toNat < 2 ^ w := by
+  rcases x with ⟨⟨n, h⟩⟩; simpa
+
+@[simp]
+theorem toNat_ofBits_lt_pow  {bs} : (ofBits w bs).toNat < 2 ^ bs.length := by
+  by_cases hw : w = 0
+  · subst hw
+    simp
+  simp [ofBits]
+  induction bs <;> simp
+  nm b bs ih
+  nth_rw 1 [Nat.shiftLeft_eq]
+  simp
+  cases w; simp at hw; nm w; clear hw
+  generalize (bs.foldr _ _ : BitVec _).toNat = x at ih ⊢
+  simp [Nat.pow_add]
+  rw [Nat.mul_mod_mul_right]
+  cases b <;> simp
+  · apply lt_of_le_of_lt _ ih; simp
+  · suffices : x % 2 ^ w * 2 ≤ x * 2; omega; simp
