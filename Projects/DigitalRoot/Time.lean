@@ -83,8 +83,8 @@ theorem get?_freqTimeMp_eq {d} (hd : d < 10) :
   rw [Set'.fold_map_push_eq_map_toMap]
   simpa [timeSet, freqTimeCount]
 
-theorem freqTimeMp_eq : freqTimeMp 10 = Set'.toMap (Set'.ofFinset # Finset.range 10)
-(λ d => freqTimeCount 10 d) := by
+theorem freqTimeMp_eq : freqTimeMp 10 = Set'.toMap (Set'.ofFinset # Finset.range 10) (λ
+d => freqTimeCount 10 d) := by
   ext d :1
   rw [Set'.get?_toMap_eq]
   simp

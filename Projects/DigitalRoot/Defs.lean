@@ -1,4 +1,4 @@
-import Projects.Digits
+import Projects.Util
 
 namespace DigitalRoot
 

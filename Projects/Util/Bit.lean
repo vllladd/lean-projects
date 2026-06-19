@@ -69,6 +69,11 @@ def toBool (b : Bit) : Bool :=
 
 instance : Coe Bit Bool := ⟨toBool⟩
 
+def toNat (b : Bit) : ℕ :=
+  match b with
+  | 0 => 0
+  | 1 => 1
+
 -----
 
 variable {b b₁ b₂ b₃ : Bit}
@@ -134,3 +139,6 @@ theorem ofBool_toBool {b : Bit} : ofBool b.toBool = b := by
 @[simp]
 theorem ofBool_eq_iff {b₁ b₂} : ofBool b₁ = ofBool b₂ ↔ b₁ = b₂ := by
   cases b₁ <;> cases b₂ <;> simp
+
+@[simp] theorem toNat_zero : toNat 0 = 0 := rfl
+@[simp] theorem toNat_one : toNat 1 = 1 := rfl

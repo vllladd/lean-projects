@@ -1,4 +1,4 @@
-import Projects.Util
+import Projects.Util.Order
 
 namespace Nat
 

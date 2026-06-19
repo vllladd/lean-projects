@@ -105,7 +105,7 @@ theorem rec_4_eq {xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)}
 @rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈ xs =
 @List.rec _ _ H₇ (λ (x : (_ : α) × Raw₀ α β) xs acc => H₈ x.1 x.2 (.ofList xs)
 (@rec α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ H₈ x.2) acc) xs.toList := by
-  induction xs; rfl; nm i x xs ih; simp [ih]; rw [DHashMap.Internal.AssocList.ofList_toList]
+  induction xs; rfl; nm i x xs ih; simp [ih]
 
 noncomputable
 def depthAux (t : Raw₀ α β) : ℕ :=
@@ -131,7 +131,7 @@ t.depthAux < (node mp : Raw₀ α β).depthAux := by
   simp only [List.rec_eq_foldr, List.foldr_max_eq_max?_map]
   generalize hf : (λ (x : DHashMap.Internal.AssocList α # λ _ => Raw₀ α β) => _) = f
   change (λ x => (x.toList.map (λ x => x.snd.depthAux)).max?.elim 0 (max 0)) = f at hf
-  simp [-List.elim_max?_id_eq_max!] at hf ⊢
+  simp [-List.elim_max?_id_eq_max!!] at hf ⊢
   rw [List.max?_eq_some_max]
   rotate_left
   · simp
@@ -143,7 +143,7 @@ t.depthAux < (node mp : Raw₀ α β).depthAux := by
   simp
   apply List.le_max_of_le_mem
   subst hf hb
-  simp [-List.elim_max?_id_eq_max!]
+  simp [-List.elim_max?_id_eq_max!!]
   simp [DHashMap.Raw.get?] at h
   choose h₁ h₂ using h
   simp [DHashMap.Internal.Raw₀.get?] at h₂
@@ -156,7 +156,7 @@ t.depthAux < (node mp : Raw₀ α β).depthAux := by
   have h₄ := Internal.List.getValueCast_mem h₂
   rw [h₃] at h₄
   use b
-  simp [-List.elim_max?_id_eq_max!, ←hb]
+  simp [-List.elim_max?_id_eq_max!!, ←hb]
   rw [List.max?_eq_some_max]
   rotate_left
   · simp only [ne_eq, List.map_eq_nil_iff]; grind
@@ -233,8 +233,8 @@ theorem WF.of_get? {k} [wf : t.WF] (h : t.get? k = some t₁) : t₁.WF := by
   cases wf <;> simp_all; tauto
 
 theorem depth_node {mp} [wf : (node mp : Raw₀ α β).WF] :
-(node mp).depth = 1 + mp.foldWith wf.mp (z := 0)
-λ acc _ t h => max acc # t.depth (wf := wf.of_mp_get? h) := by
+(node mp).depth = 1 + mp.foldWith wf.mp (z := 0) λ
+acc _ t h => max acc # t.depth (wf := wf.of_mp_get? h) := by
   simp [depth]; congr
 
 @[simp]
@@ -286,16 +286,16 @@ theorem depthAux_node {mp} : (node mp : Raw₀ α β).depthAux =
   simp [List.foldr_max_eq_max?_map]
   generalize hf : (λ (xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)) =>
     xs.toList.map (λ x => x.2.depthAux)) = f
-  trans bs.map (λ x => f x |>.max!) |>.max!
+  trans bs.map (λ x => f x |>.max!!) |>.max!!
   · subst hf; rfl
   clear hf
   rw [List.flatMap_eq_flatten_map]
-  rw [List.max!_flatten]
+  rw [List.max!!_flatten]
   simp
 
 theorem depthAux_node' {mp} (wf : (node mp : Raw₀ α β).WF) :
-(node mp).depthAux = 1 + mp.foldWith wf.mp (z := 0)
-λ acc _ t _ => max acc # t.depthAux := by
+(node mp).depthAux = 1 + mp.foldWith wf.mp (z := 0) λ
+acc _ t _ => max acc # t.depthAux := by
   classical
   rw [depthAux_node]
   simp

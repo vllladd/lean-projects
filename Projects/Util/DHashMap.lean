@@ -160,8 +160,8 @@ theorem mem_of_get?_eq_some {i x} (h : mp.get? i = some x) : i ∈ mp := by
   simp [mem_iff_isSome_get?, h]
 
 theorem get?_eq_some_iff_find?_toList {i x} :
-mp.get? i = some x ↔ mp.toList.find?
-(λ (x : Σ (i : α), β i) => x.1 = i) = some ⟨i, x⟩ := by
+mp.get? i = some x ↔ mp.toList.find? (λ
+(x : Σ (i : α), β i) => x.1 = i) = some ⟨i, x⟩ := by
   generalize hx : mp.toList = xs
   replace hx : mp.toList.Perm xs := by rw [hx]
   induction xs generalizing mp
@@ -195,7 +195,6 @@ mp.get? i = some x ↔ mp.toList.find?
       by
         rw [←mem_toList_iff_get?_eq_some]
         simp [hx.mem_iff]
-    simp at hx
     simp [hx]
   specialize @ih (mp.erase j) _
   · rw [List.perm_ext_iff_of_nodup # by simp]

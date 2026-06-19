@@ -31,14 +31,14 @@ theorem dist_translate {offset p} :
 
 @[simp]
 theorem getBorderPoint_translate_of_down {dy p d} [H : Fact # e.dir = .down] :
-(e.translate ⟨0, dy⟩).getBorderPoint p d = (translate ⟨0, dy⟩).ft
-(e.getBorderPoint ((translate ⟨0, dy⟩).ft' p) d) := by
+(e.translate ⟨0, dy⟩).getBorderPoint p d = (translate ⟨0, dy⟩).ft (
+  e.getBorderPoint ((translate ⟨0, dy⟩).ft' p) d) := by
   simp [getBorderPoint]
 
 @[simp]
 theorem getBorderPoint₀_translate_of_down {dy p} [H : Fact # e.dir = .down] :
-(e.translate ⟨0, dy⟩).getBorderPoint₀ p = (translate ⟨0, dy⟩).ft
-(e.getBorderPoint₀ ((translate ⟨0, dy⟩).ft' p)) := by
+(e.translate ⟨0, dy⟩).getBorderPoint₀ p = (translate ⟨0, dy⟩).ft (
+  e.getBorderPoint₀ ((translate ⟨0, dy⟩).ft' p)) := by
   simp [getBorderPoint₀]
 
 @[simp]

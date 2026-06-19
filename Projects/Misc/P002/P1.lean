@@ -1,4 +1,4 @@
-import Projects.Digits
+import Projects.Util
 
 namespace Misc.P002.P1
 
@@ -59,8 +59,8 @@ theorem filter_prime_icc_10_99 : (List.icc 10 99 |>.filter Nat.Prime) =
   rw [List.icc_split 60] <;> try omega;; rw [List.filter_append, filter_prime_icc_31_60]
   rw [filter_prime_icc_61_99]; rfl
 
-theorem list₁_eq_aux₁ : list₁ = (List.icc 10 99 |>.filter Nat.Prime).filter
-λ n => (Nat.digRev 10 n).Prime := by
+theorem list₁_eq_aux₁ : list₁ = (List.icc 10 99 |>.filter Nat.Prime).filter λ
+n => (Nat.digRev 10 n).Prime := by
   unfold list₁ Cnd₁
   rw [filter_prime_icc_10_99]
   simp
@@ -94,8 +94,8 @@ theorem list₁_eq_aux₁ : list₁ = (List.icc 10 99 |>.filter Nat.Prime).filte
   subst h₁
   rw [filter_prime_icc_10_99]
 
-theorem list₁_eq_aux₂ : list₁ = [11, 13, 17, 19, 31, 37, 71, 73, 79, 97].filter
-λ n => (Nat.digRev 10 n).Prime := by
+theorem list₁_eq_aux₂ : list₁ = [11, 13, 17, 19, 31, 37, 71, 73, 79, 97].filter λ
+n => (Nat.digRev 10 n).Prime := by
   rw [list₁_eq_aux₁, filter_prime_icc_10_99]
   apply List.filter_eq_filter_of' λ n => n / 10 % 2 ≠ 0 ∧ n / 10 ≠ 5; simp
   intro n h₁ h₂
@@ -117,8 +117,8 @@ theorem list₁_eq_aux₂ : list₁ = [11, 13, 17, 19, 31, 37, 71, 73, 79, 97].f
   simp at h₁
   repeat rcases h₁ with rfl | h₁; norm_num at h₂ <;> simp
 
-theorem list₁_eq_aux₃ : list₁ = [11, 13, 17, 19, 31, 37, 71, 73, 79, 97].filter
-λ n => (n % 10 * 10 + n / 10).Prime := by
+theorem list₁_eq_aux₃ : list₁ = [11, 13, 17, 19, 31, 37, 71, 73, 79, 97].filter λ
+n => (n % 10 * 10 + n / 10).Prime := by
   rw [list₁_eq_aux₂, List.filter_eq_filter]; intro n h₁
   rw [Nat.digRev_eq_of_digsNum_eq_two]; simp at h₁
   simp [Nat.digsNum_eq_iff]; omega

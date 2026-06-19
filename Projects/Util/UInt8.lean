@@ -104,3 +104,9 @@ theorem one_shiftLeft_ne_zero {n : ℕ} : 1 <<< (UInt8.ofNat n) ≠ 0 := by
 @[simp]
 theorem one_shiftLeft_eq_one_iff {n : ℕ} : 1 <<< (UInt8.ofNat n) = 1 ↔ n % 8 = 0 := by
   simp [ofNat, UInt8.eq_iff_toBitVec_eq]
+
+@[simp low]
+theorem one_shiftLeft_eq_one_iff' {x : UInt8} : 1 <<< x = 1 ↔ x.toNat % 8 = 0 := by
+  simp [UInt8.ext_iff]; generalize x.toNat % 8 = n; clear x
+  simp [Nat.shiftLeft_eq]; cases n <;> simp; nm n; simp [Nat.pow_add]
+  rw [show 256 = 128 * 2 by rfl, Nat.mul_mod_mul_right]; simp

@@ -2,6 +2,8 @@ import Projects.Util.UInt8
 
 namespace ByteArray
 
+variable {xs ys zs : ByteArray}
+
 def getD (bs : ByteArray) (z : UInt8) (i : ℕ) : UInt8 :=
   if h : i < bs.size then bs[i] else z
 
@@ -172,3 +174,15 @@ ofBits bs = ⟨⟨.ofBits (bs.take 8) :: (ofBits (bs.drop 8)).toList⟩⟩ := by
   simp [show bs ≠ [] by grind]
   rw [ofBits'_eq_append]
   simp [ofBits]
+
+@[simp]
+theorem getElem_mk {xs : Array UInt8} {i} {h : i < (⟨xs⟩ : ByteArray).size} :
+(⟨xs⟩ : ByteArray)[i]'h = xs[i]'h := rfl
+
+@[simp]
+theorem singleton_eq_iff {x} : empty.push x = xs ↔ xs.size = 1 ∧ xs[0]! = x := by
+  rcases xs with ⟨⟨xs⟩⟩; rw [ByteArray.ext_iff, Array.ext_iff]; cases xs <;> simp
+
+@[simp]
+theorem eq_singleton_iff {x} : xs = empty.push x ↔ xs.size = 1 ∧ xs[0]! = x := by
+  rw [eq_comm]; simp

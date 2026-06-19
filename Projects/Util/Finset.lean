@@ -102,7 +102,6 @@ def toSortedList {α : Type*} [h : LinearOrder α]
   apply Quot.liftOn s.val ## λ xs => xs.mergeSort
   intro xs ys hxy
   reduce at hxy
-  dsimp
   generalize hx : xs.mergeSort (· ≤ ·) = xs'
   generalize hy : ys.mergeSort (· ≤ ·) = ys'
   obtain ⟨h₁, h₂⟩ : xs'.Pairwise (· ≤ ·) ∧ ys'.Pairwise (· ≤ ·) := by

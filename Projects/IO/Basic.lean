@@ -162,7 +162,6 @@ theorem ProgM.wf_readBitsUntil {p} : (readBitsUntil p).WF := by
     simp
     have h₂ := h₃
     replace h₃ := List.mem_of_find?_eq_some h₃
-    simp at h₃
     have h₄ := List.mem_of_mem_tail h₃
     simp at h₄
     obtain ⟨bs, ⟨zs, rfl⟩, rfl⟩ := h₄

@@ -196,8 +196,8 @@ theorem ptsArr_eq_of_aPos_eq_and_taken_eq_insert.proof₁ {s s' : State} {p}
 theorem ptsArr_eq_of_aPos_eq_and_taken_eq_insert {s s' : State} {p}
 (h₂ : s'.aPos = s.aPos) (h₁ : s'.taken = s.taken.insert p)
 (h₃ : ∃ (z : ℤ), |z| ≤ 3 ∧ edge₀.getBorderPoint s.aPos z = p) :
-edge₀.ptsArr s' (-3) 7 = (edge₀.ptsArr s (-3) 7).set (p.x - s.aPos.x + 3).toNat true
-(ptsArr_eq_of_aPos_eq_and_taken_eq_insert.proof₁ h₁ h₃) := by
+edge₀.ptsArr s' (-3) 7 = (edge₀.ptsArr s (-3) 7).set (p.x - s.aPos.x + 3
+).toNat true (ptsArr_eq_of_aPos_eq_and_taken_eq_insert.proof₁ h₁ h₃) := by
   unfold ptsArr
   obtain ⟨z, h₃, h₄⟩ := h₃
   simp [getBorderPoint] at h₄ ⊢

@@ -349,7 +349,6 @@ p (sys.simulate (Strat.f ⟨a, d⟩) (s.setHist hist) · |>.1) ∧
     (g := Strat.f ⟨a.setHistAt hist s.hist, d⟩) (n := n) (by simp)
   specialize H _; rotate_left; obtain ⟨s₁, rfl, H⟩ := H; ext:1 <;> simp_all
   clear H
-  dsimp
   rintro k hk s₁ s₁' h₁ h₃ rfl
   use by simp
   intro s₂ s₂' h₄ h₅

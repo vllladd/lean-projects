@@ -15,7 +15,6 @@ import Projects.Esolangs
 import Projects.SK
 import Projects.Kolakoski
 import Projects.IO
-import Projects.Digits
 
 -- namespace AP
 -- 

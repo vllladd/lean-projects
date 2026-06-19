@@ -52,9 +52,9 @@ instance {i} : Decidable (s.mem i) := by
 instance {i} : Decidable (i ∈ s) := by
   change Decidable # s.mem i; infer_instance
 
-def toList [LinearOrder α] (s : Set' α) : List α :=
+def toList (s : Set' α) : List α :=
   s.inner.lift (·.toSortedKeys) # by
-    intro s₁ s₂ h; dsimp; unfold toSortedKeys; congr 1; simpa
+    intro s₁ s₂ h; unfold toSortedKeys; congr 1; simpa
 
 @[simp]
 theorem ofList_nil : ofList (α := α) [] = ∅ := rfl
@@ -198,7 +198,7 @@ instance : DecidableEq (Set' α) :=
 
 instance : Inhabited (Set α) := ⟨∅⟩
 
-def values [LinearOrder α] (s : Set' α) : List α :=
+def values (s : Set' α) : List α :=
   s.1.keys
 
 @[simp]
@@ -247,7 +247,7 @@ def fold₁ (s : Set' α) (f : α → α → α)
 omit hb₁ hb₂ in
 theorem fold_eq_foldl_toList [ha : LinearOrder α]
 {z : β} {f : β → α → β} {h_assoc} : s.fold f z h_assoc = s.toList.foldl f z := by
-  convert Std.ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
+  convert! Std.ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
   simp [toList, Std.ExtDHashMap.toList, Std.ExtDHashMap.lift]
   rcases s with ⟨⟨mp⟩⟩
   simp
@@ -288,16 +288,16 @@ theorem ind_ofList' [ha : LinearOrder α] {p : Set' α → Prop}
 (s : Set' α) : p s := by
   rw [←ofList_toList (s := s)]; apply h <;> simp
 
-def min? [ha : LinearOrder α] (s : Set' α) : Option α :=
+def min? (s : Set' α) : Option α :=
   s.inner.minKey?
 
-def max? [ha : LinearOrder α] (s : Set' α) : Option α :=
+def max? (s : Set' α) : Option α :=
   s.inner.maxKey?
 
-def min! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
+def min! [Inhabited α] (s : Set' α) : α :=
   s.min?.get!
 
-def max! [Inhabited α] [ha : LinearOrder α] (s : Set' α) : α :=
+def max! [Inhabited α] (s : Set' α) : α :=
   s.max?.get!
 
 theorem min?_eq_head?_toList [ha : LinearOrder α] : s.min? = s.toList.head? :=
@@ -499,7 +499,6 @@ theorem map_insert {f : α → β} {x : α} : (s.insert x).map f = (s.map f).ins
   suffices h : ∀ z h, (s.insert x).fold (λ s' x ↦ s'.insert (f x)) z h =
     (s.fold (λ (s' : Set' β) x ↦ s'.insert (f x)) z h).insert (f x); apply h
   intro z hh
-  dsimp at hh
   induction s using Set'.ind generalizing z
   · rw [fold_insert' # by simp]; simp
   clear! s; nm s y h ih
@@ -548,7 +547,7 @@ def erase (s : Set' α) (x : α) : Set' α :=
 
 @[simp]
 theorem mem_erase {x y} : y ∈ s.erase x ↔ x ≠ y ∧ y ∈ s := by
-  convert s.1.mem_erase; simp
+  convert! s.1.mem_erase; simp
 
 theorem erase_eq_of_not_mem {x} (h : x ∉ s) : s.erase x = s := by
   aesop
@@ -588,7 +587,7 @@ theorem count_le_size {p} : s.count p ≤ s.size :=
 
 @[simp]
 theorem count_eq_zero_iff {p} : s.count p = 0 ↔ ∀ x, x ∈ s → ¬p x := by
-  convert s.1.count_eq_zero_iff; nm x; simp
+  convert! s.1.count_eq_zero_iff; nm x; simp
   use λ h₁ h₂ => h₁ # s.1.mem_of_get?_eq_some h₂
   intro h₁ h₂; apply h₁; have h₃ := s.1.get?_eq_some_of_mem h₂
   simp at h₃; exact h₃
@@ -852,7 +851,7 @@ s.fold (λ mp x => mp.push # f x) (∅ : Map β ℕ) Map.push_push_comm =
 theorem fold_map_push_eq_toMap :
 s.fold (λ mp x => mp.push x) (∅ : Map α ℕ) Map.push_push_comm =
 s.toMap (s.count # λ y => y = ·) := by
-  convert s.fold_map_push_eq_map_toMap (f := id); simp
+  convert! s.fold_map_push_eq_map_toMap (f := id); simp
 
 omit hb₁ hb₂ in
 theorem get?_toMap_eq {f : α → β} {x} :
@@ -1366,10 +1365,10 @@ include hb₁ hb₂ in @[simp]
 theorem mem_bind {f : α → Set' β} {y} : y ∈ s.bind f ↔ ∃ x ∈ s, y ∈ f x := by
   induction s using ind <;> simp; grind
 
-def head! [Inhabited α] [LinearOrder α] (s : Set' α) : α :=
+def head! [Inhabited α] (s : Set' α) : α :=
   s.toList.head!
 
-def headMap! [Inhabited α] [LinearOrder α] [LinearOrder β] (s : Set' α) (f : α → β) : α :=
+def headMap! [Inhabited α] [LinearOrder β] (s : Set' α) (f : α → β) : α :=
   s.toList.mergeSort (f · ≤ f ·) |>.head!
 
 theorem head!_spec [ha₃ : Inhabited α] [ha₄ : LinearOrder α]

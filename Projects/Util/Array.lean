@@ -2,7 +2,8 @@ import Projects.Util.List
 
 namespace Array
 
-variable {α : Type*} {β : Type*} {xs ys : Array α}
+variable {α β γ : Type*}
+variable {xs ys zs : Array α}
 
 def foldlWith' (xs : Array α)
 (f : β → (x : α) → x ∈ xs → β) (z : β) (i : ℕ) : β :=
@@ -11,10 +12,21 @@ def foldlWith' (xs : Array α)
 def foldlWith (xs : Array α) (f : β → (x : α) → x ∈ xs → β) (z : β) : β :=
   xs.foldlWith' f z 0
 
+def mapWith (xs : Array α) (f : (x : α) → x ∈ xs → β) : Array β :=
+  ⟨xs.toList.mapWith # λ x h => f x # by simp at h; exact h⟩
+
+open Classical in noncomputable
+def dfltMapWith (f : (x : α) → x ∈ xs → β) (h : xs ≠ #[]) : β :=
+  match h₁ : xs with
+  | ⟨[]⟩ => by simp at h
+  | ⟨x :: _⟩ => Nonempty.some ⟨f x # by simp⟩
+
+-----
+
 theorem foldlWith'_cons' {xs : List α} {x : α}
 {f : β → (y : α) → y ∈ (⟨x :: xs⟩ : Array α) → β} {z : β} {i} (h : i ≠ 0) :
-(⟨x :: xs⟩ : Array α).foldlWith' f z i = (⟨xs⟩ : Array α).foldlWith'
-(λ acc x h₁ => f acc x # by simp at h₁; simp [h₁]) z (i - 1) := by
+(⟨x :: xs⟩ : Array α).foldlWith' f z i = (⟨xs⟩ : Array α).foldlWith' (λ
+acc x h₁ => f acc x # by simp at h₁; simp [h₁]) z (i - 1) := by
   fun_induction foldlWith'
   · nm r i h₁ ih
     simp at ih ⊢
@@ -36,8 +48,8 @@ theorem foldlWith'_cons' {xs : List α} {x : α}
 @[simp]
 theorem foldlWith'_cons {xs : List α} {x : α}
 {f : β → (y : α) → y ∈ (⟨x :: xs⟩ : Array α) → β} {z : β} {i} :
-(⟨x :: xs⟩ : Array α).foldlWith' f z (i + 1) = (⟨xs⟩ : Array α).foldlWith'
-(λ acc x h₁ => f acc x # by simp at h₁; simp [h₁]) z i :=
+(⟨x :: xs⟩ : Array α).foldlWith' f z (i + 1) = (⟨xs⟩ : Array α).foldlWith' (λ
+acc x h₁ => f acc x # by simp at h₁; simp [h₁]) z i :=
   foldlWith'_cons' # by simp
 
 theorem foldlWith_eq_foldlWith_toList {f : β → (x : α) → x ∈ xs → β} {z : β} :
@@ -53,8 +65,8 @@ xs.foldlWith f z = xs.toList.foldlWith (λ acc x h => f acc x # by simp at h; ex
 
 @[simp]
 theorem foldlWith_snoc {x : α} {f : β → (y : α) → y ∈ xs ++ [x] → β} {z : β} :
-(xs ++ [x]).foldlWith f z = f (xs.foldlWith (λ acc y h => f acc y (by simp [h])) z)
-x (by simp) := by
+(xs ++ [x]).foldlWith f z = f (xs.foldlWith (λ acc y h => f acc y (by simp [h]))
+z) x (by simp) := by
   classical
   rcases xs with ⟨xs⟩
   simp [foldlWith_eq_foldlWith_toList, List.foldlWith_eq_foldl]
@@ -73,15 +85,6 @@ xs.foldlWith f z = xs.foldl (λ acc x => if h : x ∈ xs then f acc x h else z) 
 theorem foldlWith_eq_foldl_toList [ha : DecidableEq α] {f : β → (x : α) → x ∈ xs → β} {z : β} :
 xs.foldlWith f z = xs.toList.foldl (λ acc x => if h : x ∈ xs then f acc x h else z) z := by
   simp; exact foldlWith_eq_foldl
-
-def mapWith (xs : Array α) (f : (x : α) → x ∈ xs → β) : Array β :=
-  ⟨xs.toList.mapWith # λ x h => f x # by simp at h; exact h⟩
-
-open Classical in noncomputable
-def dfltMapWith (f : (x : α) → x ∈ xs → β) (h : xs ≠ #[]) : β :=
-  match h₁ : xs with
-  | ⟨[]⟩ => by simp at h
-  | ⟨x :: _⟩ => Nonempty.some ⟨f x # by simp⟩
 
 theorem dfltMapWith_eq_dfltMapWith {f₁ f₂ : (x : α) → x ∈ xs → β}
 {h : xs ≠ #[]} : dfltMapWith f₁ h = dfltMapWith f₂ h := by
@@ -131,3 +134,7 @@ theorem getElem?_extract_add {n k i} (h : i < k) : (xs.extract n # n + k)[i]? = 
 
 theorem set_eq_set! {i x h} : xs.set i x h = xs.set! i x := by
   unfold Array.set! Array.setIfInBounds; simp [h]
+
+@[simp]
+theorem getElem_mk {xs : List α} {i} {h : i < (⟨xs⟩ : Array α).size} :
+(⟨xs⟩ : Array α)[i]'h = xs[i]'h := rfl

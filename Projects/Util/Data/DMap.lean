@@ -86,7 +86,7 @@ theorem get!_map_eq_of_pos {f : ∀ i, β i → γ i} {i : α}
   simp [get?] at hx
   simp [get!, Std.ExtDHashMap.get!_eq_get?, map, hx]
 
-def toList [LinearOrder α] (mp : DMap α β) : List (Σ i, β i) :=
+def toList (mp : DMap α β) : List (Σ i, β i) :=
   mp.inner.lift toSortedList # by simp
 
 @[simp]
@@ -266,7 +266,7 @@ theorem get!_eq_get?_get! {i} [Inhabited (β i)] : mp.get! i = (mp.get? i).get! 
 theorem get?_modify {i} {f : β i → β i} {j} :
 (mp.modify i f).get? j = if h : i = j then
 h ▸ ((mp.get? j).map (λ x => f (h.symm ▸ x))) else mp.get? j := by
-  convert Std.ExtDHashMap.get?_modify <;> simp
+  convert! Std.ExtDHashMap.get?_modify <;> simp
   generalize_proofs h₁; subst h₁; simp [get?]
 
 instance [ha : Fintype α] [hb : ∀ i, Fintype (β i)] : Fintype (DMap α β) :=
@@ -323,7 +323,7 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List ((i : α) × β i)}
 (h : xs.map (·.1) |>.Nodup) : (ofList xs).toList.Perm xs :=
   Std.ExtDHashMap.toList_ofList_perm h
 
-def keys [ha : LinearOrder α] (mp : DMap α β) : List α :=
+def keys (mp : DMap α β) : List α :=
   mp.inner.keys
 
 @[simp]
@@ -337,16 +337,16 @@ theorem sortedLT_keys [ha : LinearOrder α] : mp.keys.SortedLT :=
 theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (·.1) :=
   Std.ExtDHashMap.keys_eq_map_fst_toList
 
-def minKey? [ha : LinearOrder α] (mp : DMap α β) : Option α :=
+def minKey? (mp : DMap α β) : Option α :=
   mp.inner.minKey?
 
-def maxKey? [ha : LinearOrder α] (mp : DMap α β) : Option α :=
+def maxKey? (mp : DMap α β) : Option α :=
   mp.inner.maxKey?
 
-def minKey! [Inhabited α] [ha : LinearOrder α] (mp : DMap α β) : α :=
+def minKey! [Inhabited α] (mp : DMap α β) : α :=
   mp.minKey?.get!
 
-def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : DMap α β) : α :=
+def maxKey! [Inhabited α] (mp : DMap α β) : α :=
   mp.maxKey?.get!
 
 theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? :=

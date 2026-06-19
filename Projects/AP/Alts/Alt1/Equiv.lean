@@ -708,8 +708,8 @@ theorem Game.wf_playMove {pw} {g : Game pw}
   simp [playMove]; split_ifs <;> infer_instance
 
 theorem Game.playAMoveAt_eq_of_act {pw} {g : Game pw}
-(h : (playAMoveAt g).act) : playAMoveAt g = playAMoveAt' g.a g
-(act_of_act_playAMoveAt h) (aHasValidMove_of_act_playAMoveAt h) := by
+(h : (playAMoveAt g).act) : playAMoveAt g = playAMoveAt' g.a g (
+act_of_act_playAMoveAt h) (aHasValidMove_of_act_playAMoveAt h) := by
   simp [playAMoveAt, act_of_act_playAMoveAt h, aHasValidMove_of_act_playAMoveAt h]
 
 theorem Game.aTurn_playAMoveAt_of_act {pw} {g : Game pw}

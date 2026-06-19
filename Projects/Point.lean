@@ -375,7 +375,7 @@ section dist
 variable [ha₁ : LinearOrder α] [ha₂ : Ring α] [ha₃ : IsOrderedAddMonoid α]
   {a b c d e : Point α}
 
-def dist [LinearOrder α] [Ring α] (a b : Point α) : α :=
+def dist (a b : Point α) : α :=
   max |(a.x : α) - b.x| |(a.y : α) - b.y|
 
 omit ha₃ in @[simp]

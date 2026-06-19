@@ -172,7 +172,6 @@ liftWith_aux₂ q f h = f q.out := by
     (λ a h => f a) _
   · clear h₄
     intro x y hx
-    dsimp
     apply Function.hfunext
     · ext
       rw [forall_congr]; intro a

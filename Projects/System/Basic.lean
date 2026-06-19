@@ -270,7 +270,7 @@ theorem trs_append_full {s s₂ ts₁ ts₂} : sys.trs s (ts₁ ++ ts₂) = (s�
     on_goal 3 => exact a
     · simp_all only
     · ext i a_1 : 2
-      simp_all only [List.length_nil, not_lt_zero', not_false_eq_true, getElem?_neg, reduceCtorEq]
+      simp_all only [List.length_nil, not_lt_zero, not_false_eq_true, getElem?_neg, reduceCtorEq]
     simp_all only [Prod.mk.injEq, List.append_eq_nil_iff, false_and, and_false]
   · intro a
     obtain ⟨w, h⟩ := a

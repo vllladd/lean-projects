@@ -16,6 +16,15 @@ variable {M : Type → Type} [H₁ : Monad M] [H₂ : LawfulMonad M]
 
 end List
 
+namespace Array
+
+variable {α β γ : Type}
+variable {xs ys zs : List α}
+
+-- #check 0 #exit
+
+end Array
+
 namespace Bit
 
 -- #check 0 #exit
@@ -33,22 +42,13 @@ end BitVec
 
 namespace UInt8
 
--- @[simp]
--- theorem mk_toBitVec_shiftLeft {x : BitVec 8} {y : UInt8} : ⟨x⟩ <<< y = ⟨x <<< y.1⟩ := by
---   rw [UInt8.ext_iff]
---   simp
---   simp [Nat.shiftLeft_eq]
---   have h₁ : x.toNat < 256
---   · exact BitVec.toNat_lt_size_pow
---   rw [y.toNat.eq_div_add_mod 8]
---   simp [-Nat.div_add_mod₂]
---   sorry
-
 -- #check 0 #exit
 
 end UInt8
 
 namespace ByteArray
+
+variable {xs ys zs : ByteArray}
 
 -- #check 0 #exit
 
@@ -245,6 +245,79 @@ theorem writeBits_eq_of_lt {bs} (n : ℕ)
       change _ < 2 ^ 8; apply Nat.pow_lt_pow_of_lt (by omega)
       grind
 
+theorem fst_getOutput_ofBits_aux₁ {bs : List Bit}
+(h : bs ≠ []) (h₁ : bs.length < 8) : (getOutput.run (ofBits bs)).1 = .ofBits bs := by
+  rw [ByteArray.ofBits_of_length_le h (by omega)]
+  rename' bs => bs₂
+  rw [ofBits, empty_def, empty]
+  rw [show (0 : UInt8) = UInt8.ofBits [] by simp]
+  rw [show (1 : UInt8) = 1 <<< (UInt8.ofNat ([] : List Bit).length) by simp]
+  rw [show bs₂ = [] ++ bs₂ by simp] at h h₁ ⊢
+  generalize hb₁ : [] = bs₁ at h₁
+  nth_rw 1 [hb₁] at h
+  nth_rw 1 [show bs₁ ++ bs₂ = bs₂ by grind]
+  clear hb₁
+  simp at h₁
+  generalize hn : bs₁.length + bs₂.length = n
+  cases n
+  · simp at hn; simp [hn] at h
+  nm n; induction bs₂ using List.reverseRecOn
+  · cases bs₁ using List.reverseRecOn
+    · simp at h
+    nm bs₁ b ih₁
+    clear ih₁
+    by_cases h₂ : bs₁ = []
+    · subst h₂
+      cases b <;> rfl
+    simp [getOutput, finish]
+    rw [if_neg (by grind)]; rfl
+  nm bs₂ b ih₁; clear ih₁
+  by_cases h₂ : bs₁ ++ bs₂ = []
+  · simp at h₂
+    rcases h₂ with ⟨rfl, rfl⟩
+    cases b <;> rfl
+  simp [getOutput, finish, flush']
+  rw [if_neg]; rotate_left
+  · rw [writeBits_eq_of_lt bs₁.length rfl (by grind)]; simp
+    rw [writeBit_eq_of_lt (bs₁.length + bs₂.length) (by simp) (by grind)]; simp
+    grind
+  simp; rw [writeBits_eq_of_lt bs₁.length rfl (by grind)]
+  rw [writeBit_eq_of_lt (bs₁.length + bs₂.length) (by simp) (by grind)]
+  simp [UInt8.ext_iff]
+  rw [show _ % 8 = _ from Nat.mod_eq_of_lt (by grind)]
+  nth_rw 2 [Nat.mod_eq_of_lt]; rotate_left
+  · cases b <;> simp [Nat.shiftLeft_eq]
+    change _ < 2 ^ 8
+    apply Nat.pow_lt_pow_of_lt <;> grind
+  nth_rw 1 [Nat.mod_eq_of_lt]; rotate_left
+  · cases b <;> simp [Nat.shiftLeft_eq]
+    · apply lt_of_lt_of_le (b := 2 ^ (bs₁.length + bs₂.length))
+      · rw [add_comm]; simp [Nat.pow_add]
+      change _ ≤ 2 ^ 8; apply Nat.pow_le_pow_of_le <;> grind
+    · apply lt_of_lt_of_le (b := 2 ^ (bs₁.length + bs₂.length + 1))
+      · nth_rw 1 [add_assoc, add_comm]
+        rw [Nat.pow_add]; simp
+        apply Nat.or_lt_two_pow
+        · apply lt_of_lt_of_le (b := 2 ^ bs₂.length); simp
+          apply Nat.pow_le_pow_of_le <;> grind
+        apply Nat.pow_lt_pow_of_lt <;> grind
+      change _ ≤ 2 ^ 8; apply Nat.pow_le_pow_of_le <;> grind
+  nth_rw 1 [Nat.mod_eq_of_lt]; rotate_left
+  · simp [Nat.shiftLeft_eq]
+    apply lt_of_lt_of_le (b := 2 ^ (bs₁.length + bs₂.length))
+    · rw [add_comm]; simp [Nat.pow_add]
+    change _ ≤ 2 ^ 8; apply Nat.pow_le_pow_of_le <;> grind
+  nth_rw 2 [Nat.mod_eq_of_lt (by grind)]
+  nth_rw 1 [Nat.mod_eq_of_lt]; rotate_left
+  · apply lt_of_lt_of_le (b := 2 ^ (bs₁.length + bs₂.length + 1))
+    · simp [Nat.shiftLeft_eq]
+      nth_rw 2 [Nat.pow_add]
+      simp [mul_comm _ 2, BitVec.toNat_ofBit]
+      grind
+    change _ ≤ 2 ^ 8; apply Nat.pow_le_pow_of_le <;> grind
+  rw [Nat.or_assoc]; congr 1
+  rw [Nat.shiftLeft_or_distrib, add_comm, Nat.shiftLeft_add]
+
 -- #check 0 #exit
 
 -- @[simp]
@@ -260,97 +333,9 @@ theorem writeBits_eq_of_lt {bs} (n : ℕ)
 --     simp
 --   by_cases h₁ : bs.length < 8
 --   ·
---     clear ih
---     rw [ByteArray.ofBits_of_length_le h (by omega)]
---     rename' bs => bs₂
---     
---     rw [ofBits, empty_def, empty]
---     -- generalize hn : bs.length = n at h₁
---     -- replace h : n ≠ 0; grind
---     -- generalize hx : (0 : UInt8) = x
---     -- generalize hm : (1 : UInt8) = m
---     rw [show (0 : UInt8) = UInt8.ofBits [] by simp]
---     rw [show (1 : UInt8) = 1 <<< (UInt8.ofNat ([] : List Bit).length) by simp]
---     rw [show bs₂ = [] ++ bs₂ by simp] at h h₁ ⊢
---     generalize hb₁ : [] = bs₁ at h₁
---     nth_rw 1 [hb₁] at h
---     nth_rw 1 [show bs₁ ++ bs₂ = bs₂ by grind]
---     clear hb₁
---     simp at h₁
---     
---     generalize hn : bs₁.length + bs₂.length = n
---     induction n generalizing bs₁ bs₂
---     ·
---       simp at hn
---       simp [hn] at h
---     nm n ih
---     
---     induction bs₂ using List.reverseRecOn
---     ·
---       clear ih
---       cases bs₁ using List.reverseRecOn
---       · simp at h
---       nm bs₁ b ih₁
---       clear ih₁
---       by_cases h₂ : bs₁ = []
---       · subst h₂
---         cases b <;> rfl
---       simp [getOutput, finish]
---       rw [if_neg]; rfl
---       change ¬(1 <<< UInt8.ofNat _ = 1)
---       rw [UInt8.one_shiftLeft_eq_one_iff]
---       simp; iterate 2 rw [Nat.mod_eq_of_lt]
---       all_goals grind
---     nm bs₂ b ih₁; clear ih₁
---     
---     by_cases h₂ : bs₁ ++ bs₂ = []
---     ·
---       simp at h₂
---       rcases h₂ with ⟨rfl, rfl⟩
---       cases b <;> rfl
---     
---     specialize @ih bs₂ bs₁ h₂ (by grind) (by grind)
---     simp
---     
---     simp [getOutput, finish, flush'] at ih
---     rw [if_neg] at ih; rotate_left
---     ·
---       clear ih
---       apply ne_of_congr (1 <<< UInt8.ofNat (bs₁.length + bs₂.length) = ·)
---       rw [UInt8.one_shiftLeft_eq_one_iff]
---       rw [Nat.mod_eq_of_lt (by grind)]
---       simp [show ¬(bs₁ = [] ∧ bs₂ = []) by grind]
---       symm
---       induction bs₂ generalizing bs₁ n
---       ·
---         simp
---       nm b₁ bs₂ ih
---       -- cases n
---       -- ·
---       --   grind
---       -- nm n
---       by_cases h₃ : bs₁ ++ bs₂ = []
---       ·
---         simp at h₃
---         rcases h₃ with ⟨rfl, rfl⟩
---         rfl
---       
---       specialize @ih n (bs₁ ++ [b₁]) (by grind) (by grind) (by grind) (by simp)
---       simp at ih ⊢
---       rw [writeBit_eq_of_lt bs₁.length rfl (by grind)]; simp
---       
---       -- rw [BitVec.mk_shiftLeft]
---       
---       sorry
---     
---     simp [getOutput, finish, flush']
---     rw [if_neg]; rotate_left
---     ·
---       clear ih
---       sorry
---     
---     simp at ih ⊢
---     
---     sorry
+--     exact fst_getOutput_ofBits_aux₁ h h₁
+--   simp at h₁
+--   
+--   rw [List.length_ge_iff_right] at h₁
 --   
 --   sorry

@@ -206,9 +206,7 @@ sys.simulate st.f s n = (s', 0) ∧ st.d.f s' ∉ set := by
       rw [DState.taken_eq_of_tr h₂]
       simp at ih ⊢
       grind
-    have h₃ := taken_subset_of_reachable # sys.reachable_of_simulate hr
-    have h₄ := h₁ _ _ _ hr |>.2
-    simp at h₄; exact h₄
+    exact h₁ _ _ _ hr |>.2
   specialize h₂ # set.size + 1
   generalize hr : sys.simulate st.f s ((set.size + 1) * 2) = r at h₂
   rcases r with ⟨s₁, r⟩

@@ -169,8 +169,8 @@ theorem lowestBit_shiftRight {i : ℕ} :
 (x >>> i).lowestBit = if h : i < w then .ofBool x[i] else 0 := by
   simp [lowestBit, odd_shiftRight_toNat_iff]; split_ifs with h <;> simp [h]
 
-theorem toBits_eq_map_getElem : x.toBits = (List.range w).attach.map
-λ ⟨i, h⟩ => .ofBool # x[i]'(by grind) := by
+theorem toBits_eq_map_getElem : x.toBits = (List.range w).attach.map λ
+⟨i, h⟩ => .ofBool # x[i]'(by grind) := by
   simp [toBits]
   rw [List.map_eq_map_attach]
   congr
@@ -215,7 +215,6 @@ theorem toBits_eq_iff : x.toBits = y.toBits ↔ x = y := by
 theorem list_subset_zero_one {bs : List Bit} : bs ⊆ [0, 1] := by
   intro; simp
 
-@[simp]
 theorem w_zero_eq {x : BitVec 0} : x = (BitVec.ofNat 0 0) := by
   ext; omega
 
@@ -270,7 +269,7 @@ ofBits w bs ||| (BitVec.ofBit w b <<< bs.length) := by
 theorem ofNat_eq_ofNat_iff {n k : ℕ} :
 BitVec.ofNat w n = BitVec.ofNat w k ↔ w = 0 ∨ n % 2 ^ w = k % 2 ^ w := by
   symm; constructor
-  · cases w <;> simp
+  · cases w <;> simp [w_zero_eq]
     nm w
     intro h
     apply eq_of_toFin_eq
@@ -335,7 +334,7 @@ theorem toNat_lt_size_pow : x.toNat < 2 ^ w := by
 theorem toNat_ofBits_lt_pow  {bs} : (ofBits w bs).toNat < 2 ^ bs.length := by
   by_cases hw : w = 0
   · subst hw
-    simp
+    simp [w_zero_eq]
   simp [ofBits]
   induction bs <;> simp
   nm b bs ih
@@ -348,3 +347,46 @@ theorem toNat_ofBits_lt_pow  {bs} : (ofBits w bs).toNat < 2 ^ bs.length := by
   cases b <;> simp
   · apply lt_of_le_of_lt _ ih; simp
   · suffices : x % 2 ^ w * 2 ≤ x * 2; omega; simp
+
+theorem or_shiftLeft_eq_add {n : ℕ} (h : x.toNat < 2 ^ n) : x ||| (y <<< n) = x + (y <<< n) := by
+  rcases x, y with ⟨⟨⟨x, hx⟩⟩, ⟨⟨y, hy⟩⟩⟩
+  dsimp at h ⊢
+  simp [ext_iff, Nat.shiftLeft_eq]
+  change _ = _ % _
+  rw [Nat.mul_pow_mod_pow]
+  rw [Nat.or_mul_two_pow_eq_add_of h]
+  apply Nat.eq_of_mod_eq_mod (2 ^ w); rotate_left
+  · apply Nat.mod_lt; simp
+  · simp
+  rw [←Nat.or_mul_two_pow_eq_add_of h]
+  apply Nat.or_lt_two_pow hx
+  obtain h₁ | h₁ := le_total w n <;> obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h₁ <;> clear h₁
+  · simp
+  · simp [Nat.pow_add]
+    nth_rw 2 [mul_comm]
+    simp
+    apply Nat.mod_lt
+    simp
+
+@[simp]
+theorem ofBits_append_eq_or {bs₁ bs₂} : ofBits w (bs₁ ++ bs₂) =
+ofBits w bs₁ ||| (ofBits w bs₂ <<< bs₁.length) := by
+  induction bs₂ using List.reverseRecOn; simp
+  simp [←List.append_assoc]; grind
+
+theorem ofBits_append_eq_add {bs₁ bs₂} : ofBits w (bs₁ ++ bs₂) =
+ofBits w bs₁ + (ofBits w bs₂ <<< bs₁.length) := by
+  induction bs₂ using List.reverseRecOn; simp
+  nm bs₂ b ih
+  rw [←List.append_assoc]
+  rw [ofBits_snoc_eq_add_ofBits]
+  simp [ih]; clear ih
+  rw [or_shiftLeft_eq_add (by simp)]
+  simp [←shiftLeft_add, ←BitVec.add_assoc, BitVec.add_comm, Nat.add_comm]
+
+@[simp]
+theorem toNat_le_size_pow : x.toNat ≤ 2 ^ w :=
+  le_of_lt # by simp
+
+theorem toNat_ofBit {b} : (ofBit w b).toNat = if w ≠ 0 ∧ b = 1 then 1 else 0 := by
+  cases w; simp [w_zero_eq]; cases b <;> simp

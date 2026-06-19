@@ -19,7 +19,12 @@ example : ‖(![3, 4] : Vec)‖ = 5 := by
 ----- Particle
 
 structure ParticleId : Type where id : ℕ
-deriving Inhabited, DecidableEq, Hashable
+deriving DecidableEq, Hashable
+
+-- Standalone instance due to the compiler bug
+-- when deriving `Inhabited` in a noncomputable section
+instance : Inhabited ParticleId where
+  default := ⟨default⟩
 
 structure Particle : Type where
   id : ParticleId

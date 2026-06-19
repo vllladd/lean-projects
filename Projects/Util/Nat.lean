@@ -442,7 +442,7 @@ theorem even_sub_one_iff {n} : Even (n - 1) ↔ n = 0 ∨ Odd n := by
 theorem mul_div_mul {a b c : ℕ} (hb : b ≠ 0) : a * b / (b * c) = a / c := by
   by_cases hc : c = 0; simp [hc]
   have h : a * b * c = a * (b * c); rw [mul_assoc]
-  replace h := congrArg (· / c / (b * c)) h; simp at h
+  replace h := congrArg (· / c / (b * c)) h
   rw [Nat.mul_div_cancel _ # by omega] at h
   rw [h, Nat.div_right_comm, Nat.mul_div_cancel _ # by positivity]
 
@@ -906,3 +906,44 @@ theorem two_pow_or_eq_add_of {n k : ℕ} (h : n < 2 ^ k) : 2 ^ k ||| n = 2 ^ k +
 
 theorem eq_div_add_mod (n b : ℕ) : n = n / b * b + n % b := by
   simp
+
+theorem or_mul_two_pow_eq_add_of {n k c : ℕ}
+(h : n < 2 ^ k) : n ||| c * 2 ^ k = n + c * 2 ^ k := by
+  induction n using ind_bit generalizing k c
+  · simp
+  · nm n ih
+    cases k
+    ·
+      simp at h
+      simp [h]
+    nm k
+    simp [pow_add, ←mul_assoc, ←add_mul] at h ⊢
+    exact ih h
+  · nm n ih
+    cases k
+    · simp at h
+    nm k
+    simp [pow_add] at h ⊢
+    rw [show n * 2 + 1 + c * (2 ^ k * 2) = (n + c * 2 ^ k) * 2 + 1 by nlinarith]
+    simp [←mul_assoc]
+    apply ih
+    omega
+
+theorem or_two_pow_mul_eq_add_of {n k c : ℕ}
+(h : n < 2 ^ k) : n ||| 2 ^ k * c = n + 2 ^ k * c := by
+  rw [mul_comm _ c, or_mul_two_pow_eq_add_of h]
+
+@[simp]
+theorem le_two_pow_self {n} : n ≤ 2 ^ n :=
+  le_of_lt Nat.lt_two_pow_self
+
+theorem mul_pow_mod_pow {b n k w : ℕ} : n * b ^ k % b ^ w = n % b ^ (w - k) * b ^ k := by
+  induction k generalizing n w
+  · simp
+  nm k ih
+  cases w
+  · simp
+  nm w
+  simp [Nat.pow_add, ←mul_assoc]
+  rw [Nat.mul_mod_mul_right]
+  rw [ih]

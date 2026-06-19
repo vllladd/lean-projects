@@ -574,7 +574,6 @@ theorem converges_series_alternating_of_monoLe_drop {a N}
   replace h₂ := tendsTo_drop_of h₂ (k := N)
   rw [←converges_series_drop_iff (N := N)]
   have h₃ := converges_series_alternating_of_monoLe h₁ h₂ (a := λ n => a # N + n)
-  simp at h₃
   induction N using Nat.mod_2_ind <;> nm N <;> simp [pow_add]; exact h₃
   replace h₃ := converges_neg.mpr h₃; simp at h₃; exact h₃
 

@@ -1,5 +1,6 @@
 import Projects.Util.Finset
 
+import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 namespace Real
@@ -64,7 +65,7 @@ theorem gm_le_am (xs : List ℝ) (h₁ : xs ≠ []) (h₂ : ∀ x ∈ xs, 0 ≤ 
   rw [Finset.sum_range_list_get! (f := ((xs.length : ℝ)⁻¹ * ·)),
     Finset.prod_range_list_get! (f := (· ^ (xs.length : ℝ)⁻¹)),
     Real.list_prod_map_rpow _ h₂, Real.list_sum_map_mul_left] at h₃
-  convert h₃; unfold am; field_simp
+  convert! h₃; unfold am; field_simp
 
 theorem gm_le_am_2 (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) : √(a * b) ≤ (a + b) / 2 := by
   have h := gm_le_am (xs := [a, b])
@@ -82,7 +83,7 @@ theorem log_eq_logb {a : ℝ} : a.log = Real.logb (Real.exp 1) a := by
 
 theorem eq_of_log_eq_log {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
 (h : a.log = b.log) : a = b := by
-  replace h := congrArg (·.exp) h; dsimp at h
+  replace h := congrArg (·.exp) h
   rw [exp_log ha, exp_log hb] at h; exact h
 
 theorem log_eq_log_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :

@@ -54,7 +54,7 @@ theorem State.exi_hist_wf_of_exi_p2_aux {s : State} {p₁ p₂ : PointZ} {taken 
   obtain ⟨p, hp⟩ := Set'.exi_mem_of_ne_empty H₁
   have H₂ : s.aPos ≠ p; rintro rfl; contradiction
   replace hn := Set'.eq_insert_empty_of_size_eq_one hn hp
-  by_cases ht : s.aTurn <;> simp at ht <;> simp [ht] at h₆ <;> subst h₆
+  by_cases ht : s.aTurn <;> simp [ht] at h₆ <;> subst h₆
   · use [p, s.aPos]
     rw [wf_iff']
     use [p]

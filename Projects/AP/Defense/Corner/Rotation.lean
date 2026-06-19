@@ -46,7 +46,7 @@ theorem false_of_f_edge₁_rotLeft_rotRight_eq_some {s p₁ p₂} [h : c.SquareG
   simp [square_iff, rotLeft, rotRight, edge₁, edge₂, Point.zero_def] at h₁ h₂ h₃ h₄
   replace h₁ := Edge.of_f_eq_some h₁
   replace h₂ := Edge.of_f_eq_some h₂
-  simp at h₁ h₂ h₃ h₄; cases dir <;> simp [Edge.dist] at h₁ h₂ h₃ h₄ <;> omega
+  cases dir <;> simp [Edge.dist] at h₁ h₂ h₃ h₄ <;> omega
 
 theorem false_of_f_edge₂_rotLeft_rotRight_eq_some {s p₁ p₂} [h : c.SquareGe 6]
 (h₁ : c.rotLeft.edge₂.defense.f s = some p₁)
@@ -56,7 +56,7 @@ theorem false_of_f_edge₂_rotLeft_rotRight_eq_some {s p₁ p₂} [h : c.SquareG
   simp [square_iff, rotLeft, rotRight, edge₁, edge₂, Point.zero_def] at h₁ h₂ h₃ h₄
   replace h₁ := Edge.of_f_eq_some h₁
   replace h₂ := Edge.of_f_eq_some h₂
-  simp at h₁ h₂ h₃ h₄; cases dir <;> simp [Edge.dist] at h₁ h₂ h₃ h₄ <;> omega
+  cases dir <;> simp [Edge.dist] at h₁ h₂ h₃ h₄ <;> omega
 
 theorem compatible_rotRight [h : c.SquareGe 6] : c.defense.Compatible c.rotRight.defense := by
   intro s₀ hs₀ s p₁ p₂ h₀ h₁ h₂ h₃ h₄ h₅

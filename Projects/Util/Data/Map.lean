@@ -85,7 +85,7 @@ theorem get!_map_eq_of_pos {f : α → β → γ} {i : α}
   simp [get?] at hx
   simp [get!, ExtDHashMap.get!_eq_get?, map, hx]
 
-def toList [LinearOrder α] (mp : Map α β) : List (α × β) :=
+def toList (mp : Map α β) : List (α × β) :=
   mp.inner.lift (λ m => m.toSortedList.map Sigma.toProd) #
     by simp
 
@@ -253,7 +253,7 @@ instance [hh : DecidableEq β] : DecidableEq (Map α β) :=
     rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩
     simp at h; simpa
 
-def values [LinearOrder α] (mp : Map α β) : List β :=
+def values (mp : Map α β) : List β :=
   mp.toList.map (·.2)
 
 def all (mp : Map α β) (p : α → β → Bool) : Bool :=
@@ -349,7 +349,7 @@ def fold {γ : Type*} (mp : Map α β) (f : γ → α → β → γ) (z : γ)
 theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
 {z : γ} {f : γ → α → β → γ} {h_assoc} : mp.fold f z h_assoc =
 mp.toList.foldl (λ acc (x : α × β) => f acc x.1 x.2) z := by
-  convert ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
+  convert! ExtDHashMap.fold_eq_foldl_toList; rotate_left; infer_instance
   simp [toList, ExtDHashMap.toList, ExtDHashMap.lift]
   rcases mp with ⟨⟨mp⟩⟩
   simp
@@ -395,7 +395,7 @@ theorem toList_ofList_perm [ha : LinearOrder α] {xs : List (α × β)}
     exact DMap.toList_ofList_perm h
   simp [ofList]; rfl
 
-def keys [ha : LinearOrder α] (mp : Map α β) : List α :=
+def keys (mp : Map α β) : List α :=
   mp.inner.keys
 
 @[simp]
@@ -411,16 +411,16 @@ theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (
   refine' Quotient.apply_lift (f := List.map # λ (x : α × β) => x.1) _ |>.trans _
   intro m₁ m₂ h₁; simp; exact Std.DHashMap.toSortedKeys_eq_of_equiv h₁; simp; rfl
 
-def minKey? [ha : LinearOrder α] (mp : Map α β) : Option α :=
+def minKey? (mp : Map α β) : Option α :=
   mp.inner.minKey?
 
-def maxKey? [ha : LinearOrder α] (mp : Map α β) : Option α :=
+def maxKey? (mp : Map α β) : Option α :=
   mp.inner.maxKey?
 
-def minKey! [Inhabited α] [ha : LinearOrder α] (mp : Map α β) : α :=
+def minKey! [Inhabited α] (mp : Map α β) : α :=
   mp.minKey?.get!
 
-def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : Map α β) : α :=
+def maxKey! [Inhabited α] (mp : Map α β) : α :=
   mp.maxKey?.get!
 
 theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? :=
@@ -525,7 +525,7 @@ def push (mp : Map α ℕ) (i : α) : Map α ℕ :=
 
 theorem get?_insert {i j x} :
 (mp.insert j x).get? i = if j = i then some x else mp.get? i := by
-  convert mp.1.get?_insert; simp; rfl
+  convert! mp.1.get?_insert; simp; rfl
 
 theorem push_push_comm {i j} {mp : Map α ℕ} :
 (mp.push i).push j = (mp.push j).push i := by

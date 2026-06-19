@@ -1,5 +1,7 @@
 import Projects.Util
 
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+
 namespace Misc.P001
 
 namespace P1
@@ -79,6 +81,8 @@ theorem thm_6_div_mul_succ_mul {n : ℕ} : 6 ∣ n * (n + 1) * (2 * n + 1) := by
 
 end P3 namespace P4 -----
 
+open Finset
+
 --         1 * 8 + 1 = 9
 --        12 * 8 + 2 = 98
 --       123 * 8 + 3 = 987
@@ -88,8 +92,6 @@ end P3 namespace P4 -----
 --   1234567 * 8 + 7 = 9876543
 --  12345678 * 8 + 8 = 98765432
 -- 123456789 * 8 + 9 = 987654321
-
-open Finset
 
 theorem main {b : ℝ} {n : ℕ} (hb : b ≠ 1) :
 (∑ k ∈ range n, (n - k : ℝ) * b ^ k) * (b - 2) + n =

@@ -528,7 +528,6 @@ theorem mergeSort_perm_mergeSort {α : Type*}
 xs.mergeSort r₁ ~ ys.mergeSort r₂ ↔ xs ~ ys := by
   apply iff_of_isEquiv <;> simp
 
-@[simp]
 theorem eq_nil_of_isEmpty {α : Type*} [ha : IsEmpty α]
 {xs : List α} : xs = [] := by
   cases xs; rfl
@@ -626,8 +625,9 @@ theorem max?_eq_getLast? [ha : LinearOrder α]
 
 @[simp]
 theorem foldlWith_snoc {β : Sort*} {x : α} {f : β → (y : α) → y ∈ xs ++ [x] → β} {z : β} :
-(xs ++ [x]).foldlWith f z = f (xs.foldlWith (λ acc y h => f acc y (by simp [h])) z)
-x (by simp) := by induction xs generalizing z; rfl; nm y xs ih; simp [ih]
+(xs ++ [x]).foldlWith f z = f (xs.foldlWith
+(λ acc y h => f acc y (by simp [h])) z) x (by simp) := by
+  induction xs generalizing z; rfl; nm y xs ih; simp [ih]
 
 theorem foldl_eq_foldl_of_fn_congr {f g : β → α → β} {z : β}
 (h : ∀ acc, ∀ x ∈ xs, f acc x = g acc x) : xs.foldl f z = xs.foldl g z := by
@@ -983,7 +983,8 @@ theorem nodup_flatMap_flatMap_pair [ha : LinearOrder α]
 (xs.flatMap (λ x => ys.flatMap # λ y =>
 if x < y ∧ r x y then [(x, y)] else [])).Nodup := by
   classical
-  by_cases h₀ : IsEmpty α; simp; push Not at h₀; replace h₀ := h₀.inhabited
+  by_cases h₀ : IsEmpty α; simp [eq_nil_of_isEmpty]
+  push Not at h₀; replace h₀ := h₀.inhabited
   rw [nodup_flatMap]
   symm; split_ands
   · unfold Function.onFun Disjoint
@@ -1018,7 +1019,8 @@ theorem nodup_flatMap_flatMap_upair [ha : LinearOrder α]
 (xs.flatMap (λ x => ys.flatMap # λ y =>
 if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
   classical
-  by_cases h₀ : IsEmpty α; simp; push Not at h₀; replace h₀ := h₀.inhabited
+  by_cases h₀ : IsEmpty α; simp [eq_nil_of_isEmpty]
+  push Not at h₀; replace h₀ := h₀.inhabited
   generalize hA : (λ x => ys.flatMap # λ y =>
     if x < y ∧ r x y then [({x, y} : Set α)] else []) = A
   symm at hA

@@ -75,8 +75,8 @@ theorem AStrat.mkFold_ind {s z fa fd n} {d : DStrat} {p : State → α → Prop}
 ∃ sd, sys.tr sa (fa sa acc).1 = some sd ∧ p sd (fa sa acc).2)
 (h₂ : ∀ sd [DState sd] sa [AState sa] p₁ acc, sys.Reachable s sd →
 sys.tr sd p₁ = some sa → p sd acc →  p sa (fd sd p₁ acc)) :
-∃ s₁ acc, sys.simulate (Strat.f ⟨AStrat.mkFold s z fa fd, d⟩)
-s n = (s₁, 0) ∧ p s₁ acc := by
+∃ s₁ acc, sys.simulate (Strat.f ⟨AStrat.mkFold s z fa fd, d⟩) s n =
+(s₁, 0) ∧ p s₁ acc := by
   induction n generalizing s z; simp; use z; nm n ih
   replace hs := s.aState_or_dState; rcases hs with hs | hs
   · have h₁' := h₁

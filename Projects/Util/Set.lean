@@ -31,7 +31,7 @@ theorem insert_erase_eq_of_mem {x : α} (h : x ∈ s) : insert x (s.erase x) = s
 theorem finite_erase_iff {x : α} : (s.erase x).Finite ↔ s.Finite := by
   by_cases hx : x ∈ s
   case neg => simp [erase_eq_of_not_mem hx]
-  symm; apply Iff.intro Finite.diff; intro h
+  symm; apply Iff.intro Finite.sdiff; intro h
   generalize hs' : s.erase x = s' at h
   have hs : s = insert x s' := by
     subst hs'; rw [insert_erase_eq_of_mem hx]
@@ -68,15 +68,12 @@ theorem subsingleton_pair_iff {x y : α} : ({x, y} : Set _).Subsingleton ↔ x =
 theorem not_nonempty_iff : ¬s.Nonempty ↔ s = ∅ :=
   not_nonempty_iff_eq_empty
 
-@[simp]
-theorem setOf_compl {P : α → Prop} : {x | P x}ᶜ = {x | ¬P x} := rfl
+attribute [simp] compl_setOf
+attribute [simp] sdiff_eq_empty
 
 @[simp]
 theorem univ_injOn_iff {f : α → β} : (univ : Set α).InjOn f ↔ f.Injective := by
   simp [Set.InjOn]; rfl
-
-@[simp]
-theorem diff_eq_empty' : s \ s' = ∅ ↔ s ⊆ s' := diff_eq_empty
 
 @[simp]
 theorem exists_mem {x} : ∃ (s : Set α), x ∈ s := by
@@ -176,7 +173,7 @@ theorem finite_univ_diff_diff_singleton_iff {x} :
   classical
   simp [finite_iff_exi_finset]
   by_cases h : x ∉ s
-  · rw [Set.diff_singleton_eq_self h]
+  · rw [Set.sdiff_singleton_eq_self h]
   push Not at h
   constructor <;> rintro ⟨s₁, h₁⟩
   · use s₁.erase x

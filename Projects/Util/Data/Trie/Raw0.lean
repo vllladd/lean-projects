@@ -69,7 +69,7 @@ theorem rec_4_eq {xs : DHashMap.Internal.AssocList α (λ _ => Raw₀ α β)}
 @rec_4 α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ xs =
 @List.rec _ _ H₆ (λ (x : (_ : α) × Raw₀ α β) xs acc => H₇ x.1 x.2 (.ofList xs)
 (@rec α β ha₁ ha₂ M₁ M₂ M₃ M₄ (λ _ => M₅) H₁ H₂ H₃ H₄ H₅ H₆ H₇ x.2) acc) xs.toList := by
-  induction xs; rfl; nm i x xs ih; simp [ih]; rw [DHashMap.Internal.AssocList.ofList_toList]
+  induction xs; rfl; nm i x xs ih; simp [ih]
 
 noncomputable
 def depthAux (t : Raw₀ α β) : ℕ :=
@@ -153,8 +153,8 @@ motive val mp wf.mp (λ _ t h => t.rec' (wf := wf.get1? h) motive) := by
 
 @[simp]
 theorem depth_mk {val mp} [wf : (⟨val, mp⟩ : Raw₀ α β).WF] :
-(⟨val, mp⟩ : Raw₀ α β).depth = mp.foldWith wf.mp
-(λ acc _ (t' : Raw₀ α β) h => max acc # 1 + t'.depth (wf := wf.get1? h)) 0 := by
+(⟨val, mp⟩ : Raw₀ α β).depth = mp.foldWith wf.mp (λ
+acc _ (t' : Raw₀ α β) h => max acc # 1 + t'.depth (wf := wf.get1? h)) 0 := by
   unfold depth; simp
 
 @[simp]

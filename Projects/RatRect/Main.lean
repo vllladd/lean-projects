@@ -144,7 +144,7 @@ theorem surface_diff_interior_eq_boundary : r.surface \ r.interior = r.boundary 
 theorem surface_diff_boundary_eq_interior [wf : r.WF] :
 r.surface \ r.boundary = r.interior := by
   rw [←interior_union_boundary_eq_surface]
-  apply Set.union_diff_cancel_right; simp
+  apply Set.union_sdiff_cancel_right; simp
 
 instance [wf : r.WF] : r.trivTiling.WF := by
   simp [Rect.trivTiling]; constructor; simpa; simp; use r, wf; simp [Rect.tiledBy]

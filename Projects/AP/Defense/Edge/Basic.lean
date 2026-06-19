@@ -132,8 +132,8 @@ theorem cnd_congr {d f₁ f₂} (h : ∀ i < 7, f₁ i = f₂ i) : cnd d f₁ = 
 @[simp] theorem get?_6_cndMp : cndMp.get? 6 = none := by simp
 
 @[simp]
-theorem get?_1_cndMp : cndMp.get? 1 = some
-[#[false, false, true, true, true, false, false]] := by
+theorem get?_1_cndMp : cndMp.get? 1 = some [
+#[false, false, true, true, true, false, false]] := by
   native_decide
 
 theorem f₁_eq_of_f_eq_some {s p} (h : e.f s = some p) : e.f₁ s = some p := by

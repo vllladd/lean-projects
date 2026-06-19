@@ -19,6 +19,7 @@ import Projects.Util.Option
 import Projects.Util.String
 import Projects.Util.Finset
 import Projects.Util.BitVec
+import Projects.Util.Digits
 import Projects.Util.Fintype
 import Projects.Util.Algebra
 import Projects.Util.Complex

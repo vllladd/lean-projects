@@ -36,7 +36,7 @@ theorem get?_eq_none_iff {i} : mp.get? i = none ↔ i ∉ mp := by
   obtain ⟨x, hx⟩ := get?_eq_some_of_mem h
   simp [hx]
 
-def toList [LinearOrder α] (mp : Std.ExtDHashMap α β) : List (Σ i, β i) :=
+def toList (mp : Std.ExtDHashMap α β) : List (Σ i, β i) :=
   mp.lift Std.DHashMap.toSortedList # by simp
 
 @[simp]
@@ -278,7 +278,7 @@ def all (mp : ExtDHashMap α β) (p : (i : α) → β i → Bool) : Bool :=
 theorem all_def {p} [LinearOrder α] : mp.all p = decide (∀ x ∈ mp.toList, p x.1 x.2) := by
   rcases mp with ⟨mp⟩; apply mp.ind; simp [all, get?, lift]
 
-def keys [LinearOrder α] (mp : Std.ExtDHashMap α β) : List α :=
+def keys (mp : Std.ExtDHashMap α β) : List α :=
   mp.lift Std.DHashMap.toSortedKeys # λ m₁ _ =>
     m₁.toSortedKeys_eq_of_equiv
 
@@ -437,18 +437,18 @@ theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (
 
 -----
 
-def minKey? [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : Option α :=
+def minKey? (mp : Std.ExtDHashMap α β) : Option α :=
   mp.fold (λ acc i _ => some # acc.elim i # λ acc => min acc i) none # by
     rintro (_ | acc) i x j y <;> simp; apply min_comm; apply inf_right_comm
 
-def maxKey? [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : Option α :=
+def maxKey? (mp : Std.ExtDHashMap α β) : Option α :=
   mp.fold (λ acc i _ => some # acc.elim i # λ acc => max acc i) none # by
     rintro (_ | acc) i x j y <;> simp; apply max_comm; apply sup_right_comm
 
-def minKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : α :=
+def minKey! [Inhabited α] (mp : Std.ExtDHashMap α β) : α :=
   mp.minKey?.get!
 
-def maxKey! [Inhabited α] [ha : LinearOrder α] (mp : Std.ExtDHashMap α β) : α :=
+def maxKey! [Inhabited α] (mp : Std.ExtDHashMap α β) : α :=
   mp.maxKey?.get!
 
 theorem minKey?_eq_head?_keys [ha : LinearOrder α] : mp.minKey? = mp.keys.head? := by

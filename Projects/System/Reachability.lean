@@ -1230,7 +1230,6 @@ sys.trs s ts₁ = (s', []) → sys.trs s ts₂ = (s', []) → ts₁ = ts₂ := b
   simp at h
   simp [h₁, h₂] at h
   replace h := congrArg (· ++ ts') h
-  dsimp at h
   rw [List.append_take_eq_of_suffix # by simp [h₃],
     List.append_take_eq_of_suffix # by simp [h₄]] at h
   exact h

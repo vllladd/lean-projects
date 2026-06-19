@@ -303,7 +303,6 @@ s₁.aPos = s.aPos ∧ ∀ p ∈ ps, p ∉ s₁.taken := by
     (r := λ s₁ s₂ => s₁.aTurn = s₂.aTurn ∧ s₁.aPos = s₂.aPos ∧ s₂.taken ∩ ps' ⊆ s₀.taken) h₄
   specialize hc (by simp) _
   · clear hc
-    dsimp
     rintro k hk s₁ s₂ s₁' hs₁ hs₂ ⟨ih₁, ih₂, ih₃⟩ H₁
     have Hs₁ : sys.WF s₁; grind
     have Hs₂ : sys.WF s₂; grind
@@ -459,7 +458,6 @@ theorem State.mem_aTrap_of_aReachable {s p} [hs : sys.WF s]
   clear p
   rename' s => s₀, hs => hs₀
   nm p p' h₁ h₂ h₃ ih
-  simp at ih ⊢
   rcases ih with ⟨s, h₄, rfl⟩
   have h₆ := @exi_taken_disjoint_of_reachable_with_turn s₀ s _ {p'} true
   simp [h₃, h₄] at h₆

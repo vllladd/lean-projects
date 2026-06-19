@@ -215,7 +215,7 @@ theorem exi_g_ge {n} : ∃ k, n ≤ g a k :=
 
 theorem series_eq_f_add_g {n} : series a n =
 series (ap a) (f a n) + series (an a) (g a n) := by
-  convert H.series_eq_fAux_add_gAux <;> rfl
+  convert! H.series_eq_fAux_add_gAux <;> rfl
 
 theorem fgCnd_f'_g' : fgCnd abs a (f' a) (g' a) :=
   H.fgCnd_fAux_gAux
