@@ -174,7 +174,7 @@ theorem ProgM.wf_readNat : readNat.WF := by
   unfold readNat; infer_instance
 
 @[instance, simp]
-theorem ProgM.writeNat {n} : (writeNat n).WF := by
+theorem ProgM.wf_writeNat {n} : (writeNat n).WF := by
   unfold VerifiedIO.writeNat; apply MonadCnd.bind
   · apply MonadCnd.replicateM'; infer_instance
   · infer_instance
