@@ -2,3 +2,4 @@
 cls
 
 call "C:/Projects/batch-projects/p.bat"
+git push v main
