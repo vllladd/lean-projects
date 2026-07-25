@@ -1,8 +1,8 @@
-import Projects.Esolangs.Lang_001.Defs
+import Projects.Esolangs.Cornucopia.Defs
 
 attribute [-simp] List.getElem!_eq_getElem?_getD
 
-namespace Esolangs.Lang_001
+namespace Esolangs.Cornucopia
 
 def exprId : Expr :=
   .arg 0

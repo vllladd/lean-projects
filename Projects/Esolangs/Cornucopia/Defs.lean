@@ -1,6 +1,6 @@
 import Projects.Util
 
-namespace Esolangs.Lang_001
+namespace Esolangs.Cornucopia
 
 inductive Builtin : Type where
 | succ : Builtin
