@@ -8,11 +8,11 @@ variable {α : Type*}
 
 @[scoped grind =]
 def infPrefix [LE α] [InfSet α] (f : α → α) : α :=
-  sInf # setOf # PreFixpoint f
+  sInf # Set.ofPred # PreFixpoint f
 
 @[scoped grind =]
 def supPostfix [LE α] [SupSet α] (f : α → α) : α :=
-  sSup # setOf # PostFixpoint f
+  sSup # Set.ofPred # PostFixpoint f
 
 -----
 
@@ -24,7 +24,7 @@ variable [ha : CompleteLattice α]
 @[scoped grind →]
 theorem preFixpoint_infPrefix (hf : Monotone f) : PreFixpoint f (infPrefix f) := by
   unfold infPrefix
-  generalize hs : setOf (PreFixpoint f) = s
+  generalize hs : Set.ofPred (PreFixpoint f) = s
   generalize hx : sInf s = x
   suffices : x ∈ s; grind
   simp [←hs, PreFixpoint]
@@ -41,7 +41,7 @@ theorem preFixpoint_infPrefix (hf : Monotone f) : PreFixpoint f (infPrefix f) :=
 @[scoped grind →]
 theorem postFixpoint_supPostfix (hf : Monotone f) : PostFixpoint f (supPostfix f) := by
   unfold supPostfix
-  generalize hs : setOf (PostFixpoint f) = s
+  generalize hs : Set.ofPred (PostFixpoint f) = s
   generalize hx : sSup s = x
   unfold PostFixpoint
   nth_rw 1 [←hx]
@@ -57,7 +57,7 @@ theorem postFixpoint_supPostfix (hf : Monotone f) : PostFixpoint f (supPostfix f
 @[scoped grind →]
 theorem postFixpoint_infPrefix (hf : Monotone f) : PostFixpoint f (infPrefix f) := by
   unfold infPrefix
-  generalize hs : setOf (PreFixpoint f) = s
+  generalize hs : Set.ofPred (PreFixpoint f) = s
   generalize hx : sInf s = x
   unfold PostFixpoint
   nth_rw 1 [←hx]
@@ -68,7 +68,7 @@ theorem postFixpoint_infPrefix (hf : Monotone f) : PostFixpoint f (infPrefix f) 
 @[scoped grind →]
 theorem preFixpoint_supPostfix (hf : Monotone f) : PreFixpoint f (supPostfix f) := by
   unfold supPostfix
-  generalize hs : setOf (PostFixpoint f) = s
+  generalize hs : Set.ofPred (PostFixpoint f) = s
   generalize hx : sSup s = x
   unfold PreFixpoint
   nth_rw 2 [←hx]

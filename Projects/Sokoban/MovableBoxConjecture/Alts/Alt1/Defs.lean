@@ -6,7 +6,9 @@ open State
 
 inductive Tile where
 | Floor | Player | Box | Wall
-deriving DecidableEq open Tile
+deriving DecidableEq
+
+open Sokoban.MovableBoxConjecture.Alt₁.Tile
 
 structure State where
   get : ℤ × ℤ → Tile

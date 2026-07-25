@@ -37,7 +37,7 @@ theorem State.forall_dWins_bounded_of_forall_dWins {s} [hs : sys.WF s]
       tauto
     intro n hn
     simp [hn]
-  have h₂ := @Point.finite_setOf_dist_le sa.aPos sa.pw
+  have h₂ := @Point.finite_ofPred_dist_le sa.aPos sa.pw
   obtain ⟨⟨pa, h₃⟩, h₄⟩ := Set.exists_infinite_preimage_of (f := g) (hb := h₂)
   simp at h₃
   suffices h₅ : ∀ n, n ≠ 0 → ∃ (a : AStrat), a.WF ∧ a.f sa = pa ∧

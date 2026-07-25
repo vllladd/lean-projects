@@ -306,7 +306,7 @@ theorem bwSeq_fst_lt_snd {a : ℕ → ℝ} {y₁ y₂ : ℚ} {n m : ℕ} (hy : y
 
 theorem bwLimit_eq_of {a : ℕ → ℝ} {M : ℚ} (h : ∀ n, |a n| < M) :
 bwLimit a M = Real.mk (.mk _ # isCauSeq_bwSeq_fst_of_abs_lt h) := by
-  rw [bwLimit]; generalize_proofs; split_ifs; rfl; contradiction
+  rw [bwLimit]; generalize_proofs; split_ifs; rfl
 
 theorem bwSeq_fst_le_bwLimit {a : ℕ → ℝ} {M : ℚ} {n} (h : ∀ n, |a n| < M) :
 (bwSeq a (-M) M n).1 ≤ bwLimit a M := by

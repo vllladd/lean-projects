@@ -294,18 +294,6 @@ theorem lt_sq_self_iff {a : ℝ} : a < a ^ 2 ↔ a < 0 ∨ 1 < a := by
       simp
     nlinarith
 
-@[simp]
-theorem sqrt_le_self_iff {a : ℝ} : √a ≤ a ↔ a = 0 ∨ 1 ≤ a := by
-  by_cases h : a < 0
-  · rw [sqrt_eq_of_neg h]
-    simp [ne_of_lt h]
-    constructor <;> intro h <;> linarith
-  push Not at h
-  simp [sqrt_le_iff, h]
-  rw [le_iff_eq_or_lt] at h
-  rcases h with rfl | h; simp
-  simp [not_le_of_gt h, ne_symm' # ne_of_lt h]
-
 theorem pow_rpow_inv {a : ℝ} {n : ℕ} (ha : 0 ≤ a) (hn : n ≠ 0) :
 (a ^ ofNat(n)) ^ (ofNat(n) : ℝ)⁻¹ = a := by
   rw [instOfNatNat]; simp [Real.ofNat_eq]; rw [←rpow_natCast]

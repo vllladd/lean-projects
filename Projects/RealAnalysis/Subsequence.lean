@@ -25,7 +25,7 @@ theorem absConv_neg {a} : AbsConv (-a) ↔ AbsConv a := by
   simp [AbsConv]
 
 theorem infp_iff_infinite {a p} : Infp a p ↔ {n | p # a n}.Infinite := by
-  simp_rw [Set.infinite_iff_exists_gt, Set.mem_setOf_eq]
+  simp_rw [Set.infinite_iff_exists_gt, Set.mem_ofPred_eq]
   constructor; all_goals
     intro h N
     specialize h # N + 1

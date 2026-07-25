@@ -68,8 +68,7 @@ theorem subsingleton_pair_iff {x y : α} : ({x, y} : Set _).Subsingleton ↔ x =
 theorem not_nonempty_iff : ¬s.Nonempty ↔ s = ∅ :=
   not_nonempty_iff_eq_empty
 
-attribute [simp] compl_setOf
-attribute [simp] sdiff_eq_empty
+attribute [simp] compl_ofPred sdiff_eq_empty
 
 @[simp]
 theorem univ_injOn_iff {f : α → β} : (univ : Set α).InjOn f ↔ f.Injective := by

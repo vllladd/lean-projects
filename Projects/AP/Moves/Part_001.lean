@@ -167,7 +167,7 @@ theorem State.simulate_diff {s s₁ f n r} [hs : sys.WF s]
   rcases h with ⟨rfl, rfl⟩
   exact ih hr
 
-theorem State.aSimPts_eq_setOf {s : State} {st} : s.aSimPts st =
+theorem State.aSimPts_eq_ofPred {s : State} {st} : s.aSimPts st =
 {p | ∃ s₁ s₂, s.aMoveSim st s₁ = some (p, s₂)} := by
   ext; simp [aSimPts, aSimPairs]
 
@@ -229,7 +229,7 @@ theorem State.mem_aSimPairs_iff_simulate_tr {s s₁ p} {st : Strat} [hs : sys.WF
 ∃ s₂, sys.tr s₁ (st.a.f s₁) = some s₂ ∧ st.a.f s₁ = p := by
   simp only [aSimPairs, aMoveSim, moveSim, Option.pure_def, Option.bind_eq_bind,
     Option.bind_eq_some_iff', Option.guard_eq_some', Option.some.injEq, exists_const, Sum.exists,
-    reduceCtorEq, and_false, exists_eq_right, false_or, exists_and_left, Set.mem_setOf_eq,
+    reduceCtorEq, and_false, exists_eq_right, false_or, exists_and_left, Set.mem_ofPred_eq,
     exists_and_right]
   unfold ReachableVia ReachableVia'; constructor
   · rintro ⟨h₁, s₂, s₃, h₂, h₃⟩

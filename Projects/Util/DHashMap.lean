@@ -474,7 +474,7 @@ section foldWith
 
 namespace Internal
 
-open Raw
+open Std.DHashMap.Internal.Raw
 
 omit hh₂ in
 theorem distinctKeys_def {xs : List ((i : α) × β i)} :
@@ -612,7 +612,7 @@ theorem AssocList.toList_ofList {xs : List ((i : α) × β i)} : (ofList xs).toL
 
 end Internal
 
-open Internal
+open Std.DHashMap.Internal
 
 namespace Raw
 
@@ -1209,7 +1209,7 @@ theorem assocList_foldrM_eq!.{u, v, w} : @Internal.AssocList.foldrM.{w, v, u, w}
 λ (α : Type u) (β : α → Type v) (γ : Type w) (m : Type w → Type w) [H : Monad m]
 (f : (x : α) → β x → γ → m γ) (z : γ) (bs : Internal.AssocList α β) =>
 if h : m = Id ∧ H ≍ Id.instMonad then by
-  rcases h with ⟨rfl, h⟩
+  rcases h with ⟨rfl, _⟩
   exact bs.toList.foldr (λ x => f x.1 x.2) z
 else bs.foldrM f z := by
   funext α β γ m H f z bs

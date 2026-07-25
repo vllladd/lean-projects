@@ -228,8 +228,11 @@ instance [ha : AddZeroClass α] : AddZeroClass (Point α) where
 
 instance [ha : AddMonoid α] : AddMonoid (Point α) where
   nsmul := λ c ⟨x, y⟩ => ⟨c • x, c • y⟩
-  nsmul_zero := by rintro ⟨x, y⟩; simp; rfl
-  nsmul_succ := by rintro n ⟨x, y⟩; simp; constructor <;> apply succ_nsmul
+  nsmul_zero := by
+    rintro ⟨x, y⟩; change Point.mk _ _ = .mk _ _; simp
+  nsmul_succ := by
+    rintro n ⟨x, y⟩; change Point.mk _ _ = .mk _ _; simp
+    constructor <;> apply succ_nsmul
 
 theorem nsmul_def [ha : AddMonoid α] {c : ℕ} {p : Point α} :
 c • p = ⟨c • p.1, c • p.2⟩ := rfl
@@ -240,13 +243,17 @@ c • (⟨x, y⟩ : Point α) = ⟨c • x, c • y⟩ := rfl
 
 instance [ha : SubNegMonoid α] : SubNegMonoid (Point α) where
   zsmul := λ c ⟨x, y⟩ => ⟨c • x, c • y⟩
-  zsmul_zero' := by rintro ⟨x, y⟩; simp; rfl
+  zsmul_zero' := by
+    rintro ⟨x, y⟩; change Point.mk _ _ = .mk _ _; simp
   zsmul_succ' := by
-    rintro n ⟨x, y⟩
-    simp only [Nat.succ_eq_add_one, natCast_zsmul, mk_add_mk, mk.injEq]
-    constructor <;> apply succ_nsmul
+    rintro n ⟨x, y⟩; change Point.mk _ _ = .mk _ _; simp
+    rw [show ((n : ℤ) + 1) • x = (n : ℤ) • x + x
+      by grind only [SubNegMonoid.zsmul_succ']]
+    rw [show ((n : ℤ) + 1) • y = (n : ℤ) • y + y
+      by grind only [SubNegMonoid.zsmul_succ']]
+    constructor <;> rfl
   zsmul_neg' := by
-    rintro n ⟨x, y⟩; simp
+    rintro n ⟨x, y⟩; change Point.mk _ _ = .mk _ _; simp
     constructor <;> have h := @ha.zsmul_neg' <;> simp at h <;> apply h
   sub_eq_add_neg := λ ⟨x₁, y1⟩ ⟨x₂, y₂⟩ => by simp [sub_eq_add_neg]
 
@@ -512,7 +519,7 @@ a.x - dx₁ ≤ b.x ∧ b.x ≤ a.x + dx₂ ∧ a.y - dy₁ ≤ b.y ∧ b.y ≤ 
 theorem mem_nbhd {a b : Point α} {d} : b ∈ a.nbhd d ↔ a.dist b ≤ d := by
   simp [nbhd, dist, abs_le, add_comm d]; tauto
 
-theorem finite_setOf_dist_le {c : PointZ} {d : ℕ} :
+theorem finite_ofPred_dist_le {c : PointZ} {d : ℕ} :
 {p : PointZ | p.dist c ≤ d}.Finite := by
   apply Set.finite_of_subset_finset # List.toFinset # c.nbhd d; simp [dist_comm]
 

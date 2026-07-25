@@ -1134,7 +1134,7 @@ theorem diff_ssubset_of_right (h₁ : s₂ ⊆ s₃)
 
 noncomputable
 def compr (P : α → Prop) : Set' α :=
-  ofSet # setOf P
+  ofSet # Set.ofPred P
 
 def singleton (x : α) : Set' α :=
   ofList [x]

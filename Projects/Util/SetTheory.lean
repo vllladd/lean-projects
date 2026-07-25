@@ -233,6 +233,33 @@ theorem Set.nonempty_range_equiv_self_iff_injective.{u} {α β : Type u}
 [ha : Fintype α] {f : α → β} : Nonempty (Set.range f ≃ α) ↔ f.Injective := by
   rw [←Fintype.card_range_eq_iff_injective, ←Cardinal.eq]; simp
 
+attribute [simp] Set.finite_coe_iff Set.infinite_coe_iff
+
+theorem ncard_eq_card_toFinset {α : Type*} [ha : Fintype α] {s : Set α} :
+s.ncard = s.toFinset.card := by
+  simp only [Set.toFinset_card, Set.fintypeCard_eq_ncard]
+
+theorem ncard_eq_card_toFinset' {α : Type*} {s : Set α} [hs : Fintype s] :
+s.ncard = s.toFinset.card := by
+  simp only [Set.toFinset_card, Set.fintypeCard_eq_ncard]
+
+theorem Set.ncard_eq_cardinal_mk_to_nat {α : Type*} {s : Set α} :
+s.ncard = (Cardinal.mk s).toNat := by
+  by_cases h : s.Infinite
+  · symm
+    simp [h.ncard]
+    right
+    rw [Cardinal.aleph0_le_mk_iff]
+    simpa [infinite_coe_iff]
+  simp at h
+  replace h := h.fintype
+  rw [ncard_eq_card_toFinset']
+  simp
+
+@[simp]
+theorem Cardinal.mk_set_elem {α : Type*} {s : Set α} :
+Cardinal.mk s.Elem = Cardinal.mk {x // x ∈ s} := rfl
+
 @[simp]
 theorem Finset.mkRaw_card_eq_fintype_card_iff_injective.{u} {α β : Type u}
 [ha : Fintype α] {f : α → β} :
@@ -245,14 +272,14 @@ theorem Finset.mkRaw_card_eq_fintype_card_iff_injective.{u} {α β : Type u}
   change _ = Finset.univ.card ↔ _
   rw [←Fintype.card_range_eq_iff_injective]
   rw [Finset.card_eq_card_iff_equiv, ←Cardinal.eq]
+  rw [Cardinal.mk_eq_mk_of_finite]
   simp [Set.range]
   simp only [←Finset.card_univ]
-  simp only [Finset.card_eq_cardinal_mk_to_nat]
-  simp
-  constructor <;> intro h
-  · simp [h]
-  rwa [Cardinal.toNat_eq_iff] at h
-  simp
+  dsimp [mkRaw]
+  rw [dif_neg # by simp [ha.finite]]
+  rw [Finset.card_eq_cardinal_mk_to_nat]
+  rw [Set.ncard_eq_cardinal_mk_to_nat]
+  simp [Cardinal.mk_set_elem]
 
 @[simp]
 theorem Finset.card_le_fintype_card {α : Type*} [ha : Fintype α] {s : Finset α} :

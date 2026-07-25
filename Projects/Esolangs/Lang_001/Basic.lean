@@ -125,7 +125,7 @@ theorem not_wf_progLoop : ¬progLoop.WF := by
 
 @[simp]
 theorem Prog.compatible_fs {prog : Prog} [H : prog.WF] : prog.Compatible prog.fs :=
-  τ_spec # H.exiu_compatible.exists
+  τ_spec H.exiu_compatible.exists
 
 @[simp]
 theorem eval_exprId {prog fs xs} : exprId.eval prog fs xs = xs[0]! := by

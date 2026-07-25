@@ -72,7 +72,7 @@ theorem Equiv.trans (h₁ : t₁.Equiv t₂) (h₂ : t₂.Equiv t₃) : t₁.Equ
     use c, h₃
     exact ih k c h₃ h₁ h₂
 
-def Equiv.iseqv : Equivalence # Equiv (α := α) (β := β) where
+theorem Equiv.iseqv : Equivalence # Equiv (α := α) (β := β) where
   refl _ := Equiv.refl
   symm := Equiv.symm
   trans := Equiv.trans

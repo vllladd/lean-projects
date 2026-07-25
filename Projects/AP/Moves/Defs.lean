@@ -56,7 +56,7 @@ def State.aSimPts (s : State) (st : Strat) : Set PointZ :=
 -- Given state `s` and strategy `st`,
 -- returns the set of all future states
 def State.simStates (s : State) (st : Strat) : Set State :=
-  setOf # s.ReachableVia st
+  Set.ofPred # s.ReachableVia st
 
 def State.simStatesRangeAuxVia (r : ℕ → ℕ → Prop) [hs : DecidableRel r]
 (st : Strat) (s s₁ : State) : Finset State :=

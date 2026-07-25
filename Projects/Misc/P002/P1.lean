@@ -7,7 +7,7 @@ def Cnd₁ (n : ℕ) : Prop :=
 
 open Classical in noncomputable
 def set₁ : Set' ℕ :=
-  setOf Cnd₁
+  Set.ofPred Cnd₁
 
 instance : DecidablePred Cnd₁ := by
   unfold Cnd₁; infer_instance
@@ -17,12 +17,12 @@ def list₁ : List ℕ :=
 
 -----
 
-theorem setOf_cnd₁_subset {n} (h : n ∈ setOf Cnd₁) : n ∈ Finset.range 100 := by
+theorem ofPred_cnd₁_subset {n} (h : n ∈ Set.ofPred Cnd₁) : n ∈ Finset.range 100 := by
   replace h := Nat.lt_pow_of_digsNum_eq h.1; simpa using h
 
 @[simp]
-theorem finite_setOf_cnd₁ : (setOf Cnd₁).Finite :=
-  Set.finite_of_subset_finset _ @setOf_cnd₁_subset
+theorem ofPred_cnd₁ : (Set.ofPred Cnd₁).Finite :=
+  Set.finite_of_subset_finset _ @ofPred_cnd₁_subset
 
 @[simp]
 theorem sortedLT_list₁ : list₁.SortedLT := by

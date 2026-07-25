@@ -4,7 +4,7 @@ namespace AP
 
 open Classical in noncomputable
 def State.aProx (s s₁ : State) : Set' PointZ :=
-  Set'.ofSet # setOf λ p => sys.WF s ∧ sys.Reachable s s₁ ∧
+  Set'.ofSet # Set.ofPred λ p => sys.WF s ∧ sys.Reachable s s₁ ∧
   (∃ ps s₂, ps <+: s₁.diffTrs s ∧ sys.trs s ps = (s₂, []) ∧ s₂.aPos = p) ∧
   ∃ ps p₁ s₂, AState s₂ ∧ ps ++ [p₁] <+: s₁.diffTrs s ∧ sys.trs s ps = (s₂, []) ∧
     sys.validTr s₂ p ∧ p ≠ p₁

@@ -4,10 +4,6 @@ theorem Quot.lift_mk_of {α : Type*} {P : α → α → Prop} {f : α → Prop} 
 (h₂ : (∀ (a₁ a₂ : α), P a₁ a₂ → f a₁ = f a₂) → f a) :
 Quot.lift f h₁ (Quot.mk P a) := h₂ h₁
 
-theorem Setoid.comm {α : Type*} (s : Setoid α) {x y : α} : s x y ↔ s y x := by
-  rcases s with ⟨r, h₁, h₂, h₃⟩
-  exact ⟨h₂, h₂⟩
-
 theorem Setoid.commFn {α : Type*} (s : Setoid α) : s = λ x y => s y x := by
   ext x y; exact s.comm
 
@@ -81,12 +77,12 @@ theorem Quot.mk_out_equiv {α : Type*} {s : Setoid α} {x} : s (mk s x).out x :=
 theorem Quot.equiv_mk_out {α : Type*} {s : Setoid α} {x} : s x (mk s x).out := by
   symm; exact mk_out_equiv
 
-def quot_aux₁ {α : Type*} {β : α → Type*} {s : Setoid α}
+theorem quot_aux₁ {α : Type*} {β : α → Type*} {s : Setoid α}
 {f : (i : α) → β i} (h : ∀ (x y : α), s x y → HEq (f x) (f y)) (x) :
 β x = β (Quot.mk s x).out :=
   type_eq_of_heq # h x (Quot.mk s x).out Quot.equiv_mk_out
 
-def quot_aux₂ {α : Type*} {β : α → Type*} {s : Setoid α}
+theorem quot_aux₂ {α : Type*} {β : α → Type*} {s : Setoid α}
 {f : (i : α) → β i} (h : ∀ (x y : α), s x y → HEq (f x) (f y)) :
 ∀ (a b : α) (p : s a b), Quot.sound p ▸
   (λ x => cast (quot_aux₁ h x) (f x)) a =

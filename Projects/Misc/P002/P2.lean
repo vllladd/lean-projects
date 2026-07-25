@@ -11,10 +11,10 @@ def Cnd₁ (n : ℕ) : Prop :=
   (∃ (a b : ℕ), a.Prime ∧ b.Prime ∧ n = (a : ℤ) - b)
 
 def setX : Set ℕ :=
-  setOf CndX
+  Set.ofPred CndX
 
 def set₁ : Set ℕ :=
-  setOf Cnd₁
+  Set.ofPred Cnd₁
 
 noncomputable
 def n₁ : ℕ :=
@@ -37,7 +37,7 @@ theorem setX_eq : setX = ∅ := by
 @[simp]
 theorem set₁_eq : set₁ = {5} := by
   ext n
-  simp only [set₁, Set.mem_setOf_eq, Cnd₁, Set.mem_singleton_iff]
+  simp only [set₁, Set.mem_ofPred_eq, Cnd₁, Set.mem_singleton_iff]
   symm; constructor
   · rintro rfl
     use by norm_num
@@ -77,4 +77,4 @@ theorem set₁_eq : set₁ = {5} := by
 
 @[simp]
 theorem n₁_eq : n₁ = 5 := by
-  apply τ_eq_of_setOf; rw [←set₁]; simp
+  apply τ_eq_of_ofPred; rw [←set₁]; simp
