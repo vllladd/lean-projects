@@ -143,15 +143,34 @@ theorem toList_eq_nil_iff : mp.toList = [] ↔ mp ~m ∅ := by
   simp [isEmpty_eq_size_eq_zero]
   all_goals infer_instance
 
+theorem fold_assoc_aux {γ : Type*}
+{m₁ m₂ : Std.DHashMap α β} {xs ys} {f : γ → (i : α) → β i → γ}
+(h : ∀ {acc : γ} {i : α} {x : β i} {j : α} {y : β j},
+i ≠ j → f (f acc i x) j y = f (f acc j y) i x)
+(hx : m₁.toList = xs) (hy : m₂.toList = ys) :
+∀ {acc : γ} {x y : (a : α) × β a}, x ∈ xs ∧ y ∈ xs ∨ x ∈ ys ∧ y ∈ ys →
+f (f acc x.1 x.2) y.1 y.2 = f (f acc y.1 y.2) x.1 x.2 := by
+  rintro acc ⟨i, x⟩ ⟨j, y⟩ h₁
+  dsimp
+  by_cases h₄ : i = j ∧ x ≍ y; grind
+  apply h
+  rintro rfl
+  obtain ⟨m, h₂, h₃⟩ : ∃ (m : DHashMap α β),
+    ⟨i, x⟩ ∈ m.toList ∧ ⟨i, y⟩ ∈ m.toList; grind
+  simp at h₂
+  simp [h₂] at h₃
+  subst h₃
+  simp at h₄
+
 theorem fold_eq_fold_of_equiv {γ : Type*}
 {f : γ → (i : α) → β i → γ} {z : γ} {m₁ m₂ : Std.DHashMap α β}
-(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x)
+(h_assoc : ∀ {acc i x j y}, i ≠ j → f (f acc i x) j y = f (f acc j y) i x)
 (h : m₁ ~m m₂) : m₁.fold f z = m₂.fold f z := by
   simp [DHashMap.fold_eq_foldl_toList]
   replace h := Equiv.toList_perm h
-  generalize m₁.toList = xs at h ⊢
-  generalize m₂.toList = ys at h ⊢
-  exact List.foldl_eq_foldl_of_perm h_assoc h
+  generalize hx : m₁.toList = xs at h ⊢
+  generalize hy : m₂.toList = ys at h ⊢
+  apply List.foldl_eq_foldl_of_perm (fold_assoc_aux h_assoc hx hy) h
 
 def decideEquiv [∀ i, DecidableEq # β i] (m₁ m₂ : DHashMap α β) : Bool :=
   m₁.size = m₂.size ∧ m₁.fold (λ acc i x => acc && m₂.get? i = some x) true
@@ -1309,3 +1328,11 @@ xs.toList = [] ↔ xs = .nil := by
   unfold Internal.AssocList.toList; split <;> simp
 
 end Raw
+
+@[simp]
+theorem empty_union : ∅ ∪ mp ~m mp := by
+  simp [equiv_iff_get?, get?_union]
+
+@[simp]
+theorem union_empty : mp ∪ ∅ ~m mp := by
+  simp [equiv_iff_get?, get?_union]

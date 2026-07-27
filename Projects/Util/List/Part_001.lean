@@ -415,13 +415,14 @@ attribute [simp] pairwise_map
 
 theorem foldl_eq_foldl_of_perm {α β : Type*}
 {f : β → α → β} {z : β} {xs ys : List α}
-(h_assoc : ∀ {acc x y}, f (f acc x) y = f (f acc y) x)
+(h_assoc : ∀ {acc x y}, (x ∈ xs ∧ y ∈ xs) ∨ (x ∈ ys ∧ y ∈ ys) →
+  f (f acc x) y = f (f acc y) x)
 (h : xs ~ ys) : xs.foldl f z = ys.foldl f z := by
   induction h generalizing z <;> clear xs ys
   · rfl
-  · nm x xs ys h ih; simp [ih]
+  · nm x xs ys h ih; simp; apply ih; intro acc x₁ y₁ h₁; apply h_assoc; grind
   · nm x y xs; simp [h_assoc]
-  · nm xs ys zs h₁ h₂ ih₁ ih₂; rw [ih₁, ih₂]
+  · nm xs ys zs h₁ h₂ ih₁ ih₂; rw [ih₁, ih₂] <;> grind
 
 open Classical in
 theorem foldl_bool_to_prop {α : Type*}
@@ -674,7 +675,7 @@ theorem max?_eq_max?_of_perm [ha : LinearOrder α]
 (h : xs.Perm ys) : xs.max? = ys.max? := by
   simp only [max?_eq_foldl]
   apply foldl_eq_foldl_of_perm; rotate_left; exact h
-  rintro (_ | acc) x y <;> simp
+  rintro (_ | acc) x y - <;> simp
   apply max_comm; apply sup_right_comm
 
 theorem apply_of_pairwise_and_lt {p : α → α → Prop} {i j}

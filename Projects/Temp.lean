@@ -101,7 +101,7 @@ open Std
 universe u v w
 variable {α : Type u} {β : Type v} {γ : Type w}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
-variable {mp : Map α β}
+variable {mp m m₁ m₂ m₃ : Map α β}
 variable [ha : LinearOrder α]
 omit ha
 

@@ -9,7 +9,7 @@ deriving Inhabited
 
 variable {α : Type u} {β : Type v} {γ : Type w}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
-variable {mp : Map α β}
+variable {mp m m₁ m₂ m₃ : Map α β}
 variable [ha : LinearOrder α]
 omit ha
 
@@ -343,7 +343,7 @@ mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
 
 def fold {γ : Type*} (mp : Map α β) (f : γ → α → β → γ) (z : γ)
-(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+(h_assoc : ∀ {acc i x j y}, i ≠ j → f (f acc i x) j y = f (f acc j y) i x) : γ :=
   mp.inner.fold f z h_assoc
 
 theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}
@@ -843,3 +843,91 @@ theorem countP_values_modify_eq_ite_of_get? {p : β → Bool} {i x f}
   rw [show xs.length = (xs.map (·.2)).length by simp]
   rw [List.modify_length_append]; simp
   grind
+
+def union (m₁ m₂ : Map α β) : Map α β :=
+  ⟨m₁.inner.union m₂.inner⟩
+
+instance : Union (Map α β) := ⟨union⟩
+theorem union_def : m₁ ∪ m₂ = m₁.union m₂ := rfl
+
+@[simp]
+theorem inner_empty : (∅ : Map α β).inner = ∅ := rfl
+
+@[simp]
+theorem inner_union : (m₁ ∪ m₂).inner = m₁.inner ∪ m₂.inner := rfl
+
+@[simp]
+theorem empty_union : ∅ ∪ mp = mp := by
+  simp [eq_iff_inner_eq]
+
+@[simp]
+theorem union_empty : mp ∪ ∅ = mp := by
+  simp [eq_iff_inner_eq]
+
+@[simp]
+theorem insertP_pair {i x} : mp.insertP ⟨i, x⟩ = mp.insert i x := rfl
+
+@[simp]
+theorem get?_mk {mp : Std.ExtDHashMap α (λ _ => β)} {i} :
+(Map.mk mp).get? i = mp.get? i := rfl
+
+@[simp]
+theorem mk_union_mk {mp₁ mp₂ : Std.ExtDHashMap α (λ _ => β)} :
+Map.mk mp₁ ∪ Map.mk mp₂ = Map.mk (mp₁ ∪ mp₂) := rfl
+
+theorem get?_union {i} : (m₁ ∪ m₂).get? i = (m₂.get? i).or (m₁.get? i) := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp [ExtDHashMap.get?_union]
+
+@[simp]
+theorem inner_ofList {xs : List (α × β)} :
+(ofList xs).inner = .ofList (xs.map Prod.toSigma) := rfl
+
+@[simp]
+theorem ofList_singleton {x : α × β} : ofList [x] = (∅ : Map α β).insertP x := rfl
+
+@[simp]
+theorem insert_insert_same {i x y} : (mp.insert i x).insert i y = mp.insert i y := by
+  ext; simp [get?_insert]; grind
+
+theorem insert_union {i x} : (m₁ ∪ m₂).insert i x = m₁ ∪ m₂.insert i x := by
+  ext; simp [get?_insert, get?_union]; split_ifs with h; grind; simp
+
+theorem union_insert {i x} : m₁ ∪ m₂.insert i x = (m₁ ∪ m₂).insert i x :=
+  insert_union.symm
+
+@[simp]
+theorem ofList_append {xs ys : List (α × β)} :
+Map.ofList (xs ++ ys) = Map.ofList xs ∪ Map.ofList ys := by
+  induction ys using List.reverseRecOn generalizing xs
+  · simp
+  nm ys x ih
+  rcases x with ⟨j, x⟩
+  rw [←List.append_assoc, ofList_snoc]
+  simp [ih]; clear ih
+  rw [union_insert]
+
+theorem ofList_cons_of_mem {x : α × β} {xs y}
+(h : (x.1, y) ∈ xs) : ofList (x :: xs) = ofList xs := by
+  rcases x with ⟨i, x⟩
+  dsimp at h
+  rw [List.cons_eq_append, ofList_append]
+  ext j z
+  simp [get?_union]
+  intro h₁ h₂
+  replace h₂ := mem_of_get?_eq_some h₂
+  simp at h₂
+  grind
+
+theorem get?_union_left {i} (h : i ∉ m₂) : (m₁ ∪ m₂).get? i = m₁.get? i := by
+  simp [get?_union, get?_eq_none_of_not_mem h]
+
+theorem get?_union_right {i} (h : i ∉ m₁) : (m₁ ∪ m₂).get? i = m₂.get? i := by
+  simp [get?_union, get?_eq_none_of_not_mem h]
+
+theorem get!_union_left [hb : Inhabited β] {i}
+(h : i ∉ m₂) : (m₁ ∪ m₂).get! i = m₁.get! i := by
+  simp [get!_eq_get!_get?, get?_union, get?_eq_none_of_not_mem h]
+
+theorem get!_union_right [hb : Inhabited β] {i}
+(h : i ∉ m₁) : (m₁ ∪ m₂).get! i = m₂.get! i := by
+  simp [get!_eq_get!_get?, get?_union, get?_eq_none_of_not_mem h]

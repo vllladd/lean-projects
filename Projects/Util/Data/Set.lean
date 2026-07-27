@@ -235,7 +235,7 @@ instance [ha : Finite α] : Finite (Set' α) := by
 
 def fold (s : Set' α) (f : β → α → β) (z : β)
 (h_assoc : ∀ {acc x y}, f (f acc x) y = f (f acc y) x) : β :=
-  s.inner.fold (λ acc x _ => f acc x) z # by simpa
+  s.inner.fold (λ acc x _ => f acc x) z # by grind
 
 def fold₁ (s : Set' α) (f : α → α → α)
 (h_comm : ∀ {x y}, f x y = f y x)

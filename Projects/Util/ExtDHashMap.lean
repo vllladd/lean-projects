@@ -229,7 +229,7 @@ m₁.1 = m₂.1 ↔ m₁ = m₂ := by
   rcases m₁ with ⟨m₁⟩; rcases m₂ with ⟨m₂⟩; simp
 
 def fold {γ : Type*} (mp : Std.ExtDHashMap α β) (f : γ → (i : α) → β i → γ) (z : γ)
-(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+(h_assoc : ∀ {acc i x j y}, i ≠ j → f (f acc i x) j y = f (f acc j y) i x) : γ :=
   mp.lift (·.fold f z) # λ _ _ => DHashMap.fold_eq_fold_of_equiv @h_assoc
 
 def decideEq [hh : ∀ i, DecidableEq # β i]
@@ -404,8 +404,10 @@ mp.toList.foldl (λ acc (x : (i : α) × β i) => f acc x.1 x.2) z := by
   intro m
   simp only [Quotient.lift_mk]
   rw [Std.DHashMap.fold_eq_foldl_toList]
-  apply List.foldl_eq_foldl_of_perm h_assoc
-  simp
+  apply List.foldl_eq_foldl_of_perm _ (by simp)
+  have h₁ := @DHashMap.fold_assoc_aux
+  specialize @h₁ α β _ _ γ m m _ _ f h_assoc rfl rfl
+  simp at h₁ ⊢; exact @h₁
 
 theorem eq_iff_toList_eq [ha : LinearOrder α] {m₁ m₂ : Std.ExtDHashMap α β} :
 m₁ = m₂ ↔ m₁.toList = m₂.toList := by
@@ -439,11 +441,11 @@ theorem keys_eq_map_fst_toList [ha : LinearOrder α] : mp.keys = mp.toList.map (
 
 def minKey? (mp : Std.ExtDHashMap α β) : Option α :=
   mp.fold (λ acc i _ => some # acc.elim i # λ acc => min acc i) none # by
-    rintro (_ | acc) i x j y <;> simp; apply min_comm; apply inf_right_comm
+    rintro (_ | acc) i x j y - <;> simp; apply min_comm; apply inf_right_comm
 
 def maxKey? (mp : Std.ExtDHashMap α β) : Option α :=
   mp.fold (λ acc i _ => some # acc.elim i # λ acc => max acc i) none # by
-    rintro (_ | acc) i x j y <;> simp; apply max_comm; apply sup_right_comm
+    rintro (_ | acc) i x j y - <;> simp; apply max_comm; apply sup_right_comm
 
 def minKey! [Inhabited α] (mp : Std.ExtDHashMap α β) : α :=
   mp.minKey?.get!
@@ -611,8 +613,22 @@ theorem fold_insert {γ : Type*} {f : γ → (i : α) → β i → γ} {z : γ} 
   simp [fold, lift, DHashMap.fold_eq_foldl_toList, insert]
   trans (⟨i, x⟩ :: mp.toList).foldl (λ a b => f a b.1 b.2) z
   rotate_left; rfl
-  apply List.foldl_eq_foldl_of_perm h
-  exact DHashMap.toList_insert_perm_cons_of_not_mem h₁
+  apply List.foldl_eq_foldl_of_perm _ #
+    DHashMap.toList_insert_perm_cons_of_not_mem h₁
+  intro acc ⟨k₁, v₁⟩ ⟨k₂, v₂⟩ H₁
+  simp at H₁
+  apply @DHashMap.fold_assoc_aux α β _ _ γ
+    (mp.insert i x) (mp.insert i x) _ _ f h rfl rfl acc ⟨k₁, v₁⟩ ⟨k₂, v₂⟩
+  simp; rcases H₁ with ⟨H₁, H₂⟩ | ⟨⟨rfl, rfl⟩ | H₁, ⟨rfl, rfl⟩ | H₂⟩
+  · tauto
+  · grind
+  · simp; rw [←H₂]; rw [DHashMap.get?_insert]; simp
+    rintro rfl; cases h₁ # DHashMap.mem_of_get?_eq_some H₂
+  · simp; rw [←H₁]; rw [DHashMap.get?_insert]; simp
+    rintro rfl; cases h₁ # DHashMap.mem_of_get?_eq_some H₁
+  · have H₃ : i ≠ k₁; rintro rfl; cases h₁ # DHashMap.mem_of_get?_eq_some H₁
+    have H₄ : i ≠ k₂; rintro rfl; cases h₁ # DHashMap.mem_of_get?_eq_some H₂
+    simp [DHashMap.get?_insert, H₁, H₂, H₃, H₄]
 
 theorem insert_comm {i x j y} (h : i ≠ j ∨ HEq x y) :
 (mp.insert i x).insert j y = (mp.insert j y).insert i x := by
@@ -685,3 +701,20 @@ theorem nodup_keys : mp.keys.Nodup := by
 include ha in @[simp]
 theorem sortedLT_keys : mp.keys.SortedLT :=
   mp.sortedLE_keys.sortedLT_of_nodup nodup_keys
+
+theorem union_def : mp₁ ∪ mp₂ = mp₁.union mp₂ := rfl
+
+@[simp]
+theorem get?_out_mk {mp : DHashMap α β} :
+(⟦mp⟧ : Quotient (DHashMap.isSetoid α β)).out.get? = mp.get? := by
+  funext i; apply DHashMap.Equiv.get?_eq
+  change (_ : DHashMap α β) ≈ _
+  grind only [Quotient.eq_mk_iff_out]
+
+@[simp]
+theorem empty_union : ∅ ∪ mp = mp := by
+  rw [ext_iff]; intro i; rw [get?_union]; simp
+
+@[simp]
+theorem union_empty : mp ∪ ∅ = mp := by
+  rw [ext_iff]; intro i; rw [get?_union]; simp

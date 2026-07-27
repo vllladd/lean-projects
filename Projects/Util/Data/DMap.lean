@@ -300,7 +300,7 @@ mp.get? i = some (mp.get? i).get! ↔ i ∈ mp := by
   simp [←get!_eq_get!_get?]
 
 def fold {γ : Type*} (mp : DMap α β) (f : γ → (i : α) → β i → γ) (z : γ)
-(h_assoc : ∀ {acc i x j y}, f (f acc i x) j y = f (f acc j y) i x) : γ :=
+(h_assoc : ∀ {acc i x j y}, i ≠ j → f (f acc i x) j y = f (f acc j y) i x) : γ :=
   mp.inner.fold f z h_assoc
 
 theorem fold_eq_foldl_toList [ha : LinearOrder α] {γ : Type*}

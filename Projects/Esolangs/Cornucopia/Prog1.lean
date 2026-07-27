@@ -39,6 +39,14 @@ def exprAdd : Expr :=
   , .call (.custom 5) [refZero, refZero]
   ]
 
+-- def refOneAlt : Expr :=
+--   .call (.custom 6) []
+-- 
+-- def exprOneAlt : Expr :=
+--   .call (.builtin .sub)
+--   [ .call (.builtin .succ) [.custom 6]
+--   ]
+
 def exprMain₁ : Expr :=
   exprId
 
