@@ -72,6 +72,15 @@ end Fintype
 
 namespace Finset
 
+variable {α β γ : Type*}
+variable {s s₁ s₂ s₃ : Finset α}
+
+def fold' (s : Finset α) (f : β → α → β) (z : β)
+(h : ∀ {acc x y}, f (f acc x) y = f (f acc y) x) : β :=
+  haveI : RightCommutative f := ⟨@h⟩; s.val.foldl f z
+
+-----
+
 theorem sum_eq_sum_of_fn_congr {α : Type*} {S : Finset α} {f g : α → ℕ}
 (h : ∀ i ∈ S, f i = g i) : ∑ x ∈ S, f x = ∑ x ∈ S, g x := by
   apply Finset.sum_equiv (e := Equiv.refl α); simp; simpa

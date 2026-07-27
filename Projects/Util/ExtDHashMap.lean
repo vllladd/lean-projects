@@ -1,8 +1,9 @@
+import Projects.Util.Order
 import Projects.Util.DHashMap
 
 variable {α : Type*} {β : α → Type*} {γ : α → Type*}
 variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
-variable {mp mp₁ mp₂ : Std.ExtDHashMap α β}
+variable {mp mp₁ mp₂ m m₁ m₂ m₃ : Std.ExtDHashMap α β}
 variable [ha : LinearOrder α]
 omit ha
 
@@ -53,7 +54,7 @@ ofList (xs ++ [x]) = Insert.insert x (ofList xs) := by
 @[simp]
 theorem mem_insert' {x : Σ i, β i} {i} :
 i ∈ Insert.insert x mp ↔ i = x.1 ∨ i ∈ mp := by
-  simp; tauto
+  simp
 
 @[simp]
 theorem mem_ofList' {xs : List (Σ i, β i)} {i} :
@@ -568,6 +569,7 @@ theorem le_maxKey!_of_mem [ha₁ : Inhabited α] [ha₂ : LinearOrder α] {x}
 theorem keys_eq_nil_iff [LinearOrder α] : mp.keys = [] ↔ mp.isEmpty := by
   rw [keys_eq_map_fst_toList, List.map_eq_nil_iff]; simp
 
+@[simp]
 theorem keys_empty [LinearOrder α] : (∅ : ExtDHashMap α β).keys = [] := by
   simp
 
@@ -718,3 +720,126 @@ theorem empty_union : ∅ ∪ mp = mp := by
 @[simp]
 theorem union_empty : mp ∪ ∅ = mp := by
   rw [ext_iff]; intro i; rw [get?_union]; simp
+
+include ha in
+theorem toList_insert_of_not_mem {i x} (h : i ∉ m) : (m.insert i x).toList =
+(⟨i, x⟩ :: m.toList).mergeSort (·.1 ≤ ·.1) := by
+  rw [List.eq_iff_of_nodup_and_pairwise (r := (·.1 ≤ ·.1))]
+  rotate_left
+  · simp
+  · simp [get?_eq_none_of_not_mem h]
+  · rintro ⟨j, y⟩ ⟨k, z⟩
+    simp; grind
+  · simp
+  · have h₁ := @List.pairwise_mergeSort
+    specialize @h₁ ((i : α) × β i) (le := (·.1 ≤ ·.1))
+      (by simp) (by simp) (⟨i, x⟩ :: m.toList)
+    grind
+  rintro ⟨j, y⟩; simp
+  by_cases h₁ : j = i
+  · subst h₁; simp [eq_comm, get?_eq_none_of_not_mem h]
+  simp [h₁, get?_insert, ne_symm' h₁]
+
+include ha in
+theorem keys_insert_of_not_mem {i x} (h : i ∉ m) :
+(m.insert i x).keys = (i :: m.keys).mergeSort := by
+  simp [keys_eq_map_fst_toList, toList_insert_of_not_mem h]
+  apply List.eq_of_sortedLE_and_perm
+  · rw [List.map_mergeSort (s := (· ≤ ·)) (by simp)]
+    apply List.sortedLE_mergeSort
+  · apply List.sortedLE_mergeSort
+  simp
+  rw [List.perm_iff_mem_iff_of_nodup]; simp
+  on_goal 2 => simpa [←keys_eq_map_fst_toList]
+  rw [List.nodup_map_iff_inj_on]
+  rotate_left
+  · simp [get?_eq_none_of_not_mem h]
+  simp
+  split_ands
+  · rintro ⟨j, y⟩ h₁ rfl
+    simp [get?_eq_none_of_not_mem h] at h₁
+  rintro ⟨j, y⟩ h₁
+  dsimp at h₁ ⊢
+  split_ands
+  · rintro rfl; simp [get?_eq_none_of_not_mem h] at h₁
+  · grind
+
+@[simp]
+theorem get?_out_inner {i} : m.inner.out.get? i = m.get? i := by
+  rcases m with ⟨m⟩
+  induction m using Quotient.inductionOn
+  simp [get?, lift]
+
+@[simp]
+theorem get?_mk {m i} : ({inner := m} : ExtDHashMap α β).get? i = m.out.get? i := by
+  simp [get?, lift, Quotient.lift_eq]
+
+@[simp]
+theorem insert_mk {m i x} :
+({inner := m} : ExtDHashMap α β).insert i x = {inner := ⟦m.out.insert i x⟧} := by
+  simp [insert, lift, Quotient.lift_eq]
+
+@[simp]
+theorem erase_mk {m i} :
+({inner := m} : ExtDHashMap α β).erase i = {inner := ⟦m.out.erase i⟧} := by
+  simp [erase, lift, Quotient.lift_eq]
+
+@[simp]
+theorem insert_erase_eq_self_iff {i x} :
+(m.erase i).insert i x = m ↔ m.get? i = some x := by
+  constructor <;> intro h
+  · rw [←h]; simp
+  rw [ext_iff']
+  have h₁ := @DHashMap.insert_erase_equiv
+  specialize @h₁ α β _ _ m.inner.out i x _
+  · simpa
+  symm; apply h₁.symm.trans; symm; clear h₁
+  change (_ : DHashMap α β) ≈ _
+  rw [←Quotient.eq_mk_iff_out]
+  rcases m with ⟨m⟩
+  simp at h ⊢
+  apply DHashMap.equiv_iff_get?.mpr
+  intro j
+  ext y
+  simp [DHashMap.get?_insert]
+
+include ha in @[simp]
+theorem keys_eq_keys_iff {m₁ : ExtDHashMap α β} {m₂ : ExtDHashMap α γ} :
+m₁.keys = m₂.keys ↔ ∀ i, i ∈ m₁ ↔ i ∈ m₂ := by
+  induction m₂ using ind generalizing m₁
+  · simp [eq_empty_iff]
+  nm m₂ i x h₁ ih
+  simp
+  rw [keys_insert_of_not_mem h₁]
+  constructor
+  · intro h₂ j
+    replace h₂ := congrArg (j ∈ ·) h₂
+    simp at h₂
+    tauto
+  intro h₂
+  have h₃ : i ∈ m₁; grind
+  clear x
+  obtain ⟨x, h₄⟩ := get?_eq_some_of_mem h₃
+  have h₅ : m₁ = (m₁.erase i).insert i x
+  · symm; simpa
+  rw [h₅]
+  rw [keys_insert_of_not_mem (by simp)]
+  rw [List.mergeSort_eq_mergeSort_iff (by simp) (by simp) (by simp)]
+  simp; rw [List.perm_iff_mem_iff_of_nodup (by simp) (by simp)]; grind
+
+theorem toList_ofList [ha : LinearOrder α] {xs : List ((i : α) × β i)}
+(h : xs.map (·.1) |>.Nodup) : (ofList xs).toList = xs.mergeSort (·.1 ≤ ·.1) := by
+  apply List.eq_of_perm_of_pairwise (r := (·.1 ≤ ·.1)) <;> try simp
+  · simp [toList_ofList_perm h]
+  · grind [@List.pairwise_mergeSort ((i : α) × β i) (·.1 ≤ ·.1) (by simp) (by simp)]
+  · rintro ⟨i, x⟩ ⟨j, y⟩ h₁ h₂
+    dsimp
+    intro h₃ h₄
+    cases le_antisymm h₃ h₄
+    simp at h₁ h₂
+    grind
+
+theorem union_eq_union_iff_right (h₁ : ∀ i, i ∈ m → i ∉ m₁)
+(h₂ : ∀ i, i ∈ m → i ∉ m₂) : m ∪ m₁ = m ∪ m₂ ↔ m₁ = m₂ := by
+  simp [ext_iff, get?_union, Option.or]
+  simp [mem_iff_get?_eq_some] at h₁ h₂; grind

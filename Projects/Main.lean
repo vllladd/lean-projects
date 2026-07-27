@@ -114,6 +114,9 @@ import Projects.IO
 -- 
 -- -- theorem cnd_state₀ : Edge.cnd₀ state₀ := by native_decide
 
+-- def main : IO Unit := do
+--   IO.println # Esolangs.Cornucopia.prog₁.show
+--     ⟨["0", "1", "not", "bool", "add"]⟩
+
 def main : IO Unit := do
-  IO.println # Esolangs.Cornucopia.prog₁.show
-    ⟨["0", "1", "not", "bool", "add"]⟩
+  IO.println "ok"

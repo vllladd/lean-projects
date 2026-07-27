@@ -459,3 +459,8 @@ theorem τ_eq_of_ofPred [ha : Nonempty α] {p : α → Prop} {x}
   apply τ_eq_of; simpa using congrArg (x ∈ ·) h
   intro y hy; replace h := congrArg (y ∈ ·) h
   simp at h; tauto
+
+@[simp] theorem or_iff_or_left {p q r : Prop} : (p ∨ q ↔ p ∨ r) ↔ ¬p → (q ↔ r) := by tauto
+@[simp] theorem or_iff_or_right {p q r : Prop} : (p ∨ q ↔ r ∨ q) ↔ ¬q → (p ↔ r) := by tauto
+@[simp] theorem imp_not_imp_iff {p q : Prop} : p → ¬p → q ↔ True := by tauto
+@[simp] theorem not_imp_imp_iff {p q : Prop} : ¬p → p → q ↔ True := by tauto

@@ -1,74 +1,5 @@
 import Projects.Util
 
-def mkList {α : Type*} (n : ℕ) (f : ℕ → α) : List α :=
-  List.range n |>.map f
-
-instance : LinearOrder String where
-  le_refl := by grind
-  le_trans := by grind
-  le_antisymm := by grind
-  le_total := by grind
-  toDecidableLE := inferInstance
-  lt_iff_le_not_ge := by grind
-  min_def := by
-    intro a b; change ite _ _ _ = _; congr
-    change (Ordering.isLE (ite _ _ _) = _) = _
-    have h : (a < b) = ¬(b ≤ a); change _ = ¬¬_; simp
-    simp [apply_ite (f := Ordering.isLE)]; grind
-  max_def := by
-    intro a b; change ite _ _ _ = _; congr
-    change (Ordering.isLE (ite _ _ _) = _) = _
-    have h : (a < b) = ¬(b ≤ a); change _ = ¬¬_; simp
-    simp [apply_ite (f := Ordering.isLE)]; grind
-  compare_eq_compareOfLessAndEq := by
-    intro a b; change compareOfLessAndEq _ _ = _; congr
-
--- namespace List
--- 
--- variable {α β γ : Type*}
--- variable {xs ys zs : List α}
--- 
--- -- #check 0 #exit
--- 
--- end List
-
--- #check 0 #exit
-
-namespace Finset
-
-variable {α β γ : Type*}
-variable {s s₁ s₂ s₃ : Finset α}
-
-def fold' (s : Finset α) (f : β → α → β) (z : β)
-(h : ∀ {acc x y}, f (f acc x) y = f (f acc y) x) : β :=
-  haveI : RightCommutative f := ⟨@h⟩; s.val.foldl f z
-
--- #check 0 #exit
-
-end Finset
-
--- namespace Map
--- 
--- open Std
--- 
--- universe u v w
--- variable {α : Type u} {β : Type v} {γ : Type w}
--- variable [hh₁ : DecidableEq α] [hh₂ : Hashable α]
--- variable {mp : Map α β}
--- variable [ha : LinearOrder α]
--- omit ha
--- 
--- def ofFinset (s : Finset (α × β)) : Map α β :=
---   s.fold' (z := ∅) (λ m ⟨k, v⟩ => m.insert k v) #
---     by
---       intro m x y
---       simp
---       rw [insert_comm]
--- 
--- #check 0 #exit
--- 
--- end Map
-
 namespace Esolangs.Cornucopia
 
 def mainName : String := "main"
@@ -177,6 +108,7 @@ def Expr.eval (e : Expr) (prog : Prog) (fs : Map String (List ℕ → ℕ)) (arg
 
 structure Prog.Compatible (prog : Prog) (fs : Map String (List ℕ → ℕ)) : Prop where
   keys_fs : fs.keys = prog.defs.keys
+  get?_builtin {b : Builtin} : fs.get? b.name = b.eval
   eval_of_ne_arity ⦃name⦄ : prog.HasDef name → ∀ ⦃xs : List ℕ⦄,
     xs.length ≠ prog.arity name → fs.get! name xs = 0
   eval_eq ⦃name⦄ : prog.HasDef name → ∀ ⦃xs : List ℕ⦄, xs.length = prog.arity name →

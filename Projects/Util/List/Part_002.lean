@@ -560,3 +560,40 @@ theorem length_ge_iff_right {n} : n ≤ xs.length ↔
   constructor
   · intro h; use xs.take (xs.length - n), xs.drop (xs.length - n); simp; omega
   · rintro ⟨xs, ys, rfl, rfl⟩; simp
+
+@[simp]
+theorem length_mkList {n} {f : ℕ → α} : (mkList n f).length = n := by
+  simp [mkList]
+
+@[simp]
+theorem mem_mkList {n} {f : ℕ → α} {x} : x ∈ mkList n f ↔ ∃ i < n, f i = x := by
+  simp [mkList]
+
+theorem mergeSort_eq_mergeSort_iff {le : α → α → Bool}
+(trans : ∀ (a b c : α), le a b → le b c → le a c)
+(total : ∀ (a b : α), le a b || le b a)
+(antisymm : ∀ (a b : α), le a b → le b a → a = b) :
+xs.mergeSort le = ys.mergeSort le ↔ xs.Perm ys := by
+  use perm_of_mergeSort_eq_mergeSort
+  intro h
+  apply eq_of_perm_of_pairwise (r := (le · ·))
+  · simpa
+  · apply pairwise_mergeSort trans total
+  · apply pairwise_mergeSort trans total
+  · grind
+  · grind
+  · grind
+
+@[simp]
+theorem map_mkList {n} {f : ℕ → α} {g : α → β} :
+(mkList n f).map g = mkList n λ i => g (f i) := by
+  simp [mkList]
+
+@[simp]
+theorem getElem_mkList {n} {f : ℕ → α} {i}
+{h : i < (mkList n f).length} : (mkList n f)[i] = f i := by
+  simp [mkList]
+
+@[simp]
+theorem mkList_length_getElem! [ha : Inhabited α] : mkList xs.length (xs[·]!) = xs := by
+  simp [mkList]

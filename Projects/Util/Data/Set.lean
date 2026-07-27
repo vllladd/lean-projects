@@ -76,7 +76,7 @@ i ∈ s.insertP x ↔ i = x ∨ i ∈ s :=
 @[simp]
 theorem mem_insert {i j} :
 j ∈ s.insert i ↔ j = i ∨ j ∈ s := by
-  simp [Set'.insert, mem_def]; tauto
+  simp [Set'.insert, mem_def]
 
 @[simp]
 theorem mem_insert' {x i} :
@@ -213,7 +213,7 @@ theorem forall_mem_iff_all {p : α → Prop} [hp : DecidablePred p] :
   rcases s with ⟨⟨mp⟩⟩
   simp [all, Std.ExtDHashMap.all, mem_def]
   induction mp using Quotient.ind
-  simp [Std.ExtDHashMap.mem_iff_get?_eq_some]; rfl
+  simp [Std.ExtDHashMap.mem_iff_get?_eq_some]
 
 instance {p : α → Prop} [hp : DecidablePred p] : Decidable # ∀ x ∈ s, p x :=
   match h : s.all p with

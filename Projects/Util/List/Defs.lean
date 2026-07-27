@@ -14,6 +14,9 @@ instance {α : Type*} [ha : LinearOrder α] : Std.LawfulOrderMax α where
   max_eq_or := by simp [le_total]
   max_le_iff := by simp
 
+def mkList {α : Type*} (n : ℕ) (f : ℕ → α) : List α :=
+  List.range n |>.map f
+
 namespace List
 
 variable {α β γ : Type*}

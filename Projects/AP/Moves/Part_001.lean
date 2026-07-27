@@ -104,8 +104,7 @@ theorem State.mem_aVisitedIcc_iff_of {s f n s₁ p} [hs : sys.WF s]
   rcases hs' with hs' | hs'
   all_goals simp [hs'.aVisitedIcc_eq_of_tr h₂ h₃, ih]; clear ih
   · grind
-  apply iff_of_eq; congr 1; apply propext
-  apply exists_congr; intro k
+  intro h; apply exists_congr; intro k
   by_cases h : k ≠ n
   · simp [le_iff_eq_or_lt, h]
   push Not at h; subst h

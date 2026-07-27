@@ -109,7 +109,7 @@ i ∈ mp.insertP x ↔ i = x.1 ∨ i ∈ mp :=
 @[simp]
 theorem mem_insert' {i x j} :
 j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by
-  simp [mem_def]; tauto
+  simp [mem_def]
 
 @[simp]
 theorem mem_insert {x i} :

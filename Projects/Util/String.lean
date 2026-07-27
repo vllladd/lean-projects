@@ -205,3 +205,15 @@ def Nat.toStr' (xs : List Char) (n : ℕ) : List Char :=
 --   rw [Nat.toStr_of_base_lt h]
 --   simp [String.toNat_append]
 --   rw [ih] <;> omega
+
+instance : LinearOrder String where
+  le_refl := by grind
+  le_trans := by grind
+  le_antisymm := by grind
+  le_total := by grind
+  toDecidableLE := inferInstance
+  lt_iff_le_not_ge := by grind
+  min_def := by simp
+  max_def := by simp
+  compare_eq_compareOfLessAndEq := by
+    intro a b; change compareOfLessAndEq _ _ = _; congr

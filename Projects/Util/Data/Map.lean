@@ -108,7 +108,7 @@ i ∈ mp.insertP x ↔ i = x.1 ∨ i ∈ mp :=
 
 @[simp]
 theorem mem_insert' {i x j} : j ∈ mp.insert i x ↔ j = i ∨ j ∈ mp := by
-  simp [mem_def, Map.insert]; tauto
+  simp [mem_def, Map.insert]
 
 @[simp]
 theorem mem_insert {x i} : i ∈ Insert.insert x mp ↔ i = x.1 ∨ i ∈ mp :=
@@ -931,3 +931,148 @@ theorem get!_union_left [hb : Inhabited β] {i}
 theorem get!_union_right [hb : Inhabited β] {i}
 (h : i ∉ m₁) : (m₁ ∪ m₂).get! i = m₂.get! i := by
   simp [get!_eq_get!_get?, get?_union, get?_eq_none_of_not_mem h]
+
+theorem get!_insert [hb : Inhabited β] {i x j} :
+(mp.insert i x).get! j = if j = i then x else mp.get! j := by
+  simp [get!_eq_get!_get?, get?_insert]; grind
+
+theorem get?_ofList_eq_some_iff {xs : List (α × β)} {i x}
+(h : (xs.map (·.1)).Nodup) : (ofList xs).get? i = some x ↔ ⟨i, x⟩ ∈ xs := by
+  simp [ofList]; rw [ExtDHashMap.get?_ofList_eq_some_iff (by simpa)]; simp
+
+theorem get?_ofList_of_nodup {xs : List (α × β)} {i} (h : (xs.map (·.1)).Nodup) :
+(ofList xs).get? i = (xs.find? (·.fst = i)).map (·.2) := by
+  unfold Option.map; split
+  · nm a x h₁; clear a
+    rename' i => j
+    rcases x with ⟨i, x⟩
+    rw [get?_ofList_eq_some_iff h]
+    grind
+  nm a h₁; clear a
+  simp at h₁ ⊢
+  grind
+
+theorem get!_ofList_of_nodup [hb : Inhabited β] {xs : List (α × β)} {i}
+(h : (xs.map (·.1)).Nodup) : (ofList xs).get! i =
+((xs.find? (·.fst = i)).map (·.2)).get! := by
+  rw [get!_eq_get!_get?, get?_ofList_of_nodup h]
+
+@[simp]
+theorem mem_union {i} : i ∈ m₁ ∪ m₂ ↔ i ∈ m₁ ∨ i ∈ m₂ := by
+  simp [mem_iff_get?_eq_some, get?_union]; grind
+
+include ha in @[simp]
+theorem keys_mk {mp} : (⟨mp⟩ : Map α β).keys = mp.keys := rfl
+
+@[simp]
+theorem insert_mk {m i x} : (⟨m⟩ : Map α β).insert i x = ⟨m.insert i x⟩ := rfl
+
+@[simp]
+theorem erase_mk {m i} : (⟨m⟩ : Map α β).erase i = ⟨m.erase i⟩ := rfl
+
+include ha in
+theorem toList_insert_of_not_mem {i x} (h : i ∉ m) : (m.insert i x).toList =
+(⟨i, x⟩ :: m.toList).mergeSort (·.1 ≤ ·.1) := by
+  rcases m with ⟨m⟩; simp at h ⊢
+  rw [ExtDHashMap.toList_insert_of_not_mem h]
+  rw [List.map_mergeSort (s := (·.1 ≤ ·.1)) (by simp)]
+  simp
+
+include ha in
+theorem keys_insert_of_not_mem {i x} (h : i ∉ m) :
+(m.insert i x).keys = (i :: m.keys).mergeSort := by
+  rcases m with ⟨m⟩; simp at h ⊢
+  rw [ExtDHashMap.keys_insert_of_not_mem h]
+
+@[simp]
+theorem insert_erase_eq_self_iff {i x} :
+(m.erase i).insert i x = m ↔ m.get? i = some x := by
+  rcases m with ⟨m⟩; simp
+
+include ha in @[simp]
+theorem keys_eq_keys_iff {m₁ : Map α β} {m₂ : Map α γ} :
+m₁.keys = m₂.keys ↔ ∀ i, i ∈ m₁ ↔ i ∈ m₂ := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+theorem union_assoc : (m₁ ∪ m₂) ∪ m₃ = m₁ ∪ (m₂ ∪ m₃) := by
+  simp [ext_iff, get?_union]; grind
+
+@[simp]
+theorem union_self : m ∪ m = m := by
+  simp [ext_iff, get?_union]
+
+@[simp]
+theorem union_union_self : m₁ ∪ (m₁ ∪ m₂) = m₁ ∪ m₂ := by
+  simp [←union_assoc]
+
+def diff (m₁ m₂ : Map α β) : Map α β :=
+  ⟨m₁.1 \ m₂.1⟩
+
+instance : SDiff (Map α β) := ⟨diff⟩
+theorem diff_def : m₁ \ m₂ = m₁.diff m₂ := rfl
+
+@[simp]
+theorem mk_diff_mk {m₁ m₂} : (⟨m₁⟩ : Map α β) \ ⟨m₂⟩ = ⟨m₁ \ m₂⟩ := rfl
+
+theorem get?_diff {i} : (m₁ \ m₂).get? i = if i ∈ m₂ then none else m₁.get? i := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp [ExtDHashMap.get?_diff]
+
+@[simp]
+theorem union_diff_self : m₁ ∪ (m₂ \ m₁) = m₂ ∪ m₁ := by
+  simp [ext_iff, get?_union, get?_diff]
+  intro i
+  rw! (castMode := .all) [mem_iff_get?_eq_some]
+  split_ifs with h; grind
+  simp at h
+  rw [←Option.eq_none_iff_forall_ne_some] at h
+  grind
+
+theorem union_eq_self_left_iff : m₁ ∪ m₂ = m₁ ↔
+∀ i x, m₂.get? i = some x → m₁.get? i = some x := by
+  simp [ext_iff, get?_union, Option.or]; grind
+
+@[simp]
+theorem union_insert_empty {i x} : m₁ ∪ (∅ : Map α β).insert i x = m₁.insert i x := by
+  simp [ext_iff, get?_union, get?_insert]; grind
+
+theorem toList_ofList [ha : LinearOrder α] {xs : List (α × β)}
+(h : xs.map (·.1) |>.Nodup) : (ofList xs).toList = xs.mergeSort (·.1 ≤ ·.1) := by
+  simp [ofList]
+  have h₁ : xs.map Prod.toSigma |>.map (·.1) |>.Nodup
+  · rw [List.nodup_map_iff_inj_on]
+    rotate_left
+    · rw [List.nodup_iff_getElem_ne_getElem] at h ⊢
+      intro i j h₁ h₂ h₃
+      specialize h i j (by grind) (by grind) h₃
+      simp at h ⊢
+      grind
+    rintro ⟨i, x⟩ h₁ ⟨j, y⟩ h₂
+    simp at h₁ h₂ ⊢
+    rintro rfl; use rfl
+    rw [List.nodup_iff_getElem_ne_getElem] at h
+    simp at h
+    rw [List.mem_iff_getElem] at h₁ h₂
+    choose k h₁ h₃ using h₁
+    choose n h₂ h₄ using h₂
+    by_contra h₅
+    have h₆ : k ≠ n; grind
+    wlog h₇ : k < n with ih; grind
+    specialize h _ _ h₁ h₂ h₇
+    grind
+  have h₂ := ExtDHashMap.toList_ofList h₁
+  rw [h₂]; clear h₁ h₂
+  rw [List.map_mergeSort (s := (·.1 ≤ ·.1))] <;> simp
+
+theorem union_eq_union_iff_right (h₁ : ∀ i, i ∈ m → i ∉ m₁)
+(h₂ : ∀ i, i ∈ m → i ∉ m₂) : m ∪ m₁ = m ∪ m₂ ↔ m₁ = m₂ := by
+  simp [ext_iff, get?_union, Option.or]
+  simp [mem_iff_get?_eq_some] at h₁ h₂; grind
+
+theorem get?_union_ite {i} :
+(m₁ ∪ m₂).get? i = if i ∈ m₂ then m₂.get? i else m₁.get? i := by
+  rw! (castMode := .all) [mem_iff_get?_eq_some]
+  simp [get?_union, Option.or]; split_ifs <;> grind
+
+@[simp]
+theorem mem_diff {i} : i ∈ m₁ \ m₂ ↔ i ∈ m₁ ∧ i ∉ m₂ := by
+  rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
