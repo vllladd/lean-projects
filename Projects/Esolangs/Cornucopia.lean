@@ -1,3 +1,3 @@
 import Projects.Esolangs.Cornucopia.Defs
 import Projects.Esolangs.Cornucopia.Basic
-import Projects.Esolangs.Cornucopia.Prog1
+import Projects.Esolangs.Cornucopia.Programs

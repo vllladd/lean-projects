@@ -1,4 +1,4 @@
-import Projects.Esolangs.Cornucopia.Defs
+import Projects.Esolangs.Cornucopia.Show
 
 attribute [-simp] List.getElem!_eq_getElem?_getD
 
@@ -6,29 +6,47 @@ namespace Esolangs.Cornucopia
 
 structure CompatibleDefs (defs : Map String Def) (fs : Map String (List ℕ → ℕ)) : Prop where
   keys_fs : fs.keys = defs.keys
+  get?_eq' ⦃name d⦄ : defs.get? name = some d → fs.get? name = some (fn d.arity #
+    d.expr.eval ⟨builtinDefs ∪ .ofList defs.toList⟩ (builtinFs ∪ fs))
+
+structure CompatibleDefsAlt₁ (defs : Map String Def) (fs : Map String (List ℕ → ℕ)) : Prop where
+  keys_fs : fs.keys = defs.keys
   eval_of_ne_arity ⦃name d⦄ : defs.get? name = some d → ∀ ⦃xs : List ℕ⦄,
     xs.length ≠ d.arity → fs.get! name xs = 0
   eval_eq ⦃name d⦄ : defs.get? name = some d → ∀ ⦃xs : List ℕ⦄,
     xs.length = d.arity → fs.get! name xs = d.expr.eval
     ⟨builtinDefs ∪ .ofList defs.toList⟩ (builtinFs ∪ fs) xs
 
-structure WFDefs (defs : List (String × Def)) : Prop where
+structure WFDefs' (defs : List (String × Def)) : Prop where
   nodup_names : defs.map (·.1) |>.Nodup
   not_isBuiltin_of_mem ⦃name d⦄ : (name, d) ∈ defs → ¬IsBuiltin name
   wf_main : ∃ d, (mainName, d) ∈ defs ∧ d.arity = 1
   wf_def ⦃name d⦄ : (name, d) ∈ defs → d.WF (Prog.ofDefs defs)
-  exiu_compatible : ∃! fs, CompatibleDefs (.ofList defs) fs
 
--- #check 0 #exit
+def CompatibleCnd (defs : List (String × Def)) (fs : Map String (List ℕ → ℕ)) : Prop :=
+  CompatibleDefs (.ofList defs) fs ∧ ∀ fs', CompatibleDefs (.ofList defs) fs' →
+  ∀ name d f, (name, d) ∈ defs → fs'.get? name = some f → fs.get! name = f
+
+structure WFDefs defs extends WFDefs' defs where
+  compatible : ∃ fs, CompatibleCnd defs fs
+
+def findBuiltin (name : String) : Builtin :=
+  builtins.find? (·.name = name) |>.get!
 
 -----
+
+attribute [simp] BuiltinC.name_eq
+
+@[simp]
+theorem isBuiltin_iff {name} : IsBuiltin name ↔ ∃ (b : Builtin), b.name = name :=
+  ⟨(·.1), (⟨·⟩)⟩
 
 @[simp]
 theorem mem_builtins {b} : b ∈ builtins := by
   cases b <;> decide
 
 instance {name} : Decidable (IsBuiltin name) :=
-  decidable_of_bool (name ∈ builtinDefs) # by simp [IsBuiltin, builtinDefs]
+  decidable_of_bool (name ∈ builtinDefs) # by simp [builtinDefs]
 
 @[simp] theorem def_mk {defs name} : (Prog.mk defs).def name = defs.get! name := rfl
 @[simp] theorem def?_mk {defs name} : (Prog.mk defs).def? name = defs.get? name := rfl
@@ -41,19 +59,36 @@ instance {name} : Decidable (IsBuiltin name) :=
 
 @[simp]
 theorem mem_builtinDefs {name} : name ∈ builtinDefs ↔ IsBuiltin name := by
-  simp [builtinDefs, IsBuiltin]
+  simp [builtinDefs]
+
+@[simp]
+theorem mem_builtinFs {name} : name ∈ builtinFs ↔ IsBuiltin name := by
+  simp [builtinFs]
 
 @[simp]
 theorem not_isBuiltin_mainName : ¬IsBuiltin mainName := by
-  simp [IsBuiltin]; decide
+  simp; decide
 
 theorem Prog.def_ofDefs {xs name} (h : ¬IsBuiltin name) :
 (Prog.ofDefs xs).def name = (Map.ofList xs).get! name := by
-  simp [ofDefs]; rw [Map.get!_union_right]; simpa
+  simp [ofDefs]; rw [Map.get!_union_right]; simpa using h
 
 theorem arity_ofDefs {defs name} (h : ¬IsBuiltin name) :
 (Prog.ofDefs defs).arity name = ((Map.ofList defs).get! name).arity := by
   simp [Prog.arity, Prog.def_ofDefs h]
+
+@[simp]
+theorem BuiltinC.name_ne_mainName {name} [h : BuiltinC name] : name ≠ mainName := by
+  obtain ⟨⟨⟩, rfl⟩ := h <;> decide
+
+@[simp]
+theorem BuiltinC.mainName_ne_name {name} [h : BuiltinC name] : mainName ≠ name :=
+  ne_symm' h.name_ne_mainName
+
+@[instance, simp]
+instance {b : Builtin} : BuiltinC b.name where
+  b := b
+  name_eq := rfl
 
 @[simp]
 theorem Prog.main_ofDefs {xs} : (Prog.ofDefs xs).main = (Map.ofList xs).get! mainName := by
@@ -68,10 +103,6 @@ theorem Expr.wf_arg {prog n i} : (arg i).WF prog n ↔ i < n := by
   simp [WF]
 
 @[simp]
-theorem Builtin.isBuiltin {b : Builtin} : IsBuiltin b.name := by
-  simp [IsBuiltin]
-
-@[simp]
 theorem nodup_builtins : builtins.Nodup := by
   decide
 
@@ -80,8 +111,24 @@ theorem nodup_map_name_builtins : (builtins.map Builtin.name).Nodup := by
   decide
 
 @[simp]
-theorem Builtin.get?_builtinDefs {b : Builtin} : builtinDefs.get? b.name = some b.def := by
-  simp [builtinDefs, Map.get?_ofList_eq_some_iff]; use b
+theorem IsBuiltin.get?_builtinDefs {name} [h : BuiltinC name] :
+builtinDefs.get? name = some h.b.def := by
+  simp [builtinDefs, Map.get?_ofList_eq_some_iff]; use h.b; simp
+
+@[simp]
+theorem Builtin.ext_name {b₁ b₂ : Builtin} : b₁.name = b₂.name ↔ b₁ = b₂ := by
+  rcases b₁, b₂ with ⟨⟨⟩, ⟨⟩⟩ <;> decide
+
+@[simp] theorem Builtin.arity_def {b : Builtin} : b.def.arity = b.arity := rfl
+@[simp] theorem Builtin.expr_def {b : Builtin} : b.def.expr = b.expr := rfl
+
+@[simp]
+theorem Builtin.ext_def {b₁ b₂ : Builtin} : b₁.def = b₂.def ↔ b₁ = b₂ := by
+  rcases b₁, b₂ with ⟨⟨⟩, ⟨⟩⟩ <;> simp [Def.ext_iff]
+
+@[simp]
+theorem BuiltinC_builtin_of_name {b : Builtin} [h : BuiltinC b.name] : h.b = b := by
+  obtain ⟨b, h⟩ := h; simpa using h
 
 @[simp]
 theorem Builtin.get!_builtinDefs {b : Builtin} : builtinDefs.get! b.name = b.def := by
@@ -101,17 +148,6 @@ theorem Prog.hasDef_ofDefs {defs name} :
   simp [HasDef]
 
 @[simp]
-theorem Builtin.ext_name {b₁ b₂ : Builtin} : b₁.name = b₂.name ↔ b₁ = b₂ := by
-  rcases b₁, b₂ with ⟨⟨⟩, ⟨⟩⟩ <;> decide
-
-@[simp] theorem Builtin.arity_def {b : Builtin} : b.def.arity = b.arity := rfl
-@[simp] theorem Builtin.expr_def {b : Builtin} : b.def.expr = b.expr := rfl
-
-@[simp]
-theorem Builtin.ext_def {b₁ b₂ : Builtin} : b₁.def = b₂.def ↔ b₁ = b₂ := by
-  rcases b₁, b₂ with ⟨⟨⟩, ⟨⟩⟩ <;> simp [Def.ext_iff]
-
-@[simp]
 theorem get?_builtinDefs_eq_some {name d} :
 builtinDefs.get? name = some d ↔ ∃ (b : Builtin), b.name = name ∧ b.def = d := by
   simp [builtinDefs, Map.get?_ofList_of_nodup]
@@ -126,15 +162,13 @@ b.expr.WF prog b.arity ↔ ∃ d, prog.def? b.name = some d ∧ d.arity = b.arit
     Prog.arity, Prog.def, Map.get!_eq_get!_get?, Prog.def?]
   grind
 
-theorem WFDefs.not_mem_of_isBuiltin {defs name d} (H : WFDefs defs)
-(h : IsBuiltin name) : (name, d) ∉ defs := by
-  grind [H.not_isBuiltin_of_mem]
+theorem WFDefs'.builtin_not_mem {defs name d} (H : WFDefs' defs)
+[h : BuiltinC name] : (name, d) ∉ defs := by
+  obtain ⟨b, rfl⟩ := h
+  have h₁ := H.not_isBuiltin_of_mem
+  simp at h₁; grind
 
-theorem WFDefs.not_mem_builtin {defs} {b : Builtin} {d}
-(H : WFDefs defs) : (b.name, d) ∉ defs := by
-  apply H.not_mem_of_isBuiltin; simp
-
-theorem WFDefs.get?_ofList_defs {defs name d} (H : WFDefs defs) :
+theorem WFDefs'.get?_ofList_defs {defs name d} (H : WFDefs' defs) :
 (Map.ofList defs).get? name = some d ↔ (name, d) ∈ defs :=
   Map.get?_ofList_eq_some_iff H.nodup_names
 
@@ -147,23 +181,23 @@ theorem Builtin.get?_namesMap {b : Builtin} : namesMap.get? b.name = some b := b
 theorem Builtin.get!_namesMap {b : Builtin} : namesMap.get! b.name = b := by
   simp [Map.get!_eq_get!_get?]
 
-theorem Builtin.name_get!_namesMap_of_isBuiltin {name} (h : IsBuiltin name) :
+theorem Builtin.builtin_get!_namesMap {name} [h : BuiltinC name] :
 (namesMap.get! name).name = name := by
   obtain ⟨b, rfl⟩ := h; simp
 
-theorem WFDefs.isBuiltin_or {defs name d} (H : WFDefs defs)
+theorem WFDefs'.isBuiltin_or {defs name d} (H : WFDefs' defs)
 (h : (builtinDefs ∪ .ofList defs).get? name = some d) :
 IsBuiltin name ∨ (name, d) ∈ defs := by
   rw [or_iff_not_imp_left]
-  intro h₂
+  intro h₂; simp at h₂
   rw [Map.get?_union_right (by simpa)] at h
   rw [H.get?_ofList_defs] at h
   exact h
 
-theorem WFDefs.hasDef {defs name d} (H : WFDefs defs)
+theorem WFDefs'.hasDef {defs name d} (H : WFDefs' defs)
 (h : (builtinDefs ∪ .ofList defs).get? name = some d) :
 (Prog.ofDefs defs).HasDef name := by
-  have := H.isBuiltin_or h; simp; tauto
+  have := H.isBuiltin_or h; simp [-isBuiltin_iff]; tauto
 
 theorem Prog.def_eq_get!_def? {prog : Prog} {name} :
 prog.def name = (prog.def? name).get! := by
@@ -189,13 +223,21 @@ theorem Prog.expr_of_get? {defs name d}
 (Prog.ofDefs defs).expr name = d.expr := by
   simp [expr, def_of_get? h]
 
-theorem WFDefs.get?_builtin {defs} {b : Builtin} (H : WFDefs defs) :
-(builtinDefs ∪ .ofList defs).get? b.name = some b.def := by
-  rw [Map.get?_union_left # by simp [H.not_mem_builtin]]; simp
+theorem WFDefs'.not_mem_builtinDefs {defs name d} (H : WFDefs' defs)
+(h : (name, d) ∈ defs) : name ∉ builtinDefs := by
+  simp; rintro b rfl; simp [H.builtin_not_mem] at h
 
-theorem WFDefs.get?_of_mem_defs {defs} (H : WFDefs defs) {name d}
+theorem WFDefs'.not_mem_builtinFs {defs name d} (H : WFDefs' defs)
+(h : (name, d) ∈ defs) : name ∉ builtinFs := by
+  simp; rintro b rfl; simp [H.builtin_not_mem] at h
+
+theorem WFDefs'.get?_builtin {defs} {b : Builtin} (H : WFDefs' defs) :
+(builtinDefs ∪ .ofList defs).get? b.name = some b.def := by
+  rw [Map.get?_union_left # by simp [H.builtin_not_mem]]; simp
+
+theorem WFDefs'.get?_of_mem_defs {defs} (H : WFDefs' defs) {name d}
 (h : (name, d) ∈ defs) : (builtinDefs ∪ .ofList defs).get? name = some d := by
-  rw [Map.get?_union_right # by simp [H.not_isBuiltin_of_mem h]]
+  rw [Map.get?_union_right # H.not_mem_builtinDefs h]
   rw [Map.get?_ofList_of_nodup H.nodup_names]
   simp; use name
   rw [List.find?_eq_some_iff_of_at_most_one]; grind
@@ -207,44 +249,44 @@ theorem WFDefs.get?_of_mem_defs {defs} (H : WFDefs defs) {name d}
   rw [List.nodup_map_iff_inj_on # List.Nodup.of_map _ h₃] at h₃
   grind
 
-theorem WFDefs.def?_builtin {defs} {b : Builtin} (H : WFDefs defs) :
+theorem WFDefs'.def?_builtin {defs} {b : Builtin} (H : WFDefs' defs) :
 (Prog.ofDefs defs).def? b.name = some b.def := by
   simp [Prog.ofDefs, H.get?_builtin]
 
-theorem WFDefs.def_builtin {defs} {b : Builtin} (H : WFDefs defs) :
+theorem WFDefs'.def_builtin {defs} {b : Builtin} (H : WFDefs' defs) :
 (Prog.ofDefs defs).def b.name = b.def := by
   simp [Prog.def_eq_get!_def?, H.def?_builtin]
 
-theorem WFDefs.arity_builtin {defs} {b : Builtin} (H : WFDefs defs) :
+theorem WFDefs'.arity_builtin {defs} {b : Builtin} (H : WFDefs' defs) :
 (Prog.ofDefs defs).arity b.name = b.arity := by
   simp [Prog.arity, H.def_builtin]
 
-theorem WFDefs.expr_builtin {defs} {b : Builtin} (H : WFDefs defs) :
+theorem WFDefs'.expr_builtin {defs} {b : Builtin} (H : WFDefs' defs) :
 (Prog.ofDefs defs).expr b.name = b.expr := by
   simp [Prog.expr, H.def_builtin]
 
-theorem WFDefs.def?_of_mem_defs {defs name d} (H : WFDefs defs)
+theorem WFDefs'.def?_of_mem_defs {defs name d} (H : WFDefs' defs)
 (h : (name, d) ∈ defs) : (Prog.ofDefs defs).def? name = some d :=
   H.get?_of_mem_defs h
 
-theorem WFDefs.def_of_mem_defs {defs name d} (H : WFDefs defs)
+theorem WFDefs'.def_of_mem_defs {defs name d} (H : WFDefs' defs)
 (h : (name, d) ∈ defs) : (Prog.ofDefs defs).def name = d := by
   simp [Prog.def_eq_get!_def?, H.def?_of_mem_defs h]
 
-theorem WFDefs.arity_of_mem_defs {defs name d} (H : WFDefs defs)
+theorem WFDefs'.arity_of_mem_defs {defs name d} (H : WFDefs' defs)
 (h : (name, d) ∈ defs) : (Prog.ofDefs defs).arity name = d.arity := by
   simp [Prog.arity, H.def_of_mem_defs h]
 
-theorem WFDefs.expr_of_mem_defs {defs name d} (H : WFDefs defs)
+theorem WFDefs'.expr_of_mem_defs {defs name d} (H : WFDefs' defs)
 (h : (name, d) ∈ defs) : (Prog.ofDefs defs).expr name = d.expr := by
   simp [Prog.expr, H.def_of_mem_defs h]
 
 @[simp]
 theorem mem_builtinFS {name} : name ∈ builtinFs ↔ IsBuiltin name := by
-  simp [builtinFs, IsBuiltin]
+  simp [builtinFs]
 
-theorem WFDefs.builtin_not_mem_defs {defs} {b : Builtin} {d}
-(H : WFDefs defs) : (b.name, d) ∉ defs := by
+theorem WFDefs'.builtin_not_mem_defs {defs} {b : Builtin} {d}
+(H : WFDefs' defs) : (b.name, d) ∉ defs := by
   intro h; replace h := H.not_isBuiltin_of_mem h; simp at h
 
 @[simp]
@@ -259,14 +301,41 @@ theorem Builtin.eval_of_ne_arity {b : Builtin} {xs}
 (h : xs.length ≠ b.arity) : b.eval xs = 0 := by
   simp at h ⊢; simp [Builtin.eval, fn, h]
 
-theorem CompatibleDefs.get?_builtin {defs fs} (H : WFDefs defs)
+theorem compatibleDefs_iff_alt₁ {defs fs} :
+CompatibleDefs defs fs ↔ CompatibleDefsAlt₁ defs fs := by
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    use h₁
+    all_goals
+      intro name d h₃ xs h₄
+      specialize @h₂ name d h₃
+      simp [Map.get!_eq_get!_get?] at h₂ ⊢
+      rw [h₂]
+      simp [fn, h₄]
+  · rintro ⟨h₁, h₂, h₃⟩
+    simp [Map.get!_eq_get!_get?] at h₂ h₃ ⊢
+    use h₁
+    intro name d h₄
+    simp
+    obtain ⟨f, h₅⟩ : ∃ f, fs.get? name = some f
+    · simp [Map.mem_iff_get?_eq_some] at h₁; simp [h₁, h₄]
+    specialize h₂ h₄
+    specialize h₃ h₄
+    simp [h₅] at h₂ h₃ ⊢
+    ext; simp [fn]; grind
+
+theorem CompatibleDefs.alt₁ {defs fs}
+(h : CompatibleDefs defs fs) : CompatibleDefsAlt₁ defs fs :=
+  compatibleDefs_iff_alt₁.mp h
+
+theorem CompatibleDefs.get?_builtin {defs fs} (H : WFDefs' defs)
 (H₁ : CompatibleDefs (.ofList defs) fs) (b : Builtin) :
 (builtinFs ∪ fs).get? b.name = some b.eval := by
   have h₃ := H₁.keys_fs; simp at h₃
   rw [Map.get?_union_left]; simp
   simp [h₃]; intro d; apply H.builtin_not_mem_defs
 
-theorem CompatibleDefs.get!_builtin {defs fs} (H : WFDefs defs)
+theorem CompatibleDefs.get!_builtin {defs fs} (H : WFDefs' defs)
 (H₁ : CompatibleDefs (.ofList defs) fs) (b : Builtin) :
 (builtinFs ∪ fs).get! b.name = b.eval := by
   simp [Map.get!_eq_get!_get?, H₁.get?_builtin H]
@@ -285,60 +354,52 @@ theorem Prog.WF.def_builtin  {prog : Prog} {b : Builtin} [H : prog.WF] :
 prog.def b.name = b.def := by
   simp [def_eq_get!_def?, H.def?_builtin]
 
-@[simp]
-theorem Builtin.name_ne_mainName {b : Builtin} : b.name ≠ mainName := by
-  cases b <;> decide
-
-@[simp]
-theorem Builtin.mainName_ne_name {b : Builtin} : mainName ≠ b.name :=
-  ne_symm' b.name_ne_mainName
-
 theorem Prog.Compatible.builtinFs_union {defs fs}
 (H : (Prog.ofDefs defs).Compatible fs) : fs ∪ builtinFs = fs := by
   rw [Map.union_eq_self_left_iff]
   intro name f h
   simp at h
   obtain ⟨b, rfl, rfl⟩ := h
-  exact H.get?_builtin
+  apply H.get?_builtin'
 
-theorem WFDefs.get?_fs_of_mem_defs {defs fs name d} (H : WFDefs defs)
+theorem WFDefs'.get?_fs_of_mem_defs {defs fs name d} (H : WFDefs' defs)
 (h : (name, d) ∈ defs) : (builtinFs ∪ fs).get? name = fs.get? name := by
-  simp [Map.get?_union_right, H.not_isBuiltin_of_mem h]
+  simp only [mem_builtinFS, H.not_isBuiltin_of_mem h, not_false_eq_true, Map.get?_union_right]
 
-theorem WFDefs.get!_fs_of_mem_defs {defs fs name d} (H : WFDefs defs)
+theorem WFDefs'.get!_fs_of_mem_defs {defs fs name d} (H : WFDefs' defs)
 (h : (name, d) ∈ defs) : (builtinFs ∪ fs).get! name = fs.get! name := by
   simp [Map.get!_eq_get!_get?, H.get?_fs_of_mem_defs h]
 
-theorem WFDefs.get?_of_mem_defs' {defs} (H : WFDefs defs) {name d}
+theorem WFDefs'.get?_of_mem_defs' {defs} (H : WFDefs' defs) {name d}
 (h : (name, d) ∈ defs) : (Map.ofList defs).get? name = some d := by
   rwa [Map.get?_ofList_eq_some_iff H.nodup_names]
 
-theorem WFDefs.toList_defs {defs} (H : WFDefs defs) :
+theorem WFDefs'.toList_defs {defs} (H : WFDefs' defs) :
 (Map.ofList defs).toList = defs.mergeSort (·.1 ≤ ·.1) :=
   Map.toList_ofList H.nodup_names
 
 theorem Prog.Compatible.union_builtinFs {prog : Prog} {fs}
 (H : prog.Compatible fs) : fs ∪ builtinFs = fs := by
-  have h₁ := @H.get?_builtin
+  have h₁ := @H.get?_builtin'
   ext name : 1
   rw [Map.get?_union_ite]
   simp
-  rintro ⟨b, rfl⟩
+  rintro b rfl
   simp [h₁]
 
 theorem Prog.Compatible.fs_eq_union {prog : Prog} {fs} (H : prog.Compatible fs) :
 ∃ fs', fs = builtinFs ∪ fs' ∧ ∀ (b : Builtin), b.name ∉ fs' := by
   use fs \ builtinFs; simp [H.union_builtinFs]
 
-theorem CompatibleDefs.builtin_not_mem {defs fs} (H : WFDefs defs)
+theorem CompatibleDefs.builtin_not_mem {defs fs} (H : WFDefs' defs)
 (H₁ : CompatibleDefs (.ofList defs) fs) (b : Builtin) : b.name ∉ fs := by
   have h₁ := congrArg (b.name ∈ ·) H₁.keys_fs
-  simp at h₁; simp [h₁]; intro d; exact H.not_mem_builtin
+  simp at h₁; simp [h₁]; intro d; exact H.builtin_not_mem
 
 @[simp] theorem Builtin.eval_succ : Builtin.succ.eval = fn 1 (·[0]! + 1) := rfl
 @[simp] theorem Builtin.eval_sub : Builtin.sub.eval = fn 2 (λ xs => xs[0]! - xs[1]!) := rfl
 
-theorem WFDefs.compatible_fs_aux₁ {defs fs} (H : WFDefs defs)
+theorem WFDefs'.compatible_fs_aux₁ {defs fs} (H : WFDefs' defs)
 (H₁ : CompatibleDefs (Map.ofList defs) fs) :
 (Prog.ofDefs defs).Compatible (builtinFs ∪ fs) := by
   constructor
@@ -361,10 +422,9 @@ theorem WFDefs.compatible_fs_aux₁ {defs fs} (H : WFDefs defs)
     rw [h₃] at h₁
     choose d h₁ using h₁
     rw [H.arity_of_mem_defs h₁] at h₂
-    have h₄ := @H₁.eval_of_ne_arity name
+    have h₄ := @H₁.alt₁.eval_of_ne_arity name
     specialize @h₄ d (H.get?_of_mem_defs' h₁) xs h₂
-    rwa [Map.get!_union_right]
-    simp [H.not_isBuiltin_of_mem h₁]
+    rwa [Map.get!_union_right # H.not_mem_builtinFs h₁]
   · intro name h₁ xs h₂
     simp at h₁
     have h₃ := H₁.keys_fs
@@ -377,20 +437,20 @@ theorem WFDefs.compatible_fs_aux₁ {defs fs} (H : WFDefs defs)
       simp [←h₂]
     · symm
       rw [H.get!_fs_of_mem_defs h₁, H.expr_of_mem_defs h₁]
-      have h₄ := @H₁.eval_eq
+      have h₄ := @H₁.alt₁.eval_eq
       rw [H.arity_of_mem_defs h₁] at h₂
       specialize @h₄ name d (H.get?_of_mem_defs' h₁) xs h₂
       rw [h₄]; clear h₄
       congr 1
       simp [Prog.ofDefs]
 
-theorem WFDefs.compatible_fs_aux₂ {defs fs'} (H : WFDefs defs)
+theorem WFDefs'.compatible_fs_aux₂ {defs fs'} (H : WFDefs' defs)
 (H₂ : (Prog.ofDefs defs).Compatible (builtinFs ∪ fs'))
 (h : ∀ (b : Builtin), b.name ∉ fs') :
 CompatibleDefs (.ofList defs) fs' := by
-  constructor
+  rw [compatibleDefs_iff_alt₁]; constructor
   · have h₁ := H₂.keys_fs
-    simp [IsBuiltin] at h₁
+    simp at h₁
     simp
     intro name
     specialize h₁ name
@@ -405,15 +465,52 @@ CompatibleDefs (.ofList defs) fs' := by
     rw [Map.get?_ofList_eq_some_iff H.nodup_names] at h₁
     have h₃ := @H₂.eval_of_ne_arity
     specialize @h₃ name (by simp; tauto) xs (by simpa [H.arity_of_mem_defs h₁])
-    rwa [Map.get!_union_right # by simp [H.not_isBuiltin_of_mem h₁]] at h₃
+    rwa [Map.get!_union_right # H.not_mem_builtinFs h₁] at h₃
   · intro name d h₁ xs h₂
     rw [Map.get?_ofList_eq_some_iff H.nodup_names] at h₁
     have h₃ := @H₂.eval_eq
     specialize @h₃ name (by simp; tauto) xs (by simpa [H.arity_of_mem_defs h₁])
-    rw [Map.get!_union_right # by simp [H.not_isBuiltin_of_mem h₁]] at h₃
+    rw [Map.get!_union_right # H.not_mem_builtinFs h₁] at h₃
     rw [h₃]; clear h₃
     simp [H.expr_of_mem_defs h₁]
     congr 1
+
+theorem CompatibleDefs.exi_mem_defs_of_get? {defs fs name f}
+(H : CompatibleDefs (.ofList defs) fs)
+(h : fs.get? name = some f) : ∃ d, (name, d) ∈ defs := by
+  have h₁ := H.keys_fs; simp at h₁
+  replace h := Map.mem_of_get?_eq_some h
+  simpa [h₁] using h
+
+theorem CompatibleDefs.exi_get?_defs_of_get? {defs fs name f}
+(H : CompatibleDefs defs fs)
+(h : fs.get? name = some f) : ∃ d, defs.get? name = some d := by
+  have h₁ := H.keys_fs; simp at h₁
+  replace h := Map.mem_of_get?_eq_some h
+  rw [h₁] at h; simpa [Map.mem_iff_get?_eq_some] using h
+
+theorem WFDefs.exiu_compatible {defs} (H : WFDefs defs) :
+∃! fs, CompatibleDefs (.ofList defs) fs := by
+  obtain ⟨fs, h₁, h₂⟩ := H.compatible
+  use fs, h₁
+  intro fs' h₃
+  ext name f
+  have h₄ : fs.keys = fs'.keys
+  · grind [h₁.keys_fs, h₃.keys_fs]
+  simp [Map.mem_iff_get?_eq_some] at h₄
+  specialize h₄ name
+  simp [Map.get!_eq_get!_get?] at h₂
+  constructor <;> intro h₅ <;> simp [h₅] at h₄
+  · rename' f => f'
+    choose f h₄ using h₄
+    specialize h₂ fs' h₃ name (Map.ofList defs |>.get? name |>.get!) f'
+    simp [h₄]; choose d h₆ using h₁.exi_get?_defs_of_get? h₄
+    grind [h₂ # by simp [←H.get?_ofList_defs, h₆]]
+  · choose f' h₄ using h₄
+    specialize h₂ fs' h₃ name (Map.ofList defs |>.get? name |>.get!) f'
+    simp [h₄]
+    choose d h₆ using h₁.exi_get?_defs_of_get? h₅
+    grind [h₂ # by simp [←H.get?_ofList_defs, h₆]]
 
 theorem WFDefs.compatible_fs {defs} (H : WFDefs defs) :
 ∃! fs, (Prog.ofDefs defs).Compatible fs := by
@@ -423,17 +520,44 @@ theorem WFDefs.compatible_fs {defs} (H : WFDefs defs) :
   use H.compatible_fs_aux₁ H₁
   intro fs' h
   obtain ⟨fs', rfl, h₁⟩ := h.fs_eq_union
-  rw [Map.union_eq_union_iff_right # by simpa [IsBuiltin]]
+  rw [Map.union_eq_union_iff_right # by simpa]
   rotate_left
-  · simp [IsBuiltin]; exact H₁.builtin_not_mem H
+  · simp; exact H₁.builtin_not_mem H.toWFDefs'
   apply H₂; exact H.compatible_fs_aux₂ h h₁
 
-theorem WFDefs.wf {defs} (H : WFDefs defs) : (Prog.ofDefs defs).WF := by
+@[simp]
+theorem IsBuiltin.name_findBuiltin {name} [h : IsBuiltin name] :
+(findBuiltin name).name = name := by
+  obtain ⟨b, h⟩ := h
+  unfold findBuiltin Option.get!
+  split
+  rotate_left
+  · nm x h₁; clear x
+    simp at h₁
+    specialize h₁ b
+    contradiction
+  nm x b' h₁; clear x
+  rw [List.find?_eq_some_iff_of_at_most_one] at h₁
+  rotate_left
+  · simp
+    rintro b₁ b₂ rfl
+    simp [eq_comm]
+  simpa using h₁
+
+@[simp]
+instance BuiltinC.isBuiltin {name} [h : BuiltinC name] : IsBuiltin name where
+  h := ⟨h.b, by simp⟩
+
+instance IsBuiltin.BuiltinC {name} [h : IsBuiltin name] : BuiltinC name where
+  b := findBuiltin name
+  name_eq := h.name_findBuiltin
+
+theorem WFDefs'.wf' {defs} (H : WFDefs' defs) : (Prog.ofDefs defs).WF' := by
   constructor
   · intro b
     simp [Prog.ofDefs]
     rw [Map.get?_union_left]; simp
-    simp [H.not_mem_of_isBuiltin]
+    simp [H.builtin_not_mem]
   · simp; grind [H.wf_main]
   · obtain ⟨d, h₁, h₂⟩ := H.wf_main
     have h₃ := H.nodup_names
@@ -461,16 +585,17 @@ theorem WFDefs.wf {defs} (H : WFDefs defs) : (Prog.ofDefs defs).WF := by
     simp [Prog.ofDefs] at h₁
     by_cases h₂ : IsBuiltin name
     · clear h
-      have h₀ := λ d => H.not_mem_of_isBuiltin h₂ (d := d)
+      have h₀ := λ d => H.builtin_not_mem (name := name) (d := d)
       rw [Map.get?_union_left # by simp [h₀]] at h₁
       simp at h₁
       obtain ⟨b, rfl, rfl⟩ := h₁
       simp [Def.WF]
+      obtain ⟨b, rfl⟩ := h₂
       use b.def
       simp [Prog.ofDefs]
       rw [Map.get?_union_left # by simp [h₀]]
       simp
-    rw [Map.get?_union_right (by simpa)] at h₁
+    rw [Map.get?_union_right (by simpa using h₂)] at h₁
     rw [Map.get?_ofList_of_nodup H.nodup_names] at h₁
     simp at h₁
     choose d' h₁ using h₁
@@ -482,9 +607,9 @@ theorem WFDefs.wf {defs} (H : WFDefs defs) : (Prog.ofDefs defs).WF := by
     rintro rfl rfl
     simp
     grind
-  · exact H.compatible_fs
 
-theorem wf_of_wfDefs {defs} (H : WFDefs defs) : (Prog.ofDefs defs).WF := H.wf
+theorem WFDefs.wf {defs} (H : WFDefs defs) : (Prog.ofDefs defs).WF := by
+  haveI := H.wf'; constructor; exact H.compatible_fs
 
 @[simp]
 theorem Expr.run_call {prog fs args t xs} : (Expr.call t xs).eval prog fs args =
@@ -510,104 +635,107 @@ instance {prog : Prog} {i} : Decidable # prog.HasDef i := by
 instance {prog : Prog} {t} : Decidable # prog.HasDef t := by
   unfold Prog.HasDef; infer_instance
 
--- example : ¬∀ {defs} (H : WFDefs defs),
--- ∃! fs, (Prog.ofDefs defs).Compatible fs := by
---   simp [not_exiu_iff]
---   use [(mainName, ⟨1, exprId⟩)]
---   split_ands
---   ·
---     constructor <;> simp
---     use .ofList [(mainName, fn 1 (·[0]!))]
---     simp
---     split_ands
---     ·
---       constructor <;> simp [Map.get?_insert, Map.get!_eq_get!_get?, fn, exprId]
---     ·
---       intro fs
---       rintro ⟨h₁, h₂, h₃⟩
---       simp [Map.get?_insert, Map.get!_eq_get!_get?, exprId] at h₁ h₂ h₃
---       simp [Map.ext_iff, Map.get?_insert]
---       intro name
---       rw! (castMode := .all) [eq_comm (a := mainName)]
---       split_ifs with h₄
---       rotate_left
---       ·
---         simp [←h₁] at h₄
---         simpa
---       subst h₄
---       specialize h₁ mainName
---       simp at h₁
---       rw [Map.mem_iff_get?_eq_some] at h₁
---       choose f h₁ using h₁
---       ext xs
---       simp [h₁]
---       unfold fn
---       simp
---       revert xs
---       simp
---       ext xs
---       split_ifs with h₄
---       ·
---         specialize h₃ h₄
---         simp [h₁] at h₃
---         rw [h₃]
---       ·
---         specialize h₂ h₄
---         simp [h₁] at h₂
---         rw [h₂]
+@[simp]
+theorem fn_eq_fn_iff {n f g} : fn n f = fn n g ↔
+∀ (xs : List ℕ), xs.length = n → f xs = g xs := by
+  simp [funext_iff, fn]; grind
 
------
------
------
+theorem CompatibleDefs.eval_eq {defs : List (String × Def)} {fs name d}
+(H : CompatibleDefs (.ofList defs) fs) (h : (name, d) ∈ defs)
+(hh : defs.map (·.1) |>.Nodup := by simp) : fs.get? name = some (fn d.arity #
+  d.expr.eval ⟨builtinDefs ∪ .ofList defs⟩ (builtinFs ∪ fs)) := by
+  have h₁ := @H.get?_eq' name d # by rwa [Map.get?_ofList_eq_some_iff hh]
+  convert h₁ using 3; simp
 
--- def exprId : Expr :=
---   .arg 0
--- 
--- def exprLoop (name : String) : Expr :=
---   .call name [.arg 0]
--- 
--- def progId : Prog :=
---   .ofDefs [(mainName, ⟨1, exprId⟩)]
--- 
--- def progLoop : Prog :=
---   .ofDefs [(mainName, ⟨1, exprLoop mainName⟩)]
+theorem WFDefs'.compatible {defs fs} (H : WFDefs' defs)
+(H₁ : CompatibleDefs (Map.ofList defs) fs) :
+(Prog.ofDefs defs).Compatible (builtinFs ∪ fs) :=
+  H.compatible_fs_aux₁ H₁
 
--- @[simp]
--- theorem main_progId : progId.main = ⟨1, exprId⟩ := by
---   simp [progId, Map.get!_insert]
--- 
--- @[simp]
--- theorem main_progLoop : progLoop.main = ⟨1, exprLoop mainName⟩ := by
---   simp [progLoop, Map.get!_insert]
--- 
--- @[simp] theorem wf_exprId {prog} : exprId.WF prog 1 := by simp [Expr.WF, exprId]
--- @[simp] theorem wf_defId : (Def.mk 1 (.arg 0)).WF progId := wf_exprId
+theorem WFDefs'.wfDefs {defs} (H : WFDefs' defs)
+(h : ∃ fs, CompatibleCnd defs fs) : WFDefs defs where
+  toWFDefs' := H
+  compatible := h
 
--- theorem not_wf_progLoop : ¬progLoop.WF := by
---   unfold progLoop exprLoop
---   rintro ⟨-, -, -, h⟩; contrapose! h; clear h
---   rw [not_exiu_iff_or]; right
---   use [fn 1 λ _ => 0], [fn 1 λ _ => 1]; unfold fn
---   simp; split_ands <;> try constructor <;> simp
---   apply ne_of_congr (· [0]); simp
--- 
--- @[simp]
--- theorem eval_exprId {prog fs xs} : exprId.eval prog fs xs = xs[0]! := by
---   simp [exprId]
--- 
--- @[simp]
--- theorem run_progId {n} : progId.run n = n := by
---   simp [Prog.run, Prog.eval]; have h := @progId.compatible_fs.eval_eq
---   simp at h; specialize @h [n]; simpa using h
+theorem WFDefs'.wf {defs} (H : WFDefs' defs)
+(h : ∃ fs, CompatibleCnd defs fs) : (Prog.ofDefs defs).WF :=
+  H.wfDefs h |>.wf
 
--- @[simp, instance]
--- theorem wf_progId : progId.WF := by
---   apply wf_of_wfDefs
---   constructor <;> try simp
---   use .ofList [(mainName, fn 1 λ xs => xs[0]!)]
---   split_ands
---   ·
---     dsimp
---     constructor
---     ·
---       simp
+instance BuiltinC.succ : BuiltinC succName := ⟨Builtin.succ, rfl⟩
+instance BuiltinC.sub : BuiltinC subName := ⟨.sub, rfl⟩
+
+@[simp]
+theorem BuiltinC.b_succ [h : BuiltinC succName] : h.b = .succ := by
+  obtain ⟨b', h⟩ := h; change b' = _; rw [←Builtin.ext_name, h]; rfl
+
+@[simp]
+theorem BuiltinC.b_sub [h : BuiltinC subName] : h.b = .sub := by
+  obtain ⟨b', h⟩ := h; change b' = _; rw [←Builtin.ext_name, h]; rfl
+
+@[simp]
+theorem BuiltinC.exi_eq_name {name} [h : BuiltinC name] :
+∃ (b : Builtin), b.name = name := ⟨_, h.name_eq⟩
+
+@[simp]
+theorem BuiltinC.not_forall_ne_name {name} [h : BuiltinC name] :
+¬∀ (b : Builtin), b.name ≠ name := by simp
+
+@[simp] theorem Builtin.name_succ : Builtin.succ.name = succName := rfl
+@[simp] theorem Builtin.name_sub : Builtin.sub.name = subName := rfl
+
+@[simp] theorem subName_ne_succName : subName ≠ succName := by decide
+@[simp] theorem succName_ne_subName : succName ≠ subName := by decide
+
+@[simp]
+theorem Builtin.name_eq_succName {b : Builtin} : b.name = succName ↔ b = .succ := by
+  rw [←ext_name]; rfl
+
+@[simp]
+theorem Builtin.name_eq_subName {b : Builtin} : b.name = subName ↔ b = .sub := by
+  rw [←ext_name]; rfl
+
+@[simp]
+theorem BuiltinC.builtin_succName [h : BuiltinC succName] : h.b = .succ := by
+  obtain ⟨b', h⟩ := h; change b' = _; simpa using h
+
+@[simp]
+theorem BuiltinC.builtin_subName [h : BuiltinC subName] : h.b = .sub := by
+  obtain ⟨b', h⟩ := h; change b' = _; simpa using h
+
+@[simp]
+theorem get?_succName_builtinDefs : builtinDefs.get? succName = some Builtin.succ.def := by
+  simp [builtinDefs, builtins, Map.ofList_eq_foldl, Map.get?_insert]
+
+@[simp]
+theorem get?_subName_builtinDefs : builtinDefs.get? subName = some Builtin.sub.def := by
+  simp [builtinDefs, builtins, Map.ofList_eq_foldl, Map.get?_insert]
+
+@[simp]
+theorem get!_succName_builtinDefs : builtinDefs.get! succName = Builtin.succ.def := by
+  simp [Map.get!_eq_get!_get?]
+
+@[simp]
+theorem get!_subName_builtinDefs : builtinDefs.get! subName = Builtin.sub.def := by
+  simp [Map.get!_eq_get!_get?]
+
+@[simp]
+theorem Prog.arity_main {prog} [H : WF' prog] : prog.main.arity = 1 :=
+  H.arity_main
+
+@[simp]
+theorem Prog.arity_mainName {prog} [H : WF' prog] : prog.arity mainName = 1 :=
+  H.arity_main
+
+@[simp]
+theorem Prog.hasDef_mainName {prog} [H : WF' prog] : prog.HasDef mainName :=
+  H.has_main
+
+@[simp]
+theorem Prog.Compatible.get?_builtin {prog : Prog} {fs name} [h : BuiltinC name]
+(H : prog.Compatible fs) : fs.get? name = some h.b.eval := by
+  simpa using @H.get?_builtin' h.b
+
+@[simp]
+theorem Prog.Compatible.get!_builtin {prog : Prog} {fs name} [h : BuiltinC name]
+(H : prog.Compatible fs) : fs.get! name = h.b.eval := by
+  simp [Map.get!_eq_get!_get?, H.get?_builtin]

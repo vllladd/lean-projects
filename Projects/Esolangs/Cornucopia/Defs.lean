@@ -3,6 +3,8 @@ import Projects.Util
 namespace Esolangs.Cornucopia
 
 def mainName : String := "main"
+def succName : String := "succ"
+def subName : String := "sub"
 
 inductive Builtin : Type where
 | succ : Builtin
@@ -44,8 +46,8 @@ def builtins : List Builtin :=
 
 def Builtin.info (b : Builtin) : BuiltinInfo :=
   match b with
-  | .succ => {name := "succ", arity := 1, eval xs := xs[0]! + 1}
-  | .sub => {name := "sub", arity := 2, eval xs := xs[0]! - xs[1]!}
+  | .succ => {name := succName, arity := 1, eval xs := xs[0]! + 1}
+  | .sub => {name := subName, arity := 2, eval xs := xs[0]! - xs[1]!}
 
 def Builtin.name (b : Builtin) : String := b.info.name
 def Builtin.arity (b : Builtin) : ℕ := b.info.arity
@@ -61,8 +63,12 @@ def Builtin.def (b : Builtin) : Def where
 def Builtin.namesMap : Map String Builtin :=
   .ofList # builtins.map λ b => (b.name, b)
 
-def IsBuiltin (name : String) : Prop :=
-  ∃ (b : Builtin), b.name = name
+class IsBuiltin (name : String) : Prop where
+  h : ∃ (b : Builtin), b.name = name
+
+class BuiltinC (name : String) : Type where
+  b : Builtin
+  name_eq : b.name = name
 
 def Prog.def? (prog : Prog) (name : String) : Option Def :=
   prog.defs.get? name
@@ -108,18 +114,26 @@ def Expr.eval (e : Expr) (prog : Prog) (fs : Map String (List ℕ → ℕ)) (arg
 
 structure Prog.Compatible (prog : Prog) (fs : Map String (List ℕ → ℕ)) : Prop where
   keys_fs : fs.keys = prog.defs.keys
-  get?_builtin {b : Builtin} : fs.get? b.name = b.eval
+  get?_builtin' ⦃b : Builtin⦄ : fs.get? b.name = b.eval
   eval_of_ne_arity ⦃name⦄ : prog.HasDef name → ∀ ⦃xs : List ℕ⦄,
     xs.length ≠ prog.arity name → fs.get! name xs = 0
   eval_eq ⦃name⦄ : prog.HasDef name → ∀ ⦃xs : List ℕ⦄, xs.length = prog.arity name →
     fs.get! name xs = (prog.expr name).eval prog fs xs
 
-class Prog.WF (prog : Prog) : Prop where
-  def?_builtin {b : Builtin} : prog.def? b.name = some b.def
+class Prog.WF' (prog : Prog) : Prop where
+  def?_builtin ⦃b : Builtin⦄ : prog.def? b.name = some b.def
   has_main : prog.HasDef mainName
   arity_main : prog.main.arity = 1
   wf_def ⦃name d⦄ : prog.def? name = some d → d.WF prog
+
+class Prog.WF (prog : Prog) extends prog.WF' where
   exiu_compatible : ∃! fs, prog.Compatible fs
+
+class Prog.WFWoutModel (prog : Prog) extends prog.WF' where
+  not_compatible ⦃fs⦄ : ¬prog.Compatible fs
+
+class Prog.WFWoutUnique (prog : Prog) extends prog.WF' where
+  exi_two : ∃ fs₁ fs₂, fs₁ ≠ fs₂ ∧ prog.Compatible fs₁ ∧ prog.Compatible fs₂
 
 in noncomputable
 def Prog.fs (prog : Prog) : Map String (List ℕ → ℕ) :=
@@ -132,21 +146,3 @@ def Prog.eval (prog : Prog) (name : String) (xs : List ℕ) : ℕ :=
 in noncomputable
 def Prog.run (prog : Prog) (n : ℕ) : ℕ :=
   prog.eval mainName [n]
-
-def Expr.show (e : Expr) (argNames : Array String) : String :=
-  match e with
-  | .arg i => argNames[i]!
-  | .call t args =>
-    t ++ if args.length = 0 then "" else
-    "(" ++ ", ".intercalate (args.map (·.show argNames)) ++ ")"
-
-def Def.show (d : Def) (name : String) : String :=
-  let argNamesList := mkList d.arity λ i => String.ofList [.ofNat # 97 + i]
-  let argNames := .mk argNamesList
-  let argsStr := if d.arity = 0 then "" else
-    "(" ++ "".intercalate (argNamesList.map (", " ++ ·)) ++ ")"
-  name ++ argsStr ++ " := " ++ d.expr.show argNames
-
-def Prog.show (prog : Prog) (defNames : List String) : String :=
-  if ¬defNames.Perm prog.defs.keys then "/" else
-  "\n".intercalate # defNames.map # λ name => prog.def name |>.show name

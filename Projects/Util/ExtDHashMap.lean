@@ -843,3 +843,30 @@ theorem union_eq_union_iff_right (h₁ : ∀ i, i ∈ m → i ∉ m₁)
 (h₂ : ∀ i, i ∈ m → i ∉ m₂) : m ∪ m₁ = m ∪ m₂ ↔ m₁ = m₂ := by
   simp [ext_iff, get?_union, Option.or]
   simp [mem_iff_get?_eq_some] at h₁ h₂; grind
+
+include ha in
+theorem get?_eq_some_iff_mem_toList {i x} : mp.get? i = some x ↔ ⟨i, x⟩ ∈ mp.toList := by
+  simp
+
+include ha in
+theorem toList_ofList_subset {xs : List ((i : α) × β i)} :
+(ofList xs).toList ⊆ xs := by
+  rintro ⟨i, x⟩ h
+  induction xs using List.reverseRecOn
+  · simp at h
+  nm xs y ih
+  rcases y with ⟨j, y⟩
+  simp [get?_insert] at h
+  split_ifs at h with h₁; grind
+  simp at ih; simp [ih h]
+
+include ha in
+theorem mem_of_mem_toList_ofList {xs : List ((i : α) × β i)} {p}
+(h : p ∈ (ofList xs).toList) : p ∈ xs :=
+  toList_ofList_subset h
+
+theorem mem_of_get?_ofList {xs : List ((i : α) × β i)} {i x}
+(h : (ofList xs).get? i = some x) : ⟨i, x⟩ ∈ xs := by
+  classical
+  rw [get?_eq_some_iff_mem_toList] at h
+  exact mem_of_mem_toList_ofList h

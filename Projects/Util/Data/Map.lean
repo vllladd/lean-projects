@@ -1076,3 +1076,64 @@ theorem get?_union_ite {i} :
 @[simp]
 theorem mem_diff {i} : i ∈ m₁ \ m₂ ↔ i ∈ m₁ ∧ i ∉ m₂ := by
   rcases m₁, m₂ with ⟨⟨m₁⟩, ⟨m₂⟩⟩; simp
+
+include ha in
+theorem toList_ofList_subset {xs : List (α × β)} :
+(ofList xs).toList ⊆ xs := by
+  rintro ⟨i, x⟩ h
+  induction xs using List.reverseRecOn
+  · simp at h
+  nm xs y ih
+  rcases y with ⟨j, y⟩
+  simp [get?_insert] at h
+  split_ifs at h with h₁; grind
+  simp at ih; simp [ih h]
+
+include ha in
+theorem mem_of_mem_toList_ofList {xs : List (α × β)} {p}
+(h : p ∈ (ofList xs).toList) : p ∈ xs :=
+  toList_ofList_subset h
+
+theorem mem_of_get?_ofList {xs : List (α × β)} {i x}
+(h : (ofList xs).get? i = some x) : (i, x) ∈ xs := by
+  classical
+  rw [get?_eq_some_iff] at h
+  exact mem_of_mem_toList_ofList h
+
+@[simp]
+theorem get!_empty [hb : Inhabited β] {i} : (∅ : Map α β).get! i = default := by
+  simp [get!_eq_get!_get?]
+
+@[simp]
+theorem insert_empty_eq_insert_empty {i j x y} :
+(∅ : Map α β).insert i x = (∅ : Map α β).insert j y ↔ i = j ∧ x = y := by
+  symm; use by grind
+  simp [ext_iff, get?_insert]
+  intro h; grind [h i, h j]
+
+theorem ofList_eq_foldl {xs : List (α × β)} :
+ofList xs = xs.foldl (init := ∅) λ m x => m.insertP x := by
+  generalize h : (∅ : Map α β) = m
+  rw [show ofList xs = m ∪ ofList xs by simp [←h]]
+  clear! m
+  induction xs using List.reverseRecOn generalizing m
+  · simp
+  nm xs x ih
+  rcases x with ⟨i, x⟩
+  simp; rw [union_insert, ih]
+
+include ha in
+theorem keys_insert_of_mem {i x} (h : i ∈ mp) : (mp.insert i x).keys = mp.keys := by
+  apply List.eq_of_sortedLE_and_perm (by simp) (by simp)
+  rw [List.perm_iff_mem_iff_of_nodup (by simp) (by simp)]; simpa
+
+include ha in
+theorem keys_insert {i x} : (mp.insert i x).keys =
+if i ∈ mp then mp.keys else (i :: mp.keys).mergeSort := by
+  split_ifs with h
+  · exact keys_insert_of_mem h
+  · exact keys_insert_of_not_mem h
+
+include ha in @[simp]
+theorem keys_empty : (∅ : Map α β).keys = [] := by
+  simp [keys_eq_map_fst_toList]
