@@ -1,14 +1,11 @@
-import Projects.Esolangs.Cornucopia.Basic
+import Projects.Esolangs.Cornucopia.Programs.Common
 
 attribute [-simp] List.getElem!_eq_getElem?_getD
 
-namespace Esolangs.Cornucopia.Programs.LoopSucc₁
-
-def exprLoopSucc (name : String) : Expr :=
-  .call succName [.call name [.arg 0]]
+namespace Esolangs.Cornucopia.ProgLoopSucc₁
 
 def defs : List (String × Def) :=
-  [(mainName, ⟨1, exprLoopSucc mainName⟩)]
+  [(mainName, defLoopSucc₁ mainName)]
 
 def prog : Prog :=
   .ofDefs defs
@@ -19,10 +16,15 @@ def prog : Prog :=
 theorem nodup_defs : defs.map (·.1) |>.Nodup := by
   simp [defs]
 
+@[instance, simp]
+theorem wfBuiltins_prog : prog.WFBuiltins := by
+  apply Prog.wfBuiltins_ofDefs; decide
+
 @[simp]
 theorem wfDefs' : WFDefs' defs := by
-  constructor <;> simp [defs, exprLoopSucc]
-  simp [Prog.ofDefs, Map.get!_insert]
+  constructor; iterate 3 simp [defs]
+  rw [←prog]; simp [defs]; apply wf_exprLoopSucc₁
+  simp [prog, defs, Prog.ofDefs, Map.get?_insert]
 
 @[instance, simp]
 theorem wf' : prog.WF' :=
@@ -32,7 +34,7 @@ theorem wf' : prog.WF' :=
 theorem wfWoutModel_prog : prog.WFWoutModel := by
   constructor; intro fs H
   have h₁ := @H.eval_eq mainName (by simp) [0] (by simp)
-  simp [prog, defs, Prog.ofDefs, Map.get!_insert, exprLoopSucc, H.get!_builtin, fn] at h₁
+  simp [prog, defs, Prog.ofDefs, Map.get!_insert, exprLoopSucc₁, H.get!_builtin, fn] at h₁
 
 instance : ProgInfo prog where
   name := "LoopSucc₁"

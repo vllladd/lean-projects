@@ -15,6 +15,7 @@ import Projects.Esolangs
 import Projects.SK
 import Projects.Kolakoski
 import Projects.IO
+import Projects.Expr
 
 -- namespace AP
 -- 
@@ -118,10 +119,12 @@ open Esolangs.Cornucopia
 
 def main : IO Unit := do
   let progs :=
-    [ Programs.Id.prog.show
-    , Programs.Loop.prog.show
-    , Programs.LoopSucc₁.prog.show
-    , Programs.LoopSucc₂.prog.show
+    [ ProgId.prog.show
+    , ProgLoop.prog.show
+    , ProgLoopSucc₁.prog.show
+    , ProgLoopSucc₂.prog.show
+    , OneAlt₁.prog.show
+    , Prog₁.prog.show
     ]
   let mut i := 0
   for prog in progs do

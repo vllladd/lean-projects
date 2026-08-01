@@ -24,6 +24,12 @@ open Classical in noncomputable
 def dite' (p : Prop) (f : p → α) (g : ¬p → α) : α :=
   if h : p then f h else g h
 
+class ExiVarC (p : outParam Prop) (q : α → Prop) : Prop where
+  exi_iff : (∃ x, q x) ↔ p
+
+class AllVarC (p : outParam Prop) (q : α → Prop) : Prop where
+  all_iff : (∀ x, q x) ↔ p
+
 -- #check 0 #exit
 
 -----
@@ -464,3 +470,120 @@ theorem τ_eq_of_ofPred [ha : Nonempty α] {p : α → Prop} {x}
 @[simp] theorem or_iff_or_right {p q r : Prop} : (p ∨ q ↔ r ∨ q) ↔ ¬q → (p ↔ r) := by tauto
 @[simp] theorem imp_not_imp_iff {p q : Prop} : p → ¬p → q ↔ True := by tauto
 @[simp] theorem not_imp_imp_iff {p q : Prop} : ¬p → p → q ↔ True := by tauto
+
+theorem ExiVarC.iff {p} {q : α → Prop} : ExiVarC p q ↔ ((∃ x, q x) ↔ p) :=
+  ⟨(·.1), (⟨·⟩)⟩
+
+instance {p} : ExiVarC (p ∧ Nonempty α) λ (_ : α) => p := by
+  constructor; simp [and_comm]
+
+instance {y} : ExiVarC True λ (x : α) => x = y := by
+  constructor; simp
+
+instance {y} : ExiVarC True λ (x : α) => y = x := by
+  constructor; simp
+
+instance {p y} : ExiVarC p λ (x : α) => p ∧ x = y := by
+  constructor; simp
+
+instance {p y} : ExiVarC p λ (x : α) => x = y ∧ p := by
+  constructor; simp
+
+instance {p p'} {q : α → Prop} {y} [h : ExiVarC p q] :
+ExiVarC (p' ∨ p) λ x => (p' ∧ x = y) ∨ q x := by
+  grind [ExiVarC.iff]
+
+instance {p p'} {q : α → Prop} {y} [h : ExiVarC p q] :
+ExiVarC (p' ∨ p) λ x => (x = y ∧ p') ∨ q x := by
+  grind [ExiVarC.iff]
+
+-----
+
+theorem AllVarC.iff {p} {q : α → Prop} : AllVarC p q ↔ ((∀ x, q x) ↔ p) :=
+  ⟨(·.1), (⟨·⟩)⟩
+
+instance {p} : AllVarC (p ∨ IsEmpty α) λ (_ : α) => p := by
+  constructor; by_cases h : IsEmpty α <;> simp_all
+
+instance {p y} : AllVarC p λ (x : α) => x = y → p := by
+  constructor; simp
+
+instance {p y} : AllVarC p λ (x : α) => y = x → p := by
+  constructor; simp
+
+instance {p p'} {q : α → Prop} {y} [h : AllVarC p q] :
+AllVarC (p' ∧ p) λ x => (x = y → p') ∧ q x := by
+  grind [AllVarC.iff]
+
+instance {p p'} {q : α → Prop} {y} [h : AllVarC p q] :
+AllVarC (p' ∧ p) λ x => (y = x → p') ∧ q x := by
+  grind [AllVarC.iff]
+
+-----
+
+@[simp]
+theorem pairs_eq_simp {x : α} {y : β} {p q : α → β → Prop} :
+(∀ x' y', (x' = x ∧ y' = y) ∨ p x' y' → q x' y') ↔
+q x y ∧ ∀ x' y', p x' y' → q x' y' := by
+  grind
+
+@[simp]
+theorem imp_and_eq_left_simp {y : α} {p q : α → Prop} :
+(∀ x, (x = y → p x) ∧ q x) ↔ p y ∧ ∀ x, q x := by
+  grind
+
+@[simp]
+theorem imp_and_eq_right_simp {y : α} {p q : α → Prop} :
+(∀ x, (y = x → p x) ∧ q x) ↔ p y ∧ ∀ x, q x := by
+  grind
+
+theorem Acc.of_isEmpty [ha : IsEmpty α] {r : α → α → Prop} {x} : Acc r x := by
+  cases ha.1 x
+
+theorem WellFounded.of_isEmpty [ha : IsEmpty α] {r : α → α → Prop} : WellFounded r :=
+  ⟨λ _ => .of_isEmpty⟩
+
+theorem Relation.TransGen.lt_of_le_of_lt {r : α → α → Prop} {a c : α} (b : α)
+(h₁ : a = b ∨ TransGen r a b) (h₂ : TransGen r b c) : TransGen r a c := by
+  rcases h₁ with rfl | h₁
+  · exact h₂
+  · exact h₁.trans h₂
+
+theorem Relation.TransGen.lt_of_lt_of_le {r : α → α → Prop} {a c : α} (b : α)
+(h₁ : TransGen r a b) (h₂ : b = c ∨ TransGen r b c) : TransGen r a c := by
+  rcases h₂ with rfl | h₂
+  · exact h₁
+  · exact h₁.trans h₂
+
+theorem imp_comm_left {a b c : Prop} : a → b → c ↔ b → a → c := by
+  tauto
+
+theorem imp_and_of {p q r : Prop} (h₁ : p) (h₂ : p → q) (h₃ : p → q → r) : (p → q) ∧ r := by
+  tauto
+
+theorem imp_fn_and_of {x : Option (α → β)} {y z : α → β} {r : α → Prop}
+(h₁ : x = some y) (h₂ : ∀ w, z w = y w)
+(h₃ : x = some z → ∀ w, r w) : ∀ w, (x = some y → z w = y w) ∧ r w := by
+  simp_all [funext_iff]
+
+theorem forall_and_true {p : α → Prop} (h : ∀ x, p x ∧ True) : ∀ x, p x := by
+  grind
+
+@[simp]
+theorem decide_decidable_of_bool_eq_true_eq {p : Prop} {b : Bool} {h} :
+(@decide p (decidable_of_bool b h) = true) = b := by
+  simp [←h]
+
+@[simp]
+theorem decide_decidable_of_bool_eq_false_eq {p : Prop} {b : Bool} {h} :
+(@decide p (decidable_of_bool b h) = false) = !b := by
+  simp [←h]
+
+set_option linter.overlappingInstances false in @[simp]
+theorem ite_eq_ite_iff {p : Prop} [hp₁ : Decidable p] [hp₂ : Decidable p] {a b c d : α} :
+@ite α p hp₁ a b = @ite α p hp₂ c d ↔ @ite Prop p hp₁ (a = c) (b = d) := by
+  grind
+
+theorem forall_imp_of_forall {p : α → Prop} (q : α → Prop)
+(h : ∀ x, p x) : ∀ x, q x → p x := by
+  tauto

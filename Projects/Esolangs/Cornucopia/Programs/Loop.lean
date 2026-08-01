@@ -1,14 +1,11 @@
-import Projects.Esolangs.Cornucopia.Basic
+import Projects.Esolangs.Cornucopia.Programs.Common
 
 attribute [-simp] List.getElem!_eq_getElem?_getD
 
-namespace Esolangs.Cornucopia.Programs.Loop
-
-def exprLoop (name : String) : Expr :=
-  .call name [.arg 0]
+namespace Esolangs.Cornucopia.ProgLoop
 
 def defs : List (String × Def) :=
-  [(mainName, ⟨1, exprLoop mainName⟩)]
+  [(mainName, defLoop mainName)]
 
 def fs (n : ℕ) : Map String (List ℕ → ℕ) :=
   .ofList [(mainName, fn 1 # λ _ => n)]
@@ -24,8 +21,9 @@ theorem nodup_defs : defs.map (·.1) |>.Nodup := by
 
 @[simp]
 theorem wfDefs' : WFDefs' defs := by
-  constructor <;> simp [defs, exprLoop]
-  simp [Prog.ofDefs, Map.get!_insert]
+  constructor <;> simp [defs]
+  apply wf_exprLoop
+  simp [Prog.ofDefs, Map.get?_insert]
 
 @[instance, simp]
 theorem wf' : prog.WF' :=
@@ -47,12 +45,13 @@ theorem builtin_not_mem_fs {n} {b : Builtin} : b.name ∉ fs n := by
 
 @[simp]
 theorem fs_eq_fs_iff {n m} : fs n = fs m ↔ n = m := by
-  symm; use by grind;; simp [fs]; exact λ h => h [0] rfl
+  symm; use by grind;; simp [fs]
 
 @[instance, simp]
 theorem wfWoutUnique_prog : prog.WFWoutUnique := by
   constructor
   use builtinFs ∪ fs 0, builtinFs ∪ fs 1
+  simp_rw [ne_eq, compatible, and_self, and_true]
   simp [Map.union_eq_union_iff_right]
 
 instance : ProgInfo prog where

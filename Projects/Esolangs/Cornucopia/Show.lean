@@ -37,7 +37,12 @@ def ProgInfo.showWF {prog : Prog} [info : ProgInfo prog] : String :=
   else if !info.has_unique_model then "multiple models"
   else "unique model"
 
+-- def Prog.show (prog : Prog) [info : ProgInfo prog] : String :=
+--   let defs := "\n".intercalate # info.defNames.map # λ name =>
+--     "".intercalate (List.replicate 2 " ") ++ (prog.def name).show name
+--   "".intercalate ["-- ", info.showWF, "\nprogram ", info.name, "\n", defs]
+
 def Prog.show (prog : Prog) [info : ProgInfo prog] : String :=
-  let defs := "\n".intercalate # info.defNames.map # λ name =>
-    "".intercalate (List.replicate 2 " ") ++ (prog.def name).show name
-  "".intercalate ["program ", info.name, " -- ", info.showWF, "\n", defs]
+  let defs := "\n".intercalate # info.defNames.map #
+    λ name => (prog.def name).show name
+  "".intercalate ["-- ", info.showWF, "\n", defs]

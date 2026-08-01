@@ -597,3 +597,87 @@ theorem getElem_mkList {n} {f : ℕ → α} {i}
 @[simp]
 theorem mkList_length_getElem! [ha : Inhabited α] : mkList xs.length (xs[·]!) = xs := by
   simp [mkList]
+
+theorem find?_eq_some_iff_of_nodup [H : DecidableEq β] {f : α → β} {x y}
+(h : xs.map f |>.Nodup) : xs.find? (f · = y) = some x ↔ x ∈ xs ∧ f x = y := by
+  rw [find?_eq_some_iff_of_at_most_one] <;> simp
+  rintro a b ha hb rfl
+  rw [nodup_iff_getElem_ne_getElem] at h
+  rw [mem_iff_getElem] at ha hb; grind
+
+theorem find?_eq_none_of {p : α → Bool} (h : ∀ x ∈ xs, p x = false) : xs.find? p = none := by
+  simpa
+
+theorem Perm.comm : xs ~ ys ↔ ys ~ xs := by
+  constructor <;> exact Perm.symm
+
+theorem perm_append_comm_left : xs ++ ys ~ zs ↔ ys ++ xs ~ zs := by
+  rw [perm_iff_perm_of_left]; simp [perm_append_comm]
+
+theorem perm_append_comm_right : zs ~ xs ++ ys ↔ zs ~ ys ++ xs := by
+  rw [perm_iff_perm_of_right]; simp [perm_append_comm]
+
+@[simp]
+theorem append_mergeSort_perm [ha : LinearOrder α] :
+xs ++ ys.mergeSort ~ zs ↔ xs ++ ys ~ zs := by
+  rw [perm_iff_perm_of_left]; simp [List.perm_append_left_iff]
+
+@[simp]
+theorem mergeSort_append_perm [ha : LinearOrder α] :
+xs.mergeSort ++ ys ~ zs ↔ xs ++ ys ~ zs := by
+  rw [perm_iff_perm_of_left]; simp [List.perm_append_right_iff]
+
+@[simp]
+theorem mergeSort_two {x y : α} {le} :
+[x, y].mergeSort le = if le x y then [x, y] else [y, x] := by
+  simp [mergeSort, merge]
+
+theorem length_eq_succ_iff_append {n} :
+xs.length = n + 1 ↔ ∃ x ys zs, xs = ys ++ x :: zs ∧ ys.length + zs.length = n := by
+  rw [length_eq_succ_iff]
+  constructor
+  · rintro ⟨x, xs, rfl, rfl⟩
+    use x, [], xs
+    simp
+  · rintro ⟨x, ys, zs, rfl, h⟩
+    cases ys
+    · simpa using h
+    nm y ys
+    simp at h ⊢
+    omega
+
+theorem exi_append (i : ℕ) (h : i ≤ xs.length) : ∃ ys zs, xs = ys ++ zs ∧ ys.length = i := by
+  use xs.take i, xs.drop i; simp; grind
+
+theorem exi_append_cons (i : ℕ) (h : i < xs.length) :
+∃ x ys zs, xs = ys ++ x :: zs ∧ ys.length = i := by
+  have : Nonempty α
+  · cases xs; simp at h; nm x xs; use x
+  use xs[i]!, xs.take i, xs.drop (i + 1)
+  simp [getElem!_eq_getElem h, le_of_lt h]
+
+@[simp]
+theorem forall_length_eq_succ_imp {p : List α → Prop} {n} :
+(∀ (xs : List α), xs.length = n + 1 → p xs) ↔ ∀ x xs, xs.length = n → p (x :: xs) := by
+  simp_rw [length_eq_succ_iff]; constructor
+  · rintro h x xs rfl; apply h; tauto
+  · rintro h xs ⟨x, xs, rfl, rfl⟩; tauto
+
+@[simp]
+theorem forall_length_eq_succ_imp_and {p q : List α → Prop} {n} :
+(∀ (xs : List α), (xs.length = n + 1 → p xs) ∧ q xs) ↔
+(∀ x xs, xs.length = n → p (x :: xs)) ∧ ∀ xs, q xs := by
+  simp_rw [length_eq_succ_iff]; constructor
+  · intro h
+    split_ands
+    · rintro x xs rfl
+      specialize h (x :: xs)
+      apply h.1
+      tauto
+    · intro xs
+      specialize h xs
+      exact h.2
+  · intro h xs
+    split_ands
+    · rintro ⟨x, xs, rfl, rfl⟩; tauto
+    · grind

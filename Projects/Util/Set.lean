@@ -47,7 +47,7 @@ theorem diff_upair (x y : α) (s : Set α) : s \ {x, y} = (s \ {x}) \ {y} := by
 
 @[simp]
 theorem univ_ne_univ_diff_insert {x : α} : univ ≠ univ \ (insert x s) := by
-  simp [Set.ext_iff]; use x; simp
+  simp [Set.ext_iff]
 
 @[simp]
 theorem univ_ne_univ_diff_singleton {x : α} : univ ≠ univ \ {x} := by

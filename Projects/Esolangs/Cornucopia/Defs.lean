@@ -114,14 +114,16 @@ def Expr.eval (e : Expr) (prog : Prog) (fs : Map String (List ℕ → ℕ)) (arg
 
 structure Prog.Compatible (prog : Prog) (fs : Map String (List ℕ → ℕ)) : Prop where
   keys_fs : fs.keys = prog.defs.keys
-  get?_builtin' ⦃b : Builtin⦄ : fs.get? b.name = b.eval
+  get?_builtin' ⦃b : Builtin⦄ : fs.get? b.name = some b.eval
   eval_of_ne_arity ⦃name⦄ : prog.HasDef name → ∀ ⦃xs : List ℕ⦄,
     xs.length ≠ prog.arity name → fs.get! name xs = 0
   eval_eq ⦃name⦄ : prog.HasDef name → ∀ ⦃xs : List ℕ⦄, xs.length = prog.arity name →
     fs.get! name xs = (prog.expr name).eval prog fs xs
 
-class Prog.WF' (prog : Prog) : Prop where
+class Prog.WFBuiltins (prog : Prog) : Prop where
   def?_builtin ⦃b : Builtin⦄ : prog.def? b.name = some b.def
+
+class Prog.WF' (prog : Prog) extends prog.WFBuiltins where
   has_main : prog.HasDef mainName
   arity_main : prog.main.arity = 1
   wf_def ⦃name d⦄ : prog.def? name = some d → d.WF prog
@@ -135,14 +137,14 @@ class Prog.WFWoutModel (prog : Prog) extends prog.WF' where
 class Prog.WFWoutUnique (prog : Prog) extends prog.WF' where
   exi_two : ∃ fs₁ fs₂, fs₁ ≠ fs₂ ∧ prog.Compatible fs₁ ∧ prog.Compatible fs₂
 
-in noncomputable
+noncomputable
 def Prog.fs (prog : Prog) : Map String (List ℕ → ℕ) :=
   τ fs, prog.Compatible fs
 
-in noncomputable
+noncomputable
 def Prog.eval (prog : Prog) (name : String) (xs : List ℕ) : ℕ :=
   prog.fs.get! name xs
 
-in noncomputable
+noncomputable
 def Prog.run (prog : Prog) (n : ℕ) : ℕ :=
   prog.eval mainName [n]

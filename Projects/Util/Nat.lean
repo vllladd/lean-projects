@@ -22,6 +22,10 @@ def chkLt (n : ℕ) (p : ℕ → Bool) : Bool :=
   | 0 => true
   | n + 1 => chkLe n p
 
+open Classical in noncomputable
+def ofProp (p : Prop) : ℕ :=
+  if p then 1 else 0
+
 -----
 
 attribute [simp] mod_one mod_le
@@ -947,3 +951,25 @@ theorem mul_pow_mod_pow {b n k w : ℕ} : n * b ^ k % b ^ w = n % b ^ (w - k) * 
   simp [Nat.pow_add, ←mul_assoc]
   rw [Nat.mul_mod_mul_right]
   rw [ih]
+
+@[simp]
+theorem ofProp_true : ofProp True = 1 := by
+  simp [ofProp]
+
+@[simp]
+theorem ofProp_false : ofProp False = 0 := by
+  simp [ofProp]
+
+theorem ite_eq_ofProp {p} [Decidable p] : (if p then 1 else 0) = ofProp p := by
+  simp [ofProp]
+
+theorem ite_eq_ofProp' {p} [Decidable p] : (if p then 0 else 1) = ofProp (¬p) := by
+  simp [ofProp]
+
+@[simp]
+theorem ofProp_sub {p n} : ofProp p - n = ofProp (n = 0 ∧ p) := by
+  simp [ofProp]; grind
+
+@[simp]
+theorem add_one_sub_ofProp {p n} : n + 1 - ofProp p = n + ofProp (¬p) := by
+  simp [ofProp]; grind

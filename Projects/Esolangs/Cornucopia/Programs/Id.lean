@@ -1,14 +1,11 @@
-import Projects.Esolangs.Cornucopia.Basic
+import Projects.Esolangs.Cornucopia.Programs.Common
 
 attribute [-simp] List.getElem!_eq_getElem?_getD
 
-namespace Esolangs.Cornucopia.Programs.Id
-
-def exprId : Expr :=
-  .arg 0
+namespace Esolangs.Cornucopia.ProgId
 
 def defs : List (String × Def) :=
-  [(mainName, ⟨1, exprId⟩)]
+  [(mainName, defId)]
 
 def fs : Map String (List ℕ → ℕ) :=
   .ofList [(mainName, fn 1 (·[0]!))]
@@ -19,12 +16,12 @@ def prog : Prog :=
 -----
 
 @[simp]
-theorem nodup_defs : defs.map (·.1) |>.Nodup := by
+theorem nodup_prog : defs.map (·.1) |>.Nodup := by
   simp [defs]
 
 @[simp]
 theorem wfDefs' : WFDefs' defs := by
-  constructor <;> simp [defs, exprId]
+  constructor <;> simp [defs]
 
 @[instance, simp]
 theorem wf' : prog.WF' :=
@@ -52,7 +49,7 @@ theorem wf_prog : prog.WF := by
   intro xs
   simp [defs] at h₂
   rcases h₂ with ⟨rfl, rfl⟩
-  simp [fn, exprId]
+  simp [exprId, fn]
 
 @[simp]
 theorem fs_prog : prog.fs = builtinFs ∪ fs :=

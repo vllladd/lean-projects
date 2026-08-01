@@ -485,14 +485,12 @@ theorem minKey?_eq_none_iff [ha : LinearOrder α] : mp.minKey? = none ↔ mp = �
   rw [ext_iff]; simp
   simp_rw [minKey?_eq_head?_keys, ←mem_keys]
   cases h₁ : mp.keys <;> simp
-  nm i ks; use i; simp
 
 @[simp]
 theorem maxKey?_eq_none_iff [ha : LinearOrder α] : mp.maxKey? = none ↔ mp = ∅ := by
   rw [ext_iff]; simp
   simp_rw [maxKey?_eq_getLast?_keys, ←mem_keys]
   cases h₁ : mp.keys <;> simp
-  nm i ks; use i; simp
 
 theorem not_mem_of_lt_minKey? [ha : LinearOrder α] {m x}
 (h₁ : mp.minKey? = some m) (h₂ : x < m) : x ∉ mp := by

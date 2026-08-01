@@ -1046,8 +1046,7 @@ if x < y ∧ r x y then [({x, y} : Set α)] else [])).Nodup := by
     ext y :1
     rw [apply_ite (f := map f)]
     simp
-    split_ifs with h₁ <;> simp
-    replace h₁ := h₁.1
+    intro h₁ h₂
     subst hf
     simp
     have h₂ := le_of_lt h₁

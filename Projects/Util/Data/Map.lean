@@ -525,7 +525,7 @@ def push (mp : Map α ℕ) (i : α) : Map α ℕ :=
 
 theorem get?_insert {i j x} :
 (mp.insert j x).get? i = if j = i then some x else mp.get? i := by
-  convert! mp.1.get?_insert; simp; rfl
+  convert! mp.1.get?_insert; simp [get?]
 
 theorem push_push_comm {i j} {mp : Map α ℕ} :
 (mp.push i).push j = (mp.push j).push i := by
@@ -1137,3 +1137,26 @@ if i ∈ mp then mp.keys else (i :: mp.keys).mergeSort := by
 include ha in @[simp]
 theorem keys_empty : (∅ : Map α β).keys = [] := by
   simp [keys_eq_map_fst_toList]
+
+theorem get?_ofList_of_nodup_and_mem {xs : List (α × β)} {i x}
+(h₁ : xs.map (·.1) |>.Nodup) (h₂ : (i, x) ∈ xs) : (ofList xs).get? i = some x := by
+  rwa [get?_ofList_eq_some_iff h₁]
+
+theorem get!_ofList_of_nodup_and_mem [hb : Inhabited β] {xs : List (α × β)} {i x}
+(h₁ : xs.map (·.1) |>.Nodup) (h₂ : (i, x) ∈ xs) : (ofList xs).get! i = x := by
+  simp [get!_eq_get!_get?, get?_ofList_of_nodup_and_mem h₁ h₂]
+
+include ha in
+theorem keys_union (h : ∀ i ∈ m₁, i ∉ m₂) : (m₁ ∪ m₂).keys = (m₁.keys ++ m₂.keys).mergeSort := by
+  apply List.eq_of_perm_of_pairwise (r := (· ≤ ·))
+  all_goals simp [←List.sortedLE_iff_pairwise, List.sortedLE_mergeSort]
+  rw [List.perm_iff_subset_of_nodup (by simp) (by simpa [List.nodup_append])]
+  simp [List.subset_def]
+
+include ha in
+theorem keys_ofList {xs : List (α × β)} (h : xs.map (·.1) |>.Nodup) :
+(ofList xs).keys = (xs.map (·.1)).mergeSort := by
+  apply List.eq_of_perm_of_pairwise (r := (· ≤ ·))
+  all_goals simp [←List.sortedLE_iff_pairwise, List.sortedLE_mergeSort]
+  rw [List.perm_iff_subset_of_nodup (by simp) (by simpa [List.nodup_append])]
+  simp [List.subset_def]

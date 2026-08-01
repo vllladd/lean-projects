@@ -1,14 +1,11 @@
-import Projects.Esolangs.Cornucopia.Basic
+import Projects.Esolangs.Cornucopia.Programs.Common
 
 attribute [-simp] List.getElem!_eq_getElem?_getD
 
-namespace Esolangs.Cornucopia.Programs.LoopSucc₂
-
-def exprLoop (name : String) : Expr :=
-  .call name [.call succName [.arg 0]]
+namespace Esolangs.Cornucopia.ProgLoopSucc₂
 
 def defs : List (String × Def) :=
-  [(mainName, ⟨1, exprLoop mainName⟩)]
+  [(mainName, ⟨1, exprLoopSucc₂ mainName⟩)]
 
 def fs (n : ℕ) : Map String (List ℕ → ℕ) :=
   .ofList [(mainName, fn 1 # λ _ => n)]
@@ -22,10 +19,15 @@ def prog : Prog :=
 theorem nodup_defs : defs.map (·.1) |>.Nodup := by
   simp [defs]
 
+@[instance, simp]
+theorem wfBuiltins_prog : prog.WFBuiltins := by
+  apply Prog.wfBuiltins_ofDefs; decide
+
 @[simp]
 theorem wfDefs' : WFDefs' defs := by
-  constructor <;> simp [defs, exprLoop]
-  simp [Prog.ofDefs, Map.get!_insert]
+  constructor; iterate 3 simp [defs]
+  rw [←prog]; simp [defs]; apply wf_exprLoopSucc₂
+  simp [prog, defs, Prog.ofDefs, Map.get?_insert]
 
 @[instance, simp]
 theorem wf' : prog.WF' :=
@@ -35,7 +37,7 @@ theorem wf' : prog.WF' :=
 theorem compatibleDefs {n} : CompatibleDefs (.ofList defs) (fs n) := by
   use by simp [defs, fs]
   intro name d; simp [defs, fs, Map.get?_insert]
-  rintro rfl rfl; simp [exprLoop, Map.get!_insert, fn]
+  rintro rfl rfl; simp [exprLoopSucc₂, Map.get!_insert, fn]
 
 @[simp]
 theorem compatible {n} : prog.Compatible (builtinFs ∪ fs n) :=
@@ -47,7 +49,7 @@ theorem builtin_not_mem_fs {n} {b : Builtin} : b.name ∉ fs n := by
 
 @[simp]
 theorem fs_eq_fs_iff {n m} : fs n = fs m ↔ n = m := by
-  symm; use by grind;; simp [fs]; exact λ h => h [0] rfl
+  symm; use by grind;; simp [fs]
 
 @[instance, simp]
 theorem wfWoutUnique_prog : prog.WFWoutUnique := by
@@ -56,7 +58,7 @@ theorem wfWoutUnique_prog : prog.WFWoutUnique := by
   simp [Map.union_eq_union_iff_right]
 
 instance : ProgInfo prog where
-  name := "Loop"
+  name := "LoopSucc₂"
   defNames := ["main"]
   has_model := true
   has_unique_model := false
