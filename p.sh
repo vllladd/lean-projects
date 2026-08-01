@@ -3,6 +3,6 @@ clear
 
 git add .
 git commit -m commit
-git push o docs
+git push
 
 echo ""
